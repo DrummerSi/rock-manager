@@ -1,0 +1,90 @@
+property m_data, m_path, m_sndObj
+
+on new me, argPath
+  m_data = []
+  repeat with note = 1 to 24
+    m_data.add([[#file: "BassDrum", #Pitch: power(2, (note - 1) / 12.0)]])
+  end repeat
+  m_data[3] = [[#file: "SnareDrum", #Pitch: 1]]
+  m_data[5] = [[#file: "Hihat", #Pitch: 1]]
+  if voidp(argPath) then
+    argPath = "D:\User\Beat\"
+  end if
+  m_path = argPath
+  return me
+end
+
+on kill me
+  if objectp(m_sndObj) then
+    m_sndObj = m_sndObj.kill()
+  end if
+  return 0
+end
+
+on getFile me, argEvent
+  note = argEvent[#note]
+  if (note >= 1) and (note <= m_data.count()) then
+    perNote = m_data[note]
+    layer = argEvent[#layer]
+    if not integerp(layer) then
+      layer = 1
+    end if
+    tmpInfo = perNote[layer]
+    return tmpInfo[#file]
+  end if
+  return EMPTY
+end
+
+on load me, argList
+  if stringp(argList) then
+    argList = member(argList).text.value
+  end if
+  if not listp(argList) then
+    argList = [#Autogen: ["03-Track #", 3]]
+  end if
+  m_data = []
+  if listp(argList[#Autogen]) then
+    alert("Not fixed!")
+    tmp = argList[#Autogen]
+    repeat with n = 1 to 24
+      m_data[n] = [#file: m_path & tmp[1] & convItoS(n, 3), #Pitch: 1]
+    end repeat
+  else
+    keys = argList[#keys]
+    repeat with n = 1 to keys.count()
+      newPerNote = []
+      m_data.add(newPerNote)
+      perNote = keys[n]
+      if ilk(perNote) = #propList then
+        perNote = [perNote]
+      end if
+      repeat with m = 1 to perNote.count()
+        data = perNote[m]
+        data[#file] = m_path & data[#file]
+        if voidp(data[#Pitch]) then
+          data[#Pitch] = 1
+        end if
+        newPerNote.add(data)
+      end repeat
+    end repeat
+  end if
+end
+
+on playNote me, argEvent, argVol, argPan
+  if objectp(m_sndObj) then
+    m_sndObj = m_sndObj.kill()
+  end if
+  tmpFile = me.getFile(argEvent)
+  if tmpFile = EMPTY then
+    exit
+  end if
+  if voidp(argVol) then
+    argVol = 127
+  end if
+  m_sndObj = script("SoundScript").new(tmpFile, [#PlayDirect: 0])
+  if objectp(m_sndObj) then
+    m_sndObj.setVol(100.0 * argVol / 127)
+    m_sndObj.setPan(argPan)
+    m_sndObj.play()
+  end if
+end

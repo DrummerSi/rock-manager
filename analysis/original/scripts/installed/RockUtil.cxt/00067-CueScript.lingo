@@ -1,0 +1,81 @@
+property cues, startTime, modFact, ancestor, cueOffset, cueNum, states, reportObj, mp3SoundObj, currentCue
+global gUseful
+
+on new me, argReportObj, argFileName, argSndOptions
+  global gRock
+  reportObj = argReportObj
+  tmpPath = gRock.m_paths.getPath(#sound)
+  if voidp(argSndOptions) then
+    argSndOptions = [:]
+  end if
+  argSndOptions.setaProp(#ReportTo, me)
+  if voidp(argSndOptions[#vol]) then
+    argSndOptions[#vol] = #SpeakVol
+  end if
+  if argSndOptions[#format] = #Mp3 then
+    tmpExt = fileGetExtension(argFileName)
+    if tmpExt.length = 0 then
+      argFileName = argFileName & gUseful.soundFileExt
+    end if
+    mp3SoundObj = script("SoundScript").new(gRock.m_paths.getPath(#ActorSounds) & argFileName, argSndOptions)
+  else
+    ancestor = script("SoundScript").new(tmpPath & argFileName, argSndOptions)
+    if voidp(ancestor) then
+      return 0
+    end if
+  end if
+  cues = getCues(argFileName)
+  modFact = 60.0 / 12
+  gUseful.frameTimer.addObject(me)
+  cueOffset = 0
+  cueNum = 0
+  currentCue = 0
+  return me
+end
+
+on kill me
+  if objectp(mp3SoundObj) then
+    mp3SoundObj = mp3SoundObj.kill()
+  end if
+  if objectp(ancestor) then
+    ancestor = ancestor.kill()
+  end if
+  gUseful.frameTimer.deleteObject(me)
+  reportObj = 0
+  return 0
+end
+
+on timeTick me
+  me.handleCue()
+end
+
+on nextCue me
+  cueOffset = cueOffset + 1
+  me.handleCue()
+end
+
+on getCurrentCue me
+  return currentCue
+end
+
+on handleCue me
+  tmpCueNum = ((the ticks - startTime) / modFact) + 1 + cueOffset
+  if tmpCueNum < cues.count then
+    currentCue = cues[tmpCueNum]
+    reportObj.Report(me, #Cue, currentCue)
+  end if
+end
+
+on Report me, argObj, argWhat
+  if argWhat = #Preloaded then
+    startTime = the ticks
+  else
+    if argWhat = #play then
+      startTime = the ticks
+    else
+      if argWhat = #finished then
+      end if
+    end if
+  end if
+  reportObj.Report(me, argWhat)
+end

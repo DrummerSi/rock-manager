@@ -1,0 +1,148 @@
+property ancestor, m_concert_r, m_snd
+global gDir, gRock
+
+on new me, argOptions
+  ID = argOptions[#ID]
+  argOptions.setaProp(#ReportTo, me)
+  argOptions.setaProp(#child, me)
+  dialog_r = gRock.m_classManager.getObjByIDAndClass(#DlgConcertResult, #Dialog)
+  dialog_r.dataMemberName = "DlgConcertResultData"
+  argOptions[#DlgInfoObj] = dialog_r
+  ConcertInfo = argOptions[#ConcertInfo]
+  if voidp(ConcertInfo) then
+    pott("Aargh", argOptions)
+    ConcertInfo = [#VenueID: #Live01, #Satisfaction: 0.59999999999999998, #NumAudience: 10]
+  end if
+  ConcertID = ConcertInfo[#ConcertID]
+  m_concert_r = gRock.m_classManager.getObjByIDAndClass(ConcertID, #Concert)
+  venue_r = gRock.m_classManager.getObjByIDAndClass(m_concert_r.Venue, #Live)
+  gRock.m_context.setFocus(#place, venue_r)
+  dialog_r.name = venue_r.name
+  ancestor = script("DlgRockAncestorScript").new(argOptions)
+  dlgObj = ancestor.m_objDlg
+  itemObj = dlgObj.getItem(#Pic)
+  tmpFilledFract = float(m_concert_r.NumAudience) / venue_r.size
+  img = makeConcertPic(venue_r, tmpFilledFract)
+  itemObj.setOneProp(#Pic, img)
+  itemObj = dlgObj.getItemByPath([#Satisfaction, #Head, #icon])
+  itemObj.setOneProp(#Pic, "icon_prize podium02")
+  itemObj = dlgObj.getItemByPath([#Satisfaction, #Head, #Info])
+  itemObj.setOneProp(#editData, gRock.m_languageManager.getStr(#szidQuality))
+  itemObj = dlgObj.getItemByPath([#Satisfaction, #dlg, #Pic])
+  tmpStars = integer(m_concert_r.getRating() * 2)
+  tmpPic = "meter_stars" & convItoS(tmpStars, 2)
+  itemObj.setOneProp(#Pic, tmpPic)
+  itemObj = dlgObj.getItemByPath([#Venue, #Head, #icon])
+  itemObj.setOneProp(#Pic, "icon_spotlight02")
+  itemObj = dlgObj.getItemByPath([#Venue, #Head, #Info])
+  itemObj.setOneProp(#editData, gRock.m_languageManager.getStr(#szidVenue))
+  itemObj = dlgObj.getItemByPath([#Venue, #dlg, #Pic])
+  itemObj.setOneProp(#Pic, rFormatText([#szidMaxAudience, string(venue_r.size), #szidPersonsShort, #szidMinAge, venue_r.MinAge, #szidYears, #szidTicketPrice, rCurrency(venue_r.PreferredPriceModel.UnitPrice, 0, 1), #szidRoyalty, convFloatToPercent(venue_r.PreferredPriceModel.Royalty, 1)], "Live3Formatting"))
+  tmpMerchandiseIncome = ConcertInfo[#MerchandiseIncome]
+  tmpMoneyFactor = rex("MissionVar.concertMoneyFactor")
+  if tmpMoneyFactor >= 0 then
+    rex("MissionVar.concertMoneyFactor = 1")
+  else
+    tmpMoneyFactor = 1.0
+  end if
+  tmpTicketsRevenue = integer(tmpMoneyFactor * m_concert_r.Income)
+  tmpEarned = tmpTicketsRevenue
+  gRock.m_player.transactMoney(tmpTicketsRevenue, [#Live, #Tickets])
+  tmpTot = integer(tmpTicketsRevenue - venue_r.PreferredPriceModel.BasePrice)
+  itemObj = dlgObj.getItemByPath([#results, #Head, #icon])
+  itemObj.setOneProp(#Pic, "icon_money02")
+  itemObj = dlgObj.getItemByPath([#results, #Head, #Info])
+  itemObj.setOneProp(#editData, gRock.m_languageManager.getStr(#szidResults))
+  itemObj = dlgObj.getItemByPath([#results, #dlg, #Pic])
+  itemObj.setOneProp(#Pic, rFormatText([#szidAudience, rCurrency(m_concert_r.NumAudience), #szidPersonsShort, #szidTicketsRevenue, rCurrency(tmpTicketsRevenue, 0, 1), #szidRent, rCurrency(venue_r.PreferredPriceModel.BasePrice, 0, 1), #szidTotal, rCurrency(tmpTot, 0, 1)], "ConcertResultFormatting"))
+  mission_r = gRock.m_context.getFocus(#Mission)
+  tmpAllConcerts = mission_r.Vars.getaProp(#ConcertEarnings)
+  if voidp(tmpAllConcerts) then
+    tmpAllConcerts = 0
+  end if
+  tmpAllConcerts = tmpAllConcerts + tmpTot
+  mission_r.Vars.setaProp(#ConcertEarnings, tmpAllConcerts)
+  itemObj = dlgObj.getItem(#Info)
+  if rex("missionVar.NoConcertComment > 0") then
+    tmpComment = EMPTY
+    tmpHead = EMPTY
+    rex("missionVar.NoConcertComment = 0")
+  else
+    tmpComment = me.generateComment(m_concert_r, venue_r)
+    if tmpComment.length = 0 then
+      tmpComment = "ERR COMMENT!!!"
+    end if
+    tmpHead = #szidConcertHeadComment
+  end if
+  itemObj.setOneProp(#Pic, rFormatText([tmpHead, tmpComment], "ConcertDescriptionFormatting", [#shadow: 1]))
+  ancestor.render()
+  gRock.m_context.setContext(#Concert)
+  gRock.m_eventCardsManager.allowEventCardsWithProp(#ShowInConcert, 1, 1)
+  return me
+end
+
+on kill me
+  gRock.m_eventCardsManager.setOKToShowOnTopOfNumDialogs(0)
+  gRock.m_eventCardsManager.allowEventCardsWithProp(#ShowInConcert, 0, 0)
+  if objectp(m_snd) then
+    m_snd = m_snd.kill()
+  end if
+  m_concert_r = 0
+  rCloseAgenda()
+  ancestor.kill()
+  return 0
+end
+
+on Report me, argObj, argWhat
+end
+
+on mouse me, argObj, argWhat, argOption
+  if objectp(argOption) then
+    if argWhat = #click then
+      ID = argOption.getOneProp(#ID)
+      IDStr = string(ID)
+      if ID = #ButtonOK then
+      else
+        if ID = #ButtonCancel then
+        end if
+      end if
+      ancestor.mouse(argObj, argWhat, argOption)
+    end if
+  end if
+end
+
+on generateComment me, argConcert_r, argVenue_r
+  global gUseful
+  tmp = float(argConcert_r.NumAudience) / argVenue_r.size
+  audienceNr = comesBeforeValInList(tmp, [0.25: 1, 0.75: 2, 10: 3])
+  satisfactionNr = comesBeforeValInList(argConcert_r.quality, [0.25: 1, 0.5: 2, 0.75: 3, 10: 4])
+  randoms = [[1, 1, 1], [1, 1, 1], [1, 1, 1]]
+  if (audienceNr > 0) and (audienceNr <= randoms.count) then
+    tmpRnd = randoms[audienceNr]
+    if (satisfactionNr > 0) and (satisfactionNr <= tmpRnd.count) then
+      tmpMaxRnd = tmpRnd[satisfactionNr]
+      tmpMaxRnd = randoms[audienceNr][satisfactionNr]
+    else
+      pott("What?!?satisfactionNr", satisfactionNr)
+      tmpMaxRnd = 1
+    end if
+  else
+    pott("What?!?audienceNr", audienceNr)
+    tmpMaxRnd = 1
+  end if
+  tmpUseVenueID = argVenue_r.ID
+  ID = symbol("szidConcertFb" & string(satisfactionNr) & string(audienceNr) & random(tmpMaxRnd) & string(tmpUseVenueID))
+  tmp = rGetStr(rGetStr(ID))
+  if tmp.length = 0 then
+    tmp = string(ID)
+  end if
+  sndSatisfactionNr = comesBeforeValInList(argConcert_r.quality, [0.25: 1, 0.75: 2, 10: 3])
+  tmpUseVenueID = argVenue_r.ID
+  tmpSndSuffix = string(sndSatisfactionNr) & string(audienceNr) & "1" & gUseful.soundFileExt
+  tmpSnd = gRock.m_paths.getPath(#sound) & "A" & string(tmpUseVenueID) & "-" & tmpSndSuffix
+  if fileExists2(tmpSnd) = 0 then
+    tmpSnd = gRock.m_paths.getPath(#sound) & "A" & tmpSndSuffix
+  end if
+  m_snd = script("SoundScript").new(tmpSnd, [#file: 1, #vol: #FXVol])
+  return tmp
+end

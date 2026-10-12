@@ -1,0 +1,268 @@
+on formatTextMember argMember, argFormatting
+  if not voidp(argFormatting[#font]) then
+    if argMember.font <> argFormatting[#font] then
+      argMember.font = argFormatting[#font]
+    end if
+  end if
+  if not voidp(argFormatting[#fontStyle]) then
+    if argMember.fontStyle <> argFormatting[#fontStyle] then
+      argMember.fontStyle = argFormatting[#fontStyle]
+    end if
+  end if
+  if not voidp(argFormatting[#fontSize]) then
+    if argMember.fontSize <> argFormatting[#fontSize] then
+      argMember.fontSize = argFormatting[#fontSize]
+    end if
+  end if
+  if not voidp(argFormatting[#foreColor]) then
+    if argMember.foreColor <> argFormatting[#foreColor] then
+      argMember.foreColor = argFormatting[#foreColor]
+    end if
+  end if
+  if not voidp(argFormatting[#alignment]) then
+    if argMember.alignment <> argFormatting[#alignment] then
+      argMember.alignment = argFormatting[#alignment]
+    end if
+  end if
+  if not voidp(argFormatting[#antialias]) then
+    if argMember.antialias <> argFormatting[#antialias] then
+      argMember.antialias = argFormatting[#antialias]
+      argMember.antiAliasThreshold = 0
+    end if
+  end if
+  if not voidp(argFormatting[#LeftIndent]) then
+    if argMember.LeftIndent <> argFormatting[#LeftIndent] then
+      argMember.LeftIndent = argFormatting[#LeftIndent]
+    end if
+  end if
+  if not voidp(argFormatting[#RightIndent]) then
+    if argMember.RightIndent <> argFormatting[#RightIndent] then
+      argMember.RightIndent = argFormatting[#RightIndent]
+    end if
+  end if
+  if not voidp(argFormatting[#FirstIndent]) then
+    if argMember.FirstIndent <> argFormatting[#FirstIndent] then
+      argMember.FirstIndent = argFormatting[#FirstIndent]
+    end if
+  end if
+  if not voidp(argFormatting[#width]) then
+    if argMember.width <> argFormatting[#width] then
+      argMember.width = argFormatting[#width]
+    end if
+  end if
+  if not voidp(argFormatting[#FixedLinespace]) then
+    if argMember.FixedLinespace <> argFormatting[#FixedLinespace] then
+      argMember.FixedLinespace = argFormatting[#FixedLinespace]
+    end if
+  end if
+end
+
+on formatFromList argMember, argFormatList, argExchangeList
+  formatTemplates = [1: [#font: "Arial", #fontStyle: [#bold], #fontSize: 12], 2: [#font: "Arial", #fontStyle: [#plain], #fontSize: 12]]
+  if voidp(argExchangeList) then
+    argExchangeList = []
+  end if
+  if voidp(argMember) then
+    argMember = member("x")
+  end if
+  formattingPerChar = argFormatList[#char]
+  formattingPerMember = argFormatList[#member]
+  settings = [:]
+  formatByCharIndex = [:]
+  currentFormat = [:]
+  lastFormatChange = 0
+  argExchangeListCnt = 1
+  str = EMPTY
+  repeat with n = 1 to formattingPerChar.count
+    Info = formattingPerChar[n]
+    if stringp(Info) then
+      if (Info.word[1] = "AAA") and (argExchangeList.count > 0) then
+        formattingPerChar[n] = argExchangeList[argExchangeListCnt]
+        tmpExStr = argExchangeList[argExchangeListCnt]
+        if charToNum(Info.word[1].char[1]) = 65 then
+        end if
+        str = str & tmpExStr
+        argExchangeListCnt = argExchangeListCnt + 1
+        if argExchangeListCnt > argExchangeList.count then
+          exit repeat
+        end if
+      else
+        str = str & Info
+      end if
+      next repeat
+    end if
+    lastFormatChange = str.length
+    currentFormat = Info.duplicate()
+    repeat with m = 1 to Info.count
+      prop = Info.getPropAt(m)
+      val = Info[m]
+      propSettings = settings[prop]
+      if voidp(propSettings) then
+        propSettings = [:]
+        settings.setaProp(prop, propSettings)
+      end if
+      propSettings.addProp(str.length + 1, val)
+    end repeat
+  end repeat
+  perLineProps = [#FixedLinespace, #RightIndent, #FirstIndent, #LeftIndent, #alignment]
+  argMember.text = EMPTY
+  argMember.FixedLinespace = 0
+  argMember.LeftIndent = 0
+  argMember.RightIndent = 0
+  argMember.FirstIndent = 0
+  if not voidp(formattingPerMember[#width]) then
+    argMember.width = formattingPerMember[#width]
+  end if
+  if not voidp(formattingPerMember[#color]) then
+    argMember.color = formattingPerMember[#color]
+  end if
+  if not voidp(formattingPerMember[#wordWrap]) then
+    argMember.wordWrap = formattingPerMember[#wordWrap]
+  end if
+  if not voidp(formattingPerMember[#alignment]) then
+    argMember.alignment = formattingPerMember[#alignment]
+  end if
+  argMember.text = str
+  repeat with n = 1 to settings.count()
+    prop = settings.getPropAt(n)
+    lst = settings[n]
+    charNr = lst.getPropAt(1)
+    repeat with m = 1 to lst.count()
+      if m = lst.count() then
+        nextCharNr = str.length
+      else
+        nextCharNr = lst.getPropAt(m + 1) - 1
+      end if
+      Info = lst[m]
+      if nextCharNr < charNr then
+        nextCharNr = charNr
+      end if
+      if perLineProps.getPos(prop) then
+        tmpCharNr = charNr - 1
+        if tmpCharNr = 0 then
+          tmpCharNr = 1
+        end if
+        tmpNextChar = nextCharNr
+        if tmpNextChar < str.length then
+          tmpNextChar = tmpNextChar - 1
+        end if
+        tmpLine1 = the number of lines in str.char[1..tmpCharNr]
+        tmpLine2 = the number of lines in str.char[1..tmpNextChar]
+        case prop of
+          #FixedLinespace:
+            argMember.line[tmpLine1..tmpLine2].FixedLinespace = Info
+          #RightIndent:
+            argMember.char[charNr..nextCharNr].RightIndent = Info
+          #LeftIndent:
+            argMember.char[charNr..nextCharNr].LeftIndent = Info
+          #FirstIndent:
+            argMember.char[charNr..nextCharNr].FirstIndent = Info
+          #alignment:
+            argMember.line[tmpLine1..tmpLine2].alignment = Info
+        end case
+      else
+        case prop of
+          #Tabs:
+            argMember.char[charNr..nextCharNr].Tabs = Info
+          #font:
+            argMember.char[charNr..nextCharNr].font = Info
+          #fontSize:
+            argMember.char[charNr..nextCharNr].fontSize = Info
+          #fontStyle:
+            argMember.char[charNr..nextCharNr].fontStyle = Info
+          #color:
+            argMember.char[charNr..nextCharNr].color = Info
+          #CharSpacing:
+            argMember.char[charNr..nextCharNr].CharSpacing = Info
+        end case
+      end if
+      charNr = nextCharNr + 1
+    end repeat
+  end repeat
+end
+
+on formatFromString argMember, argStr
+  if not stringp(argStr) then
+    argStr = "<#Font:'Verdana', #FontStyle:[#Plain]>Jonas<#FontStyle:[#bold]>"
+  end if
+  Formatting = []
+  repeat while 1
+    tmpStart = offset("<", argStr)
+    if tmpStart then
+      tmpEnd = offset(">", argStr)
+      tmpSwitch = argStr.char[tmpStart + 1..tmpEnd - 1]
+      tmpSwitch = changeChars("'", QUOTE, tmpSwitch)
+      tmpSwitch = value("[" & tmpSwitch & "]")
+      if tmpStart > 1 then
+        Formatting.add(argStr.char[1..tmpStart - 1])
+      end if
+      Formatting.add(tmpSwitch)
+      delete argMember.char[tmpStart..tmpEnd]
+      next repeat
+    end if
+    exit repeat
+  end repeat
+  if argStr.length > 0 then
+    Formatting.add(argStr)
+  end if
+  tmpAll = [#member: [:], #char: Formatting]
+  formatFromList(argMember, tmpAll)
+end
+
+on extractTextFormatting argMember
+  if voidp(argMember) then
+    argMember = member("FormattingTemplate")
+  end if
+  allChanges = []
+  currentSettings = [:]
+  lastChangePos = 1
+  lastChar = EMPTY
+  str = argMember.text
+  repeat with n = 1 to str.length
+    newSettings = [:]
+    newSettings.addProp(#font, argMember.char[n].font)
+    newSettings.addProp(#fontStyle, argMember.char[n].fontStyle)
+    newSettings.addProp(#fontSize, argMember.char[n].fontSize)
+    newSettings.addProp(#color, argMember.char[n].color)
+    newSettings.addProp(#CharSpacing, argMember.char[n].CharSpacing)
+    newSettings.addProp(#RightIndent, argMember.char[n].RightIndent)
+    newSettings.addProp(#BottomSpacing, argMember.char[n].BottomSpacing)
+    newSettings.addProp(#LeftIndent, argMember.char[n].LeftIndent)
+    newSettings.addProp(#FirstIndent, argMember.char[n].FirstIndent)
+    newSettings.addProp(#FixedLinespace, argMember.char[n].FixedLinespace)
+    newSettings.addProp(#TopSpacing, argMember.char[n].TopSpacing)
+    newSettings.addProp(#alignment, argMember.char[n].alignment)
+    newSettings.addProp(#Tabs, argMember.char[n].Tabs)
+    if (lastChar <> "a") and (str.char[n] = "a") and (n > 1) then
+      allChanges.add(argMember.text.char[lastChangePos..n - 1])
+      lastChangePos = n
+    else
+      if (lastChar = "a") and (str.char[n] <> "a") then
+        allChanges.add(argMember.text.char[lastChangePos..n - 1])
+        lastChangePos = n
+      end if
+    end if
+    changedSettings = [:]
+    repeat with m = 1 to newSettings.count()
+      prop = newSettings.getPropAt(m)
+      currVal = currentSettings[prop]
+      if (newSettings[m] <> currVal) or voidp(currVal) then
+        currentSettings[prop] = newSettings[m]
+        changedSettings.setaProp(prop, newSettings[m])
+      end if
+    end repeat
+    if changedSettings.count() then
+      if lastChangePos < n then
+        allChanges.add(str.char[lastChangePos..n - 1])
+      end if
+      lastChangePos = n
+      allChanges.add(changedSettings)
+    else
+      if n = str.length then
+        allChanges.add(str.char[lastChangePos..n])
+      end if
+    end if
+    lastChar = str.char[n]
+  end repeat
+  return [#member: [#width: argMember.width, #color: argMember.color, #wordWrap: argMember.wordWrap, #alignment: argMember.alignment], #char: allChanges]
+end

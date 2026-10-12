@@ -1,0 +1,107 @@
+global gRock, gClassManager
+
+on dbSearch argStr, argLimitToClasses, argTypesToSearch
+  if not objectp(gClassManager) then
+    gClassManager = gRock.m_classManager
+  end if
+  if voidp(argStr) then
+    argStr = "*JudgeJoe*"
+  end if
+  if voidp(argLimitToClasses) then
+    argLimitToClasses = [#Trigger, #Action, #EventCard]
+  end if
+  if voidp(argLimitToClasses) then
+    argLimitToClasses = []
+    repeat with classNr = 1 to gClassManager.m_objsByClass.count
+      className = gClassManager.m_objsByClass.getPropAt(classNr)
+      argLimitToClasses.add(className)
+    end repeat
+  end if
+  if voidp(argTypesToSearch) then
+    argTypesToSearch = [#string, #symbol, #list]
+  end if
+  repeat with classNr = argLimitToClasses.count() down to 1
+    className = argLimitToClasses[classNr]
+    subClasses = gClassManager.getClassesWithBaseClass(className)
+    if listp(subClasses) then
+      repeat with subClass in subClasses
+        if argLimitToClasses.getPos(subClass) = 0 then
+          argLimitToClasses.addAt(classNr + 1, subClass)
+        end if
+      end repeat
+    end if
+  end repeat
+  found = []
+  repeat with classNr = 1 to argLimitToClasses.count()
+    className = argLimitToClasses[classNr]
+    instances = gClassManager.getObjsOfClass(className)
+    if listp(instances) then
+      searchProps = dbFindPropsOfClass(className, argTypesToSearch)
+      repeat with instNr = 1 to instances.count()
+        instance = instances[instNr]
+        tmp = [instance]
+        tmp = dbFindMatchingVals(instance, searchProps, argStr, tmp)
+        mergeLists(found, tmp)
+      end repeat
+    end if
+  end repeat
+  return found
+end
+
+on dbFindPropsOfClass argClassName, argOKTypes
+  tmpOKProps = [:]
+  props = gClassManager.getPropsInClassIncludingAncestors(argClassName)
+  repeat with propNr = 1 to props.count()
+    propName = props.getPropAt(propNr)
+    tmp = props[propNr]
+    propType = tmp[1]
+    if gClassManager.isStdType(propType) then
+      tmpOK = voidp(argOKTypes)
+      if not tmpOK then
+        tmpOK = argOKTypes.getPos(propType)
+      end if
+      if tmpOK then
+        tmpOKProps.addProp(propName, 0)
+      end if
+      next repeat
+    end if
+    tmp = dbFindPropsOfClass(propType, argOKTypes)
+    if tmp.count() then
+      tmpOKProps.addProp(propName, tmp)
+    end if
+  end repeat
+  return tmpOKProps
+end
+
+on dbFindMatchingVals argObj, argSearchProps, argSearchVal, argPath, argHits
+  if voidp(argHits) then
+    argHits = []
+  end if
+  if voidp(argPath) then
+    argPath = []
+  end if
+  repeat with n = 1 to argSearchProps.count()
+    argSearchProps.getPropAt(n)
+    tmpSub = argSearchProps[n]
+    propName = argSearchProps.getPropAt(n)
+    if listp(tmpSub) then
+      tmpPath = argPath.duplicate()
+      tmpPath.add(propName)
+      dbFindMatchingVals(rgetProp(argObj, propName), tmpSub, argSearchVal, tmpPath, argHits)
+      next repeat
+    end if
+    val = rgetProp(argObj, propName)
+    if symbolp(val) then
+      val = "#" & string(val)
+    else
+      val = string(val)
+    end if
+    tmp = wildCardSearch(argSearchVal, [val])
+    if tmp.count() > 0 then
+      tmpPath = argPath.duplicate()
+      tmpPath.add(propName)
+      argHits.add([tmpPath, tmp[1]])
+    end if
+  end repeat
+  return argHits
+end

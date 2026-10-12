@@ -1,0 +1,79 @@
+property firstFrames, mouseObjs, SPs, reportObject, ID, Rects, Active
+
+on new me, argReportObject, argAllInfo, argOptions
+  reportObject = argReportObject
+  if listp(argOptions) then
+    ID = getaProp(argOptions, #ID)
+    tmpLayer = getaProp(argOptions, #layer)
+  end if
+  if voidp(tmpLayer) then
+    tmpLayer = 499
+  end if
+  firstFrames = []
+  SPs = []
+  mouseObjs = []
+  Rects = []
+  repeat with n = 1 to count(argAllInfo)
+    tmpOneButton = getAt(argAllInfo, n)
+    tmpMemb = getAt(tmpOneButton, 1)
+    add(firstFrames, getMemberNum(tmpMemb))
+    tmpSP = getAt(tmpOneButton, 3)
+    add(SPs, tmpSP)
+    set the member of sprite tmpSP to member(tmpMemb)
+    tmpLoc = getAt(tmpOneButton, 2)
+    if ilk(tmpLoc) = #rect then
+      add(Rects, tmpLoc)
+      tmpRect = tmpLoc
+      set the rect of sprite tmpSP to tmpLoc
+    else
+      add(Rects, 0)
+      tmpRect = getMemberRect(tmpMemb)
+      tmpRect = rect(tmpLoc, tmpLoc) + tmpRect
+      set the loc of sprite tmpSP to tmpLoc
+    end if
+    tmpObj = new(script("MouseObject"), me, tmpRect, [#layer: tmpLayer])
+    add(mouseObjs, tmpObj)
+  end repeat
+  Active = 1
+  return me
+end
+
+on kill me
+  repeat with tmpSP in SPs
+    set the member of sprite tmpSP to member("Dummy")
+  end repeat
+  repeat with tmpObj in mouseObjs
+    kill(tmpObj)
+  end repeat
+  mouseObjs = []
+  return 0
+end
+
+on activate me, argIsTRUE
+  Active = argIsTRUE
+  repeat with tmpObj in mouseObjs
+    activate(tmpObj, argIsTRUE)
+  end repeat
+end
+
+on mouse me, argObj, argWhat
+  if argWhat = #enter then
+    repeat with n = 1 to count(SPs)
+      set the member of sprite getAt(SPs, n) to member(getAt(firstFrames, n) + 1)
+      tmpRect = getAt(Rects, n)
+      if listp(tmpRect) then
+        set the rect of sprite getAt(SPs, n) to tmpRect
+      end if
+    end repeat
+  else
+    if argWhat = #Leave then
+      repeat with n = 1 to count(SPs)
+        set the member of sprite getAt(SPs, n) to member(getAt(firstFrames, n))
+      end repeat
+    else
+      if argWhat = #click then
+        mouse(reportObject, me, argWhat)
+      end if
+    end if
+  end if
+end

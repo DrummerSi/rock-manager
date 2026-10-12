@@ -1,0 +1,103 @@
+on zzrDefLikesAlbum argWho_r, argAlbum_r, argCheckWhat, argReturnWhat
+  global gRock
+  if voidp(argAlbum_r) then
+    argAlbum_r = gRock.m_context.getFocus(#album)
+  end if
+  if voidp(argAlbum_r) then
+    return VOID
+  end if
+  if voidp(argCheckWhat) then
+    argCheckWhat = [#music: 1, #image: 1, #SongType: 1, #quality: 1]
+  end if
+  allWeights = [:]
+  likesSorted = [:]
+  likesSorted.sort()
+  tmpStyleWeights = [:]
+  if not voidp(argCheckWhat[#music]) then
+    tmpStyleWeights.addProp(argCheckWhat[#music], argAlbum_r.MusicStyle)
+  end if
+  if not voidp(argCheckWhat[#image]) then
+    tmpStyleWeights.addProp(argCheckWhat[#image], argAlbum_r.ImageStyle)
+  end if
+  if tmpStyleWeights.count then
+    StyleObj = gRock.m_classManager.createUnregObj(#StyleMix)
+    rCalcObjsAverage(StyleObj, tmpStyleWeights)
+    weight = 0.0
+    repeat with n = 1 to tmpStyleWeights.count
+      weight = weight + tmpStyleWeights.getPropAt(n)
+    end repeat
+    weight = weight / tmpStyleWeights.count
+    musicCenterVals = rgetProp(argWho_r, #MusicStyle)
+    if objectp(musicCenterVals) then
+      musicTolerance = rgetProp(argWho_r, #MusicStyleTolerance)
+    else
+      musicCenterVals = rgetProp(argWho_r, #StyleMix)
+      musicTolerance = rgetProp(argWho_r, #StyleMixTolerance)
+    end if
+    if objectp(musicCenterVals) and objectp(musicTolerance) then
+      tmpInfo = checkWithinTolerance(musicCenterVals, musicTolerance, StyleObj, #ExtraInfo)
+      tmpLikeStyle = tmpInfo[#Like]
+      tmp = tmpInfo[#LikeSorted]
+      likesSorted.addProp(tmp.getPropAt(1), [#Style, tmp[1]])
+      likesSorted.addProp(tmp.getPropAt(tmp.count), [#Style, tmp[tmp.count]])
+    end if
+    if not voidp(tmpLikeStyle) then
+      allWeights.addProp(weight, tmpLikeStyle)
+    end if
+    gRock.m_classManager.removeObj(StyleObj, #kill)
+  end if
+  weight = argCheckWhat[#SongType]
+  if weight > 0 then
+    typeCenterVals = rgetProp(argWho_r, #SongType)
+    if not voidp(typeCenterVals) then
+      typeTolerance = rgetProp(argWho_r, #SongTypeTolerance)
+    else
+    end if
+    if not voidp(typeCenterVals) and not voidp(typeTolerance) then
+      tmpInfo = checkWithinTolerance(typeCenterVals, typeTolerance, argAlbum_r.SongType, #ExtraInfo)
+      tmpLikeType = tmpInfo[#Like]
+    end if
+    if not voidp(tmpLikeType) then
+      allWeights.addProp(weight, tmpLikeType)
+    end if
+  end if
+  weight = argCheckWhat[#quality]
+  if weight > 0 then
+    MinQuality = rgetProp(argWho_r, #MinQuality)
+    if voidp(MinQuality) then
+      MinQuality = 0
+    end if
+    qualityDiff = argAlbum_r.quality - MinQuality
+    if qualityDiff >= 0 then
+      tmpLikeQuality = funcNeverReach1(qualityDiff, 0.10000000000000001)
+    else
+      tmpLikeQuality = qualityDiff * 2.0
+    end if
+    likesSorted.addProp(tmpLikeQuality, [#quality])
+    allWeights.addProp(weight, tmpLikeQuality)
+  end if
+  if 0 then
+    repeat with n = allWeights.count down to 1
+      val = allWeights[n]
+      if val < 0 then
+        weight = allWeights.getPropAt(n) * 10
+        allWeights.deleteAt(n)
+        allWeights.addProp(weight, val)
+      end if
+    end repeat
+  end if
+  likeTotal = calcAverage(allWeights)
+  freshEffect = 0.0
+  if not voidp(argCheckWhat[#Freshness]) and (argCheckWhat[#Freshness] <> 0) then
+    freshEffect = argCheckWhat[#Freshness] * (argAlbum_r.Freshness - 1.0)
+    likeTotal = likeTotal + freshEffect
+  end if
+  tmpExtraInfo = [#Like: likeTotal, #LikeSorted: likesSorted, #WeightedList: allWeights, #Other: [#Freshness: freshEffect]]
+  if rOKCheatPass() then
+    tuneDebug("rDefLikesAlbum", argWho_r.ID, tmpExtraInfo)
+  end if
+  if argReturnWhat = #ExtraInfo then
+    return tmpExtraInfo
+  end if
+  return likeTotal
+end

@@ -1,0 +1,76 @@
+property mouseObj, overMouseObj, reportObj, deltaMove, downLoc, lastLoc
+global gUseful
+
+on new me, argReportObj, argRect, argOptions
+  reportObj = argReportObj
+  if voidp(argOptions) then
+    argOptions = [:]
+  end if
+  mouseObj = new(script("MouseObject"), me, argRect, argOptions)
+  argOptions = argOptions.duplicate()
+  setaProp(argOptions, #layer, 2000)
+  overMouseObj = new(script("MouseObject"), me, rect(-1000, -1000, 2000, 2000), argOptions)
+  activate(overMouseObj, 0)
+  downLoc = point(0, 0)
+  lastLoc = point(0, 0)
+  deltaMove = point(0, 0)
+  return me
+end
+
+on kill me
+  mouseObj = kill(mouseObj)
+  overMouseObj = kill(overMouseObj)
+  return 0
+end
+
+on mouse me, argObj, argWhat
+  if argObj = mouseObj then
+    if argWhat = #down then
+      downLoc = getMouseLoc(gUseful.mouseObjects)
+      lastLoc = downLoc
+      activate(overMouseObj, 1)
+      mouseObj.downOn = 0
+      overMouseObj.downOn = 1
+    end if
+  else
+    if argObj = overMouseObj then
+      if argWhat = #stillDown then
+        tmp = getMouseLoc(gUseful.mouseObjects)
+        deltaMove = tmp - lastLoc
+        lastLoc = tmp
+      else
+        if argWhat = #click then
+          activate(overMouseObj, 0)
+        end if
+      end if
+    end if
+  end if
+  mouse(reportObj, me, argWhat)
+end
+
+on getDraggedRect me
+  return rect(downLoc, lastLoc)
+end
+
+on getMove me, argMode
+  if argMode = #down then
+    return lastLoc - downLoc
+  end if
+  return deltaMove
+end
+
+on getID me
+  return getID(mouseObj)
+end
+
+on getOption me, argOpt
+  return getOption(mouseObj, argOpt)
+end
+
+on getRect me
+  return getRect(mouseObj)
+end
+
+on setRect me, argRect
+  setRect(mouseObj, argRect)
+end

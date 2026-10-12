@@ -1,0 +1,354 @@
+global gRock
+
+on makeAlbumCover argSettings
+  img = image(300, 300, 24)
+  img.fill(img.rect, rgb(50, 50, 50))
+  band_r = gRock.m_context.getFocus(#Band)
+  if voidp(argSettings) then
+    album_r = gRock.m_context.getFocus(#album)
+    if not objectp(album_r) then
+      argSettings = [:]
+    else
+      argSettings = album_r.DesignSettings
+    end if
+  end if
+  repeat with n = 1 to argSettings.count
+    X = the milliSeconds
+    ID = VOID
+    catID = argSettings.getPropAt(n)
+    Nr = argSettings[n]
+    if Nr = 0 then
+      next repeat
+    end if
+    if symbolp(Nr) then
+      ID = Nr
+    else
+      if integerp(Nr) then
+        catObj_r = gRock.m_classManager.getObjByIDAndClass(catID, #DesignCategory)
+        if (Nr < 1) or (Nr > catObj_r.elements.count) then
+          next repeat
+        end if
+        ID = catObj_r.elements[Nr]
+      end if
+    end if
+    obj_r = gRock.m_classManager.getObjByIDAndClass(ID, #DesignElement)
+    if not objectp(obj_r) and symbolp(ID) then
+      next repeat
+    end if
+    tmpAsList = value(obj_r.Gfx)
+    if listp(tmpAsList) then
+      if not voidp(tmpAsList[#EFFECT]) then
+        img = makeGrayscale(img)
+        if tmpAsList[#EFFECT] = #palette then
+          if (tmpAsList[#palette] <> "Grayscale") and not voidp(tmpAsList[#palette]) then
+            img.paletteRef = member(tmpAsList[#palette])
+          end if
+        end if
+        img2 = image(img.rect[3], img.rect[4], 24)
+        img2.copyPixels(img, img.rect, img.rect)
+        img = img2
+        img2 = 0
+      else
+        memb = member(tmpAsList[#Pic])
+        img.copyPixels(memb.image, img.rect + rect(tmpAsList[#loc], tmpAsList[#loc]), img.rect)
+        next repeat
+      end if
+    end if
+    if catID = #DCDesignFont then
+      createLogo(img, point(0, 40), obj_r.ID)
+      next repeat
+    end if
+    if catID = #DCDesignArtist then
+      if ID <> #DEDArtists04 then
+        tmpDontAllowPositions = [#DEDArtists01: [#vocals02], #DEDArtists02: [#vocals01], #DEDArtists03: [#drums01, #right01, #right02, #left01, #left02, #vocals01]]
+        tmpDontAllowPositions = tmpDontAllowPositions.getaProp(ID)
+        place_r = gRock.m_classManager.getObjByIDAndClass(#Design01, #place)
+        blitMusicians(img, place_r, [#DontAllowPositions: tmpDontAllowPositions])
+      end if
+      next repeat
+    end if
+    if length(obj_r.Gfx) > 1 then
+      memb = member(obj_r.Gfx)
+      img.copyPixels(memb.image, img.rect, memb.rect)
+    end if
+  end repeat
+  if 0 then
+    tmpSpatialVariations = [1: [[point(-110, 0), "l"], [point(110, 0), "r"]], 2: [[point(-110, 0), "l"], [point(110, 0), "r"]], 3: [[point(0, -50)]], 4: [[point(-90, 0), "l"], [point(90, 0), "r"]], 5: [[point(0, 50)], [point(0, 50), "z"]]]
+    tmpRenderList = [:]
+    tmpRenderList.sort()
+    repeat with n = 1 to band_r.members.count
+      ID = band_r.members[n]
+      obj_r = gRock.m_classManager.getObjByIDAndClass(ID, #RealMusician)
+      Nr = getRefNr(obj_r)
+      membName = "pose" & convItoS(Nr, 2) & "_"
+      instrInfo_r = gRock.m_classManager.getObjByIDAndClass(obj_r.NowPlaying, #InstrumentInfo)
+      tmpInfix = rgetProp(instrInfo_r, #DesignEditorInfix)
+      membName = membName & convItoS(tmpInfix, 2)
+      tmpVariations = tmpSpatialVariations.getaProp(obj_r.spatialPos)
+      tmpVariation = tmpVariations[random(tmpVariations.count)]
+      if tmpVariation.count > 1 then
+        membName = membName & tmpVariation[2]
+      end if
+      memb = member(membName)
+      if memb.number > 0 then
+        loc = tmpVariation[1] + point(60, 80) + point(random(16), random(16))
+        size = getRectSize(memb.rect)
+        DstRect = rect(point(0, 0), size * 0.59999999999999998) + rect(loc, loc)
+        tmpLayer = tmpInfix
+        tmpRenderList.addProp(tmpLayer, [#image: memb.image, #DstRect: DstRect, #Instrument: obj_r.NowPlaying])
+      end if
+    end repeat
+    repeat with n = 1 to tmpRenderList.count
+      lst = tmpRenderList[n]
+      img.copyPixels(lst[#image], lst[#DstRect], lst[#image].rect)
+    end repeat
+  end if
+  if 0 then
+    tmpQuad = [point(0, 0), point(111, 4), point(108, 149), point(2, 121)]
+    srndRect = rect(1000, 1000, -1000, -1000)
+    repeat with n = 1 to tmpQuad.count
+      if tmpQuad[n][1] > srndRect[3] then
+        srndRect[3] = tmpQuad[n][1]
+      end if
+      if tmpQuad[n][1] < srndRect[1] then
+        srndRect[1] = tmpQuad[n][1]
+      end if
+      if tmpQuad[n][2] > srndRect[4] then
+        srndRect[4] = tmpQuad[n][2]
+      end if
+      if tmpQuad[n][2] < srndRect[2] then
+        srndRect[2] = tmpQuad[n][2]
+      end if
+    end repeat
+    srndSize = getRectSize(srndRect)
+    quadImg = image(srndSize[1], srndSize[2], 24, 8)
+    quadImg.copyPixels(img, tmpQuad, img.rect)
+    return quadImg
+  end if
+  return img
+end
+
+on createLogo argImage, argLoc, argFontID
+  if voidp(argFontID) then
+    album_r = gRock.m_context.getFocus(#album)
+    if objectp(album_r) then
+      argFontID = album_r.DesignSettings.getaProp(#DCDesignFont)
+    else
+      argFontID = #DEDFont01
+    end if
+  end if
+  designElement_r = gRock.m_classManager.getObjByIDAndClass(argFontID, #DesignElement)
+  if not objectp(designElement_r) then
+    return 
+  end if
+  if designElement_r.Gfx.length <= 1 then
+    return 
+  end if
+  band_r = gRock.m_context.getFocus(#Band)
+  renderStr = band_r.name
+  if renderStr.length < 1 then
+    return 
+  end if
+  renderStr = changeChars("'", "«", renderStr)
+  a = script("RenderFontScript").new()
+  castLib("Empty").fileName = the moviePath & designElement_r.Gfx
+  a.setFont(designElement_r.Gfx)
+  a.setFormat([:])
+  if designElement_r.comment.length > 0 then
+    extraFontInfo = value("[" & designElement_r.comment & "]")
+  end if
+  if not listp(extraFontInfo) then
+    extraFontInfo = [0, 1.0]
+  end if
+  Info = a.calcString(renderStr, 3000)
+  locs = Info[#locs]
+  if locs.count = 0 then
+    return 
+  end if
+  locs = locs[1]
+  if locs.count = 0 then
+    return 
+  end if
+  extraSpaceOnSides = 20
+  stdScale = 0.65000000000000002 * extraFontInfo[2]
+  tmpWidth = locs[locs.count] * stdScale
+  XScale = float(argImage.width - extraSpaceOnSides) / float(tmpWidth)
+  if XScale < 1 then
+    if XScale > 0.5 then
+      stdScale = stdScale * XScale
+    else
+      stdScale = stdScale * XScale
+    end if
+  end if
+  scale = point(stdScale, stdScale)
+  tmpLoc = argLoc + point(0, extraFontInfo[1] * stdScale / extraFontInfo[2])
+  a.m_lineHeight = 100
+  a.m_charSpace = 10
+  a.renderString(renderStr, argImage.width - extraSpaceOnSides, [argImage], scale, #center, 1, tmpLoc + point(4, 4))
+  a.renderString(renderStr, argImage.width - extraSpaceOnSides, [argImage], scale, #center, 0, tmpLoc + point(0, 0))
+end
+
+on getRefNr argObj
+  str = argObj.Gfx
+  Nr = str.char[str.length - 1..str.length]
+  return value(Nr)
+end
+
+on getMusicianPose argMus_r, argWithLeftRight
+  Nr = getRefNr(argMus_r)
+  membName = "pose_" & argMus_r.Gfx & "_"
+  instrInfo_r = gRock.m_classManager.getObjByIDAndClass(argMus_r.NowPlaying, #InstrumentInfo)
+  tmpInfix = rgetProp(instrInfo_r, #DesignEditorInfix)
+  membName = membName & convItoS(tmpInfix, 2)
+  if argWithLeftRight = 1 then
+    tmpPossiblePos = rgetProp(instrInfo_r, #PossibleSpatialPos)
+    if tmpPossiblePos.count > 1 then
+      if argMus_r.spatialPos < 3 then
+        tmpLeftRight = "l"
+      else
+        tmpLeftRight = "r"
+      end if
+      membName = membName & tmpLeftRight
+    end if
+  end if
+  return membName
+end
+
+on decideBandPositions argPossiblePositions, argRandomize
+  band_r = gRock.m_context.getFocus(#Band)
+  musObjs_r = band_r.getMusicianObjs()
+  repeat with n = argPossiblePositions.count down to 1
+    tmp = argPossiblePositions[n]
+    if (tmp[3] = 1) and (tmp[2] = point(0, 0)) then
+      argPossiblePositions.deleteAt(n)
+    end if
+  end repeat
+  occupiedPlaces = []
+  tmpSorted = [:]
+  tmpSorted.sort()
+  repeat with mus_r in musObjs_r
+    tmpList = getPossibleVisualLocsFromPos(mus_r.spatialPos).duplicate()
+    repeat with n = 1 to occupiedPlaces.count
+      tmpList.deleteOne(occupiedPlaces[n])
+    end repeat
+    repeat with n = tmpList.count down to 1
+      if voidp(argPossiblePositions.getaProp(tmpList[n])) then
+        tmpList.deleteAt(n)
+      end if
+    end repeat
+    if tmpList.count > 0 then
+      if argRandomize = 1 then
+        tmpPos = tmpList[random(tmpList.count)]
+      else
+        tmpPos = tmpList[1]
+      end if
+      occupiedPlaces.add(tmpPos)
+      tmpLayer = argPossiblePositions.findPos(tmpPos)
+      tmpSorted.addProp(tmpLayer, mus_r)
+    end if
+  end repeat
+  posList = [:]
+  repeat with n = 1 to tmpSorted.count
+    tmpPos = argPossiblePositions.getPropAt(tmpSorted.getPropAt(n))
+    posList.addProp(tmpPos, tmpSorted[n])
+  end repeat
+  return posList
+end
+
+on blitMusicians argImage, argPlace_r, argOptions
+  argPlaceID = argPlace_r.ID
+  if argPlace_r.className = #Design then
+    band_r = gRock.m_context.getFocus(#Band)
+    tmpPlacingInfo = getBestMusicianDesignLayout(band_r.getMusicianObjs())
+  else
+    if argPlace_r.className = #Live then
+      tmpPlacingInfo = member("Actors" & string(argPlace_r.className) & "Field").text.value
+      tmpPlacingInfo = tmpPlacingInfo[argPlaceID]
+    end if
+  end if
+  if not listp(tmpPlacingInfo) then
+    exit
+  end if
+  if not listp(argOptions) then
+    argOptions = [:]
+  end if
+  if listp(argOptions[#DontAllowPositions]) then
+    repeat with notAllowedPos in argOptions[#DontAllowPositions]
+      tmpPlacingInfo.deleteProp(notAllowedPos)
+    end repeat
+  end if
+  posList = decideBandPositions(tmpPlacingInfo)
+  cp = [#left01: "l", #left02: "l", #right01: "r", #right02: "r", #vocals02: "z"]
+  repeat with n = 1 to posList.count
+    mus_r = posList[n]
+    Pos = posList.getPropAt(n)
+    Info = tmpPlacingInfo.getaProp(Pos)
+    membName = getMusicianPose(mus_r)
+    tmpSpecialLetter = cp.getaProp(Pos)
+    if stringp(tmpSpecialLetter) then
+      membName = membName & tmpSpecialLetter
+    end if
+    memb = member(membName)
+    if memb.number < 1 then
+      pott("Pos Problema!", mus_r.ID, membName)
+      memb = member("pose_actor01_02l")
+    end if
+    tmpInfo = tmpPlacingInfo.getaProp(mus_r.spatialPos)
+    tmpOff = Info[2]
+    tmpSize = Info[3]
+    tmpDstRect = rect(tmpOff, tmpOff) + (getMemberRect(memb) * tmpSize)
+    argImage.copyPixels(memb.image, tmpDstRect, memb.rect)
+  end repeat
+end
+
+on getPossibleVisualLocsFromPos argPos
+  tmp = [1: [#left01, #left02, #right01, #right02], 2: [#left01, #left02, #right01, #right02], 3: [#drums01], 4: [#left01, #left02, #right01, #right02], 5: [#vocals01, #vocals02]]
+  return tmp.getaProp(argPos)
+end
+
+on makeConcertPic argPlace_r, argFilledFract
+  if voidp(argPlace_r) then
+    argPlace_r = gRock.m_classManager.getObjByIDAndClass(#Live04, #place)
+  end if
+  if voidp(argFilledFract) then
+    argFilledFract = 0.10000000000000001
+  end if
+  BGMember = member(string(argPlace_r.ID) & "_feedback_background01")
+  img = image(BGMember.rect[3], BGMember.rect[4], 16)
+  img.copyPixels(BGMember.image, BGMember.rect, BGMember.rect)
+  blitMusicians(img, argPlace_r)
+  numPeoplePicNum = 1 + integer(3 * argFilledFract)
+  fgMember = member(string(argPlace_r.ID) & "_feedback_foreground" & convItoS(numPeoplePicNum, 2))
+  img.copyPixels(fgMember.image, fgMember.rect, fgMember.rect)
+  return img
+end
+
+on getBestMusicianDesignLayout argMusicians_r
+  definitions = member("ActorsDesignData").text.value
+  repeat with n = 1 to definitions.count
+    tmp = definitions[n]
+    tmp.sort()
+    definitions[n] = tmp
+  end repeat
+  usedInstruments = []
+  usedInstruments.sort()
+  repeat with mus_r in argMusicians_r
+    instr = mus_r.NowPlaying
+    if (instr <> #Vocals) and (instr <> #Drums) then
+      instr = #Other
+    end if
+    usedInstruments.add(instr)
+  end repeat
+  definition = 0
+  repeat with n = 1 to definitions.count
+    if definitions[n] = usedInstruments then
+      definition = definitions[n + 1]
+      next repeat
+    end if
+  end repeat
+  if not listp(definition) then
+    pott("ERR", usedInstruments, definition)
+    return 0
+  end if
+  return definition
+end

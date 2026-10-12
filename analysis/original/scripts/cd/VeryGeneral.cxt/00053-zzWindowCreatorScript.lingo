@@ -1,0 +1,171 @@
+property currentStyle, defaultSettings
+
+on new me
+  me.setStyle("Rock")
+  return me
+end
+
+on kill me
+  return 0
+end
+
+on setStyle me, argStyle
+  currentStyle = argStyle
+  if argStyle = "Rock" then
+    defaultSettings = [#default: [#Prefix: argStyle, #depth: 24, #alpha: 8, #bgColor: rgb(0, 0, 0), #FgColor: rgb(250, 250, 250)], #button: [#Prefix: argStyle & "Button", #margins: point(10, 4), #MinSize: point(28, 28)]]
+  else
+    if argStyle = "Win" then
+      defaultSettings = [#default: [#Prefix: argStyle & "Dialog", #depth: 24, #alpha: 0, #bgColor: rgb(192, 192, 192), #FgColor: rgb(0, 0, 0)], #button: [#margins: point(2, 2), #FgColor: rgb(255, 90, 0)]]
+    else
+      defaultSettings = [#default: [#Prefix: argStyle, #depth: 8, #alpha: 0, #bgColor: rgb(192, 192, 192), #FgColor: rgb(0, 0, 0)], #button: [#margins: point(28, 10)]]
+    end if
+  end if
+  tmpNeededExceptDefault = [#button]
+  repeat with tmp in tmpNeededExceptDefault
+    tmpList = defaultSettings[tmp]
+    if voidp(tmpList) then
+      defaultSettings[tmp] = defaultSettings[#default]
+      next repeat
+    end if
+    tmpList2 = defaultSettings[#default].duplicate()
+    mergeLists(tmpList2, tmpList, #Replace)
+    defaultSettings[tmp] = tmpList2
+  end repeat
+end
+
+on createTextButton me, argMemberOrImage, argText
+  tmpSettings = defaultSettings[#button]
+  tmpMemb = member("TestText")
+  tmpMemb.rect = rect(0, 0, 200, 20)
+  tmpMemb.text = argText & "  "
+  tmpMemb.alignment = #left
+  tmpOff = charPosToLoc(tmpMemb, length(argText) + 2)
+  tmpMemb.text = argText
+  tmpMemb.alignment = #center
+  tmpMemb.height = tmpOff[2]
+  tmpMemb.width = tmpOff[1]
+  tmpMemb.foreColor = 255
+  tmpMemb.backColor = 0
+  iTmp = image(tmpMemb.width, tmpMemb.height, 24, 0)
+  iTmp.fill(rect(0, 0, tmpMemb.width, tmpMemb.height), tmpSettings[#bgColor])
+  tmpRect = tmpMemb.rect + rect(0, tmpOff[2] * 0.10000000000000001, 0, -1)
+  iTmp.copyPixels(tmpMemb.image, tmpRect, tmpRect, [#color: tmpSettings[#FgColor], #bgColor: tmpSettings[#bgColor]])
+  tmpSize = duplicate(tmpOff)
+  tmpSize = tmpSize + (tmpSettings[#margins] * 2)
+  if listp(tmpSettings[#MinSize]) then
+    if tmpSize[1] < tmpSettings[#MinSize][1] then
+      tmpSize[1] = tmpSettings[#MinSize][1]
+    end if
+    if tmpSize[2] < tmpSettings[#MinSize][2] then
+      tmpSize[2] = tmpSettings[#MinSize][2]
+    end if
+  end if
+  me.createWnd(argMemberOrImage, [#StyleList: tmpSettings, #size: tmpSize, #depth: 24, #alpha: tmpSettings[#alpha], #ResizeToFit: #Exact])
+  tmpOff = tmpSettings[#margins] + point(0, -1)
+  composeImage([[iTmp, tmpOff]], argMemberOrImage, [#ink: 36, #useAlpha: 0])
+  return argMemberOrImage
+end
+
+on createWnd me, argMemberOrImage, argOptions
+  if ilk(argMemberOrImage) = #member then
+    iDst = argMemberOrImage.image
+  else
+    iDst = argMemberOrImage
+  end if
+  tmpDstRect = argOptions[#rect]
+  tmpSize = argOptions[#size]
+  tmpDepth = argOptions[#depth]
+  if voidp(tmpDstRect) and voidp(tmpSize) and voidp(tmpDepth) then
+    tmpSize = point(iDst.width, iDst.height)
+    tmpDstRect = rect(point(0, 0), tmpSize)
+    tmpDepth = iDst.depth
+    if (tmpSize[1] = 0) or (tmpSize[2] = 0) or (tmpDepth = 0) then
+      put "Supplied image empty!"
+      exit
+    end if
+  else
+    if voidp(tmpDstRect) then
+      tmpDstRect = rect(point(0, 0), tmpSize)
+    else
+      if voidp(tmpSize) then
+        tmpSize = point(tmpDstRect[3] - tmpDstRect[1], tmpDstRect[4] - tmpDstRect[2])
+      end if
+    end if
+  end if
+  tmpStyle = argOptions[#StyleList]
+  if not listp(tmpStyle) then
+    tmpStyle = [#Prefix: "WinDialog", #bgColor: rgb(192, 192, 192)]
+  end if
+  tmpMembPrefix = tmpStyle[#Prefix] & "Edge"
+  tmpBg = tmpStyle[#bgColor]
+  tmpResizing = argOptions[#ResizeToFit]
+  if voidp(tmpResizing) then
+    if (iDst.width = 0) or (iDst.height = 0) or (iDst.depth = 0) then
+      tmpResizing = #new
+    end if
+  end if
+  if tmpResizing = #Exact then
+    if (iDst.width <> tmpSize[1]) or (iDst.height <> tmpSize[2]) or (iDst.depth <> tmpDepth) then
+      iDst = image(tmpSize[1], tmpSize[2], tmpDepth, argOptions[#alpha])
+    end if
+  else
+    if tmpResizing = #Enlarge then
+      if (iDst.width < tmpDstRect[3]) or (iDst.height < tmpDstRect[4]) or (iDst.depth < tmpDepth) then
+        iDst = image(tmpDstRect[3], tmpDstRect[4], tmpDepth, argOptions[#alpha])
+      end if
+    else
+      if tmpResizing = #new then
+        iDst = image(tmpSize[1], tmpSize[2], tmpDepth, argOptions[#alpha])
+      end if
+    end if
+  end if
+  if ilk(tmpBg) = #color then
+    iDst.fill(tmpDstRect, tmpBg)
+  else
+    if ilk(tmpBg) = #member then
+      fillWithPattern(iDst, tmpBg, tmpDstRect)
+    end if
+  end if
+  tmpLists = [["T", [tmpDstRect[1], tmpDstRect[2], tmpDstRect[3], #PlusSize]], ["R", [#MinusSize, tmpDstRect[2], tmpDstRect[3], tmpDstRect[4]]], ["B", [tmpDstRect[1], #MinusSize, tmpDstRect[3], tmpDstRect[4]]], ["L", [tmpDstRect[1], tmpDstRect[2], #PlusSize, tmpDstRect[4]]], ["BL", point(tmpDstRect[1], tmpDstRect[4])], ["TL", point(tmpDstRect[1], tmpDstRect[2])], ["BR", point(tmpDstRect[3], tmpDstRect[4])], ["TR", point(tmpDstRect[3], tmpDstRect[2])]]
+  tmpLists = [["BL", point(tmpDstRect[1], tmpDstRect[4])], ["TL", point(tmpDstRect[1], tmpDstRect[2])], ["BR", point(tmpDstRect[3], tmpDstRect[4])], ["TR", point(tmpDstRect[3], tmpDstRect[2])], ["T", ["TL3", tmpDstRect[2], "TR1", #PlusSize]], ["  R", [#MinusSize, "TR4", tmpDstRect[3], "BR2"]], ["B", ["BL3", #MinusSize, "BR1", tmpDstRect[4]]], ["L", [tmpDstRect[1], "TL4", #PlusSize, "BL2"]]]
+  tmpLists = [["BL", point(tmpDstRect[1], tmpDstRect[4])], ["TL", point(tmpDstRect[1], tmpDstRect[2])], ["BR", point(tmpDstRect[3], tmpDstRect[4])], ["TR", point(tmpDstRect[3], tmpDstRect[2])], ["T", ["23", tmpDstRect[2], "41", #PlusSize]], ["R", [#MinusSize, "44", tmpDstRect[3], "32"]], ["B", ["13", #MinusSize, "31", tmpDstRect[4]]], ["L", [tmpDstRect[1], "24", #PlusSize, "12"]]]
+  repeat with tmpList in tmpLists
+    tmpWhich = tmpList[1]
+    tmpMemb = member(tmpMembPrefix & tmpList[1])
+    if tmpMemb.number < 0 then
+      put "no memb", tmpMembPrefix & tmpList[1]
+    end if
+    tmpList[1] = tmpMemb
+    tmpLoc = tmpList[2]
+    if ilk(tmpLoc) = #list then
+      repeat with n = 1 to 4
+        tmpWhat = tmpLoc[n]
+        if stringp(tmpWhat) then
+          tmpOtherMemb = tmpLists[value(tmpWhat.char[1])][1]
+          tmpOtherRect = getMemberRect(tmpOtherMemb)[value(tmpWhat.char[2])]
+          tmpLoc[n] = tmpDstRect[n] + tmpOtherRect
+          next repeat
+        end if
+        if symbolp(tmpWhat) then
+          if n > 2 then
+            tmpRefPos = n - 2
+          else
+            tmpRefPos = n + 2
+          end if
+          if tmpWhat = #PlusSize then
+            tmpLoc[n] = tmpLoc[tmpRefPos] + tmpMemb.rect[1 - (tmpRefPos mod 2) + 3]
+            next repeat
+          end if
+          tmpLoc[n] = tmpLoc[tmpRefPos] - tmpMemb.rect[1 - (tmpRefPos mod 2) + 3]
+        end if
+      end repeat
+      tmpRect = rect(tmpLoc[1], tmpLoc[2], tmpLoc[3], tmpLoc[4])
+      tmpList[2] = tmpRect
+    end if
+  end repeat
+  composeImage(tmpLists, iDst, [#ink: 0, #useAlpha: 0])
+  if ilk(argMemberOrImage) = #member then
+    argMemberOrImage.image = iDst
+  end if
+  return iDst
+end

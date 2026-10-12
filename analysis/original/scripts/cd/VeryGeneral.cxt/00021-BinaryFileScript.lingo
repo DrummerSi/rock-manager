@@ -1,0 +1,109 @@
+property stringList, stringLengths, totLengths
+
+on new me
+  return me
+end
+
+on kill me
+  return 0
+end
+
+on readFields me, argField, argNr
+  stringList = []
+  totLengths = []
+  sort(totLengths)
+  stringLengths = []
+  tmpTot = 0
+  repeat with n = 1 to argNr
+    tmpStr = member(argField & string(n)).text
+    add(stringList, tmpStr)
+    tmpLen = length(tmpStr)
+    tmpTot = tmpTot + tmpLen
+    add(stringLengths, tmpLen)
+    add(totLengths, tmpTot)
+  end repeat
+end
+
+on read me, argFile
+  openXLib(the moviePath & "Data\FileIO.dll")
+  stringList = []
+  totLengths = []
+  sort(totLengths)
+  stringLengths = []
+  tmpRead = fileio(#mnew, "read", argFile)
+  if not objectp(tmpRead) then
+    put "Couldnt open"
+    return 
+  else
+    tmpLen = tmpRead(#mGetLength)
+    add(stringList, tmpRead(#mReadFile))
+    tmpPos = tmpRead(#mGetPosition)
+    add(totLengths, tmpPos)
+    add(stringLengths, tmpPos)
+    if tmpPos < tmpLen then
+      repeat while 1
+        add(stringList, tmpRead(#mReadFile))
+        tmpPos = tmpRead(#mGetPosition)
+        add(totLengths, tmpPos)
+        add(stringLengths, tmpPos - getAt(totLengths, count(totLengths) - 1))
+        if tmpPos >= tmpLen then
+          exit repeat
+        end if
+      end repeat
+    end if
+    tmpRead(#mdispose)
+  end if
+  closeXLib(the moviePath & "Data\FileIO.dll")
+end
+
+on getSize me
+  return getAt(totLengths, count(totLengths))
+end
+
+on getChar me, argPos
+  if argPos > getSize(me) then
+    return "0"
+  end if
+  add(totLengths, argPos)
+  tmpPos = getPos(totLengths, argPos)
+  deleteAt(totLengths, tmpPos)
+  tmpStr = getAt(stringList, tmpPos)
+  if tmpPos > 1 then
+    argPos = argPos - getAt(totLengths, tmpPos - 1)
+  end if
+  return char argPos of tmpStr
+end
+
+on posToStrNr me, argPos
+  add(totLengths, argPos)
+  tmpPos = getPos(totLengths, argPos)
+  deleteAt(totLengths, tmpPos)
+  if tmpPos > count(totLengths) then
+    return 0
+  end if
+  if tmpPos > 1 then
+    argPos = argPos - getAt(totLengths, tmpPos - 1)
+  end if
+  return [#str: tmpPos, #Pos: argPos]
+end
+
+on getString me, argStart, argLength
+  tmpOK = posToStrNr(me, argStart)
+  if tmpOK = 0 then
+    return EMPTY
+  end if
+  tmpStrNr = getProp(tmpOK, #str)
+  tmpStr = getAt(stringList, tmpStrNr)
+  tmpStrLen = getAt(stringLengths, tmpStrNr)
+  tmpTotLengthBeforeThisStr = getAt(totLengths, tmpStrNr) - tmpStrLen
+  tmpPosInStr = getProp(tmpOK, #Pos)
+  tmpRemainingInStr = tmpStrLen - tmpPosInStr + 1
+  if tmpRemainingInStr >= argLength then
+    return char (argStart - tmpTotLengthBeforeThisStr) to (argStart + argLength - 1 - tmpTotLengthBeforeThisStr) of tmpStr
+  else
+    tmpNewStr = char (argStart - tmpTotLengthBeforeThisStr) to length(tmpStr) of tmpStr
+    tmpNewStart = argStart + length(tmpNewStr)
+    tmpNewLength = argLength - length(tmpNewStr)
+    return tmpNewStr & getString(me, tmpNewStart, tmpNewLength)
+  end if
+end

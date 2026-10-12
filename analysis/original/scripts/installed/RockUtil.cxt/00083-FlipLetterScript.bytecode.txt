@@ -1,0 +1,381 @@
+property SP, flipCnt, speed, currentLetter, startMemberUpper, startMemberLower, midCnt, endAtLetter, nextLetter, numFrames, myLoc, numAnimFrames, currentFrame, orgRect, reportObj
+
+on new me, argReportObj, argSP, argPos, argStartLoc, argImage
+  [  0] getparam 8 .............................. <argReportObj>
+  [  2] setprop 538 ............................. reportObj = argReportObj
+  [  5] getparam 16 ............................. <argSP>
+  [  7] setprop 539 ............................. SP = argSP
+  [ 10] pushzero ................................ <0>
+  [ 11] setprop 2021 ............................ flipCnt = 0
+  [ 14] pushzero ................................ <0>
+  [ 15] setprop 211 ............................. speed = 0
+  [ 18] pushint8 42 ............................. <42>
+  [ 21] setprop 2022 ............................ currentLetter = 42
+  [ 24] pushint8 1 .............................. <1>
+  [ 27] inv ..................................... <-1>
+  [ 28] pushcons 0 .............................. <"letters01_0030">
+  [ 30] pushzero ................................ <0>
+  [ 31] pushint8 10 ............................. <10>
+  [ 34] get 9 ................................... <the number of member "letters01_0030">
+  [ 36] add ..................................... <-1 + the number of member "letters01_0030">
+  [ 37] setprop 2023 ............................ startMemberUpper = -1 + the number of member "letters01_0030"
+  [ 40] pushint8 1 .............................. <1>
+  [ 43] inv ..................................... <-1>
+  [ 44] pushcons 8 .............................. <"letters02_0030">
+  [ 46] pushzero ................................ <0>
+  [ 47] pushint8 10 ............................. <10>
+  [ 50] get 9 ................................... <the number of member "letters02_0030">
+  [ 52] add ..................................... <-1 + the number of member "letters02_0030">
+  [ 53] setprop 2024 ............................ startMemberLower = -1 + the number of member "letters02_0030"
+  [ 56] getprop 2023 ............................ <startMemberUpper>
+  [ 59] pushint8 1 .............................. <1>
+  [ 62] add ..................................... <startMemberUpper + 1>
+  [ 63] pusharglist 1 ........................... <startMemberUpper + 1>
+  [ 65] extcall 296 ............................. <member(startMemberUpper + 1)>
+  [ 68] getobjprop 555 .......................... <member(startMemberUpper + 1).rect>
+  [ 71] setprop 2025 ............................ orgRect = member(startMemberUpper + 1).rect
+  [ 74] pushint8 1 .............................. <1>
+  [ 77] getprop 2025 ............................ <orgRect>
+  [ 80] pushint8 3 .............................. <3>
+  [ 83] pusharglist 2 ........................... <orgRect, 3>
+  [ 85] extcall 34 .............................. <getAt(orgRect, 3)>
+  [ 88] add ..................................... <1 + getAt(orgRect, 3)>
+  [ 89] setlocal 0 .............................. tmpWidth = 1 + getAt(orgRect, 3)
+  [ 91] getparam 32 ............................. <argStartLoc>
+  [ 93] getparam 24 ............................. <argPos>
+  [ 95] pushint8 1 .............................. <1>
+  [ 98] sub ..................................... <argPos - 1>
+  [ 99] getlocal 0 .............................. <tmpWidth>
+  [101] mul ..................................... <(argPos - 1) * tmpWidth>
+  [102] pushzero ................................ <0>
+  [103] pusharglist 2 ........................... <(argPos - 1) * tmpWidth, 0>
+  [105] extcall 568 ............................. <point((argPos - 1) * tmpWidth, 0)>
+  [108] add ..................................... <argStartLoc + point((argPos - 1) * tmpWidth, 0)>
+  [109] pushzero ................................ <0>
+  [110] pushzero ................................ <0>
+  [111] pusharglist 2 ........................... <0, 0>
+  [113] extcall 568 ............................. <point(0, 0)>
+  [116] add ..................................... <argStartLoc + point((argPos - 1) * tmpWidth, 0) + point(0, 0)>
+  [117] setprop 853 ............................. myLoc = argStartLoc + point((argPos - 1) * tmpWidth, 0) + point(0, 0)
+  [120] pushzero ................................ <0>
+  [121] setprop 2026 ............................ endAtLetter = 0
+  [124] pushint8 6 .............................. <6>
+  [127] setprop 2027 ............................ numAnimFrames = 6
+  [130] getparam 0 .............................. <me>
+  [132] getprop 539 ............................. <SP>
+  [135] getprop 2022 ............................ <currentLetter>
+  [138] pushsymb 2028 ........................... <#Upper>
+  [141] pusharglistnoret 4 ...................... <me, SP, currentLetter, #Upper>
+  [143] objcall 2020 ............................ me.setFrame(SP, currentLetter, #Upper)
+  [146] getparam 0 .............................. <me>
+  [148] getprop 539 ............................. <SP>
+  [151] pushint8 1 .............................. <1>
+  [154] add ..................................... <SP + 1>
+  [155] getprop 2022 ............................ <currentLetter>
+  [158] pushsymb 2029 ........................... <#Lower>
+  [161] pusharglistnoret 4 ...................... <me, SP + 1, currentLetter, #Lower>
+  [163] objcall 2020 ............................ me.setFrame(SP + 1, currentLetter, #Lower)
+  [166] getparam 0 .............................. <me>
+  [168] pusharglistnoret 1 ...................... <me>
+  [170] extcall 21 .............................. return me
+  [172] ret
+end
+
+on kill me
+  [  0] pushzero ................................ <0>
+  [  1] pusharglistnoret 1 ...................... <0>
+  [  3] extcall 21 .............................. return 0
+  [  5] ret
+end
+
+on gotoLetter me, argNr
+  [  0] getprop 2026 ............................ <endAtLetter>
+  [  3] jmpifz [ 14] ............................ if endAtLetter then / else
+  [  6] getparam 8 .............................. <argNr>
+  [  8] setprop 2026 ............................ endAtLetter = argNr
+  [ 11] jmp [ 66]
+  [ 14] getparam 8 .............................. <argNr>
+  [ 16] setprop 2026 ............................ endAtLetter = argNr
+  [ 19] getprop 2026 ............................ <endAtLetter>
+  [ 22] getprop 2022 ............................ <currentLetter>
+  [ 25] nteq .................................... <endAtLetter <> currentLetter>
+  [ 26] jmpifz [ 41] ............................ if endAtLetter <> currentLetter then / else
+  [ 29] getparam 0 .............................. <me>
+  [ 31] pushint8 12 ............................. <12>
+  [ 34] pusharglistnoret 2 ...................... <me, 12>
+  [ 36] localcall 3 ............................. flip(me, 12)
+  [ 38] jmp [ 66]
+  [ 41] pushzero ................................ <0>
+  [ 42] setprop 2026 ............................ endAtLetter = 0
+  [ 45] getprop 538 ............................. <reportObj>
+  [ 48] pusharglist 1 ........................... <reportObj>
+  [ 50] extcall 71 .............................. <objectp(reportObj)>
+  [ 53] jmpifz [ 66] ............................ if objectp(reportObj) then
+  [ 56] getprop 538 ............................. <reportObj>
+  [ 59] getparam 0 .............................. <me>
+  [ 61] pusharglistnoret 2 ...................... <reportObj, me>
+  [ 63] objcall 2008 ............................ reportObj.oneDone(me)
+  [ 66] ret
+end
+
+on flip me, argNumFrames
+  [  0] getprop 2026 ............................ <endAtLetter>
+  [  3] jmpifz [ 55] ............................ if endAtLetter then
+  [  6] getprop 2026 ............................ <endAtLetter>
+  [  9] getprop 2022 ............................ <currentLetter>
+  [ 12] sub ..................................... <endAtLetter - currentLetter>
+  [ 13] setlocal 0 .............................. tmpDiff = endAtLetter - currentLetter
+  [ 15] getprop 2026 ............................ <endAtLetter>
+  [ 18] getprop 2022 ............................ <currentLetter>
+  [ 21] lt ...................................... <endAtLetter < currentLetter>
+  [ 22] jmpifz [ 33] ............................ if endAtLetter < currentLetter then
+  [ 25] getlocal 0 .............................. <tmpDiff>
+  [ 27] pushint8 42 ............................. <42>
+  [ 30] add ..................................... <tmpDiff + 42>
+  [ 31] setlocal 0 .............................. tmpDiff = tmpDiff + 42
+  [ 33] getlocal 0 .............................. <tmpDiff>
+  [ 35] pushint8 2 .............................. <2>
+  [ 38] gteq .................................... <tmpDiff >= 2>
+  [ 39] jmpifz [ 50] ............................ if tmpDiff >= 2 then / else
+  [ 42] pushint8 4 .............................. <4>
+  [ 45] setparam 8 .............................. argNumFrames = 4
+  [ 47] jmp [ 55]
+  [ 50] pushint8 12 ............................. <12>
+  [ 53] setparam 8 .............................. argNumFrames = 12
+  [ 55] getparam 8 .............................. <argNumFrames>
+  [ 57] setprop 534 ............................. numFrames = argNumFrames
+  [ 60] pushint8 1 .............................. <1>
+  [ 63] setprop 2021 ............................ flipCnt = 1
+  [ 66] getprop 534 ............................. <numFrames>
+  [ 69] pushint8 2 .............................. <2>
+  [ 72] div ..................................... <numFrames / 2>
+  [ 73] setprop 2032 ............................ midCnt = numFrames / 2
+  [ 76] getprop 2022 ............................ <currentLetter>
+  [ 79] pushint8 1 .............................. <1>
+  [ 82] add ..................................... <currentLetter + 1>
+  [ 83] setprop 2033 ............................ nextLetter = currentLetter + 1
+  [ 86] getprop 2033 ............................ <nextLetter>
+  [ 89] pushint8 42 ............................. <42>
+  [ 92] gt ...................................... <nextLetter > 42>
+  [ 93] jmpifz [102] ............................ if nextLetter > 42 then
+  [ 96] pushint8 1 .............................. <1>
+  [ 99] setprop 2033 ............................ nextLetter = 1
+  [102] getprop 539 ............................. <SP>
+  [105] pushint8 2 .............................. <2>
+  [108] add ..................................... <SP + 2>
+  [109] getprop 2025 ............................ <orgRect>
+  [112] pushint8 34 ............................. <34>
+  [115] set 6 ................................... set the rect of sprite (SP + 2) to orgRect
+  [117] getparam 0 .............................. <me>
+  [119] getprop 539 ............................. <SP>
+  [122] getprop 2033 ............................ <nextLetter>
+  [125] pushsymb 2028 ........................... <#Upper>
+  [128] pusharglistnoret 4 ...................... <me, SP, nextLetter, #Upper>
+  [130] objcall 2020 ............................ me.setFrame(SP, nextLetter, #Upper)
+  [133] getparam 0 .............................. <me>
+  [135] getprop 539 ............................. <SP>
+  [138] pushint8 1 .............................. <1>
+  [141] add ..................................... <SP + 1>
+  [142] getprop 2022 ............................ <currentLetter>
+  [145] pushsymb 2029 ........................... <#Lower>
+  [148] pusharglistnoret 4 ...................... <me, SP + 1, currentLetter, #Lower>
+  [150] objcall 2020 ............................ me.setFrame(SP + 1, currentLetter, #Lower)
+  [153] getparam 0 .............................. <me>
+  [155] getprop 539 ............................. <SP>
+  [158] pushint8 2 .............................. <2>
+  [161] add ..................................... <SP + 2>
+  [162] getprop 2022 ............................ <currentLetter>
+  [165] pushsymb 2028 ........................... <#Upper>
+  [168] pusharglistnoret 4 ...................... <me, SP + 2, currentLetter, #Upper>
+  [170] objcall 2020 ............................ me.setFrame(SP + 2, currentLetter, #Upper)
+  [173] ret
+end
+
+on timeTick me
+  [  0] getprop 2021 ............................ <flipCnt>
+  [  3] jmpifz [104] ............................ if flipCnt then
+  [  6] getparam 0 .............................. <me>
+  [  8] getprop 539 ............................. <SP>
+  [ 11] pushint8 2 .............................. <2>
+  [ 14] add ..................................... <SP + 2>
+  [ 15] pusharglistnoret 2 ...................... <me, SP + 2>
+  [ 17] objcall 2018 ............................ me.setFlipFrame(SP + 2)
+  [ 20] getprop 2021 ............................ <flipCnt>
+  [ 23] pushint8 1 .............................. <1>
+  [ 26] add ..................................... <flipCnt + 1>
+  [ 27] setprop 2021 ............................ flipCnt = flipCnt + 1
+  [ 30] getprop 2021 ............................ <flipCnt>
+  [ 33] getprop 534 ............................. <numFrames>
+  [ 36] gt ...................................... <flipCnt > numFrames>
+  [ 37] jmpifz [104] ............................ if flipCnt > numFrames then
+  [ 40] getprop 2033 ............................ <nextLetter>
+  [ 43] setprop 2022 ............................ currentLetter = nextLetter
+  [ 46] getprop 2026 ............................ <endAtLetter>
+  [ 49] jmpifz [104] ............................ if endAtLetter then
+  [ 52] getprop 2022 ............................ <currentLetter>
+  [ 55] getprop 2026 ............................ <endAtLetter>
+  [ 58] eq ...................................... <currentLetter = endAtLetter>
+  [ 59] jmpifz [ 94] ............................ if currentLetter = endAtLetter then / else
+  [ 62] pushzero ................................ <0>
+  [ 63] setprop 2026 ............................ endAtLetter = 0
+  [ 66] pushzero ................................ <0>
+  [ 67] setprop 2021 ............................ flipCnt = 0
+  [ 70] getprop 538 ............................. <reportObj>
+  [ 73] pusharglist 1 ........................... <reportObj>
+  [ 75] extcall 71 .............................. <objectp(reportObj)>
+  [ 78] jmpifz [ 91] ............................ if objectp(reportObj) then
+  [ 81] getprop 538 ............................. <reportObj>
+  [ 84] getparam 0 .............................. <me>
+  [ 86] pusharglistnoret 2 ...................... <reportObj, me>
+  [ 88] objcall 2008 ............................ reportObj.oneDone(me)
+  [ 91] jmp [104]
+  [ 94] getparam 0 .............................. <me>
+  [ 96] getprop 534 ............................. <numFrames>
+  [ 99] pusharglistnoret 2 ...................... <me, numFrames>
+  [101] objcall 2017 ............................ me.flip(numFrames)
+  [104] ret
+end
+
+on setFlipFrame me, argSP
+  [  0] getprop 2021 ............................ <flipCnt>
+  [  3] getprop 2032 ............................ <midCnt>
+  [  6] lt ...................................... <flipCnt < midCnt>
+  [  7] jmpifz [103] ............................ if flipCnt < midCnt then / else
+  [ 10] getprop 2032 ............................ <midCnt>
+  [ 13] getprop 2021 ............................ <flipCnt>
+  [ 16] sub ..................................... <midCnt - flipCnt>
+  [ 17] getprop 2032 ............................ <midCnt>
+  [ 20] pusharglist 1 ........................... <midCnt>
+  [ 22] extcall 175 ............................. <float(midCnt)>
+  [ 25] div ..................................... <(midCnt - flipCnt) / float(midCnt)>
+  [ 26] setlocal 0 .............................. tmpFact = (midCnt - flipCnt) / float(midCnt)
+  [ 28] getparam 8 .............................. <argSP>
+  [ 30] getprop 2025 ............................ <orgRect>
+  [ 33] pushint8 4 .............................. <4>
+  [ 36] pusharglist 2 ........................... <orgRect, 4>
+  [ 38] extcall 34 .............................. <getAt(orgRect, 4)>
+  [ 41] getlocal 0 .............................. <tmpFact>
+  [ 43] mul ..................................... <getAt(orgRect, 4) * tmpFact>
+  [ 44] pusharglist 1 ........................... <getAt(orgRect, 4) * tmpFact>
+  [ 46] extcall 54 .............................. <integer(getAt(orgRect, 4) * tmpFact)>
+  [ 49] pushint8 8 .............................. <8>
+  [ 52] set 6 ................................... set the height of sprite argSP to integer(getAt(orgRect, 4) * tmpFact)
+  [ 54] getparam 8 .............................. <argSP>
+  [ 56] getparam 0 .............................. <me>
+  [ 58] getprop 2022 ............................ <currentLetter>
+  [ 61] pushsymb 2028 ........................... <#Upper>
+  [ 64] pusharglist 3 ........................... <me, currentLetter, #Upper>
+  [ 66] objcall 2019 ............................ <me.getFrame(currentLetter, #Upper)>
+  [ 69] pushint8 37 ............................. <37>
+  [ 72] set 6 ................................... set the member of sprite argSP to me.getFrame(currentLetter, #Upper)
+  [ 74] getparam 8 .............................. <argSP>
+  [ 76] getprop 853 ............................. <myLoc>
+  [ 79] pushcons 16 ............................. <1.0>
+  [ 81] getlocal 0 .............................. <tmpFact>
+  [ 83] sub ..................................... <1.0 - tmpFact>
+  [ 84] pushzero ................................ <0>
+  [ 85] pushint8 11 ............................. <11>
+  [ 88] pusharglist 2 ........................... <0, 11>
+  [ 90] extcall 568 ............................. <point(0, 11)>
+  [ 93] mul ..................................... <(1.0 - tmpFact) * point(0, 11)>
+  [ 94] add ..................................... <myLoc + ((1.0 - tmpFact) * point(0, 11))>
+  [ 95] pushint8 33 ............................. <33>
+  [ 98] set 6 ................................... set the loc of sprite argSP to myLoc + ((1.0 - tmpFact) * point(0, 11))
+  [100] jmp [204]
+  [103] getprop 2021 ............................ <flipCnt>
+  [106] getprop 2032 ............................ <midCnt>
+  [109] sub ..................................... <flipCnt - midCnt>
+  [110] getprop 2032 ............................ <midCnt>
+  [113] pusharglist 1 ........................... <midCnt>
+  [115] extcall 175 ............................. <float(midCnt)>
+  [118] div ..................................... <(flipCnt - midCnt) / float(midCnt)>
+  [119] setlocal 0 .............................. tmpFact = (flipCnt - midCnt) / float(midCnt)
+  [121] getprop 2025 ............................ <orgRect>
+  [124] pushint8 4 .............................. <4>
+  [127] pusharglist 2 ........................... <orgRect, 4>
+  [129] extcall 34 .............................. <getAt(orgRect, 4)>
+  [132] getlocal 0 .............................. <tmpFact>
+  [134] mul ..................................... <getAt(orgRect, 4) * tmpFact>
+  [135] pusharglist 1 ........................... <getAt(orgRect, 4) * tmpFact>
+  [137] extcall 54 .............................. <integer(getAt(orgRect, 4) * tmpFact)>
+  [140] setlocal 8 .............................. tmpHeight = integer(getAt(orgRect, 4) * tmpFact)
+  [142] getparam 8 .............................. <argSP>
+  [144] getlocal 8 .............................. <tmpHeight>
+  [146] pushint8 8 .............................. <8>
+  [149] set 6 ................................... set the height of sprite argSP to tmpHeight
+  [151] getparam 8 .............................. <argSP>
+  [153] getparam 0 .............................. <me>
+  [155] getprop 2033 ............................ <nextLetter>
+  [158] pushsymb 2029 ........................... <#Lower>
+  [161] pusharglist 3 ........................... <me, nextLetter, #Lower>
+  [163] objcall 2019 ............................ <me.getFrame(nextLetter, #Lower)>
+  [166] pushint8 37 ............................. <37>
+  [169] set 6 ................................... set the member of sprite argSP to me.getFrame(nextLetter, #Lower)
+  [171] getparam 8 .............................. <argSP>
+  [173] getprop 853 ............................. <myLoc>
+  [176] pushzero ................................ <0>
+  [177] pushint8 11 ............................. <11>
+  [180] pusharglist 2 ........................... <0, 11>
+  [182] extcall 568 ............................. <point(0, 11)>
+  [185] add ..................................... <myLoc + point(0, 11)>
+  [186] getlocal 0 .............................. <tmpFact>
+  [188] pushzero ................................ <0>
+  [189] pushint8 11 ............................. <11>
+  [192] pusharglist 2 ........................... <0, 11>
+  [194] extcall 568 ............................. <point(0, 11)>
+  [197] mul ..................................... <tmpFact * point(0, 11)>
+  [198] add ..................................... <myLoc + point(0, 11) + (tmpFact * point(0, 11))>
+  [199] pushint8 33 ............................. <33>
+  [202] set 6 ................................... set the loc of sprite argSP to myLoc + point(0, 11) + (tmpFact * point(0, 11))
+  [204] ret
+end
+
+on getFrame me, argLetterNum, argIsUpper
+  [  0] getparam 16 ............................. <argIsUpper>
+  [  2] pushsymb 2028 ........................... <#Upper>
+  [  5] eq ...................................... <argIsUpper = #Upper>
+  [  6] jmpifz [ 19] ............................ if argIsUpper = #Upper then
+  [  9] getprop 2023 ............................ <startMemberUpper>
+  [ 12] getparam 8 .............................. <argLetterNum>
+  [ 14] add ..................................... <startMemberUpper + argLetterNum>
+  [ 15] pusharglistnoret 1 ...................... <startMemberUpper + argLetterNum>
+  [ 17] extcall 21 .............................. return startMemberUpper + argLetterNum
+  [ 19] getprop 2024 ............................ <startMemberLower>
+  [ 22] getparam 8 .............................. <argLetterNum>
+  [ 24] add ..................................... <startMemberLower + argLetterNum>
+  [ 25] pusharglistnoret 1 ...................... <startMemberLower + argLetterNum>
+  [ 27] extcall 21 .............................. return startMemberLower + argLetterNum
+  [ 29] ret
+end
+
+on setFrame me, argSP, argLetterNum, argIsUpper
+  [  0] getparam 0 .............................. <me>
+  [  2] getparam 16 ............................. <argLetterNum>
+  [  4] getparam 24 ............................. <argIsUpper>
+  [  6] pusharglist 3 ........................... <me, argLetterNum, argIsUpper>
+  [  8] localcall 6 ............................. <getFrame(me, argLetterNum, argIsUpper)>
+  [ 10] setlocal 0 .............................. tmpMemb = getFrame(me, argLetterNum, argIsUpper)
+  [ 12] getparam 8 .............................. <argSP>
+  [ 14] getlocal 0 .............................. <tmpMemb>
+  [ 16] pushint8 37 ............................. <37>
+  [ 19] set 6 ................................... set the member of sprite argSP to tmpMemb
+  [ 21] getparam 24 ............................. <argIsUpper>
+  [ 23] pushsymb 2028 ........................... <#Upper>
+  [ 26] eq ...................................... <argIsUpper = #Upper>
+  [ 27] jmpifz [ 43] ............................ if argIsUpper = #Upper then / else
+  [ 30] getparam 8 .............................. <argSP>
+  [ 32] getprop 853 ............................. <myLoc>
+  [ 35] pushint8 33 ............................. <33>
+  [ 38] set 6 ................................... set the loc of sprite argSP to myLoc
+  [ 40] jmp [ 63]
+  [ 43] getparam 8 .............................. <argSP>
+  [ 45] getprop 853 ............................. <myLoc>
+  [ 48] pushzero ................................ <0>
+  [ 49] pushint8 22 ............................. <22>
+  [ 52] pusharglist 2 ........................... <0, 22>
+  [ 54] extcall 568 ............................. <point(0, 22)>
+  [ 57] add ..................................... <myLoc + point(0, 22)>
+  [ 58] pushint8 33 ............................. <33>
+  [ 61] set 6 ................................... set the loc of sprite argSP to myLoc + point(0, 22)
+  [ 63] ret
+end

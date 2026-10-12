@@ -1,0 +1,36 @@
+property reportObject, keyObjList
+global gUseful
+
+on new me, argReportObject, argList, argTimerObj, argTellMovie
+  reportObject = argReportObject
+  keyObjList = []
+  repeat with tmp in argList
+    tmpKey = tmp[1]
+    if tmp.count() > 1 then
+      tmpOptions = tmp[2]
+    end if
+    tmpObj = script("KeyObject").new(me, tmpKey, tmpOptions, argTimerObj, argTellMovie)
+    keyObjList.add(tmpObj)
+  end repeat
+  return me
+end
+
+on kill me
+  setTellMovie(me, 0)
+  repeat with tmpObj in keyObjList
+    tmpObj.kill()
+  end repeat
+  keyObjList = []
+  reportObject = 0
+  return 0
+end
+
+on key me, argObj, argState, argID
+  reportObject.key(argObj, argState, argID)
+end
+
+on setTellMovie me, argObj
+  repeat with tmpObj in keyObjList
+    tmpObj.setTellMovie(argObj)
+  end repeat
+end

@@ -1,0 +1,184 @@
+property m_channel, m_data, m_yScale, m_centerVal, m_zeroAt, m_pixPerV, m_displayMode, m_dataStartAndEndDates, m_agenda, m_clr, m_name, m_legendFormat
+
+on new me, argChannelObj, argInfo
+  m_channel = argChannelObj
+  m_agenda = m_channel.m_agenda
+  me.formatData(argInfo[#data], argInfo[#ContinueTilToday], argInfo[#TodayDate], argInfo[#ForceEndDate])
+  m_legendFormat = argInfo[#LegendFormat]
+  m_name = argInfo[#name]
+  m_clr = argInfo[#clr]
+  if voidp(m_clr) then
+    m_clr = rgb(random(255), random(255), random(255))
+  end if
+  return me
+end
+
+on kill me
+  m_channel = 0
+  m_data = 0
+  m_agenda = 0
+  m_legendFormat = 0
+  return 0
+end
+
+on formatData me, argData, argContinueTilToday, argTodayDate, argForceEndDate
+  global gRock
+  if listp(argData) then
+    if ilk(argData) = #propList then
+      argData = argData.duplicate()
+      m_data = []
+      if argData.count then
+        if integerp(argForceEndDate) then
+          argData.addProp(argForceEndDate, argData[argData.count])
+        end if
+        tmpMax = 0
+        tmpStartDate = argData.getPropAt(1)
+        tmpLastDate = argData.getPropAt(1)
+        argData.addProp(argData.getPropAt(argData.count) + 1, argData[argData.count])
+        repeat with n = 2 to argData.count
+          tmpNextDate = argData.getPropAt(n)
+          tmpVal = argData[n - 1]
+          if tmpVal > tmpMax then
+            tmpMax = tmpVal
+          end if
+          repeat with tmpDate = tmpLastDate to tmpNextDate - 1
+            m_data.add(tmpVal)
+          end repeat
+          tmpLastDate = tmpNextDate
+        end repeat
+        m_yScale = tmpMax
+        m_centerVal = tmpMax / 2
+      end if
+    else
+      m_data = argData.duplicate()
+      if m_data.count > 1 then
+        tmpStartDate = m_data[1]
+        m_data.deleteAt(1)
+        Stats = getListStats(m_data)
+        m_yScale = Stats[#max]
+        m_centerVal = tmpMax / 2
+      else
+        m_data = [0]
+        tmpStartDate = 1
+        m_yScale = 1.0
+        m_centerVal = 0.5
+      end if
+    end if
+  else
+    m_data = [1, 2, 3, 4, 5]
+    m_yScale = 5.0
+    m_centerVal = tmpMax / 2
+    tmpStartDate = gRock.m_date.getDateInt()
+  end if
+  if integerp(argForceEndDate) then
+    tmpDiff = tmpStartDate + m_data.count - 1 - argForceEndDate
+    if tmpDiff > 0 then
+      repeat with n = 1 to tmpDiff
+        m_data.deleteAt(m_data.count)
+      end repeat
+    else
+      tmpVal = m_data[m_data.count]
+      repeat with n = 1 to -tmpDiff
+        m_data.add(tmpVal)
+      end repeat
+    end if
+  end if
+  if m_yScale = 0 then
+    m_yScale = 1.0
+  end if
+  tmpStartDate = tmpStartDate + 1
+  m_dataStartAndEndDates = [tmpStartDate, tmpStartDate + m_data.count - 1]
+  m_displayMode = #line
+end
+
+on getValueOfDate me, argDate
+  if (argDate < m_dataStartAndEndDates[1]) or (argDate > (m_dataStartAndEndDates[2] + 1)) then
+    return VOID
+  end if
+  if argDate = (m_dataStartAndEndDates[2] + 1) then
+    val = m_data[m_data.count]
+  else
+    val = m_data[argDate - m_dataStartAndEndDates[1] + 1]
+  end if
+  val = m_data[m_data.count]
+  if m_legendFormat = #integer then
+    return integer(val)
+  else
+    if m_legendFormat = #Percent then
+      val = convValToRange(val, [0.0, 0.33000000000000002], [0.0, 1.0])
+      return string(convFloatToPercent(val, 0)) & "%"
+    end if
+  end if
+  return val
+end
+
+on getName me
+  return m_name
+end
+
+on draw me, argWholeViewStartAndEndDates, argRedrawRect, argRedrawDates, argImage
+  realStartAndEndDates = argRedrawDates.duplicate()
+  if m_displayMode = #Bar then
+    realStartAndEndDates[2] = realStartAndEndDates[2] + 1
+  else
+    if m_displayMode = #line then
+      realStartAndEndDates[2] = realStartAndEndDates[2] + 1
+    end if
+  end if
+  tmpDataToDisplay = 1
+  if m_dataStartAndEndDates[1] > realStartAndEndDates[1] then
+    if m_dataStartAndEndDates[1] > realStartAndEndDates[2] then
+      tmpDataToDisplay = 0
+    else
+      realStartAndEndDates[1] = m_dataStartAndEndDates[1]
+    end if
+  end if
+  if m_dataStartAndEndDates[2] < realStartAndEndDates[2] then
+    if m_dataStartAndEndDates[2] < realStartAndEndDates[1] then
+      tmpDataToDisplay = 0
+    else
+      realStartAndEndDates[2] = m_dataStartAndEndDates[2]
+    end if
+  end if
+  blitOffset = point(0, 0)
+  argRedrawRect[2] = 0
+  argRedrawRect[4] = argImage.rect[4]
+  dayWidth = m_agenda.m_pixelsPerDay
+  tmpLastLoc = VOID
+  if tmpDataToDisplay then
+    repeat with tmpDate = realStartAndEndDates[1] to realStartAndEndDates[2]
+      tmpLocH = m_agenda.dateToLocH(tmpDate)
+      tmpIndex = tmpDate - m_dataStartAndEndDates[1] + 1
+      if tmpIndex < 1 then
+        pott("Err graph index < 1", m_name)
+        next repeat
+      end if
+      tmpLocV = m_zeroAt - (m_data[tmpIndex] * m_pixPerV)
+      tmpLoc = point(tmpLocH, integer(tmpLocV)) + blitOffset
+      if (tmpLoc[2] >= blitOffset[2]) and (tmpLoc[2] < (blitOffset[2] + m_channel.m_size[2])) then
+        if voidp(tmpLastLoc) then
+          tmpLastLoc = tmpLoc
+        end if
+        if m_displayMode = #line then
+          argImage.draw(tmpLastLoc, tmpLoc, m_clr)
+        else
+          if m_displayMode = #Bar then
+            tmpRect = rect(tmpLastLoc[1] + 1, tmpLoc[2], tmpLoc[1], m_channel.m_viewRect[4]) + rect(-dayWidth / 2, 0, -dayWidth / 2, 0)
+            argImage.fill(tmpRect, [#shapeType: #rect, #color: m_clr])
+          else
+            argImage.setPixel(tmpLoc, m_clr)
+          end if
+        end if
+      end if
+      tmpLastLoc = tmpLoc
+    end repeat
+  end if
+end
+
+on setViewRect me, argRect
+  tmpSpaceOverAndUnder = [5, 0]
+  tmpSize = getRectSize(argRect) + point(0, -(tmpSpaceOverAndUnder[1] + tmpSpaceOverAndUnder[2]))
+  tmpViewYRange = [0.0, float(m_yScale)]
+  m_pixPerV = float(tmpSize[2]) / (tmpViewYRange[2] - tmpViewYRange[1])
+  m_zeroAt = float(tmpSize[2]) + tmpSpaceOverAndUnder[1]
+end

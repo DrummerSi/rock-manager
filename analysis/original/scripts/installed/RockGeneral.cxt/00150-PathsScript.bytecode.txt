@@ -1,0 +1,589 @@
+property m_delim, m_paths, m_alternativePaths
+
+on new me
+  [  0] pushcons 0 .............................. <"\\">
+  [  2] setprop 374 ............................. m_delim = "\\"
+  [  5] getmovieprop 55 ......................... <the runMode>
+  [  8] pushcons 8 .............................. <"Projector">
+  [ 10] eq ...................................... <the runMode = "Projector">
+  [ 11] pushcons 16 ............................. <"\\\\resurs\\">
+  [ 13] getmovieprop 2185 ....................... <the moviePath>
+  [ 16] pusharglist 2 ........................... <"\\\\resurs\\", the moviePath>
+  [ 18] extcall 384 ............................. <offset("\\\\resurs\\", the moviePath)>
+  [ 21] and ..................................... <(the runMode = "Projector") and offset("\\\\resurs\\", the moviePath)>
+  [ 22] jmpifz [ 25] ............................ if (the runMode = "Projector") and offset("\\\\resurs\\", the moviePath) then
+  [ 25] getglobal 9 ............................. <gSystem>
+  [ 27] getobjprop 3204 ......................... <gSystem.m_CDPath>
+  [ 30] pushsymb 138 ............................ <#char>
+  [ 33] pushint8 1 .............................. <1>
+  [ 36] pushint8 10 ............................. <10>
+  [ 39] pusharglist 4 ........................... <gSystem.m_CDPath, #char, 1, 10>
+  [ 41] objcall 113 ............................. <gSystem.m_CDPath.char[1..10]>
+  [ 44] setlocal 0 .............................. tmpCheck = gSystem.m_CDPath.char[1..10]
+  [ 46] pushint8 2 .............................. <2>
+  [ 49] setlocal 8 .............................. dirCnt = 2
+  [ 51] getlocal 0 .............................. <tmpCheck>
+  [ 53] pushsymb 138 ............................ <#char>
+  [ 56] pushint8 1 .............................. <1>
+  [ 59] pushint8 2 .............................. <2>
+  [ 62] pusharglist 4 ........................... <tmpCheck, #char, 1, 2>
+  [ 64] objcall 113 ............................. <tmpCheck.char[1..2]>
+  [ 67] pushcons 24 ............................. <"\\\\">
+  [ 69] eq ...................................... <tmpCheck.char[1..2] = "\\\\">
+  [ 70] jmpifz [ 81] ............................ if tmpCheck.char[1..2] = "\\\\" then
+  [ 73] getlocal 8 .............................. <dirCnt>
+  [ 75] pushint8 2 .............................. <2>
+  [ 78] add ..................................... <dirCnt + 2>
+  [ 79] setlocal 8 .............................. dirCnt = dirCnt + 2
+  [ 81] pushint8 1 .............................. <1>
+  [ 84] setlocal 16
+  [ 86] getlocal 16
+  [ 88] getlocal 0 .............................. <tmpCheck>
+  [ 90] getobjprop 135 .......................... <tmpCheck.length>
+  [ 93] lteq
+  [ 94] jmpifz [161] ............................ repeat with n = 1 to tmpCheck.length
+  [ 97] getlocal 0 .............................. <tmpCheck>
+  [ 99] pushsymb 138 ............................ <#char>
+  [102] getlocal 16 ............................. <n>
+  [104] pusharglist 3 ........................... <tmpCheck, #char, n>
+  [106] objcall 113 ............................. <tmpCheck.char[n]>
+  [109] pushcons 32 ............................. <"\\">
+  [111] eq ...................................... <tmpCheck.char[n] = "\\">
+  [112] jmpifz [150] ............................ if tmpCheck.char[n] = "\\" then
+  [115] getlocal 8 .............................. <dirCnt>
+  [117] pushint8 1 .............................. <1>
+  [120] sub ..................................... <dirCnt - 1>
+  [121] setlocal 8 .............................. dirCnt = dirCnt - 1
+  [123] getlocal 8 .............................. <dirCnt>
+  [125] pushzero ................................ <0>
+  [126] eq ...................................... <dirCnt = 0>
+  [127] jmpifz [150] ............................ if dirCnt = 0 then
+  [130] getlocal 0 .............................. <tmpCheck>
+  [132] pushsymb 138 ............................ <#char>
+  [135] pushint8 1 .............................. <1>
+  [138] getlocal 16 ............................. <n>
+  [140] pusharglist 4 ........................... <tmpCheck, #char, 1, n>
+  [142] objcall 113 ............................. <tmpCheck.char[1..n]>
+  [145] setlocal 0 .............................. tmpCheck = tmpCheck.char[1..n]
+  [147] jmp [161] ............................... exit repeat
+  [150] pushint8 1
+  [153] getlocal 16
+  [155] add
+  [156] setlocal 16
+  [158] endrepeat [ 86]
+  [161] pushint8 1 .............................. <1>
+  [164] setlocal 16
+  [166] getlocal 16
+  [168] pushint8 4 .............................. <4>
+  [171] get 8 ................................... <the number of castLibs>
+  [173] lteq
+  [174] jmpifz [209] ............................ repeat with n = 1 to the number of castLibs
+  [177] getlocal 0 .............................. <tmpCheck>
+  [179] getlocal 16 ............................. <n>
+  [181] pusharglist 1 ........................... <n>
+  [183] extcall 3219 ............................ <castLib(n)>
+  [186] getobjprop 469 .......................... <castLib(n).fileName>
+  [189] pusharglist 2 ........................... <tmpCheck, castLib(n).fileName>
+  [191] extcall 384 ............................. <offset(tmpCheck, castLib(n).fileName)>
+  [194] not ..................................... <not offset(tmpCheck, castLib(n).fileName)>
+  [195] jmpifz [198] ............................ if not offset(tmpCheck, castLib(n).fileName) then
+  [198] pushint8 1
+  [201] getlocal 16
+  [203] add
+  [204] setlocal 16
+  [206] endrepeat [166]
+  [209] getmovieprop 55 ......................... <the runMode>
+  [212] pushcons 40 ............................. <"Author">
+  [214] eq ...................................... <the runMode = "Author">
+  [215] jmpifz [225] ............................ if the runMode = "Author" then / else
+  [218] pushcons 48 ............................. <"C:\\Documents and Settings\\Administrat\u009Ar\\Application Data\\Rock Manager\\">
+  [220] setlocal 24 ............................. tmpUserPath = "C:\\Documents and Settings\\Administrat\u009Ar\\Application Data\\Rock Manager\\"
+  [222] jmp [232]
+  [225] getglobal 9 ............................. <gSystem>
+  [227] getobjprop 3200 ......................... <gSystem.m_projectPath>
+  [230] setlocal 24 ............................. tmpUserPath = gSystem.m_projectPath
+  [232] getglobal 9 ............................. <gSystem>
+  [234] pushsymb 3220 ........................... <#m_userPath>
+  [237] pusharglist 2 ........................... <gSystem, #m_userPath>
+  [239] objcall 183 ............................. <gSystem.getaProp(#m_userPath)>
+  [242] pusharglist 1 ........................... <gSystem.getaProp(#m_userPath)>
+  [244] extcall 13 .............................. <stringp(gSystem.getaProp(#m_userPath))>
+  [246] jmpifz [279] ............................ if stringp(gSystem.getaProp(#m_userPath)) then
+  [249] getglobal 9 ............................. <gSystem>
+  [251] getobjprop 3220 ......................... <gSystem.m_userPath>
+  [254] setlocal 24 ............................. tmpUserPath = gSystem.m_userPath
+  [256] getlocal 24 ............................. <tmpUserPath>
+  [258] pushcons 56 ............................. <"\\Rock Manager">
+  [260] joinstr ................................. <tmpUserPath & "\\Rock Manager">
+  [261] setlocal 24 ............................. tmpUserPath = tmpUserPath & "\\Rock Manager"
+  [263] getlocal 24 ............................. <tmpUserPath>
+  [265] pushcons 64 ............................. <EMPTY>
+  [267] pushcons 72 ............................. <"\\Save">
+  [269] pushcons 80 ............................. <"\\Rendered">
+  [271] pusharglist 3 ........................... <[EMPTY, "\\Save", "\\Rendered"]>
+  [273] pushlist ................................ <[EMPTY, "\\Save", "\\Rendered"]>
+  [274] pusharglistnoret 2 ...................... <tmpUserPath, [EMPTY, "\\Save", "\\Rendered"]>
+  [276] extcall 3221 ............................ createFolders(tmpUserPath, [EMPTY, "\\Save", "\\Rendered"])
+  [279] pushcons 88 ............................. <"PROJECT">
+  [281] getglobal 9 ............................. <gSystem>
+  [283] getobjprop 3200 ......................... <gSystem.m_projectPath>
+  [286] pushcons 96 ............................. <"CD">
+  [288] getglobal 9 ............................. <gSystem>
+  [290] getobjprop 3204 ......................... <gSystem.m_CDPath>
+  [293] pushcons 104 ............................ <"SERVER">
+  [295] pushcons 112 ............................ <"\\\\resurs\\Monsterland\\_Projects\\Rockmanager\\">
+  [297] pushcons 120 ............................ <"USER">
+  [299] getlocal 24 ............................. <tmpUserPath>
+  [301] pusharglist 8 ........................... <["PROJECT": gSystem.m_projectPath, "CD": gSystem.m_CDPath, "SERVER": "\\\\resurs\\Monsterland\\_Projects\\Rockmanager\\", "USER": tmpUserPath]>
+  [303] pushproplist ............................ <["PROJECT": gSystem.m_projectPath, "CD": gSystem.m_CDPath, "SERVER": "\\\\resurs\\Monsterland\\_Projects\\Rockmanager\\", "USER": tmpUserPath]>
+  [304] setlocal 32 ............................. substitutes = ["PROJECT": gSystem.m_projectPath, "CD": gSystem.m_CDPath, "SERVER": "\\\\resurs\\Monsterland\\_Projects\\Rockmanager\\", "USER": tmpUserPath]
+  [306] getparam 0 .............................. <me>
+  [308] pushcons 128 ............................ <"FolderLayout">
+  [310] getmovieprop 55 ......................... <the runMode>
+  [313] joinstr ................................. <"FolderLayout" & the runMode>
+  [314] pusharglist 1 ........................... <"FolderLayout" & the runMode>
+  [316] extcall 56 .............................. <member("FolderLayout" & the runMode)>
+  [319] getobjprop 414 .......................... <member("FolderLayout" & the runMode).text>
+  [322] getlocal 32 ............................. <substitutes>
+  [324] getprop 374 ............................. <m_delim>
+  [327] pusharglist 4 ........................... <me, member("FolderLayout" & the runMode).text, substitutes, m_delim>
+  [329] objcall 3218 ............................ <me.generateFolderIDs(member("FolderLayout" & the runMode).text, substitutes, m_delim)>
+  [332] setprop 50 .............................. m_paths = me.generateFolderIDs(member("FolderLayout" & the runMode).text, substitutes, m_delim)
+  [335] getparam 0 .............................. <me>
+  [337] pusharglistnoret 1 ...................... <me>
+  [339] extcall 69 .............................. return me
+  [342] ret
+end
+
+on kill me
+  [  0] pushzero ................................ <0>
+  [  1] pusharglistnoret 1 ...................... <0>
+  [  3] extcall 69 .............................. return 0
+  [  6] ret
+end
+
+on getPath me, argWhich
+  [  0] getprop 50 .............................. <m_paths>
+  [  3] getparam 8 .............................. <argWhich>
+  [  5] pusharglist 2 ........................... <m_paths, argWhich>
+  [  7] objcall 119 ............................. <m_paths[argWhich]>
+  [ 10] pusharglistnoret 1 ...................... <m_paths[argWhich]>
+  [ 12] extcall 69 .............................. return m_paths[argWhich]
+  [ 15] ret
+end
+
+on findFileInOneOfPaths me, argFileName, argPathID
+  [  0] getparam 0 .............................. <me>
+  [  2] getparam 16 ............................. <argPathID>
+  [  4] pusharglist 2 ........................... <me, argPathID>
+  [  6] objcall 53 .............................. <me.getPath(argPathID)>
+  [  9] setlocal 0 .............................. tmpPath = me.getPath(argPathID)
+  [ 11] getlocal 0 .............................. <tmpPath>
+  [ 13] getparam 8 .............................. <argFileName>
+  [ 15] joinstr ................................. <tmpPath & argFileName>
+  [ 16] pusharglist 1 ........................... <tmpPath & argFileName>
+  [ 18] extcall 105 ............................. <fileExists2(tmpPath & argFileName)>
+  [ 21] jmpifz [ 31] ............................ if fileExists2(tmpPath & argFileName) then
+  [ 24] getlocal 0 .............................. <tmpPath>
+  [ 26] pusharglistnoret 1 ...................... <tmpPath>
+  [ 28] extcall 69 .............................. return tmpPath
+  [ 31] getprop 3226 ............................ <m_alternativePaths>
+  [ 34] getparam 16 ............................. <argPathID>
+  [ 36] pusharglist 2 ........................... <m_alternativePaths, argPathID>
+  [ 38] objcall 183 ............................. <m_alternativePaths.getaProp(argPathID)>
+  [ 41] setlocal 8 .............................. alternatives = m_alternativePaths.getaProp(argPathID)
+  [ 43] getlocal 8 .............................. <alternatives>
+  [ 45] pusharglist 1 ........................... <alternatives>
+  [ 47] extcall 115 ............................. <listp(alternatives)>
+  [ 50] not ..................................... <not listp(alternatives)>
+  [ 51] jmpifz [ 60] ............................ if not listp(alternatives) then
+  [ 54] pushzero ................................ <0>
+  [ 55] pusharglistnoret 1 ...................... <0>
+  [ 57] extcall 69 .............................. return 0
+  [ 60] pushint8 1 .............................. <1>
+  [ 63] setlocal 16
+  [ 65] getlocal 16
+  [ 67] getlocal 8 .............................. <alternatives>
+  [ 69] getobjprop 156 .......................... <alternatives.count>
+  [ 72] lteq
+  [ 73] jmpifz [118] ............................ repeat with n = 1 to alternatives.count
+  [ 76] getlocal 8 .............................. <alternatives>
+  [ 78] getlocal 16 ............................. <n>
+  [ 80] pusharglist 2 ........................... <alternatives, n>
+  [ 82] objcall 119 ............................. <alternatives[n]>
+  [ 85] setlocal 0 .............................. tmpPath = alternatives[n]
+  [ 87] getlocal 0 .............................. <tmpPath>
+  [ 89] getparam 8 .............................. <argFileName>
+  [ 91] joinstr ................................. <tmpPath & argFileName>
+  [ 92] pusharglist 1 ........................... <tmpPath & argFileName>
+  [ 94] extcall 105 ............................. <fileExists2(tmpPath & argFileName)>
+  [ 97] jmpifz [107] ............................ if fileExists2(tmpPath & argFileName) then
+  [100] getlocal 0 .............................. <tmpPath>
+  [102] pusharglistnoret 1 ...................... <tmpPath>
+  [104] extcall 69 .............................. return tmpPath
+  [107] pushint8 1
+  [110] getlocal 16
+  [112] add
+  [113] setlocal 16
+  [115] endrepeat [ 65]
+  [118] pushzero ................................ <0>
+  [119] pusharglistnoret 1 ...................... <0>
+  [121] extcall 69 .............................. return 0
+  [124] ret
+end
+
+on getAllAlternativePaths me, argPathID
+  [  0] getparam 0 .............................. <me>
+  [  2] getparam 8 .............................. <argPathID>
+  [  4] pusharglist 2 ........................... <me, argPathID>
+  [  6] objcall 53 .............................. <me.getPath(argPathID)>
+  [  9] setlocal 0 .............................. tmpPath = me.getPath(argPathID)
+  [ 11] getlocal 0 .............................. <tmpPath>
+  [ 13] pusharglist 1 ........................... <tmpPath>
+  [ 15] extcall 61 .............................. <voidp(tmpPath)>
+  [ 18] jmpifz [ 29] ............................ if voidp(tmpPath) then
+  [ 21] pusharglist 0 ........................... <[]>
+  [ 23] pushlist ................................ <[]>
+  [ 24] pusharglistnoret 1 ...................... <[]>
+  [ 26] extcall 69 .............................. return []
+  [ 29] getlocal 0 .............................. <tmpPath>
+  [ 31] pusharglist 1 ........................... <[tmpPath]>
+  [ 33] pushlist ................................ <[tmpPath]>
+  [ 34] setlocal 8 .............................. tmpPaths = [tmpPath]
+  [ 36] getprop 3226 ............................ <m_alternativePaths>
+  [ 39] getparam 8 .............................. <argPathID>
+  [ 41] pusharglist 2 ........................... <m_alternativePaths, argPathID>
+  [ 43] objcall 183 ............................. <m_alternativePaths.getaProp(argPathID)>
+  [ 46] setlocal 16 ............................. alternatives = m_alternativePaths.getaProp(argPathID)
+  [ 48] getlocal 16 ............................. <alternatives>
+  [ 50] pusharglist 1 ........................... <alternatives>
+  [ 52] extcall 61 .............................. <voidp(alternatives)>
+  [ 55] jmpifz [ 65] ............................ if voidp(alternatives) then
+  [ 58] getlocal 8 .............................. <tmpPaths>
+  [ 60] pusharglistnoret 1 ...................... <tmpPaths>
+  [ 62] extcall 69 .............................. return tmpPaths
+  [ 65] getlocal 8 .............................. <tmpPaths>
+  [ 67] getprop 3226 ............................ <m_alternativePaths>
+  [ 70] getparam 8 .............................. <argPathID>
+  [ 72] pusharglist 2 ........................... <m_alternativePaths, argPathID>
+  [ 74] objcall 183 ............................. <m_alternativePaths.getaProp(argPathID)>
+  [ 77] pusharglistnoret 2 ...................... <tmpPaths, m_alternativePaths.getaProp(argPathID)>
+  [ 79] extcall 288 ............................. mergeLists(tmpPaths, m_alternativePaths.getaProp(argPathID))
+  [ 82] getlocal 8 .............................. <tmpPaths>
+  [ 84] pusharglistnoret 1 ...................... <tmpPaths>
+  [ 86] extcall 69 .............................. return tmpPaths
+  [ 89] ret
+end
+
+on generateFolderIDs me, argStructureStr, argSubstitutes, argFolderDelimiter
+  [  0] getparam 8 .............................. <argStructureStr>
+  [  2] pushint8 4 .............................. <4>
+  [  5] get 1 ................................... <the number of lines in argStructureStr>
+  [  7] setlocal 0 .............................. numLines = the number of lines in argStructureStr
+  [  9] getparam 24 ............................. <argFolderDelimiter>
+  [ 11] pusharglist 1 ........................... <argFolderDelimiter>
+  [ 13] extcall 61 .............................. <voidp(argFolderDelimiter)>
+  [ 16] jmpifz [ 23] ............................ if voidp(argFolderDelimiter) then
+  [ 19] pushcons 136 ............................ <"\\">
+  [ 21] setparam 24 ............................. argFolderDelimiter = "\\"
+  [ 23] getparam 16 ............................. <argSubstitutes>
+  [ 25] pusharglist 1 ........................... <argSubstitutes>
+  [ 27] extcall 115 ............................. <listp(argSubstitutes)>
+  [ 30] not ..................................... <not listp(argSubstitutes)>
+  [ 31] jmpifz [ 39] ............................ if not listp(argSubstitutes) then
+  [ 34] pusharglist 0 ........................... <[:]>
+  [ 36] pushproplist ............................ <[:]>
+  [ 37] setparam 16 ............................. argSubstitutes = [:]
+  [ 39] pushint8 1 .............................. <1>
+  [ 42] setlocal 8
+  [ 44] getlocal 8
+  [ 46] getparam 16 ............................. <argSubstitutes>
+  [ 48] getobjprop 156 .......................... <argSubstitutes.count>
+  [ 51] lteq
+  [ 52] jmpifz [132] ............................ repeat with n = 1 to argSubstitutes.count
+  [ 55] getparam 16 ............................. <argSubstitutes>
+  [ 57] getlocal 8 .............................. <n>
+  [ 59] pusharglist 2 ........................... <argSubstitutes, n>
+  [ 61] objcall 119 ............................. <argSubstitutes[n]>
+  [ 64] setlocal 16 ............................. path = argSubstitutes[n]
+  [ 66] getlocal 16 ............................. <path>
+  [ 68] pushsymb 138 ............................ <#char>
+  [ 71] getlocal 16 ............................. <path>
+  [ 73] getobjprop 135 .......................... <path.length>
+  [ 76] pusharglist 3 ........................... <path, #char, path.length>
+  [ 78] objcall 113 ............................. <path.char[path.length]>
+  [ 81] getparam 24 ............................. <argFolderDelimiter>
+  [ 83] eq ...................................... <path.char[path.length] = argFolderDelimiter>
+  [ 84] jmpifz [121] ............................ if path.char[path.length] = argFolderDelimiter then
+  [ 87] pushint8 2 .............................. <2>
+  [ 90] pushchunkvarref 5 ....................... <numLines>
+  [ 92] pushsymb 138 ............................ <#char>
+  [ 95] getlocal 16 ............................. <path>
+  [ 97] getobjprop 135 .......................... <path.length>
+  [100] pusharglist 3 ........................... <numLines, #char, path.length>
+  [102] objcall 416 ............................. <numLines.char[path.length]>
+  [105] pusharglistnoret 1 ...................... <numLines.char[path.length]>
+  [107] objcall 417 ............................. delete numLines.char[path.length]
+  [110] getparam 16 ............................. <argSubstitutes>
+  [112] getlocal 8 .............................. <n>
+  [114] getlocal 16 ............................. <path>
+  [116] pusharglistnoret 3 ...................... <argSubstitutes, n, path>
+  [118] objcall 353 ............................. argSubstitutes[n] = path
+  [121] pushint8 1
+  [124] getlocal 8
+  [126] add
+  [127] setlocal 8
+  [129] endrepeat [ 44]
+  [132] pusharglist 0 ........................... <[]>
+  [134] pushlist ................................ <[]>
+  [135] setlocal 24 ............................. currentPath = []
+  [137] pusharglist 0 ........................... <[:]>
+  [139] pushproplist ............................ <[:]>
+  [140] setlocal 32 ............................. idSorted = [:]
+  [142] pusharglist 0 ........................... <[:]>
+  [144] pushproplist ............................ <[:]>
+  [145] setprop 3226 ............................ m_alternativePaths = [:]
+  [148] pusharglist 0 ........................... <[:]>
+  [150] pushproplist ............................ <[:]>
+  [151] setlocal 40 ............................. structure = [:]
+  [153] getlocal 40 ............................. <structure>
+  [155] setlocal 48 ............................. lst = structure
+  [157] pushzero ................................ <0>
+  [158] setlocal 56 ............................. indent = 0
+  [160] pushint8 1 .............................. <1>
+  [163] setlocal 64
+  [165] getlocal 64
+  [167] getlocal 0 .............................. <numLines>
+  [169] lteq
+  [170] jmpifz [671] ............................ repeat with lineNr = 1 to numLines
+  [173] getparam 8 .............................. <argStructureStr>
+  [175] pushsymb 395 ............................ <#line>
+  [178] getlocal 64 ............................. <lineNr>
+  [180] pusharglist 3 ........................... <argStructureStr, #line, lineNr>
+  [182] objcall 113 ............................. <argStructureStr.line[lineNr]>
+  [185] setlocal 72 ............................. tmpLine = argStructureStr.line[lineNr]
+  [187] getlocal 72 ............................. <tmpLine>
+  [189] pushsymb 396 ............................ <#word>
+  [192] pushint8 1 .............................. <1>
+  [195] pusharglist 3 ........................... <tmpLine, #word, 1>
+  [197] objcall 113 ............................. <tmpLine.word[1]>
+  [200] setlocal 80 ............................. tmpWord1 = tmpLine.word[1]
+  [202] getlocal 80 ............................. <tmpWord1>
+  [204] getobjprop 135 .......................... <tmpWord1.length>
+  [207] pushzero ................................ <0>
+  [208] eq ...................................... <tmpWord1.length = 0>
+  [209] jmpifz [215] ............................ if tmpWord1.length = 0 then
+  [212] jmp [660] ............................... next repeat
+  [215] getlocal 80 ............................. <tmpWord1>
+  [217] getlocal 72 ............................. <tmpLine>
+  [219] pusharglist 2 ........................... <tmpWord1, tmpLine>
+  [221] extcall 384 ............................. <offset(tmpWord1, tmpLine)>
+  [224] setlocal 88 ............................. tmpNewIndent = offset(tmpWord1, tmpLine)
+  [226] pushcons 144 ............................ <":">
+  [228] getlocal 72 ............................. <tmpLine>
+  [230] pusharglist 2 ........................... <":", tmpLine>
+  [232] extcall 384 ............................. <offset(":", tmpLine)>
+  [235] setlocal 96 ............................. tmpOff = offset(":", tmpLine)
+  [237] getlocal 72 ............................. <tmpLine>
+  [239] pushsymb 138 ............................ <#char>
+  [242] getlocal 88 ............................. <tmpNewIndent>
+  [244] getlocal 96 ............................. <tmpOff>
+  [246] pushint8 1 .............................. <1>
+  [249] sub ..................................... <tmpOff - 1>
+  [250] pusharglist 4 ........................... <tmpLine, #char, tmpNewIndent, tmpOff - 1>
+  [252] objcall 113 ............................. <tmpLine.char[tmpNewIndent..tmpOff - 1]>
+  [255] pushcons 152 ............................ <" ">
+  [257] pusharglist 2 ........................... <tmpLine.char[tmpNewIndent..tmpOff - 1], " ">
+  [259] extcall 2087 ............................ <trimStringFromChars(tmpLine.char[tmpNewIndent..tmpOff - 1], " ")>
+  [262] setlocal 104 ............................ folderName = trimStringFromChars(tmpLine.char[tmpNewIndent..tmpOff - 1], " ")
+  [264] getlocal 72 ............................. <tmpLine>
+  [266] pushsymb 138 ............................ <#char>
+  [269] getlocal 96 ............................. <tmpOff>
+  [271] pushint8 1 .............................. <1>
+  [274] add ..................................... <tmpOff + 1>
+  [275] getlocal 72 ............................. <tmpLine>
+  [277] getobjprop 135 .......................... <tmpLine.length>
+  [280] pusharglist 4 ........................... <tmpLine, #char, tmpOff + 1, tmpLine.length>
+  [282] objcall 113 ............................. <tmpLine.char[tmpOff + 1..tmpLine.length]>
+  [285] pushcons 160 ............................ <" ">
+  [287] pusharglist 2 ........................... <tmpLine.char[tmpOff + 1..tmpLine.length], " ">
+  [289] extcall 2087 ............................ <trimStringFromChars(tmpLine.char[tmpOff + 1..tmpLine.length], " ")>
+  [292] setlocal 112 ............................ idName = trimStringFromChars(tmpLine.char[tmpOff + 1..tmpLine.length], " ")
+  [294] pushzero ................................ <0>
+  [295] setlocal 120 ............................ tryNr = 0
+  [297] pushcons 168 ............................ <"_TRY">
+  [299] getlocal 112 ............................ <idName>
+  [301] pusharglist 2 ........................... <"_TRY", idName>
+  [303] extcall 384 ............................. <offset("_TRY", idName)>
+  [306] setlocal 128 ............................ tmpTryOff = offset("_TRY", idName)
+  [308] getlocal 128 ............................ <tmpTryOff>
+  [310] jmpifz [366] ............................ if tmpTryOff then
+  [313] getlocal 112 ............................ <idName>
+  [315] pushsymb 138 ............................ <#char>
+  [318] getlocal 128 ............................ <tmpTryOff>
+  [320] pushint8 4 .............................. <4>
+  [323] add ..................................... <tmpTryOff + 4>
+  [324] getlocal 112 ............................ <idName>
+  [326] getobjprop 135 .......................... <idName.length>
+  [329] pusharglist 4 ........................... <idName, #char, tmpTryOff + 4, idName.length>
+  [331] objcall 113 ............................. <idName.char[tmpTryOff + 4..idName.length]>
+  [334] pusharglist 1 ........................... <idName.char[tmpTryOff + 4..idName.length]>
+  [336] extcall 116 ............................. <value(idName.char[tmpTryOff + 4..idName.length])>
+  [339] setlocal 120 ............................ tryNr = value(idName.char[tmpTryOff + 4..idName.length])
+  [341] pushint8 14 ............................. <14>
+  [344] pushchunkvarref 5 ....................... <n>
+  [346] pushsymb 138 ............................ <#char>
+  [349] getlocal 128 ............................ <tmpTryOff>
+  [351] getlocal 112 ............................ <idName>
+  [353] getobjprop 135 .......................... <idName.length>
+  [356] pusharglist 4 ........................... <n, #char, tmpTryOff, idName.length>
+  [358] objcall 416 ............................. <n.char[tmpTryOff..idName.length]>
+  [361] pusharglistnoret 1 ...................... <n.char[tmpTryOff..idName.length]>
+  [363] objcall 417 ............................. delete n.char[tmpTryOff..idName.length]
+  [366] getlocal 88 ............................. <tmpNewIndent>
+  [368] getlocal 56 ............................. <indent>
+  [370] lteq .................................... <tmpNewIndent <= indent>
+  [371] jmpifz [450] ............................ if tmpNewIndent <= indent then
+  [374] getlocal 40 ............................. <structure>
+  [376] setlocal 48 ............................. lst = structure
+  [378] pushint8 1 .............................. <1>
+  [381] setlocal 8
+  [383] getlocal 8
+  [385] getlocal 88 ............................. <tmpNewIndent>
+  [387] pushint8 1 .............................. <1>
+  [390] sub ..................................... <tmpNewIndent - 1>
+  [391] lteq
+  [392] jmpifz [416] ............................ repeat with n = 1 to tmpNewIndent - 1
+  [395] getlocal 48 ............................. <lst>
+  [397] getlocal 8 .............................. <n>
+  [399] pusharglist 2 ........................... <lst, n>
+  [401] objcall 119 ............................. <lst[n]>
+  [404] setlocal 48 ............................. lst = lst[n]
+  [406] pushint8 1
+  [409] getlocal 8
+  [411] add
+  [412] setlocal 8
+  [414] endrepeat [383]
+  [416] getlocal 88 ............................. <tmpNewIndent>
+  [418] setlocal 8
+  [420] getlocal 8
+  [422] getlocal 56 ............................. <indent>
+  [424] lteq
+  [425] jmpifz [450] ............................ repeat with n = tmpNewIndent to indent
+  [428] getlocal 24 ............................. <currentPath>
+  [430] getlocal 24 ............................. <currentPath>
+  [432] getobjprop 156 .......................... <currentPath.count>
+  [435] pusharglistnoret 2 ...................... <currentPath, currentPath.count>
+  [437] objcall 221 ............................. currentPath.deleteAt(currentPath.count)
+  [440] pushint8 1
+  [443] getlocal 8
+  [445] add
+  [446] setlocal 8
+  [448] endrepeat [420]
+  [450] pusharglist 0 ........................... <[:]>
+  [452] pushproplist ............................ <[:]>
+  [453] setlocal 136 ............................ tmpSub = [:]
+  [455] getlocal 136 ............................ <tmpSub>
+  [457] pushzero ................................ <0>
+  [458] getlocal 112 ............................ <idName>
+  [460] pusharglistnoret 3 ...................... <tmpSub, 0, idName>
+  [462] objcall 309 ............................. tmpSub.addProp(0, idName)
+  [465] getlocal 48 ............................. <lst>
+  [467] getlocal 104 ............................ <folderName>
+  [469] getlocal 136 ............................ <tmpSub>
+  [471] pusharglistnoret 3 ...................... <lst, folderName, tmpSub>
+  [473] objcall 309 ............................. lst.addProp(folderName, tmpSub)
+  [476] getlocal 136 ............................ <tmpSub>
+  [478] setlocal 48 ............................. lst = tmpSub
+  [480] getparam 16 ............................. <argSubstitutes>
+  [482] getlocal 104 ............................ <folderName>
+  [484] pusharglist 2 ........................... <argSubstitutes, folderName>
+  [486] objcall 183 ............................. <argSubstitutes.getaProp(folderName)>
+  [489] setlocal 144 ............................ substitute = argSubstitutes.getaProp(folderName)
+  [491] getlocal 144 ............................ <substitute>
+  [493] pusharglist 1 ........................... <substitute>
+  [495] extcall 13 .............................. <stringp(substitute)>
+  [497] jmpifz [512] ............................ if stringp(substitute) then / else
+  [500] getlocal 24 ............................. <currentPath>
+  [502] getlocal 144 ............................ <substitute>
+  [504] pusharglistnoret 2 ...................... <currentPath, substitute>
+  [506] objcall 229 ............................. currentPath.add(substitute)
+  [509] jmp [521]
+  [512] getlocal 24 ............................. <currentPath>
+  [514] getlocal 104 ............................ <folderName>
+  [516] pusharglistnoret 2 ...................... <currentPath, folderName>
+  [518] objcall 229 ............................. currentPath.add(folderName)
+  [521] pushcons 176 ............................ <EMPTY>
+  [523] setlocal 152 ............................ pathStr = EMPTY
+  [525] pushint8 1 .............................. <1>
+  [528] setlocal 8
+  [530] getlocal 8
+  [532] getlocal 24 ............................. <currentPath>
+  [534] getobjprop 156 .......................... <currentPath.count>
+  [537] lteq
+  [538] jmpifz [569] ............................ repeat with n = 1 to currentPath.count
+  [541] getlocal 152 ............................ <pathStr>
+  [543] getlocal 24 ............................. <currentPath>
+  [545] getlocal 8 .............................. <n>
+  [547] pusharglist 2 ........................... <currentPath, n>
+  [549] objcall 119 ............................. <currentPath[n]>
+  [552] joinstr ................................. <pathStr & currentPath[n]>
+  [553] getparam 24 ............................. <argFolderDelimiter>
+  [555] joinstr ................................. <pathStr & currentPath[n] & argFolderDelimiter>
+  [556] setlocal 152 ............................ pathStr = pathStr & currentPath[n] & argFolderDelimiter
+  [558] pushint8 1
+  [561] getlocal 8
+  [563] add
+  [564] setlocal 8
+  [566] endrepeat [530]
+  [569] getlocal 112 ............................ <idName>
+  [571] pusharglist 1 ........................... <idName>
+  [573] extcall 267 ............................. <symbol(idName)>
+  [576] setlocal 160 ............................ ID = symbol(idName)
+  [578] getlocal 120 ............................ <tryNr>
+  [580] pushzero ................................ <0>
+  [581] eq ...................................... <tryNr = 0>
+  [582] jmpifz [599] ............................ if tryNr = 0 then / else
+  [585] getlocal 32 ............................. <idSorted>
+  [587] getlocal 160 ............................ <ID>
+  [589] getlocal 152 ............................ <pathStr>
+  [591] pusharglistnoret 3 ...................... <idSorted, ID, pathStr>
+  [593] objcall 309 ............................. idSorted.addProp(ID, pathStr)
+  [596] jmp [656]
+  [599] getprop 3226 ............................ <m_alternativePaths>
+  [602] getlocal 160 ............................ <ID>
+  [604] pusharglist 2 ........................... <m_alternativePaths, ID>
+  [606] objcall 183 ............................. <m_alternativePaths.getaProp(ID)>
+  [609] setlocal 168 ............................ tmp = m_alternativePaths.getaProp(ID)
+  [611] getlocal 168 ............................ <tmp>
+  [613] pusharglist 1 ........................... <tmp>
+  [615] extcall 61 .............................. <voidp(tmp)>
+  [618] jmpifz [645] ............................ if voidp(tmp) then
+  [621] pusharglist 0 ........................... <[:]>
+  [623] pushproplist ............................ <[:]>
+  [624] setlocal 168 ............................ tmp = [:]
+  [626] getlocal 168 ............................ <tmp>
+  [628] pusharglistnoret 1 ...................... <tmp>
+  [630] objcall 609 ............................. tmp.sort()
+  [633] getprop 3226 ............................ <m_alternativePaths>
+  [636] getlocal 160 ............................ <ID>
+  [638] getlocal 168 ............................ <tmp>
+  [640] pusharglistnoret 3 ...................... <m_alternativePaths, ID, tmp>
+  [642] objcall 309 ............................. m_alternativePaths.addProp(ID, tmp)
+  [645] getlocal 168 ............................ <tmp>
+  [647] getlocal 120 ............................ <tryNr>
+  [649] getlocal 152 ............................ <pathStr>
+  [651] pusharglistnoret 3 ...................... <tmp, tryNr, pathStr>
+  [653] objcall 309 ............................. tmp.addProp(tryNr, pathStr)
+  [656] getlocal 88 ............................. <tmpNewIndent>
+  [658] setlocal 56 ............................. indent = tmpNewIndent
+  [660] pushint8 1
+  [663] getlocal 64
+  [665] add
+  [666] setlocal 64
+  [668] endrepeat [165]
+  [671] getlocal 32 ............................. <idSorted>
+  [673] pusharglistnoret 1 ...................... <idSorted>
+  [675] extcall 69 .............................. return idSorted
+  [678] ret
+end

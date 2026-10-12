@@ -1,0 +1,47 @@
+property Action, reportObj
+global gUseful, gAssets
+
+on new me, argReportObj, argAction
+  reportObj = argReportObj
+  Action = argAction
+  gUseful.idleTimer.addObject(me)
+  return me
+end
+
+on kill me
+  gUseful.idleTimer.deleteObject(me)
+  reportObj = 0
+  Action = 0
+  return 0
+end
+
+on timeTick me
+  tmpIlk = ilk(Action)
+  if objectp(reportObj) then
+    reportObj.Report(me, #wait, Action)
+  else
+    if tmpIlk = #string then
+      do(Action)
+    else
+      if tmpIlk = #propList then
+        tmpType = Action[#type]
+        case tmpType of
+          #goMovie:
+            go(1, Action.getaProp(tmpType))
+        end case
+      else
+        if tmpIlk = #list then
+          if Action[1] = #goMovie then
+            go(1, Action[2])
+            gUseful.mouseObjects.activate(1)
+          else
+            if Action[1] = #call then
+              call(Action[2], Action[3])
+            end if
+          end if
+        end if
+      end if
+    end if
+  end if
+  kill(me)
+end

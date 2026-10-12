@@ -1,0 +1,94 @@
+property mouseObj, cnt, reportObj, myText, ID, displaying, myLoc, options, Active
+global gUseful
+
+on new me, argReportObj, argRectOrSPOrMember, argID, argLoc, argOptions
+  reportObj = argReportObj
+  options = argOptions
+  ID = argID
+  tmpUseOwnMouse = 1
+  myLoc = argLoc
+  if listp(options) then
+    tmpUseOwnMouse = getaProp(options, #UseOwnMouseObj)
+  end if
+  if tmpUseOwnMouse then
+    tmp = ilk(argRectOrSPOrMember)
+    if tmp = #rect then
+      tmpRect = argRectOrSPOrMember
+    else
+      if tmp = #member then
+        tmpRect = getMemberRect(argRectOrSPOrMember)
+      else
+        if tmp = #string then
+          tmpRect = getMemberRect(member(argRectOrSPOrMember))
+        else
+          if tmp = #integer then
+            tmpRect = the rect of sprite argRectOrSPOrMember
+          end if
+        end if
+      end if
+    end if
+    mouseObj = new(script("MouseObject"), me, tmpRect, [#layer: 1000, #PassButton: 1])
+  end if
+  Active = 1
+  displaying = 0
+  return me
+end
+
+on kill me
+  if objectp(mouseObj) then
+    mouseObj = kill(mouseObj)
+  end if
+  deleteObject(gUseful.frameTimer, me)
+  reportObj = 0
+  return 0
+end
+
+on setLoc me, argLoc
+  myLoc = argLoc
+end
+
+on setRect me, argRect
+  mouseObj.myRect = argRect
+end
+
+on activate me, argIsTRUE
+  Active = argIsTRUE
+  activate(mouseObj, argIsTRUE)
+end
+
+on timeTick me
+  if cnt then
+    cnt = cnt - 1
+    if cnt = 0 then
+      displaying = 1
+      if objectp(reportObj) then
+        Report(reportObj, me, #display, 1)
+      end if
+      deleteObject(gUseful.frameTimer, me)
+    end if
+  end if
+end
+
+on mouse me, argObj, argWhat
+  if not Active then
+    exit
+  end if
+  if argWhat = #enter then
+    addObject(gUseful.frameTimer, me)
+    cnt = 10
+  else
+    if argWhat = #Leave then
+      if displaying then
+        if objectp(reportObj) then
+          Report(reportObj, me, #display, 0)
+        end if
+        cnt = 0
+      end if
+      deleteObject(gUseful.frameTimer, me)
+    end if
+  end if
+end
+
+on setText me, argStr
+  myText = argStr
+end

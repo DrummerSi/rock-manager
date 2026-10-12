@@ -1,0 +1,44 @@
+on iniStrToPropList argStr, argIgnoreComments
+  wholeLst = [:]
+  numLines = the number of lines in argStr
+  repeat with lineNr = 1 to numLines
+    tmpLine = argStr.line[lineNr]
+    if tmpLine.char[1] = numToChar(10) then
+      delete wholeLst.char[1]
+    end if
+    if tmpLine.length = 0 then
+      next repeat
+    end if
+    if argIgnoreComments = 1 then
+      if tmpLine.char[1] = ";" then
+        next repeat
+      end if
+    end if
+    if tmpLine.char[1] = "[" then
+      category = tmpLine.char[2..tmpLine.length - 1]
+      lst = [:]
+      wholeLst.addProp(symbol(category), lst)
+      next repeat
+    end if
+    tmpOff = offset("=", tmpLine)
+    if not tmpOff then
+      next repeat
+    end if
+    prop = tmpLine.char[1..tmpOff - 1]
+    lst.addProp(symbol(prop), tmpLine.char[tmpOff + 1..tmpLine.length])
+  end repeat
+  return wholeLst
+end
+
+on propListToIniStr argPropList
+  str = EMPTY
+  repeat with propNr = 1 to argPropList.count
+    prop = argPropList.getPropAt(propNr)
+    str = str & "[" & string(prop) & "]" & RETURN
+    lst = argPropList[propNr]
+    repeat with n = 1 to lst.count
+      str = str & string(lst.getPropAt(n)) & "=" & string(lst[n]) & RETURN
+    end repeat
+  end repeat
+  return str
+end

@@ -1,0 +1,226 @@
+property m_classInfoObj
+global gRock, gClassManager
+
+on new me, argClassInfoObj
+  m_classInfoObj = argClassInfoObj
+  return me
+end
+
+on export me, argWhichClasses, argOutFilename
+  if objectp(gRock) then
+    gClassManager = gRock.m_classManager
+  end if
+  if voidp(argWhichClasses) then
+    argWhichClasses = []
+    repeat with classNr = 1 to gClassManager.m_objsByClass.count
+      argWhichClasses.add(gClassManager.m_objsByClass.getPropAt(classNr))
+    end repeat
+    argWhichClasses = [#RealMusician]
+  end if
+  if voidp(argOutFilename) then
+    argOutFilename = the moviePath & "TestOut2.txt"
+  end if
+  str = EMPTY
+  axis = [1, 2]
+  numTabsBeforeDataStart = 6
+  currentLoc = point(1, 1)
+  arrayPtr = []
+  repeat with classNr = 1 to argWhichClasses.count
+    className = argWhichClasses[classNr]
+    instances = gClassManager.getObjsOfClass(className)
+    if not listp(instances) then
+      next repeat
+    end if
+    if instances.count = 0 then
+      next repeat
+    end if
+    propsToExport = m_classInfoObj.getPropsWithInfoCriteria([className])
+    if voidp(propsToExport.getaProp(#ID)) then
+      tmp = [#ID: 0]
+      mergeLists(tmp, propsToExport)
+      propsToExport = tmp
+    end if
+    currentLoc[axis[1]] = 1
+    setValInMultiDimensionArray(arrayPtr, currentLoc, className)
+    currentLoc[axis[2]] = currentLoc[axis[2]] + 1
+    tmpLoc = currentLoc.duplicate()
+    tmpLoc[axis[1]] = 2
+    numProps = tmpLoc[axis[2]]
+    me.xportSub(propsToExport, arrayPtr, tmpLoc, axis)
+    numProps = tmpLoc[axis[2]] - numProps
+    currentLoc[axis[1]] = numTabsBeforeDataStart
+    repeat with instNr = 1 to instances.count
+      instance = instances[instNr]
+      currentLoc[axis[1]] = currentLoc[axis[1]] + 1
+      me.xportSubInstance(instance, propsToExport, arrayPtr, currentLoc.duplicate(), axis)
+    end repeat
+    currentLoc[axis[2]] = currentLoc[axis[2]] + numProps + 2
+    pott(className, "OK")
+  end repeat
+  str = TwoDArrayToStr(arrayPtr)
+  str = assertPCNewLine(str)
+  pott("Insert LF")
+  writeFile(argOutFilename, str)
+  pott("Done")
+end
+
+on xportSub me, argProps, argArrayPtr, argLoc, argAxis
+  repeat with propNr = 1 to argProps.count
+    prop = argProps.getPropAt(propNr)
+    subProps = argProps[propNr]
+    if listp(subProps) then
+      setValInMultiDimensionArray(argArrayPtr, argLoc, prop)
+      argLoc[argAxis[2]] = argLoc[argAxis[2]] + 1
+      argLoc[argAxis[1]] = argLoc[argAxis[1]] + 1
+      me.xportSub(subProps, argArrayPtr, argLoc, argAxis)
+      argLoc[argAxis[1]] = argLoc[argAxis[1]] - 1
+      next repeat
+    end if
+    if stringp(prop) then
+      repeat while 1
+        tmpOff = offset(RETURN, prop)
+        if tmpOff then
+          put "\n" into propNr.char[tmpOff]
+          next repeat
+        end if
+        exit repeat
+      end repeat
+    end if
+    setValInMultiDimensionArray(argArrayPtr, argLoc, prop)
+    argLoc[argAxis[2]] = argLoc[argAxis[2]] + 1
+  end repeat
+end
+
+on xportSubInstance me, argObj, argProps, argArrayPtr, argLoc, argAxis
+  repeat with propNr = 1 to argProps.count
+    prop = argProps.getPropAt(propNr)
+    subProps = argProps[propNr]
+    val = getPropFromObjOrAncestor(argObj, prop)
+    if listp(subProps) then
+      argLoc[argAxis[2]] = argLoc[argAxis[2]] + 1
+      me.xportSubInstance(val, subProps, argArrayPtr, argLoc, argAxis)
+      next repeat
+    end if
+    setValInMultiDimensionArray(argArrayPtr, argLoc, string(val))
+    argLoc[argAxis[2]] = argLoc[argAxis[2]] + 1
+  end repeat
+end
+
+on exportObjsByMission me, argClasses, argFileOut, argOnlyTheseMisNrsList
+  allClassesByMission = [:]
+  repeat with className in argClasses
+    byMission = me.sortObjsByMission(className)
+    repeat with n = 1 to byMission.count
+      misNr = byMission.getPropAt(n)
+      objs = byMission[n]
+      if objs.count = 0 then
+        next repeat
+      end if
+      tmp = allClassesByMission.getaProp(misNr)
+      if voidp(tmp) then
+        tmp = [:]
+        allClassesByMission.addProp(misNr, tmp)
+      end if
+      tmp.addProp(className, objs)
+    end repeat
+  end repeat
+  ext = fileGetExtension(argFileOut)
+  path = fileExtractPath(argFileOut)
+  stripped = fileStripName(argFileOut)
+  repeat with n = 1 to allClassesByMission.count
+    misNr = allClassesByMission.getPropAt(n)
+    if listp(argOnlyTheseMisNrsList) then
+      if argOnlyTheseMisNrsList.getPos(misNr) = 0 then
+        next repeat
+      end if
+    end if
+    classesAndObjs = allClassesByMission[n]
+    me.exportObjs(classesAndObjs, path & stripped & convItoS(misNr, 2) & "." & ext)
+  end repeat
+end
+
+on exportObjs me, argClassAndObjs, argOutFilename
+  str = EMPTY
+  axis = [1, 2]
+  numTabsBeforeDataStart = 6
+  currentLoc = point(1, 1)
+  arrayPtr = []
+  repeat with classNr = 1 to argClassAndObjs.count
+    className = argClassAndObjs.getPropAt(classNr)
+    instances = argClassAndObjs[classNr]
+    if not listp(instances) then
+      next repeat
+    end if
+    if instances.count = 0 then
+      next repeat
+    end if
+    propsToExport = m_classInfoObj.getPropsWithInfoCriteria([className])
+    if voidp(propsToExport.getaProp(#ID)) then
+      tmp = [#ID: 0]
+      mergeLists(tmp, propsToExport)
+      propsToExport = tmp
+    end if
+    currentLoc[axis[1]] = 1
+    setValInMultiDimensionArray(arrayPtr, currentLoc, className)
+    currentLoc[axis[2]] = currentLoc[axis[2]] + 1
+    tmpLoc = currentLoc.duplicate()
+    tmpLoc[axis[1]] = 2
+    numProps = tmpLoc[axis[2]]
+    me.xportSub(propsToExport, arrayPtr, tmpLoc, axis)
+    numProps = tmpLoc[axis[2]] - numProps
+    currentLoc[axis[1]] = numTabsBeforeDataStart
+    repeat with instNr = 1 to instances.count
+      instance = instances[instNr]
+      currentLoc[axis[1]] = currentLoc[axis[1]] + 1
+      me.xportSubInstance(instance, propsToExport, arrayPtr, currentLoc.duplicate(), axis)
+    end repeat
+    currentLoc[axis[2]] = currentLoc[axis[2]] + numProps + 2
+    pott(className, "OK")
+  end repeat
+  str = TwoDArrayToStr(arrayPtr)
+  str = assertPCNewLine(str)
+  pott("Insert LF")
+  writeFile(argOutFilename, str)
+  pott("Done")
+end
+
+on sortObjsByMission me, argClass
+  if objectp(gRock) then
+    gClassManager = gRock.m_classManager
+  end if
+  objs = gClassManager.getObjsOfClass(argClass)
+  maxMisOffsets = [#EventCard: 5, #EventCardOKCancel: 5, #EventCardMulti: 4, #EventCardChangeVal: 5, #Trigger: 3]
+  argMaxMisOffset = maxMisOffsets.getaProp(argClass)
+  if voidp(argMaxMisOffset) then
+    return [0: objs]
+  end if
+  perMission = [:]
+  searchFor = "Mis"
+  repeat with obj in objs
+    missionNr = 0
+    IDStr = string(obj.ID)
+    tmpOff = offset(searchFor, IDStr)
+    if tmpOff <= argMaxMisOffset then
+      tmpOff = tmpOff + searchFor.length
+      lastNumeric = 0
+      repeat with chNr = tmpOff to tmpOff + 4
+        ch = IDStr.char[chNr]
+        if (ch >= "0") and (ch <= "9") then
+          lastNumeric = chNr
+          next repeat
+        end if
+        exit repeat
+      end repeat
+      if lastNumeric > 0 then
+        missionNr = value(IDStr.char[tmpOff..lastNumeric])
+      end if
+    end if
+    thisMissionObjs = perMission.getaProp(missionNr)
+    if voidp(thisMissionObjs) then
+      thisMissionObjs = []
+      perMission.setaProp(missionNr, thisMissionObjs)
+    end if
+    thisMissionObjs.add(obj)
+  end repeat
+  return perMission
+end

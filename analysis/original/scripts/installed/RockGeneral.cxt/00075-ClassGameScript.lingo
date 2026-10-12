@@ -1,0 +1,52 @@
+property ancestor, child, className, belongsTo, _killed, DeadPeopleIDs, UsedUpIDs, Vars
+global gRock
+
+on new me, argChild, argBelongsTo
+  if objectp(argChild) then
+    child = argChild
+  else
+    child = me
+  end if
+  belongsTo = argBelongsTo
+  ancestor = script("ClassConcreteScript").new(child)
+  className = #Game
+  DeadPeopleIDs = []
+  UsedUpIDs = []
+  Vars = [:]
+  return me
+end
+
+on kill me
+  _killed = 1
+  if objectp(ancestor) then
+    ancestor = ancestor.kill()
+  end if
+  child = 0
+  belongsTo = 0
+  return 0
+end
+
+on load me, argList
+  repeat with tmpID in DeadPeopleIDs
+    human_r = gRock.m_classManager.getObjByIDAndClass(tmpID, #Human)
+    human_r.Alive = 0
+  end repeat
+end
+
+on save me
+  return [:]
+end
+
+on zzgetIsUsedUpID me, argID
+  return UsedUpIDs.getPos(argID) > 0
+end
+
+on getIsDiscarded me, argID
+  return UsedUpIDs.getPos(argID) > 0
+end
+
+on discard me, argID
+  if me.getIsDiscarded(argID) = 0 then
+    UsedUpIDs.add(argID)
+  end if
+end

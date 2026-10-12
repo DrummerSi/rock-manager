@@ -1,0 +1,303 @@
+property m_daysPerMonth, m_leapYears, m_date, m_format, m_langDef, m_wholeDaysLeftUntilEndOf, m_dayZeroDate
+
+on new me
+  m_langDef = [:]
+  m_daysPerMonth = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
+  m_leapYears = [4: 1, 100: -1, 400: 1]
+  m_format = [#year: 0, #month: 1, #day: 1, #Hour: 0, #min: 0, #Sec: 0]
+  m_date = m_format.duplicate()
+  me.setLanguage(#Swedish)
+  me.setDayZeroDate([#year: 2000, #month: 1, #day: 1])
+  return me
+end
+
+on kill me
+  return 0
+end
+
+on setLanguage me, argDef
+  if listp(argDef) then
+    m_langDef = argDef
+  else
+    if argDef = #English then
+      m_langDef = [#Days: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"], #Months: [#short: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"], #long: ["January", "February", "Mars", "April", "May", "June", "July", "August", "September", "October", "November", "December"]]]
+    else
+      if argDef = #Swedish then
+        m_langDef = [#Days: ["Mndag", "Tisdag", "Onsdag", "Torsdag", "Fredag", "Lrdag", "Sndag"], #Months: [#short: ["Jan", "Feb", "Mar", "Apr", "Maj", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dec"], #long: ["Januari", "Februari", "Mars", "April", "Maj", "Juni", "Juli", "Augusti", "September", "Oktober", "November", "December"]]]
+      end if
+    end if
+  end if
+end
+
+on setStrings me, argWhat, argStrOrList
+  if stringp(argStrOrList) then
+    tmpNumWords = the number of words in argStrOrList
+    lst = []
+    repeat with n = 1 to tmpNumWords
+      lst.add(argStrOrList.word[n])
+    end repeat
+    argStrOrList = lst
+  end if
+  if argWhat = #All then
+    m_langDef = argStrOrList
+  else
+    listSetByPath(m_langDef, argWhat, argStrOrList)
+  end if
+end
+
+on duplicate me
+  obj = script("DateScript").new()
+  obj.m_date = m_date.duplicate()
+  return obj
+end
+
+on convDaysSinceDayZeroToDate me, argDays
+  tmp = m_date.duplicate()
+  me.add(argDays)
+  tmp2 = m_date.duplicate()
+  m_date = tmp
+  return tmp2
+end
+
+on setDayZeroDate me, argList
+  m_dayZeroDate = argList.duplicate()
+end
+
+on getDaysSinceDayZero me, argList
+  if voidp(argList) then
+    argList = m_date
+  end if
+  return me.getDaysBetween(m_dayZeroDate, argList)
+end
+
+on getDateAsList me
+  return m_date.duplicate()
+end
+
+on setDate me, argList
+  repeat with n = 1 to m_format.count()
+    tmpProp = m_format.getPropAt(n)
+    tmpVal = argList.getaProp(tmpProp)
+    if voidp(tmpVal) then
+      m_date[tmpProp] = m_format[n]
+      next repeat
+    end if
+    m_date[tmpProp] = tmpVal
+  end repeat
+  me.calcWholeDaysLeft()
+end
+
+on calcWholeDaysLeft me, argDate
+  if voidp(argDate) then
+    argDate = m_date
+  end if
+  wholeDaysLeft = [:]
+  repeat with n = 1 to m_format.count()
+    tmp = m_format.getPropAt(n)
+    if voidp(argDate[tmp]) then
+      argDate[tmp] = m_format[n]
+    end if
+    case tmp of
+      #month:
+        tmpTot = 0
+        repeat with m = argDate[#month] + 1 to 12
+          tmpTot = tmpTot + m_daysPerMonth[m]
+        end repeat
+        wholeDaysLeft[tmp] = tmpTot
+      #day:
+        wholeDaysLeft[tmp] = m_daysPerMonth[argDate[#month]] - argDate[#day] - 1
+    end case
+  end repeat
+  m_wholeDaysLeftUntilEndOf = [:]
+  m_wholeDaysLeftUntilEndOf[#year] = wholeDaysLeft[#month] + wholeDaysLeft[#day]
+  m_wholeDaysLeftUntilEndOf[#month] = wholeDaysLeft[#day]
+end
+
+on setOutputFormat me
+end
+
+on getLingoDate me, argDate
+  if voidp(argDate) then
+    argDate = m_date
+  end if
+  return date(argDate[#year], argDate[#month], argDate[#day])
+end
+
+on getDateStr me, argFormat, argDate
+  if stringp(argFormat) then
+    if voidp(argDate) then
+      argDate = m_date
+    end if
+    dateStr = argFormat
+    tmpOff = offset("D", argFormat)
+    if tmpOff then
+      repeat with n = tmpOff + 1 to argFormat.length
+        if argFormat.char[n] <> "D" then
+          exit repeat
+        end if
+      end repeat
+      numChars = n - tmpOff
+      if numChars > 1 then
+        str = convItoS(argDate[#day], numChars)
+      else
+        str = string(argDate[#day])
+      end if
+      put str into dateStr.char[tmpOff..n - 1]
+    end if
+    tmpOff = offset("M", argFormat)
+    if tmpOff then
+      repeat with n = tmpOff + 1 to argFormat.length
+        if argFormat.char[n] <> "M" then
+          exit repeat
+        end if
+      end repeat
+      numChars = n - tmpOff
+      if numChars >= 4 then
+        str = m_langDef[#Months][#long][argDate[#month]]
+      else
+        if numChars = 3 then
+          str = m_langDef[#Months][#short][argDate[#month]]
+        else
+          if numChars > 1 then
+            str = convItoS(argDate[#month], numChars)
+          else
+            str = string(argDate[#month])
+          end if
+        end if
+      end if
+      put str into dateStr.char[tmpOff..n - 1]
+    end if
+    tmpOff = offset("Y", argFormat)
+    if tmpOff then
+      repeat with n = tmpOff + 1 to argFormat.length
+        if argFormat.char[n] <> "Y" then
+          exit repeat
+        end if
+      end repeat
+      numChars = n - tmpOff
+      if numChars > 2 then
+        str = convItoS(argDate[#year], numChars)
+      else
+        str = string(argDate[#year])
+        str = str.char[str.length - 1..str.length]
+      end if
+      put str into dateStr.char[tmpOff..n - 1]
+    end if
+  end if
+  return dateStr
+end
+
+on add me, argDateObjOrDays
+  if integerp(argDateObjOrDays) then
+    m_date[#day] = m_date[#day] + argDateObjOrDays
+    tmp = me.getDaysInMonth()
+    if m_date[#day] > tmp then
+      m_date[#day] = m_date[#day] - tmp
+      m_date[#month] = m_date[#month] + 1
+      if m_date[#month] > 12 then
+        m_date[#month] = 1
+        m_date[#year] = m_date[#year] + 1
+      end if
+    end if
+  else
+    if listp(argDateObjOrDays) then
+    else
+      if objectp(argDateObjOrDays) then
+      end if
+    end if
+  end if
+end
+
+on subtract me, argDateObjOrDays
+end
+
+on getDaysInMonth me
+  tmp = m_daysPerMonth[m_date[#month]]
+  if m_date[#month] = 2 then
+    if isLeapYear(m_date[#year]) then
+      return tmp - 1
+    end if
+  end if
+  return tmp
+end
+
+on getDaysBetween me, argTime1, argTime2
+  tmpDate1 = me.getLingoDate(argTime1)
+  tmpDate2 = me.getLingoDate(argTime2)
+  return tmpDate2 - tmpDate1
+  Secs = 0
+  me.calcWholeDaysLeft(argTime1)
+  secsSinceMonthStart1 = argTime1[#Sec] + (argTime1[#min] * 60) + (argTime1[#Hour] * 60 * 60) + (argTime1[#day] * 60 * 60 * 24)
+  secsSinceMonthStart2 = argTime2[#Sec] + (argTime2[#min] * 60) + (argTime2[#Hour] * 60 * 60) + (argTime2[#day] * 60 * 60 * 24)
+  tmpDiff = argTime2 - argTime1
+  diffInDays = 0
+  if tmpDiff[#year] = 0 then
+    if tmpDiff[#month] = 0 then
+      diffInSecs = secsSinceMonthStart2 - secsSinceMonthStart1
+      diffInDays = diffInSecs / (60 * 60 * 24)
+      Secs = diffInSecs - diffInDays
+    else
+      diffInDays = m_wholeDaysLeftUntilEndOf[#month]
+      tmpTot = 0
+      repeat with m = argTime1[#month] + 1 to argTime2[#month] - 1
+        tmpTot = tmpTot + m_daysPerMonth[m]
+      end repeat
+      diffInDays = diffInDays + tmpTot + argTime2[#day]
+    end if
+  else
+    diffInDays = m_wholeDaysLeftUntilEndOf[#year]
+    tmpTot = 0
+    repeat with m = 1 to argTime2[#month] - 1
+      tmpTot = tmpTot + m_daysPerMonth[m]
+    end repeat
+    diffInDays = diffInDays + tmpTot + argTime2[#day]
+    if tmpDiff[#year] >= 2 then
+      diffInDays = diffInDays + ((tmpDiff[#year] - 1) * 365)
+    end if
+  end if
+  diffInDays = diffInDays + me.getNumLeapYrs(argTime1, argTime2)
+  return diffInDays
+end
+
+on getNumLeapYrs me, argStartDate, argEndDate
+  totPassings = 0
+  repeat with n = 1 to m_leapYears.count()
+    tmp = m_leapYears.getPropAt(n)
+    tmpPass = (argEndDate[#year] / tmp) - (argStartDate[#year] / tmp)
+    totPassings = totPassings + (tmpPass * m_leapYears[n])
+  end repeat
+  if me.isLeapYear(argStartDate[#year]) then
+    tmpPassedThis = 0
+    if argStartDate[#month] <= 2 then
+      if argStartDate[#day] <= 28 then
+        if argStartDate[#year] = argEndDate[#year] then
+          if argEndDate[#month] > 2 then
+            return 1
+          else
+            return 0
+          end if
+        else
+          tmpPassedThis = 1
+        end if
+      end if
+    end if
+    if tmpPassedThis = 0 then
+      totPassings = totPassings - 1
+    end if
+  end if
+  if me.isLeapYear(argEndDate[#year]) then
+    if argEndDate[#month] <= 2 then
+      totPassings = totPassings - 1
+    end if
+  end if
+  return totPassings
+end
+
+on isLeapYear me, argYear
+  repeat with n = m_leapYears.count() down to 1
+    if (argYear mod m_leapYears.getPropAt(n)) = 0 then
+      return m_leapYears[n] > 0
+    end if
+  end repeat
+  return 0
+end

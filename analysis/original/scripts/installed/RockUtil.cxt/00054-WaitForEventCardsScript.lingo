@@ -1,0 +1,44 @@
+property m_callBackInfo, m_maxNumOpen, m_openOverWhat
+global gUseful, gRock, gDir
+
+on new me, argMaxNumOpen, argOpenOverWhat, argCallBackInfo
+  m_maxNumOpen = argMaxNumOpen
+  m_openOverWhat = argOpenOverWhat
+  m_callBackInfo = argCallBackInfo
+  if voidp(m_callBackInfo) then
+    m_callBackInfo = [:]
+  end if
+  gUseful.frameTimer.addObject(me)
+  return me
+end
+
+on kill me
+  gUseful.frameTimer.deleteObject(me)
+  m_openOverWhat = 0
+  m_callBackInfo = 0
+  return 0
+end
+
+on checkAnyCardsUpOrComing me
+  waitingECs = gRock.m_eventCardsManager.getWaiting()
+  if objectp(m_openOverWhat) then
+    tmp = gDir.m_objDialogsMaster.getDialogsOver(m_openOverWhat)
+    numOpen = tmp.count
+  else
+    numOpen = gDir.m_objDialogsMaster.getNumOpen()
+  end if
+  return (numOpen > m_maxNumOpen) or (waitingECs.count > 0)
+end
+
+on timeTick me
+  if me.checkAnyCardsUpOrComing() = 0 then
+    if objectp(m_callBackInfo[#object]) then
+      tmpHandler = m_callBackInfo[#handler]
+      if voidp(tmpHandler) then
+        tmpHandler = #callback
+      end if
+      call(tmpHandler, m_callBackInfo[#object], me, #Ok)
+      gUseful.frameTimer.deleteObject(me)
+    end if
+  end if
+end

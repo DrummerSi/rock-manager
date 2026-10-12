@@ -1,0 +1,146 @@
+property m_delim, m_projectPath, m_exePath, m_CDPath, m_HDPath, m_foundCD, m_prefs, m_userPath, m_searchPaths
+
+on new me, argUniqueFilesOnCDList
+  m_delim = "\"
+  m_projectPath = the moviePath
+  m_HDPath = the moviePath
+  m_exePath = EMPTY
+  m_foundCD = 0
+  m_prefs = [:]
+  m_searchPaths = [:]
+  if voidp(argUniqueFilesOnCDList) then
+    argUniqueFilesOnCDList = [["Movies\Main.dir", "Movies\Main.dxr"]]
+  end if
+  if the runMode = "Author" then
+    m_CDPath = me.getCDPath(argUniqueFilesOnCDList)
+    if m_CDPath = 0 then
+      m_CDPath = the moviePath
+    end if
+  else
+    m_projectPath = fileExtractPath(the applicationPath)
+    m_CDPath = me.getCDPath(argUniqueFilesOnCDList)
+  end if
+  m_userPath = me.getUserPath()
+  return me
+end
+
+on kill me
+  return 0
+end
+
+on getCDPath me, argUniqueFilesOnCDList
+  if argUniqueFilesOnCDList.count = 0 then
+    m_foundCD = 0
+    return 0
+  end if
+  tmp = me.findFilesInDriveRoots(argUniqueFilesOnCDList)
+  if stringp(tmp) then
+    m_foundCD = 1
+    return tmp
+  end if
+  tmp = me.findFilesOverFolder(argUniqueFilesOnCDList, the moviePath)
+  if stringp(tmp) then
+    return tmp
+  end if
+  tmp = me.findFilesInSubFolders(argUniqueFilesOnCDList, the moviePath)
+  if stringp(tmp) then
+    return tmp
+  end if
+  return 0
+end
+
+on findFilesInDriveRoots me, argFindFiles
+  repeat with n = charToNum("C") to charToNum("Z")
+    tmpCh = numToChar(n)
+    tmpDrive = tmpCh & ":\"
+    if me.checkForFilesInFolder(argFindFiles, tmpDrive) then
+      return tmpDrive
+    end if
+  end repeat
+  return 0
+end
+
+on findFilesOverFolder me, argFindFiles, argPath
+  repeat with n = argPath.length - 1 down to 3
+    tmpCh = argPath.char[n]
+    if tmpCh = m_delim then
+      tmpTestPath = argPath.char[1..n]
+      if me.checkForFilesInFolder(argFindFiles, tmpTestPath, 1) then
+        return tmpTestPath
+      end if
+    end if
+  end repeat
+  return 0
+end
+
+on findFilesInSubFolders me, argFindFiles, argPath
+  tmpFilesAndFolders = getFilesInFolder(argPath)
+  repeat with tmpFileOrFolder in tmpFilesAndFolders
+    isFolder = offset(".", tmpFileOrFolder) = 0
+    if isFolder then
+      tmpTestPath = argPath & tmpFileOrFolder & m_delim
+      if me.checkForFilesInFolder(argFindFiles, tmpTestPath) then
+        return tmpTestPath
+      end if
+    end if
+  end repeat
+  return 0
+end
+
+on checkForFilesInFolder me, argFileList, argFolder, argDebug
+  if argFolder.char[argFolder.length] <> m_delim then
+    argFolder = argFolder & m_delim
+  end if
+  repeat with sublist in argFileList
+    if listp(sublist) then
+      tmpOK = 0
+      repeat with tmpFile in sublist
+        if fileExists2(argFolder & tmpFile) then
+          tmpOK = 1
+          exit repeat
+        end if
+      end repeat
+      if tmpOK = 0 then
+        return 0
+      end if
+    end if
+  end repeat
+  return 1
+end
+
+on getUserPath me, argKey, argValue
+  if voidp(argKey) then
+    argKey = "HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\Shell Folders"
+  end if
+  if voidp(argValue) then
+    argValue = "AppData"
+  end if
+  userPath = ReadRegistryValue(argKey, argValue)
+  if not stringp(userPath) then
+    alert("Unable to find user info!")
+    return EMPTY
+  end if
+  return userPath
+end
+
+on resolveSearchPaths me, argList
+  if voidp(argList) then
+    argList = m_searchPaths.duplicate()
+  end if
+  replaceList = ["<CD>", m_CDPath, "<PROJECT>", m_projectPath]
+  repeat with n = 1 to argList.count
+    str = argList[n]
+    tmpStart = offset("<", str)
+    if tmpStart then
+      tmpEnd = offset(">", str)
+      tmpReplaceThis = str.char[tmpStart..tmpEnd]
+      tmpPos = replaceList.getPos(tmpReplaceThis)
+      if tmpPos then
+        put replaceList[tmpPos + 1] into replaceList.char[tmpStart..tmpEnd]
+        argList[n] = str
+      end if
+    end if
+  end repeat
+  the searchCurrentFolder = 0
+  the searchPaths = argList
+end

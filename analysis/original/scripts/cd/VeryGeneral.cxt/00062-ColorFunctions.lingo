@@ -1,0 +1,207 @@
+on RGBAToInt argRGBA
+  return (argRGBA[4] * 16777216) + argRGBA[3] + (argRGBA[2] * 256) + (argRGBA[1] * 65536)
+end
+
+on RGBToInt argRGB
+  return argRGB.blue + (argRGB.green * 256) + (argRGB.red * 65536)
+end
+
+on HexRGBToInt argStr
+  return RGBToInt(rgb(argStr))
+end
+
+on intToRGBA argInt
+  rgba = []
+  if argInt < 0 then
+    argInt = bitAnd(argInt, 2147483647)
+    rgba[4] = 128 + bitAnd(argInt / 16777216, 255)
+  else
+    rgba[4] = bitAnd(argInt / 16777216, 255)
+  end if
+  rgba[1] = bitAnd(argInt / 65536, 255)
+  rgba[2] = bitAnd(argInt / 256, 255)
+  rgba[3] = bitAnd(argInt, 255)
+  return rgba
+  rgba = [0, 0, 0, 0]
+  fact = integer(power(2, 24))
+  if argInt < 0 then
+    argInt = integer(float(argInt) - power(2, 31))
+    a = 128 + (argInt / fact)
+    argInt = argInt - (argInt / fact * fact)
+  else
+    a = argInt / fact
+    argInt = argInt - (a * fact)
+  end if
+  rgba[4] = a
+  repeat with n = 1 to 3
+    fact = fact / 256
+    rgba[n] = argInt / fact
+    argInt = argInt - (rgba[n] * fact)
+  end repeat
+  return rgba
+end
+
+on rgb2hsb rgb
+  hsb = [0, 0, 0]
+  posList = [0, 0, 0]
+  maxPos = 0
+  minPos = 0
+  max = 0
+  min = 255
+  repeat with n = 1 to rgb.count
+    tmpVal = rgb[n]
+    if tmpVal > max then
+      maxPos = n
+      max = tmpVal
+    end if
+    if tmpVal < min then
+      min = tmpVal
+      minPos = n
+    end if
+  end repeat
+  posList[maxPos] = 1
+  posList[minPos] = -1
+  maxDiff = max - min
+  hsb[3] = 100 * max / 255
+  if max = 0 then
+    hsb[2] = 0
+  else
+    hsb[2] = integer(100 * (float(maxDiff) / max))
+  end if
+  if maxDiff > 0 then
+    tmpAng = (maxPos - 1) * 120
+    midPos = posList.getPos(0)
+    midPercentBetweenMinNMax = float(rgb[midPos] - min) / maxDiff
+    if (maxPos = 1) and (midPos = 3) then
+      midPos = 0
+    else
+      if (maxPos = 3) and (midPos = 1) then
+        midPos = 4
+      end if
+    end if
+    if midPos > maxPos then
+      tmpAng = tmpAng + (midPercentBetweenMinNMax * 60)
+    else
+      tmpAng = tmpAng - (midPercentBetweenMinNMax * 60)
+    end if
+    hsb[1] = integer(tmpAng + 360) mod 360
+  else
+    hsb[1] = 0
+  end if
+  return hsb
+end
+
+on hsb2rgb hsb
+  rgb = [0, 0, 0]
+  posList = [-1, -1, -1]
+  max = 255 * hsb[3] / 100
+  maxDiff = hsb[2] * max / 100
+  min = max - maxDiff
+  tmp = hsb[1] / 120.0
+  tmpInt = integer(tmp)
+  tmpPart = tmp - tmpInt
+  tmpInt = tmpInt + 1
+  if tmpInt = 4 then
+    tmpInt = 1
+    tmpPart = tmpPart
+  end if
+  posList[tmpInt] = 1
+  if tmpPart < 0 then
+    if tmpInt = 1 then
+      posList[3] = 0
+    else
+      posList[tmpInt - 1] = 0
+    end if
+  else
+    if tmpInt = 3 then
+      posList[1] = 0
+    else
+      posList[tmpInt + 1] = 0
+    end if
+  end if
+  tmpPart = abs(tmpPart) * 2
+  rgb[posList.getPos(1)] = max
+  rgb[posList.getPos(-1)] = min
+  rgb[posList.getPos(0)] = min + (tmpPart * maxDiff)
+  return rgb
+end
+
+on rgb2cmyk argRGB
+  c = 100 - (100 * argRGB[1] / 255)
+  m = 100 - (100 * argRGB[2] / 255)
+  Y = 100 - (100 * argRGB[3] / 255)
+  K = c
+  if m < K then
+    K = m
+  end if
+  if Y < K then
+    K = Y
+  end if
+  c = c - K
+  m = m - K
+  Y = Y - K
+  return [c, m, Y, K]
+end
+
+on cmyk2rgb argCMYK
+  r = 255 - integer(2.54999999999999982 * (argCMYK[1] + argCMYK[4]))
+  if r < 0 then
+    r = 0
+  end if
+  G = 255 - integer(2.54999999999999982 * (argCMYK[2] + argCMYK[4]))
+  if G < 0 then
+    G = 0
+  end if
+  b = 255 - integer(2.54999999999999982 * (argCMYK[3] + argCMYK[4]))
+  if b < 0 then
+    b = 0
+  end if
+  return [r, G, b]
+end
+
+on hsb2rgb2 hsb
+  H = hsb[1]
+  s = hsb[2]
+  L = hsb[3]
+  if s > 0 then
+    nH = H / 60
+    nl = L
+    nS = s
+    lH = nH.integer
+    nF = nH - lH
+    nP = nl * (1 - nS)
+    nQ = nl * (1 - (nS * nF))
+    nT = nl * (1 - (nS * (1 - nF)))
+    case lH of
+      0:
+        r = nl * 255
+        G = nT * 255
+        b = nP * 255
+      1:
+        r = nQ * 255
+        G = nl * 255
+        b = nP * 255
+      2:
+        r = nP * 255
+        G = nl * 255
+        b = nT * 255
+      3:
+        r = nP * 255
+        G = nQ * 255
+        b = nl * 255
+      4:
+        r = nT * 255
+        G = nP * 255
+        b = nl * 255
+      5:
+        r = nl * 255
+        G = nP * 255
+        b = nQ * 255
+    end case
+  else
+    r = L * 255 / 100
+    G = r
+    b = r
+  end if
+  return [r, G, b]
+end

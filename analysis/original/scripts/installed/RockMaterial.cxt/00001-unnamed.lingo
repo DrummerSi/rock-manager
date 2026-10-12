@@ -1,0 +1,172 @@
+on xxxDlgReplace
+  searchStr = "DlgRockData"
+  membs = findMembers("Dlg*Data", [#Casts: ["RockMaterial"]], #members)
+  newID = "#Fond"
+  repeat with n = 1 to membs.count()
+    tmpMemb = membs[n]
+    str = tmpMemb.text
+    tmpPath = findInListAsStr(searchStr, str)
+    if not listp(tmpPath) then
+      next repeat
+    end if
+    tmpList = str.value
+    repeat with m = tmpPath.count() down to 2
+      tmpProp = tmpPath[m]
+      if symbolp(tmpProp) then
+        tmpList = tmpList.getaProp(tmpProp)
+        next repeat
+      end if
+      tmpList = tmpList[tmpProp]
+    end repeat
+    if listp(tmpList) then
+      if tmpList.getaProp(tmpPath[1]) = searchStr then
+        tmpOldID = "#" & string(tmpList[#ID])
+        put "Old id: " & tmpOldID
+        if tmpOldID = newID then
+          tmpOldID = VOID
+        end if
+      end if
+    end if
+    if not voidp(tmpOldID) then
+      tmpAnythingChanged = 0
+      repeat while 1
+        tmpOff = offset(tmpOldID, str)
+        if tmpOff then
+          put newID into searchStr.char[tmpOff..tmpOff + the length of tmpOldID - 1]
+          tmpAnythingChanged = 1
+          next repeat
+        end if
+        exit repeat
+      end repeat
+      if tmpAnythingChanged then
+        tmpList = value(str)
+        if listp(tmpList) then
+          tmpMemb.text = str
+          put "Changed " & tmpMemb.name
+        end if
+      end if
+    end if
+  end repeat
+end
+
+on makeSureStrMatch argSearchStr, argStr, argOffset
+  tmpCharBefore = argStr.char[argOffset - 1]
+  if (tmpCharBefore <> ",") and (tmpCharBefore <> "[") and (tmpCharBefore <> QUOTE) and (tmpCharBefore <> "#") and (tmpCharBefore <> " ") then
+    return 0
+  end if
+  tmpCharAfter = argStr.char[argOffset + argSearchStr.length]
+  if (tmpCharAfter <> ",") and (tmpCharAfter <> "]") and (tmpCharAfter <> QUOTE) then
+    return 0
+  end if
+  return argOffset
+end
+
+on findInListAsStr argSearchStr, argListAsStr
+  tmpOff = offset(argSearchStr, argListAsStr)
+  if tmpOff then
+    tmpOff = makeSureStrMatch(argSearchStr, argListAsStr, tmpOff)
+  end if
+  if tmpOff then
+    tmpPropEnd = 0
+    tmpLvl = 1
+    tmpProps = []
+    tmpIndex = 1
+    tmpCharBefore = argListAsStr.char[tmpOff - 1]
+    tmpInsideQuotes = tmpCharBefore = QUOTE
+    repeat with m = tmpOff - 1 down to 1
+      ch = argListAsStr.char[m]
+      if tmpInsideQuotes then
+        if ch = QUOTE then
+          tmpInsideQuotes = 0
+        end if
+        next repeat
+      end if
+      if ch = "[" then
+        if tmpPropEnd then
+          prop = argListAsStr.char[m + 1..tmpPropEnd]
+          prop = value(changeChars(" ", EMPTY, prop))
+          if tmpLvl > tmpProps.count() then
+            tmpProps[tmpLvl] = prop
+          end if
+          tmpPropEnd = 0
+        else
+          if tmpLvl > tmpProps.count() then
+            tmpProps[tmpLvl] = tmpIndex
+            tmpIndex = 1
+          end if
+        end if
+        tmpLvl = tmpLvl + 1
+        next repeat
+      end if
+      if ch = "(" then
+        tmpLvl = tmpLvl + 1
+        next repeat
+      end if
+      if ch = ")" then
+        tmpLvl = tmpLvl - 1
+        next repeat
+      end if
+      if ch = QUOTE then
+        tmpInsideQuotes = 1
+        next repeat
+      end if
+      if ch = "]" then
+        tmpLvl = tmpLvl - 1
+        tmpPropEnd = 0
+        if tmpLvl >= tmpProps.count() then
+        end if
+        next repeat
+      end if
+      if ch = ":" then
+        tmpPropEnd = m - 1
+        next repeat
+      end if
+      if ch = "," then
+        if tmpPropEnd then
+          prop = argListAsStr.char[m + 1..tmpPropEnd]
+          prop = value(changeChars(" ", EMPTY, prop))
+          if tmpLvl > tmpProps.count() then
+            tmpProps[tmpLvl] = prop
+          end if
+          tmpPropEnd = 0
+          next repeat
+        end if
+        if tmpLvl >= tmpProps.count() then
+          tmpIndex = tmpIndex + 1
+        end if
+      end if
+    end repeat
+  end if
+  return tmpProps
+end
+
+on recursiveFindInList argSearchVal, argList, argPath
+  if voidp(argPath) then
+    argPath = []
+  end if
+  repeat with n = 1 to argList.count()
+    if argList[n] = argSearchVal then
+      if ilk(argList) = #propList then
+        argPath.add(argList.getPropAt(n))
+      else
+        argPath.add(n)
+      end if
+      return 1
+    end if
+  end repeat
+  repeat with n = 1 to argList.count()
+    if listp(argList[n]) then
+      if ilk(argList) = #propList then
+        argPath.add(argList.getPropAt(n))
+      else
+        argPath.add(n)
+      end if
+      tmp = recursiveFindInList(argSearchVal, argList[n], argPath)
+      if tmp = 0 then
+        argPath.deleteAt(argPath.count())
+      end if
+      return 1
+    end if
+  end repeat
+  return 0
+end

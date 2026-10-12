@@ -1,0 +1,245 @@
+property ancestor, child, className, belongsTo, _killed, normal, Current, min, max, GainFact, LoseFact, ValTriggers, mode, DefaultNotify, LastTriggerListPos, SuspendedVal, IsSuspended, nearestTriggers, onlyReportMostExtremeTrigger, isSorted
+global gRock
+
+on new me, argChild, argBelongsTo
+  if objectp(argChild) then
+    child = argChild
+  else
+    child = me
+  end if
+  belongsTo = argBelongsTo
+  className = #DynamicTriggerVar
+  normal = 0
+  Current = 0
+  min = 0
+  max = 1
+  GainFact = 0
+  LoseFact = 0
+  ValTriggers = [:]
+  mode = #none
+  DefaultNotify = #none
+  LastTriggerListPos = 0
+  SuspendedVal = 0
+  IsSuspended = 0
+  LastTriggerListPos = -1
+  nearestTriggers = []
+  onlyReportMostExtremeTrigger = 1
+  isSorted = 0
+  return me
+end
+
+on kill me
+  _killed = 1
+  gRock.m_gameTimer.deleteObject(me)
+  if objectp(ancestor) then
+    ancestor = ancestor.kill()
+  end if
+  child = 0
+  belongsTo = 0
+  return 0
+end
+
+on init me
+  ValTriggers.sort()
+  isSorted = 1
+end
+
+on setActiveState me, argState
+  me.activate(argState)
+end
+
+on activate me, argIsTRUE
+  if argIsTRUE then
+    if (mode = #AutoNormalize) or (mode = #AutoGain) or (mode = #AutoLose) or (mode = #AutoXGain) then
+      gRock.m_gameTimer.addObject(me)
+    end if
+  else
+    gRock.m_gameTimer.deleteObject(me)
+  end if
+end
+
+on timeTick me
+  if isSorted = 0 then
+    ValTriggers.sort()
+    isSorted = 1
+  end if
+  tmpOldCurrent = Current
+  if mode = #AutoGain then
+    Current = Current + GainFact
+  else
+    if mode = #AutoXGain then
+      Current = Current + (GainFact * (1.0 - (Current / max)))
+    else
+      if mode = #AutoLose then
+        Current = Current - LoseFact
+      else
+        if mode = #AutoNormalize then
+          if Current < normal then
+            Current = Current + GainFact
+            if Current > normal then
+              Current = normal
+            end if
+          else
+            if Current > normal then
+              Current = Current - LoseFact
+              if Current < normal then
+                Current = normal
+              end if
+            end if
+          end if
+        end if
+      end if
+    end if
+  end if
+  if Current <> tmpOldCurrent then
+    me.checkAndTrig(tmpOldCurrent, Current)
+  end if
+end
+
+on addTriggerVal me
+end
+
+on checkAndTrig me, argFromVal, argToVal
+  if IsSuspended then
+    exit
+  end if
+  tmpPassedTriggers = me.checkTriggerVals(argFromVal, argToVal, ValTriggers)
+  cnt = tmpPassedTriggers.count
+  if cnt > 1 then
+    if onlyReportMostExtremeTrigger then
+      me.passedTriggerVal(tmpPassedTriggers.getPropAt(cnt), tmpPassedTriggers[cnt], argToVal - argFromVal)
+      exit
+    end if
+  end if
+  repeat with n = 1 to cnt
+    me.passedTriggerVal(tmpPassedTriggers.getPropAt(n), tmpPassedTriggers[n], argToVal - argFromVal)
+  end repeat
+end
+
+on checkTriggerVals me, argFromVal, argToVal, argTriggerValSortedList
+  if voidp(argTriggerValSortedList) then
+    argTriggerValSortedList = ValTriggers
+  end if
+  tmpOldPos = comesBeforePosInList(argFromVal, argTriggerValSortedList)
+  tmpNewPos = comesBeforePosInList(argToVal, argTriggerValSortedList)
+  tmpPassedTriggers = [:]
+  if tmpOldPos < tmpNewPos then
+    repeat with n = tmpOldPos to tmpNewPos - 1
+      tmpDoWhatList = argTriggerValSortedList[n]
+      if listp(tmpDoWhatList) then
+        if tmpDoWhatList[#direction] = -1 then
+          next repeat
+        end if
+      end if
+      tmpPassedTriggers.addProp(argTriggerValSortedList.getPropAt(n), tmpDoWhatList)
+    end repeat
+  else
+    if tmpOldPos > tmpNewPos then
+      repeat with n = tmpOldPos - 1 down to tmpNewPos
+        tmpDoWhatList = argTriggerValSortedList[n]
+        if listp(tmpDoWhatList) then
+          if tmpDoWhatList[#direction] = 1 then
+            next repeat
+          end if
+        end if
+        tmpPassedTriggers.addProp(argTriggerValSortedList.getPropAt(n), tmpDoWhatList)
+      end repeat
+    end if
+  end if
+  LastTriggerListPos = tmpNewPos
+  return tmpPassedTriggers
+end
+
+on passedTriggerVal me, argVal, argDoWhatList, argChange
+  if not listp(argDoWhatList) then
+    argDoWhatList = [#notify: belongsTo, #msg: argDoWhatList]
+  end if
+  if voidp(argDoWhatList[#Info]) then
+    argDoWhatList[#Info] = [:]
+  end if
+  argDoWhatList[#Info][#Change] = argChange
+  argDoWhatList[#Info][#TriggerVal] = argVal
+  tmpNotify = argDoWhatList[#notify]
+  if voidp(tmpNotify) then
+    if DefaultNotify = #none then
+      tmpNotify = belongsTo
+    else
+      tmpNotify = DefaultNotify
+    end if
+  end if
+  if symbolp(tmpNotify) then
+    if tmpNotify = #msg then
+      gRock.m_msgManager.msg(argDoWhatList[#msg], me)
+      exit
+    else
+      tmpNotify = gRock.m_classManager.getObjByID(tmpNotify)
+    end if
+  end if
+  if objectp(tmpNotify) then
+    tmpHandler = argDoWhatList[#handler]
+    if voidp(tmpHandler) then
+      tmpHandler = #Report
+    end if
+    call(tmpHandler, tmpNotify, me, argDoWhatList[#msg], argDoWhatList[#Info])
+  end if
+end
+
+on setOneProp me, argProp, argVal
+  if voidp(argProp) then
+    argProp = #Current
+  end if
+  me.setaProp(argProp, argVal)
+end
+
+on getOneProp me, argProp
+  if voidp(argProp) then
+    argProp = #Current
+  end if
+  return me.getaProp(argProp)
+end
+
+on changeVal me, argNewVal
+  tmpOld = Current
+  Current = argNewVal
+  me.checkAndTrig(tmpOld, Current)
+end
+
+on getCurrentTriggerProp me
+  if IsSuspended then
+    return comesBeforeValInList(Current, ValTriggers)
+  end if
+  if LastTriggerListPos < 1 then
+    if isSorted = 0 then
+      ValTriggers.sort()
+      isSorted = 1
+    end if
+    LastTriggerListPos = comesBeforePosInList(Current, ValTriggers)
+    if LastTriggerListPos = 8 then
+      pott("sass")
+    end if
+  end if
+  if (LastTriggerListPos > 0) and (LastTriggerListPos <= ValTriggers.count) then
+    return ValTriggers[LastTriggerListPos]
+  end if
+  if ValTriggers.count then
+    return ValTriggers[1]
+  end if
+  return VOID
+end
+
+on getTriggerPropPos me, argTriggerProp
+  return ValTriggers.getPos(argTriggerProp)
+end
+
+on suspend me, argIsTRUE
+  IsSuspended = argIsTRUE
+  if argIsTRUE then
+    SuspendedVal = Current
+  else
+    me.checkAndTrig(SuspendedVal, Current)
+  end if
+end
+
+on getIsSuspended me
+  return IsSuspended
+end

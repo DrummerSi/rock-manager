@@ -1,0 +1,70 @@
+property m_dlg, m_protectMouseObj, m_allowClick
+global gRock, gDir
+
+on new me
+  m_dlg = script("Dialog").new([#AttachImageToMember: #temp, #StartSpriteNum: gDir.m_spriteList[#ButtonOK], #NumSprites: 1])
+  lst = [[#ID: #BG, #type: #Pic, #Pic: "ColorPic", #FgColorStr: "#555555", #inOffsetRect: [0, 0, 0, 7], #rel: [0, 0, [#ZYXSrnd, 3], [#ZYXSrnd, 4]], #ch: 1, #blit: 1, #usingMouse: 0], [#ID: #ButtonOK, #type: #Dialog, #inOffsetRect: [0, 7, 0, 0], #rel: [0, 0, #Auto, #Auto], #ch: 2, #blit: 1, #usingMouse: 1, #dialogDataMemberName: "DlgButton2Data"]]
+  m_dlg.rawCreate(lst)
+  itemObj = m_dlg.getItem(#ButtonOK)
+  dialogInfo_r = gRock.m_classManager.getObjByIDAndClass(#DlgMixer, #Dialog)
+  rDlgPrepareButton(itemObj, me, dialogInfo_r.ButtonOK.Gfx, dialogInfo_r.ButtonOK.name)
+  m_dlg.renderAtLoc(point(132, 451))
+  studio_r = gRock.m_context.getFocus(#Studio)
+  SP = sprite(gDir.m_spriteList[#StudioPic])
+  SP.member = member(studio_r.Gfx)
+  SP.rect = rect(114, 145, 227, 234)
+  m_protectMouseObj = script("MouseObject").new(me, rect(0, 0, 1000, 1000), [#noPassRoll: 1, #PassButton: 0, #layer: 50, #cursorRoll: #NoClick])
+  m_allowClick = 0
+  return me
+end
+
+on kill me
+  m_protectMouseObj = m_protectMouseObj.kill()
+  m_dlg.kill()
+  return 0
+end
+
+on Report me, argObj, argWhat
+  pott(argObj, argWhat)
+end
+
+on eventCardCall me, argWhat
+  rSetParserVariable(#TmpCallBack, VOID, #Remove)
+  if argWhat = #OKLeaveMixer then
+    me.leaveNow()
+  end if
+end
+
+on leaveNow me, argObj, argWhat
+  global gDir
+  if objectp(argObj) then
+    argObj.kill()
+  end if
+  waitCursor(1)
+  gDir.m_mixerObj.stop()
+  gDir.m_mixerObj.calcResult()
+  goMovie("Main")
+end
+
+on mouse me, argObj, argWhat, argOption
+  if m_allowClick = 0 then
+    exit
+  end if
+  if argObj = m_protectMouseObj then
+    exit
+  end if
+  if argWhat = #click then
+    ecard_r = gRock.m_classManager.getObjByIDAndClass(#ECOCMixerExit, #EventCard)
+    if not objectp(ecard_r) then
+      alert("Err find EC: " & string(#ECOCMixerExit))
+      exit
+    end if
+    rSetParserVariable(#TmpCallBack, me)
+    dlg = gDir.m_objDialogsMaster.openDialog(#MixerExit)
+    exit
+  end if
+end
+
+on allowClick me, argIsTRUE
+  m_allowClick = argIsTRUE
+end

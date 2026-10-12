@@ -1,0 +1,60 @@
+on makePropListWithFakeInheritance argFile
+  global gRock
+  if voidp(argFile) then
+    argFile = gRock.m_paths.getPath(#data) & "Accounts.txt"
+  end if
+  str = readFile(argFile)
+  the itemDelimiter = numToChar(9)
+  depth = 0
+  currInheritedProps = [:]
+  currProps = [:]
+  propsPerDepthLevel = [:]
+  lastItem = 0
+  repeat with lineNr = 1 to the number of lines in str
+    tmpLine = str.line[lineNr]
+    itemNr = whichItemNrIsFirstWordOnLine(tmpLine)
+    if itemNr = 0 then
+      next repeat
+    end if
+    tmpItem = tmpLine.item[itemNr]
+    if tmpItem.char[1..2] = "##" then
+      next repeat
+    end if
+    if tmpItem.char[1] = ":" then
+      delete depth.char[1]
+      derived = 1
+    else
+      derived = 0
+    end if
+    tmpItem = symbol(tmpItem)
+    if itemNr > depth then
+      if itemNr > (depth + 1) then
+      else
+      end if
+      next repeat
+    end if
+    if itemNr < depth then
+      next repeat
+    end if
+    if derived then
+      tmp = [:]
+      currProps.addProp(tmpItem, tmp)
+      currProps = tmp
+      next repeat
+    end if
+    currProps.addProp(tmpItem, 0)
+  end repeat
+end
+
+on zzwhichItemNrIsFirstWordOnLine argLine
+  if the number of words in argLine = 0 then
+    return 0
+  end if
+  wrd = argLine.word[1]
+  if wrd = " " then
+    return 0
+  end if
+  off = offset(wrd, argLine)
+  tmp = the number of items in argLine.char[1..off]
+  return tmp
+end

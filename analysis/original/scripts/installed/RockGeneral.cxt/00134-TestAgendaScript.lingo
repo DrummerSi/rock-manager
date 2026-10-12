@@ -1,0 +1,64 @@
+property m_rollOverObj
+global gRock, gDir
+
+on new me, argRect, argOptions
+  if voidp(argOptions) then
+    argOptions = [:]
+  end if
+  events_r = gRock.m_classManager.getObjsWithBaseClass(#Event).duplicate()
+  if (getSystemPref(#ShowHiddenEvents) <> 1) and (rOKCheatPass() = 0) then
+    repeat with n = events_r.count down to 1
+      if events_r[n].visible = 0 then
+        events_r.deleteAt(n)
+      end if
+    end repeat
+  end if
+  tmpDate = gRock.m_date.getDateInt()
+  player_r = gRock.m_classManager.getObjByIDAndClass(#player, #player)
+  m_rollOverObj = script("ShowEventInfoScript").new()
+  tmpShowWhat = argOptions[#show]
+  if voidp(tmpShowWhat) then
+    tmpShowWhat = [:]
+  end if
+  tmp = [#Band: [#name: EMPTY, #type: #Planning, #events: events_r, #Moveable: argOptions[#MoveItems], #ReportToAboutItems: m_rollOverObj]]
+  if tmpShowWhat[#Graphs] = 1 then
+    tmpGraphs = [:]
+    tmpGraphs.addProp(#Money, [#name: #szidAgendaBandAccount, #data: gRock.m_player.moneyGraph, #clr: rgb(39, 96, 120), #LegendFormat: #integer, #ForceEndDate: tmpDate])
+    tmpAlbum = gRock.m_context.getFocus(#album)
+    if objectp(tmpAlbum) then
+      tmpGraphs.addProp(#album, [#name: #szidAgendaAlbumsSold, #data: tmpAlbum.salesGraph, #clr: rgb(147, 100, 12), #LegendFormat: #integer])
+      tmpGraphs.addProp(#AlbumHype, [#name: #szidAgendaAlbumHype, #data: tmpAlbum.hypeGraph, #clr: rgb(204, 51, 51), #LegendFormat: #Percent])
+    end if
+    repeat with n = 1 to tmpGraphs.count
+      tmpSub = tmpGraphs[n]
+      if symbolp(tmpSub[#name]) then
+        tmpSub[#name] = gRock.m_languageManager.getStr(tmpSub[#name], [#FirstUppercase: 1])
+      end if
+      if voidp(tmpSub[#ForceEndDate]) then
+        tmpSub[#ForceEndDate] = tmpDate - 1
+      end if
+    end repeat
+    tmp.addProp(#Graphs, [#name: EMPTY, #type: #Graph, #ContinueTilToday: 1, #Graphs: tmpGraphs])
+  end if
+  gRock.m_agenda.setTodayDate(tmpDate)
+  gRock.m_agenda.load([#channels: tmp])
+  if voidp(argOptions[#midDate]) then
+    argOptions[#midDate] = 0.29999999999999999
+  end if
+  if voidp(argOptions[#bgPic]) then
+    argOptions[#bgPic] = "agenda_background01"
+  end if
+  if voidp(argOptions[#ShrinkRect]) then
+    argOptions[#ShrinkRect] = rect(3, 3, -3, -3)
+  end if
+  if voidp(argOptions[#SPNum]) then
+    argOptions[#SPNum] = gDir.m_spriteList[#FaceAnim]
+  end if
+  gRock.m_agenda.openDlg(argRect, [#dlg: argOptions[#SPNum], #Drag: gDir.m_spriteList[#Drag]], argOptions[#midDate], [#bgPic: argOptions[#bgPic], #ShrinkRect: argOptions[#ShrinkRect]])
+  return me
+end
+
+on kill me
+  m_agenda = m_agenda.kill()
+  m_rollOverObj = m_rollOverObj.kill()
+end

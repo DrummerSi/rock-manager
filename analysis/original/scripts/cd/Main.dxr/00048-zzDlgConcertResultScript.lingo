@@ -1,0 +1,101 @@
+property ancestor
+global gDir, gRock
+
+on new me, argOptions
+  ID = argOptions[#ID]
+  argOptions.setaProp(#ReportTo, me)
+  argOptions.setaProp(#child, me)
+  dialog_r = gRock.m_classManager.getObjByIDAndClass(#DlgConcertResult, #Dialog)
+  dialog_r.dataMemberName = "DlgConcertResultData"
+  argOptions[#DlgInfoObj] = dialog_r
+  ConcertInfo = argOptions[#ConcertInfo]
+  if voidp(ConcertInfo) then
+    pott("Aargh", argOptions)
+    ConcertInfo = [#VenueID: #Live01, #Satisfaction: 0.59999999999999998, #NumAudience: 10]
+  end if
+  ConcertID = ConcertInfo[#ConcertID]
+  concert_r = gRock.m_classManager.getObjByIDAndClass(ConcertID, #Concert)
+  venue_r = gRock.m_classManager.getObjByIDAndClass(ConcertInfo[#VenueID], #Live)
+  NumAudience()
+  tmp = float(concert_r.NumAudience) / venue_r.size
+  ECNr = convValToRange(tmp, [0, 1], [4, 1])
+  ECID = symbol("ECOCConcert" & convItoS(ECNr, 2))
+  eventCard_r = gRock.m_classManager.getObjByIDAndClass(ECID, #EventCard)
+  if objectp(eventCard_r) then
+    dialog_r.name = eventCard_r.name
+  else
+    dialog_r.name = venue_r.name
+  end if
+  ancestor = script("DlgRockAncestorScript").new(argOptions)
+  dlgObj = ancestor.m_objDlg
+  itemObj = dlgObj.getItem(#Pic)
+  tmpFilledFract = float(concert_r.NumAudience) / venue_r.size
+  img = makeConcertPic(venue_r, tmpFilledFract)
+  itemObj.setOneProp(#Pic, img)
+  itemObj = dlgObj.getItemByPath([#Satisfaction, #Head, #icon])
+  itemObj.setOneProp(#Pic, "icon_prize podium02")
+  itemObj = dlgObj.getItemByPath([#Satisfaction, #Head, #Info])
+  itemObj.setOneProp(#editData, gRock.m_languageManager.getStr(#szidSatisfaction))
+  itemObj = dlgObj.getItemByPath([#Satisfaction, #dlg, #Pic])
+  tmpStars = integer(concert_r.getRating() * 2)
+  tmpPic = "meter_stars" & convItoS(tmpStars, 2)
+  itemObj.setOneProp(#Pic, tmpPic)
+  itemObj = dlgObj.getItemByPath([#Venue, #Head, #icon])
+  itemObj.setOneProp(#Pic, "icon_spotlight02")
+  itemObj = dlgObj.getItemByPath([#Venue, #Head, #Info])
+  itemObj.setOneProp(#editData, gRock.m_languageManager.getStr(#szidVenue))
+  itemObj = dlgObj.getItemByPath([#Venue, #dlg, #Pic])
+  itemObj.setOneProp(#Pic, rFormatText([#szidMaxAudience, string(venue_r.size), #szidPersonsShort, #szidMinAge, venue_r.MinAge, #szidYears, #szidTicketPrice, rCurrency(venue_r.PreferredPriceModel.UnitPrice, 0, 1), #szidRoyalty, convFloatToPercent(venue_r.PreferredPriceModel.Royalty, 1)], "Live3Formatting"))
+  tmpTicketsRevenue = integer(venue_r.PreferredPriceModel.UnitPrice * venue_r.PreferredPriceModel.Royalty * ConcertInfo[#NumAudience])
+  tmpEarned = tmpTicketsRevenue + ConcertInfo[#MerchandiseIncome]
+  gRock.m_player.transactMoney(tmpTicketsRevenue, [#Live, #Tickets])
+  gRock.m_player.transactMoney(ConcertInfo[#MerchandiseIncome], [#Merchandise])
+  tmpTot = integer(tmpTicketsRevenue - venue_r.PreferredPriceModel.BasePrice)
+  itemObj = dlgObj.getItemByPath([#results, #Head, #icon])
+  itemObj.setOneProp(#Pic, "icon_money02")
+  itemObj = dlgObj.getItemByPath([#results, #Head, #Info])
+  itemObj.setOneProp(#editData, gRock.m_languageManager.getStr(#szidResults))
+  itemObj = dlgObj.getItemByPath([#results, #dlg, #Pic])
+  itemObj.setOneProp(#Pic, rFormatText([#szidAudience, rCurrency(ConcertInfo[#NumAudience]), #szidPersonsShort, #szidTicketsRevenue, rCurrency(tmpTicketsRevenue, 0, 1), #szidMerchandiseIncome, rCurrency(ConcertInfo[#MerchandiseIncome], 0, 1), #szidRent, rCurrency(venue_r.PreferredPriceModel.BasePrice, 0, 1), #szidTotal, rCurrency(tmpTot, 0, 1)], "ConcertResultFormatting"))
+  mission_r = gRock.m_context.getFocus(#Mission)
+  tmpAllConcerts = mission_r.Vars.getaProp(#ConcertEarnings)
+  if voidp(tmpAllConcerts) then
+    tmpAllConcerts = 0
+  end if
+  tmpAllConcerts = tmpAllConcerts + tmpTot
+  mission_r.Vars.setaProp(#ConcertEarnings, tmpAllConcerts)
+  itemObj = dlgObj.getItem(#Info)
+  if objectp(eventCard_r) then
+    tmpComment = eventCard_r.comment
+  else
+    tmpComment = EMPTY
+  end if
+  itemObj.setOneProp(#Pic, rFormatText([#szidConcertHeadComment, tmpComment], "ConcertDescriptionFormatting"))
+  ancestor.render()
+  gRock.m_context.setContext(#Concert)
+  return me
+end
+
+on kill me
+  gRock.m_agenda.closeDlg()
+  ancestor.kill()
+  return 0
+end
+
+on Report me, argObj, argWhat
+end
+
+on mouse me, argObj, argWhat, argOption
+  if objectp(argOption) then
+    if argWhat = #click then
+      ID = argOption.getOneProp(#ID)
+      IDStr = string(ID)
+      if ID = #ButtonOK then
+      else
+        if ID = #ButtonCancel then
+        end if
+      end if
+      ancestor.mouse(argObj, argWhat, argOption)
+    end if
+  end if
+end

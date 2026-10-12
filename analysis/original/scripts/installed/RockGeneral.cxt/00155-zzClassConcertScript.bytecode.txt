@@ -1,0 +1,677 @@
+property ancestor, child, className, belongsTo, Venue, PriceModel, NumAudience, quality, Income, VenueIncome, BandPerformance, calcedList
+global gRock
+
+on new me, argChild, argBelongsTo
+  [  0] getparam 8 .............................. <argChild>
+  [  2] pusharglist 1 ........................... <argChild>
+  [  4] extcall 8 ............................... <objectp(argChild)>
+  [  6] jmpifz [ 17] ............................ if objectp(argChild) then / else
+  [  9] getparam 8 .............................. <argChild>
+  [ 11] setprop 496 ............................. child = argChild
+  [ 14] jmp [ 22]
+  [ 17] getparam 0 .............................. <me>
+  [ 19] setprop 496 ............................. child = me
+  [ 22] getparam 16 ............................. <argBelongsTo>
+  [ 24] setprop 208 ............................. belongsTo = argBelongsTo
+  [ 27] pushcons 0 .............................. <"ClassEventScript">
+  [ 29] pusharglist 1 ........................... <"ClassEventScript">
+  [ 31] extcall 10 .............................. <script("ClassEventScript")>
+  [ 33] getprop 496 ............................. <child>
+  [ 36] pusharglist 2 ........................... <script("ClassEventScript"), child>
+  [ 38] objcall 11 .............................. <script("ClassEventScript").new(child)>
+  [ 40] setprop 347 ............................. ancestor = script("ClassEventScript").new(child)
+  [ 43] pushsymb 1455 ........................... <#Concert>
+  [ 46] setprop 224 ............................. className = #Concert
+  [ 49] pushsymb 268 ............................ <#none>
+  [ 52] setprop 1456 ............................ Venue = #none
+  [ 55] pushcons 8 .............................. <"ClassPriceModelScript">
+  [ 57] pusharglist 1 ........................... <"ClassPriceModelScript">
+  [ 59] extcall 10 .............................. <script("ClassPriceModelScript")>
+  [ 61] pusharglist 0 ........................... <>
+  [ 63] extcall 151 ............................. <VOID>
+  [ 66] getparam 0 .............................. <me>
+  [ 68] pusharglist 3 ........................... <script("ClassPriceModelScript"), VOID, me>
+  [ 70] objcall 11 .............................. <script("ClassPriceModelScript").new(VOID, me)>
+  [ 72] setprop 531 ............................. PriceModel = script("ClassPriceModelScript").new(VOID, me)
+  [ 75] pushzero ................................ <0>
+  [ 76] setprop 1457 ............................ NumAudience = 0
+  [ 79] pushcons 16 ............................. <0.0>
+  [ 81] setprop 724 ............................. quality = 0.0
+  [ 84] pushzero ................................ <0>
+  [ 85] setprop 1458 ............................ Income = 0
+  [ 88] pushzero ................................ <0>
+  [ 89] setprop 1459 ............................ VenueIncome = 0
+  [ 92] pushcons 24 ............................. <0.0>
+  [ 94] setprop 1460 ............................ BandPerformance = 0.0
+  [ 97] getparam 0 .............................. <me>
+  [ 99] pusharglistnoret 1 ...................... <me>
+  [101] extcall 69 .............................. return me
+  [104] ret
+end
+
+on kill me
+  [  0] getprop 347 ............................. <ancestor>
+  [  3] pusharglist 1 ........................... <ancestor>
+  [  5] extcall 8 ............................... <objectp(ancestor)>
+  [  7] jmpifz [ 20] ............................ if objectp(ancestor) then
+  [ 10] getprop 347 ............................. <ancestor>
+  [ 13] pusharglist 1 ........................... <ancestor>
+  [ 15] objcall 31 .............................. <ancestor.kill()>
+  [ 17] setprop 347 ............................. ancestor = ancestor.kill()
+  [ 20] pushzero ................................ <0>
+  [ 21] setprop 496 ............................. child = 0
+  [ 24] pushzero ................................ <0>
+  [ 25] setprop 208 ............................. belongsTo = 0
+  [ 28] pushzero ................................ <0>
+  [ 29] pusharglistnoret 1 ...................... <0>
+  [ 31] extcall 69 .............................. return 0
+  [ 34] ret
+end
+
+on eventChangeState me, argAction, argOption
+  [  0] getparam 8 .............................. <argAction>
+  [  2] pushsymb 43 ............................. <#start>
+  [  5] eq ...................................... <argAction = #start>
+  [  6] jmpifz [ 12] ............................ if argAction = #start then / else
+  [  9] jmp [208]
+  [ 12] getparam 8 .............................. <argAction>
+  [ 14] pushsymb 663 ............................ <#stop>
+  [ 17] eq ...................................... <argAction = #stop>
+  [ 18] jmpifz [208] ............................ if argAction = #stop then
+  [ 21] getglobal 23 ............................ <gRock>
+  [ 23] getobjprop 82 ........................... <gRock.m_classManager>
+  [ 26] getprop 1456 ............................ <Venue>
+  [ 29] pushsymb 1072 ........................... <#place>
+  [ 32] pusharglist 3 ........................... <gRock.m_classManager, Venue, #place>
+  [ 34] objcall 149 ............................. <gRock.m_classManager.getObjByIDAndClass(Venue, #place)>
+  [ 37] setlocal 0 .............................. venue_r = gRock.m_classManager.getObjByIDAndClass(Venue, #place)
+  [ 39] getlocal 0 .............................. <venue_r>
+  [ 41] pusharglist 1 ........................... <venue_r>
+  [ 43] extcall 8 ............................... <objectp(venue_r)>
+  [ 45] not ..................................... <not objectp(venue_r)>
+  [ 46] jmpifz [ 57] ............................ if not objectp(venue_r) then
+  [ 49] pushcons 32 ............................. <"Error in concert's venue!">
+  [ 51] pusharglistnoret 1 ...................... <"Error in concert's venue!">
+  [ 53] extcall 118 ............................. alert("Error in concert's venue!")
+  [ 56] ret ..................................... exit
+  [ 57] getparam 0 .............................. <me>
+  [ 59] pusharglist 1 ........................... <me>
+  [ 61] objcall 1465 ............................ <me.calcAudienceSatisfaction()>
+  [ 64] setprop 1464 ............................ calcedList = me.calcAudienceSatisfaction()
+  [ 67] getprop 1464 ............................ <calcedList>
+  [ 70] pushsymb 1474 ........................... <#VenueID>
+  [ 73] getlocal 0 .............................. <venue_r>
+  [ 75] getobjprop 154 .......................... <venue_r.ID>
+  [ 78] pusharglistnoret 3 ...................... <calcedList, #VenueID, venue_r.ID>
+  [ 80] objcall 309 ............................. calcedList.addProp(#VenueID, venue_r.ID)
+  [ 83] getprop 1464 ............................ <calcedList>
+  [ 86] pushsymb 1475 ........................... <#ConcertID>
+  [ 89] getprop 347 ............................. <ancestor>
+  [ 92] getobjprop 154 .......................... <ancestor.ID>
+  [ 95] pusharglistnoret 3 ...................... <calcedList, #ConcertID, ancestor.ID>
+  [ 97] objcall 309 ............................. calcedList.addProp(#ConcertID, ancestor.ID)
+  [100] getglobal 23 ............................ <gRock>
+  [102] getobjprop 82 ........................... <gRock.m_classManager>
+  [105] pushsymb 664 ............................ <#Reporter>
+  [108] pusharglist 2 ........................... <gRock.m_classManager, #Reporter>
+  [110] objcall 155 ............................. <gRock.m_classManager.getObjsOfClass(#Reporter)>
+  [113] setlocal 8 .............................. reporters_r = gRock.m_classManager.getObjsOfClass(#Reporter)
+  [115] getlocal 8 .............................. <reporters_r>
+  [117] peek 0
+  [119] pusharglist 1
+  [121] extcall 156
+  [124] pushint8 1
+  [126] peek 0
+  [128] peek 2
+  [130] lteq
+  [131] jmpifz [176] ............................ repeat with reporter_r in reporters_r
+  [134] peek 2
+  [136] peek 1
+  [138] pusharglist 2
+  [140] extcall 119
+  [143] setlocal 16
+  [145] getlocal 16 ............................. <reporter_r>
+  [147] getprop 347 ............................. <ancestor>
+  [150] getobjprop 154 .......................... <ancestor.ID>
+  [153] pusharglist 2 ........................... <reporter_r, ancestor.ID>
+  [155] objcall 790 ............................. <reporter_r.gotTicketsForConcert(ancestor.ID)>
+  [158] jmpifz [170] ............................ if reporter_r.gotTicketsForConcert(ancestor.ID) then
+  [161] getlocal 16 ............................. <reporter_r>
+  [163] getparam 0 .............................. <me>
+  [165] pusharglistnoret 2 ...................... <reporter_r, me>
+  [167] objcall 792 ............................. reporter_r.checkWillReviewConcert(me)
+  [170] pushint8 1
+  [172] add
+  [173] endrepeat [126]
+  [176] pop 3
+  [178] getglobal 23 ............................ <gRock>
+  [180] getobjprop 80 ........................... <gRock.m_eventCardsManager>
+  [183] pusharglist 0 ........................... <>
+  [185] extcall 151 ............................. <VOID>
+  [188] pushsymb 1444 ........................... <#DlgScript>
+  [191] pushsymb 1476 ........................... <#ConcertResult>
+  [194] pushsymb 1478 ........................... <#ConcertInfo>
+  [197] getprop 1464 ............................ <calcedList>
+  [200] pusharglist 4 ........................... <[#DlgScript: #ConcertResult, #ConcertInfo: calcedList]>
+  [202] pushproplist ............................ <[#DlgScript: #ConcertResult, #ConcertInfo: calcedList]>
+  [203] pusharglistnoret 3 ...................... <gRock.m_eventCardsManager, VOID, [#DlgScript: #ConcertResult, #ConcertInfo: calcedList]>
+  [205] objcall 856 ............................. gRock.m_eventCardsManager.tryNewShowEventCard(VOID, [#DlgScript: #ConcertResult, #ConcertInfo: calcedList])
+  [208] getprop 347 ............................. <ancestor>
+  [211] getparam 8 .............................. <argAction>
+  [213] getparam 16 ............................. <argOption>
+  [215] pusharglistnoret 3 ...................... <ancestor, argAction, argOption>
+  [217] objcall 660 ............................. ancestor.eventChangeState(argAction, argOption)
+  [220] ret
+end
+
+on calcNumAudience me
+  [  0] getglobal 23 ............................ <gRock>
+  [  2] getobjprop 79 ........................... <gRock.m_context>
+  [  5] pushsymb 171 ............................ <#Band>
+  [  8] pusharglist 2 ........................... <gRock.m_context, #Band>
+  [ 10] objcall 146 ............................. <gRock.m_context.getFocus(#Band)>
+  [ 13] setlocal 0 .............................. band_r = gRock.m_context.getFocus(#Band)
+  [ 15] getglobal 23 ............................ <gRock>
+  [ 17] getobjprop 79 ........................... <gRock.m_context>
+  [ 20] pushsymb 217 ............................ <#album>
+  [ 23] pusharglist 2 ........................... <gRock.m_context, #album>
+  [ 25] objcall 146 ............................. <gRock.m_context.getFocus(#album)>
+  [ 28] setlocal 8 .............................. album_r = gRock.m_context.getFocus(#album)
+  [ 30] getglobal 23 ............................ <gRock>
+  [ 32] getobjprop 82 ........................... <gRock.m_classManager>
+  [ 35] getprop 1456 ............................ <Venue>
+  [ 38] pushsymb 1072 ........................... <#place>
+  [ 41] pusharglist 3 ........................... <gRock.m_classManager, Venue, #place>
+  [ 43] objcall 149 ............................. <gRock.m_classManager.getObjByIDAndClass(Venue, #place)>
+  [ 46] setlocal 16 ............................. venue_r = gRock.m_classManager.getObjByIDAndClass(Venue, #place)
+  [ 48] getlocal 16 ............................. <venue_r>
+  [ 50] getobjprop 645 .......................... <venue_r.size>
+  [ 53] getlocal 16 ............................. <venue_r>
+  [ 55] getobjprop 1094 ......................... <venue_r.Regulars>
+  [ 58] mul ..................................... <venue_r.size * venue_r.Regulars>
+  [ 59] setlocal 24 ............................. regularVisitors = venue_r.size * venue_r.Regulars
+  [ 61] pusharglist 0 ........................... <[:]>
+  [ 63] pushproplist ............................ <[:]>
+  [ 64] setlocal 32 ............................. tmpNumPerGroup = [:]
+  [ 66] pushzero ................................ <0>
+  [ 67] setlocal 40 ............................. tmpTotReachFact = 0
+  [ 69] getlocal 16 ............................. <venue_r>
+  [ 71] pusharglist 1 ........................... <venue_r>
+  [ 73] objcall 1085 ............................ <venue_r.calcReach()>
+  [ 76] setlocal 48 ............................. ReachesGroups = venue_r.calcReach()
+  [ 78] pushint8 1 .............................. <1>
+  [ 81] setlocal 56
+  [ 83] getlocal 56
+  [ 85] getlocal 48 ............................. <ReachesGroups>
+  [ 87] getobjprop 156 .......................... <ReachesGroups.count>
+  [ 90] lteq
+  [ 91] jmpifz [123] ............................ repeat with n = 1 to ReachesGroups.count
+  [ 94] getlocal 48 ............................. <ReachesGroups>
+  [ 96] getlocal 56 ............................. <n>
+  [ 98] pusharglist 2 ........................... <ReachesGroups, n>
+  [100] objcall 119 ............................. <ReachesGroups[n]>
+  [103] setlocal 64 ............................. tmpReachFact = ReachesGroups[n]
+  [105] getlocal 40 ............................. <tmpTotReachFact>
+  [107] getlocal 64 ............................. <tmpReachFact>
+  [109] add ..................................... <tmpTotReachFact + tmpReachFact>
+  [110] setlocal 40 ............................. tmpTotReachFact = tmpTotReachFact + tmpReachFact
+  [112] pushint8 1
+  [115] getlocal 56
+  [117] add
+  [118] setlocal 56
+  [120] endrepeat [ 83]
+  [123] getlocal 40 ............................. <tmpTotReachFact>
+  [125] pushzero ................................ <0>
+  [126] eq ...................................... <tmpTotReachFact = 0>
+  [127] jmpifz [137] ............................ if tmpTotReachFact = 0 then
+  [130] getlocal 32 ............................. <tmpNumPerGroup>
+  [132] pusharglistnoret 1 ...................... <tmpNumPerGroup>
+  [134] extcall 69 .............................. return tmpNumPerGroup
+  [137] pushzero ................................ <0>
+  [138] setlocal 72 ............................. tmpTot = 0
+  [140] pushzero ................................ <0>
+  [141] setlocal 80 ............................. tmpTotRegulars = 0
+  [143] pushint8 1 .............................. <1>
+  [146] setlocal 56
+  [148] getlocal 56
+  [150] getlocal 48 ............................. <ReachesGroups>
+  [152] getobjprop 156 .......................... <ReachesGroups.count>
+  [155] lteq
+  [156] jmpifz [320] ............................ repeat with n = 1 to ReachesGroups.count
+  [159] getlocal 48 ............................. <ReachesGroups>
+  [161] getlocal 56 ............................. <n>
+  [163] pusharglist 2 ........................... <ReachesGroups, n>
+  [165] objcall 119 ............................. <ReachesGroups[n]>
+  [168] setlocal 64 ............................. tmpReachFact = ReachesGroups[n]
+  [170] getlocal 24 ............................. <regularVisitors>
+  [172] getlocal 64 ............................. <tmpReachFact>
+  [174] mul ..................................... <regularVisitors * tmpReachFact>
+  [175] getlocal 40 ............................. <tmpTotReachFact>
+  [177] div ..................................... <regularVisitors * tmpReachFact / tmpTotReachFact>
+  [178] setlocal 88 ............................. tmpNumRegularsFromGroup = regularVisitors * tmpReachFact / tmpTotReachFact
+  [180] getglobal 23 ............................ <gRock>
+  [182] getobjprop 82 ........................... <gRock.m_classManager>
+  [185] getlocal 48 ............................. <ReachesGroups>
+  [187] getlocal 56 ............................. <n>
+  [189] pusharglist 2 ........................... <ReachesGroups, n>
+  [191] objcall 295 ............................. <ReachesGroups.getPropAt(n)>
+  [194] pushsymb 589 ............................ <#Group>
+  [197] pusharglist 3 ........................... <gRock.m_classManager, ReachesGroups.getPropAt(n), #Group>
+  [199] objcall 149 ............................. <gRock.m_classManager.getObjByIDAndClass(ReachesGroups.getPropAt(n), #Group)>
+  [202] setlocal 96 ............................. group_r = gRock.m_classManager.getObjByIDAndClass(ReachesGroups.getPropAt(n), #Group)
+  [204] pushzero ................................ <0>
+  [205] setlocal 104 ............................ tmpHype = 0
+  [207] getlocal 96 ............................. <group_r>
+  [209] getobjprop 542 .......................... <group_r.Attitudes>
+  [212] getlocal 0 .............................. <band_r>
+  [214] getobjprop 154 .......................... <band_r.ID>
+  [217] pusharglist 2 ........................... <group_r.Attitudes, band_r.ID>
+  [219] objcall 538 ............................. <group_r.Attitudes.getAttitude(band_r.ID)>
+  [222] setlocal 112 ............................ tmpAtt = group_r.Attitudes.getAttitude(band_r.ID)
+  [224] getlocal 112 ............................ <tmpAtt>
+  [226] pusharglist 1 ........................... <tmpAtt>
+  [228] extcall 115 ............................. <listp(tmpAtt)>
+  [231] jmpifz [262] ............................ if listp(tmpAtt) then
+  [234] getlocal 112 ............................ <tmpAtt>
+  [236] pushsymb 616 ............................ <#Hype>
+  [239] pusharglist 2 ........................... <tmpAtt, #Hype>
+  [241] objcall 119 ............................. <tmpAtt[#Hype]>
+  [244] setlocal 104 ............................ tmpHype = tmpAtt[#Hype]
+  [246] getlocal 104 ............................ <tmpHype>
+  [248] pusharglist 1 ........................... <tmpHype>
+  [250] extcall 8 ............................... <objectp(tmpHype)>
+  [252] jmpifz [262] ............................ if objectp(tmpHype) then
+  [255] getlocal 104 ............................ <tmpHype>
+  [257] getobjprop 499 .......................... <tmpHype.Current>
+  [260] setlocal 104 ............................ tmpHype = tmpHype.Current
+  [262] getlocal 88 ............................. <tmpNumRegularsFromGroup>
+  [264] getlocal 64 ............................. <tmpReachFact>
+  [266] getlocal 96 ............................. <group_r>
+  [268] getobjprop 645 .......................... <group_r.size>
+  [271] mul ..................................... <tmpReachFact * group_r.size>
+  [272] getlocal 104 ............................ <tmpHype>
+  [274] mul ..................................... <tmpReachFact * group_r.size * tmpHype>
+  [275] pushcons 40 ............................. <0.05>
+  [277] mul ..................................... <tmpReachFact * group_r.size * tmpHype * 0.05>
+  [278] add ..................................... <tmpNumRegularsFromGroup + (tmpReachFact * group_r.size * tmpHype * 0.05)>
+  [279] setlocal 120 ............................ tmpNumFromGroup = tmpNumRegularsFromGroup + (tmpReachFact * group_r.size * tmpHype * 0.05)
+  [281] getlocal 80 ............................. <tmpTotRegulars>
+  [283] getlocal 88 ............................. <tmpNumRegularsFromGroup>
+  [285] add ..................................... <tmpTotRegulars + tmpNumRegularsFromGroup>
+  [286] setlocal 80 ............................. tmpTotRegulars = tmpTotRegulars + tmpNumRegularsFromGroup
+  [288] getlocal 72 ............................. <tmpTot>
+  [290] getlocal 120 ............................ <tmpNumFromGroup>
+  [292] add ..................................... <tmpTot + tmpNumFromGroup>
+  [293] setlocal 72 ............................. tmpTot = tmpTot + tmpNumFromGroup
+  [295] getlocal 32 ............................. <tmpNumPerGroup>
+  [297] getlocal 96 ............................. <group_r>
+  [299] getobjprop 154 .......................... <group_r.ID>
+  [302] getlocal 120 ............................ <tmpNumFromGroup>
+  [304] pusharglistnoret 3 ...................... <tmpNumPerGroup, group_r.ID, tmpNumFromGroup>
+  [306] objcall 309 ............................. tmpNumPerGroup.addProp(group_r.ID, tmpNumFromGroup)
+  [309] pushint8 1
+  [312] getlocal 56
+  [314] add
+  [315] setlocal 56
+  [317] endrepeat [148]
+  [320] pushcons 48 ............................. <"Tot audience">
+  [322] getlocal 72 ............................. <tmpTot>
+  [324] pushcons 56 ............................. <"Regulars">
+  [326] getlocal 80 ............................. <tmpTotRegulars>
+  [328] pusharglistnoret 4 ...................... <"Tot audience", tmpTot, "Regulars", tmpTotRegulars>
+  [330] extcall 122 ............................. pott("Tot audience", tmpTot, "Regulars", tmpTotRegulars)
+  [333] getlocal 32 ............................. <tmpNumPerGroup>
+  [335] pusharglistnoret 1 ...................... <tmpNumPerGroup>
+  [337] extcall 69 .............................. return tmpNumPerGroup
+  [340] ret
+end
+
+on calcAudienceSatisfaction me
+  [  0] pusharglist 0 ........................... <[:]>
+  [  2] pushproplist ............................ <[:]>
+  [  3] setlocal 0 .............................. returnList = [:]
+  [  5] getglobal 23 ............................ <gRock>
+  [  7] getobjprop 79 ........................... <gRock.m_context>
+  [ 10] pushsymb 171 ............................ <#Band>
+  [ 13] pusharglist 2 ........................... <gRock.m_context, #Band>
+  [ 15] objcall 146 ............................. <gRock.m_context.getFocus(#Band)>
+  [ 18] setlocal 8 .............................. band_r = gRock.m_context.getFocus(#Band)
+  [ 20] getlocal 8 .............................. <band_r>
+  [ 22] pushsymb 588 ............................ <#memberObjs>
+  [ 25] pusharglist 2 ........................... <band_r, #memberObjs>
+  [ 27] objcall 156 ............................. <band_r.memberObjs.count>
+  [ 30] pushzero ................................ <0>
+  [ 31] eq ...................................... <band_r.memberObjs.count = 0>
+  [ 32] jmpifz [ 48] ............................ if band_r.memberObjs.count = 0 then
+  [ 35] getlocal 0 .............................. <returnList>
+  [ 37] pushsymb 1470 ........................... <#Cancelled>
+  [ 40] pushint8 1 .............................. <1>
+  [ 43] pusharglistnoret 3 ...................... <returnList, #Cancelled, 1>
+  [ 45] objcall 309 ............................. returnList.addProp(#Cancelled, 1)
+  [ 48] getglobal 23 ............................ <gRock>
+  [ 50] getobjprop 79 ........................... <gRock.m_context>
+  [ 53] pushsymb 217 ............................ <#album>
+  [ 56] pusharglist 2 ........................... <gRock.m_context, #album>
+  [ 58] objcall 146 ............................. <gRock.m_context.getFocus(#album)>
+  [ 61] setlocal 16 ............................. album_r = gRock.m_context.getFocus(#album)
+  [ 63] getglobal 23 ............................ <gRock>
+  [ 65] getobjprop 82 ........................... <gRock.m_classManager>
+  [ 68] getprop 1456 ............................ <Venue>
+  [ 71] pushsymb 1072 ........................... <#place>
+  [ 74] pusharglist 3 ........................... <gRock.m_classManager, Venue, #place>
+  [ 76] objcall 149 ............................. <gRock.m_classManager.getObjByIDAndClass(Venue, #place)>
+  [ 79] setlocal 24 ............................. venue_r = gRock.m_classManager.getObjByIDAndClass(Venue, #place)
+  [ 81] getparam 0 .............................. <me>
+  [ 83] pusharglist 1 ........................... <me>
+  [ 85] objcall 2467 ............................ <me.calcNumAudience()>
+  [ 88] setlocal 32 ............................. tmpNumPerGroup = me.calcNumAudience()
+  [ 90] pushzero ................................ <0>
+  [ 91] setlocal 40 ............................. tmpTotAudience = 0
+  [ 93] pushint8 1 .............................. <1>
+  [ 96] setlocal 48
+  [ 98] getlocal 48
+  [100] getlocal 32 ............................. <tmpNumPerGroup>
+  [102] getobjprop 156 .......................... <tmpNumPerGroup.count>
+  [105] lteq
+  [106] jmpifz [134] ............................ repeat with n = 1 to tmpNumPerGroup.count
+  [109] getlocal 40 ............................. <tmpTotAudience>
+  [111] getlocal 32 ............................. <tmpNumPerGroup>
+  [113] getlocal 48 ............................. <n>
+  [115] pusharglist 2 ........................... <tmpNumPerGroup, n>
+  [117] objcall 119 ............................. <tmpNumPerGroup[n]>
+  [120] add ..................................... <tmpTotAudience + tmpNumPerGroup[n]>
+  [121] setlocal 40 ............................. tmpTotAudience = tmpTotAudience + tmpNumPerGroup[n]
+  [123] pushint8 1
+  [126] getlocal 48
+  [128] add
+  [129] setlocal 48
+  [131] endrepeat [ 98]
+  [134] getlocal 40 ............................. <tmpTotAudience>
+  [136] getlocal 24 ............................. <venue_r>
+  [138] getobjprop 645 .......................... <venue_r.size>
+  [141] div ..................................... <tmpTotAudience / venue_r.size>
+  [142] setlocal 56 ............................. tmpFilledFact = tmpTotAudience / venue_r.size
+  [144] getlocal 56 ............................. <tmpFilledFact>
+  [146] pushcons 64 ............................. <1.30000000000000004>
+  [148] gt ...................................... <tmpFilledFact > 1.30000000000000004>
+  [149] jmpifz [156] ............................ if tmpFilledFact > 1.30000000000000004 then
+  [152] pushcons 72 ............................. <1.30000000000000004>
+  [154] setlocal 56 ............................. tmpFilledFact = 1.30000000000000004
+  [156] getlocal 40 ............................. <tmpTotAudience>
+  [158] setlocal 64 ............................. tmpRealAudience = tmpTotAudience
+  [160] getlocal 64 ............................. <tmpRealAudience>
+  [162] getlocal 24 ............................. <venue_r>
+  [164] getobjprop 645 .......................... <venue_r.size>
+  [167] gt ...................................... <tmpRealAudience > venue_r.size>
+  [168] jmpifz [178] ............................ if tmpRealAudience > venue_r.size then
+  [171] getlocal 24 ............................. <venue_r>
+  [173] getobjprop 645 .......................... <venue_r.size>
+  [176] setlocal 64 ............................. tmpRealAudience = venue_r.size
+  [178] getlocal 0 .............................. <returnList>
+  [180] pushsymb 1457 ........................... <#NumAudience>
+  [183] getlocal 64 ............................. <tmpRealAudience>
+  [185] pusharglistnoret 3 ...................... <returnList, #NumAudience, tmpRealAudience>
+  [187] objcall 309 ............................. returnList.addProp(#NumAudience, tmpRealAudience)
+  [190] getlocal 0 .............................. <returnList>
+  [192] pushsymb 2480 ........................... <#FilledFact>
+  [195] getlocal 56 ............................. <tmpFilledFact>
+  [197] pusharglistnoret 3 ...................... <returnList, #FilledFact, tmpFilledFact>
+  [199] objcall 309 ............................. returnList.addProp(#FilledFact, tmpFilledFact)
+  [202] getlocal 0 .............................. <returnList>
+  [204] pushsymb 2481 ........................... <#WantedToGo>
+  [207] getlocal 40 ............................. <tmpTotAudience>
+  [209] pusharglistnoret 3 ...................... <returnList, #WantedToGo, tmpTotAudience>
+  [211] objcall 309 ............................. returnList.addProp(#WantedToGo, tmpTotAudience)
+  [214] pushcons 80 ............................. <1.0>
+  [216] setlocal 72 ............................. tmpFillBoost = 1.0
+  [218] getlocal 56 ............................. <tmpFilledFact>
+  [220] pushcons 88 ............................. <0.90000000000000002>
+  [222] gt ...................................... <tmpFilledFact > 0.90000000000000002>
+  [223] jmpifz [242] ............................ if tmpFilledFact > 0.90000000000000002 then / else
+  [226] pushcons 96 ............................. <1.0>
+  [228] getlocal 56 ............................. <tmpFilledFact>
+  [230] pushcons 104 ............................ <0.90000000000000002>
+  [232] sub ..................................... <tmpFilledFact - 0.90000000000000002>
+  [233] pushcons 112 ............................ <0.10000000000000001>
+  [235] div ..................................... <(tmpFilledFact - 0.90000000000000002) / 0.10000000000000001>
+  [236] add ..................................... <1.0 + ((tmpFilledFact - 0.90000000000000002) / 0.10000000000000001)>
+  [237] setlocal 72 ............................. tmpFillBoost = 1.0 + ((tmpFilledFact - 0.90000000000000002) / 0.10000000000000001)
+  [239] jmp [257]
+  [242] getlocal 56 ............................. <tmpFilledFact>
+  [244] pushcons 120 ............................ <0.20000000000000001>
+  [246] lt ...................................... <tmpFilledFact < 0.20000000000000001>
+  [247] jmpifz [257] ............................ if tmpFilledFact < 0.20000000000000001 then
+  [250] getlocal 56 ............................. <tmpFilledFact>
+  [252] pushcons 128 ............................ <0.20000000000000001>
+  [254] div ..................................... <tmpFilledFact / 0.20000000000000001>
+  [255] setlocal 72 ............................. tmpFillBoost = tmpFilledFact / 0.20000000000000001
+  [257] pushcons 136 ............................ <0.29999999999999999>
+  [259] getlocal 72 ............................. <tmpFillBoost>
+  [261] pushcons 144 ............................ <1.0>
+  [263] sub ..................................... <tmpFillBoost - 1.0>
+  [264] mul ..................................... <0.29999999999999999 * (tmpFillBoost - 1.0)>
+  [265] pushcons 152 ............................ <1.0>
+  [267] add ..................................... <(0.29999999999999999 * (tmpFillBoost - 1.0)) + 1.0>
+  [268] setlocal 72 ............................. tmpFillBoost = (0.29999999999999999 * (tmpFillBoost - 1.0)) + 1.0
+  [270] getlocal 8 .............................. <band_r>
+  [272] pushsymb 588 ............................ <#memberObjs>
+  [275] pusharglist 2 ........................... <band_r, #memberObjs>
+  [277] objcall 156 ............................. <band_r.memberObjs.count>
+  [280] jmpifz [424] ............................ if band_r.memberObjs.count then / else
+  [283] pusharglist 0 ........................... <[:]>
+  [285] pushproplist ............................ <[:]>
+  [286] setlocal 80 ............................. tmpPerformanceWeighted = [:]
+  [288] pushint8 1 .............................. <1>
+  [291] setlocal 48
+  [293] getlocal 48
+  [295] getlocal 8 .............................. <band_r>
+  [297] getobjprop 588 .......................... <band_r.memberObjs>
+  [300] pusharglist 1 ........................... <band_r.memberObjs>
+  [302] objcall 156 ............................. <band_r.memberObjs.count()>
+  [305] lteq
+  [306] jmpifz [411] ............................ repeat with n = 1 to band_r.memberObjs.count()
+  [309] getlocal 8 .............................. <band_r>
+  [311] getobjprop 588 .......................... <band_r.memberObjs>
+  [314] getlocal 48 ............................. <n>
+  [316] pusharglist 2 ........................... <band_r.memberObjs, n>
+  [318] objcall 119 ............................. <band_r.memberObjs[n]>
+  [321] setlocal 88 ............................. musician_r = band_r.memberObjs[n]
+  [323] getlocal 88 ............................. <musician_r>
+  [325] pushsymb 3314 ........................... <#LiveSkill>
+  [328] pusharglist 2 ........................... <musician_r, #LiveSkill>
+  [330] extcall 162 ............................. <rgetProp(musician_r, #LiveSkill)>
+  [333] setlocal 96 ............................. tmpLiveSkill = rgetProp(musician_r, #LiveSkill)
+  [335] getlocal 88 ............................. <musician_r>
+  [337] pushsymb 596 ............................ <#Mood>
+  [340] pusharglist 2 ........................... <musician_r, #Mood>
+  [342] extcall 162 ............................. <rgetProp(musician_r, #Mood)>
+  [345] setlocal 104 ............................ tmpMood = rgetProp(musician_r, #Mood)
+  [347] getlocal 88 ............................. <musician_r>
+  [349] pushsymb 556 ............................ <#InstrumentalSkills>
+  [352] getlocal 88 ............................. <musician_r>
+  [354] getobjprop 615 .......................... <musician_r.NowPlaying>
+  [357] pusharglist 2 ........................... <[#InstrumentalSkills, musician_r.NowPlaying]>
+  [359] pushlist ................................ <[#InstrumentalSkills, musician_r.NowPlaying]>
+  [360] pusharglist 2 ........................... <musician_r, [#InstrumentalSkills, musician_r.NowPlaying]>
+  [362] extcall 162 ............................. <rgetProp(musician_r, [#InstrumentalSkills, musician_r.NowPlaying])>
+  [365] setlocal 112 ............................ tmpInstrSkill = rgetProp(musician_r, [#InstrumentalSkills, musician_r.NowPlaying])
+  [367] pushcons 160 ............................ <1.0>
+  [369] getlocal 96 ............................. <tmpLiveSkill>
+  [371] pushcons 168 ............................ <0.29999999999999999>
+  [373] getlocal 104 ............................ <tmpMood>
+  [375] pushcons 176 ............................ <0.29999999999999999>
+  [377] getlocal 112 ............................ <tmpInstrSkill>
+  [379] pusharglist 6 ........................... <[1.0: tmpLiveSkill, 0.29999999999999999: tmpMood, 0.29999999999999999: tmpInstrSkill]>
+  [381] pushproplist ............................ <[1.0: tmpLiveSkill, 0.29999999999999999: tmpMood, 0.29999999999999999: tmpInstrSkill]>
+  [382] pusharglist 1 ........................... <[1.0: tmpLiveSkill, 0.29999999999999999: tmpMood, 0.29999999999999999: tmpInstrSkill]>
+  [384] extcall 650 ............................. <calcAverage([1.0: tmpLiveSkill, 0.29999999999999999: tmpMood, 0.29999999999999999: tmpInstrSkill])>
+  [387] setlocal 120 ............................ tmpPerf = calcAverage([1.0: tmpLiveSkill, 0.29999999999999999: tmpMood, 0.29999999999999999: tmpInstrSkill])
+  [389] getlocal 80 ............................. <tmpPerformanceWeighted>
+  [391] pushcons 184 ............................ <1.0>
+  [393] getlocal 120 ............................ <tmpPerf>
+  [395] pusharglistnoret 3 ...................... <tmpPerformanceWeighted, 1.0, tmpPerf>
+  [397] objcall 309 ............................. tmpPerformanceWeighted.addProp(1.0, tmpPerf)
+  [400] pushint8 1
+  [403] getlocal 48
+  [405] add
+  [406] setlocal 48
+  [408] endrepeat [293]
+  [411] getlocal 80 ............................. <tmpPerformanceWeighted>
+  [413] pusharglist 1 ........................... <tmpPerformanceWeighted>
+  [415] extcall 650 ............................. <calcAverage(tmpPerformanceWeighted)>
+  [418] setprop 1460 ............................ BandPerformance = calcAverage(tmpPerformanceWeighted)
+  [421] jmp [428]
+  [424] pushzero ................................ <0>
+  [425] setprop 1460 ............................ BandPerformance = 0
+  [428] getprop 1460 ............................ <BandPerformance>
+  [431] getlocal 72 ............................. <tmpFillBoost>
+  [433] mul ..................................... <BandPerformance * tmpFillBoost>
+  [434] setprop 1460 ............................ BandPerformance = BandPerformance * tmpFillBoost
+  [437] getlocal 0 .............................. <returnList>
+  [439] pushsymb 1472 ........................... <#Performance>
+  [442] getprop 1460 ............................ <BandPerformance>
+  [445] pusharglistnoret 3 ...................... <returnList, #Performance, BandPerformance>
+  [447] objcall 309 ............................. returnList.addProp(#Performance, BandPerformance)
+  [450] pushzero ................................ <0>
+  [451] setlocal 128 ............................ tmpAvgLike = 0
+  [453] getlocal 40 ............................. <tmpTotAudience>
+  [455] pushint8 1 .............................. <1>
+  [458] gteq .................................... <tmpTotAudience >= 1>
+  [459] getlocal 8 .............................. <band_r>
+  [461] pushsymb 588 ............................ <#memberObjs>
+  [464] pusharglist 2 ........................... <band_r, #memberObjs>
+  [466] objcall 156 ............................. <band_r.memberObjs.count>
+  [469] pushzero ................................ <0>
+  [470] gt ...................................... <band_r.memberObjs.count > 0>
+  [471] and ..................................... <(tmpTotAudience >= 1) and (band_r.memberObjs.count > 0)>
+  [472] jmpifz [578] ............................ if (tmpTotAudience >= 1) and (band_r.memberObjs.count > 0) then
+  [475] pusharglist 0 ........................... <[:]>
+  [477] pushproplist ............................ <[:]>
+  [478] setlocal 136 ............................ tmpLikeWeighted = [:]
+  [480] pushint8 1 .............................. <1>
+  [483] setlocal 48
+  [485] getlocal 48
+  [487] getlocal 32 ............................. <tmpNumPerGroup>
+  [489] pusharglist 1 ........................... <tmpNumPerGroup>
+  [491] objcall 156 ............................. <tmpNumPerGroup.count()>
+  [494] lteq
+  [495] jmpifz [569] ............................ repeat with n = 1 to tmpNumPerGroup.count()
+  [498] getglobal 23 ............................ <gRock>
+  [500] getobjprop 82 ........................... <gRock.m_classManager>
+  [503] getlocal 32 ............................. <tmpNumPerGroup>
+  [505] getlocal 48 ............................. <n>
+  [507] pusharglist 2 ........................... <tmpNumPerGroup, n>
+  [509] objcall 295 ............................. <tmpNumPerGroup.getPropAt(n)>
+  [512] pushsymb 589 ............................ <#Group>
+  [515] pusharglist 3 ........................... <gRock.m_classManager, tmpNumPerGroup.getPropAt(n), #Group>
+  [517] objcall 149 ............................. <gRock.m_classManager.getObjByIDAndClass(tmpNumPerGroup.getPropAt(n), #Group)>
+  [520] setlocal 144 ............................ group_r = gRock.m_classManager.getObjByIDAndClass(tmpNumPerGroup.getPropAt(n), #Group)
+  [522] getparam 0 .............................. <me>
+  [524] getlocal 144 ............................ <group_r>
+  [526] pusharglist 2 ........................... <me, group_r>
+  [528] objcall 3312 ............................ <me.likesConcert(group_r)>
+  [531] setlocal 152 ............................ tmpLike = me.likesConcert(group_r)
+  [533] getlocal 32 ............................. <tmpNumPerGroup>
+  [535] getlocal 48 ............................. <n>
+  [537] pusharglist 2 ........................... <tmpNumPerGroup, n>
+  [539] objcall 119 ............................. <tmpNumPerGroup[n]>
+  [542] getlocal 40 ............................. <tmpTotAudience>
+  [544] div ..................................... <tmpNumPerGroup[n] / tmpTotAudience>
+  [545] setlocal 160 ............................ tmpWeight = tmpNumPerGroup[n] / tmpTotAudience
+  [547] getlocal 136 ............................ <tmpLikeWeighted>
+  [549] getlocal 160 ............................ <tmpWeight>
+  [551] getlocal 152 ............................ <tmpLike>
+  [553] pusharglistnoret 3 ...................... <tmpLikeWeighted, tmpWeight, tmpLike>
+  [555] objcall 309 ............................. tmpLikeWeighted.addProp(tmpWeight, tmpLike)
+  [558] pushint8 1
+  [561] getlocal 48
+  [563] add
+  [564] setlocal 48
+  [566] endrepeat [485]
+  [569] getlocal 136 ............................ <tmpLikeWeighted>
+  [571] pusharglist 1 ........................... <tmpLikeWeighted>
+  [573] extcall 650 ............................. <calcAverage(tmpLikeWeighted)>
+  [576] setlocal 128 ............................ tmpAvgLike = calcAverage(tmpLikeWeighted)
+  [578] getlocal 0 .............................. <returnList>
+  [580] pushsymb 1473 ........................... <#Satisfaction>
+  [583] getlocal 128 ............................ <tmpAvgLike>
+  [585] pusharglistnoret 3 ...................... <returnList, #Satisfaction, tmpAvgLike>
+  [587] objcall 309 ............................. returnList.addProp(#Satisfaction, tmpAvgLike)
+  [590] getlocal 0 .............................. <returnList>
+  [592] pusharglistnoret 1 ...................... <returnList>
+  [594] extcall 69 .............................. return returnList
+  [597] ret
+end
+
+on likesConcert me, argWho_r, argWeights, argReturnWhat
+  [  0] getparam 16 ............................. <argWeights>
+  [  2] pusharglist 1 ........................... <argWeights>
+  [  4] extcall 61 .............................. <voidp(argWeights)>
+  [  7] jmpifz [ 45] ............................ if voidp(argWeights) then
+  [ 10] pushsymb 722 ............................ <#music>
+  [ 13] pushint8 1 .............................. <1>
+  [ 16] pushsymb 723 ............................ <#image>
+  [ 19] pushint8 1 .............................. <1>
+  [ 22] pushsymb 528 ............................ <#SongType>
+  [ 25] pushint8 1 .............................. <1>
+  [ 28] pushsymb 724 ............................ <#quality>
+  [ 31] pushint8 1 .............................. <1>
+  [ 34] pushsymb 1472 ........................... <#Performance>
+  [ 37] pushint8 4 .............................. <4>
+  [ 40] pusharglist 10 .......................... <[#music: 1, #image: 1, #SongType: 1, #quality: 1, #Performance: 4]>
+  [ 42] pushproplist ............................ <[#music: 1, #image: 1, #SongType: 1, #quality: 1, #Performance: 4]>
+  [ 43] setparam 16 ............................. argWeights = [#music: 1, #image: 1, #SongType: 1, #quality: 1, #Performance: 4]
+  [ 45] getparam 8 .............................. <argWho_r>
+  [ 47] pusharglist 0 ........................... <>
+  [ 49] extcall 151 ............................. <VOID>
+  [ 52] getparam 16 ............................. <argWeights>
+  [ 54] pushsymb 725 ............................ <#ExtraInfo>
+  [ 57] pusharglist 4 ........................... <argWho_r, VOID, argWeights, #ExtraInfo>
+  [ 59] extcall 721 ............................. <rDefLikesAlbum(argWho_r, VOID, argWeights, #ExtraInfo)>
+  [ 62] setlocal 0 .............................. likesAlbumInfo = rDefLikesAlbum(argWho_r, VOID, argWeights, #ExtraInfo)
+  [ 64] getlocal 0 .............................. <likesAlbumInfo>
+  [ 66] pushsymb 1739 ........................... <#WeightedList>
+  [ 69] pusharglist 2 ........................... <likesAlbumInfo, #WeightedList>
+  [ 71] objcall 119 ............................. <likesAlbumInfo[#WeightedList]>
+  [ 74] setlocal 8 .............................. tmpWeighted = likesAlbumInfo[#WeightedList]
+  [ 76] getlocal 0 .............................. <likesAlbumInfo>
+  [ 78] pushsymb 1101 ........................... <#LikeSorted>
+  [ 81] pusharglist 2 ........................... <likesAlbumInfo, #LikeSorted>
+  [ 83] objcall 119 ............................. <likesAlbumInfo[#LikeSorted]>
+  [ 86] getprop 1460 ............................ <BandPerformance>
+  [ 89] pushsymb 1472 ........................... <#Performance>
+  [ 92] pusharglist 1 ........................... <[#Performance]>
+  [ 94] pushlist ................................ <[#Performance]>
+  [ 95] pusharglistnoret 3 ...................... <likesAlbumInfo[#LikeSorted], BandPerformance, [#Performance]>
+  [ 97] objcall 309 ............................. likesAlbumInfo[#LikeSorted].addProp(BandPerformance, [#Performance])
+  [100] getparam 16 ............................. <argWeights>
+  [102] pushsymb 1472 ........................... <#Performance>
+  [105] pusharglist 2 ........................... <argWeights, #Performance>
+  [107] objcall 119 ............................. <argWeights[#Performance]>
+  [110] pushzero ................................ <0>
+  [111] gt ...................................... <argWeights[#Performance] > 0>
+  [112] jmpifz [135] ............................ if argWeights[#Performance] > 0 then
+  [115] getlocal 8 .............................. <tmpWeighted>
+  [117] getparam 16 ............................. <argWeights>
+  [119] pushsymb 1472 ........................... <#Performance>
+  [122] pusharglist 2 ........................... <argWeights, #Performance>
+  [124] objcall 119 ............................. <argWeights[#Performance]>
+  [127] getprop 1460 ............................ <BandPerformance>
+  [130] pusharglistnoret 3 ...................... <tmpWeighted, argWeights[#Performance], BandPerformance>
+  [132] objcall 309 ............................. tmpWeighted.addProp(argWeights[#Performance], BandPerformance)
+  [135] getlocal 8 .............................. <tmpWeighted>
+  [137] pusharglist 1 ........................... <tmpWeighted>
+  [139] extcall 650 ............................. <calcAverage(tmpWeighted)>
+  [142] setlocal 16 ............................. tmpLike = calcAverage(tmpWeighted)
+  [144] getparam 24 ............................. <argReturnWhat>
+  [146] pushsymb 725 ............................ <#ExtraInfo>
+  [149] eq ...................................... <argReturnWhat = #ExtraInfo>
+  [150] jmpifz [160] ............................ if argReturnWhat = #ExtraInfo then
+  [153] getlocal 0 .............................. <likesAlbumInfo>
+  [155] pusharglistnoret 1 ...................... <likesAlbumInfo>
+  [157] extcall 69 .............................. return likesAlbumInfo
+  [160] getlocal 16 ............................. <tmpLike>
+  [162] pusharglistnoret 1 ...................... <tmpLike>
+  [164] extcall 69 .............................. return tmpLike
+  [167] ret
+end

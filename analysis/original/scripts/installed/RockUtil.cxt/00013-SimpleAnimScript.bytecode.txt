@@ -1,0 +1,273 @@
+property frameList, cnt, SP, reportObj, Active, firstFrame, options, numFrames, speed
+global gUseful
+
+on new me, argReportObj, argSPNum, argFirstFrameName, argOptions
+  [  0] getparam 32 ............................. <argOptions>
+  [  2] pusharglist 1 ........................... <argOptions>
+  [  4] extcall 68 .............................. <voidp(argOptions)>
+  [  7] jmpifz [ 15] ............................ if voidp(argOptions) then
+  [ 10] pusharglist 0 ........................... <[:]>
+  [ 12] pushproplist ............................ <[:]>
+  [ 13] setparam 32 ............................. argOptions = [:]
+  [ 15] getparam 32 ............................. <argOptions>
+  [ 17] setprop 532 ............................. options = argOptions
+  [ 20] getparam 32 ............................. <argOptions>
+  [ 22] pushsymb 533 ............................ <#frameList>
+  [ 25] pusharglist 2 ........................... <argOptions, #frameList>
+  [ 27] objcall 34 .............................. <argOptions[#frameList]>
+  [ 30] setprop 533 ............................. frameList = argOptions[#frameList]
+  [ 33] getprop 533 ............................. <frameList>
+  [ 36] pusharglist 1 ........................... <frameList>
+  [ 38] extcall 68 .............................. <voidp(frameList)>
+  [ 41] jmpifz [128] ............................ if voidp(frameList) then
+  [ 44] getparam 32 ............................. <argOptions>
+  [ 46] pushsymb 534 ............................ <#numFrames>
+  [ 49] pusharglist 2 ........................... <argOptions, #numFrames>
+  [ 51] objcall 34 .............................. <argOptions[#numFrames]>
+  [ 54] pushzero ................................ <0>
+  [ 55] gt ...................................... <argOptions[#numFrames] > 0>
+  [ 56] jmpifz [ 75] ............................ if argOptions[#numFrames] > 0 then / else
+  [ 59] getparam 32 ............................. <argOptions>
+  [ 61] pushsymb 534 ............................ <#numFrames>
+  [ 64] pusharglist 2 ........................... <argOptions, #numFrames>
+  [ 66] objcall 34 .............................. <argOptions[#numFrames]>
+  [ 69] setprop 534 ............................. numFrames = argOptions[#numFrames]
+  [ 72] jmp [128]
+  [ 75] getparam 24 ............................. <argFirstFrameName>
+  [ 77] pushcons 0 .............................. <"Chart">
+  [ 79] joinstr ................................. <argFirstFrameName & "Chart">
+  [ 80] setlocal 0 .............................. tmpName = argFirstFrameName & "Chart"
+  [ 82] getlocal 0 .............................. <tmpName>
+  [ 84] pusharglist 1 ........................... <tmpName>
+  [ 86] extcall 535 ............................. <getMemberNum(tmpName)>
+  [ 89] setlocal 8 .............................. tmpNum = getMemberNum(tmpName)
+  [ 91] getlocal 8 .............................. <tmpNum>
+  [ 93] pushzero ................................ <0>
+  [ 94] gt ...................................... <tmpNum > 0>
+  [ 95] jmpifz [113] ............................ if tmpNum > 0 then
+  [ 98] getlocal 0 .............................. <tmpName>
+  [100] pusharglist 1 ........................... <tmpName>
+  [102] extcall 296 ............................. <member(tmpName)>
+  [105] getobjprop 297 .......................... <member(tmpName).text>
+  [108] getobjprop 176 .......................... <member(tmpName).text.value>
+  [111] setlocal 16 ............................. argFrameList = member(tmpName).text.value
+  [113] getlocal 16 ............................. <argFrameList>
+  [115] pusharglist 1 ........................... <argFrameList>
+  [117] extcall 68 .............................. <voidp(argFrameList)>
+  [120] jmpifz [128] ............................ if voidp(argFrameList) then
+  [123] pusharglist 0 ........................... <[]>
+  [125] pushlist ................................ <[]>
+  [126] setlocal 16 ............................. argFrameList = []
+  [128] getlocal 16 ............................. <argFrameList>
+  [130] pusharglist 1 ........................... <argFrameList>
+  [132] extcall 136 ............................. <listp(argFrameList)>
+  [135] jmpifz [148] ............................ if listp(argFrameList) then
+  [138] getlocal 16 ............................. <argFrameList>
+  [140] pusharglist 1 ........................... <argFrameList>
+  [142] objcall 32 .............................. <argFrameList.count()>
+  [145] setprop 534 ............................. numFrames = argFrameList.count()
+  [148] pushint8 1 .............................. <1>
+  [151] inv ..................................... <-1>
+  [152] getparam 24 ............................. <argFirstFrameName>
+  [154] pusharglist 1 ........................... <argFirstFrameName>
+  [156] extcall 296 ............................. <member(argFirstFrameName)>
+  [159] getobjprop 537 .......................... <member(argFirstFrameName).number>
+  [162] add ..................................... <-1 + member(argFirstFrameName).number>
+  [163] setprop 536 ............................. firstFrame = -1 + member(argFirstFrameName).number
+  [166] getparam 32 ............................. <argOptions>
+  [168] pushsymb 211 ............................ <#speed>
+  [171] pusharglist 2 ........................... <argOptions, #speed>
+  [173] objcall 34 .............................. <argOptions[#speed]>
+  [176] setprop 211 ............................. speed = argOptions[#speed]
+  [179] getprop 211 ............................. <speed>
+  [182] pusharglist 1 ........................... <speed>
+  [184] extcall 68 .............................. <voidp(speed)>
+  [187] jmpifz [195] ............................ if voidp(speed) then
+  [190] pushcons 8 .............................. <1.0>
+  [192] setprop 211 ............................. speed = 1.0
+  [195] getparam 8 .............................. <argReportObj>
+  [197] setprop 538 ............................. reportObj = argReportObj
+  [200] getlocal 16 ............................. <argFrameList>
+  [202] setprop 533 ............................. frameList = argFrameList
+  [205] getparam 16 ............................. <argSPNum>
+  [207] pusharglist 1 ........................... <argSPNum>
+  [209] extcall 540 ............................. <sprite(argSPNum)>
+  [212] setprop 539 ............................. SP = sprite(argSPNum)
+  [215] pushint8 1 .............................. <1>
+  [218] setprop 541 ............................. Active = 1
+  [221] pushzero ................................ <0>
+  [222] setprop 542 ............................. cnt = 0
+  [225] getparam 0 .............................. <me>
+  [227] pusharglistnoret 1 ...................... <me>
+  [229] objcall 5 ............................... me.timeTick()
+  [231] getglobal 23 ............................ <gUseful>
+  [233] getobjprop 24 ........................... <gUseful.frameTimer>
+  [235] getparam 0 .............................. <me>
+  [237] pusharglistnoret 2 ...................... <gUseful.frameTimer, me>
+  [239] objcall 56 .............................. gUseful.frameTimer.addObject(me)
+  [242] getparam 0 .............................. <me>
+  [244] pusharglistnoret 1 ...................... <me>
+  [246] extcall 21 .............................. return me
+  [248] ret
+end
+
+on kill me, argKeepMember
+  [  0] getparam 8 .............................. <argKeepMember>
+  [  2] pushint8 1 .............................. <1>
+  [  5] nteq .................................... <argKeepMember <> 1>
+  [  6] jmpifz [ 22] ............................ if argKeepMember <> 1 then
+  [  9] getprop 539 ............................. <SP>
+  [ 12] pushcons 16 ............................. <"Dummy">
+  [ 14] pusharglist 1 ........................... <"Dummy">
+  [ 16] extcall 296 ............................. <member("Dummy")>
+  [ 19] setobjprop 296 .......................... SP.member = member("Dummy")
+  [ 22] getglobal 23 ............................ <gUseful>
+  [ 24] getobjprop 24 ........................... <gUseful.frameTimer>
+  [ 26] getparam 0 .............................. <me>
+  [ 28] pusharglistnoret 2 ...................... <gUseful.frameTimer, me>
+  [ 30] objcall 25 .............................. gUseful.frameTimer.deleteObject(me)
+  [ 32] pushzero ................................ <0>
+  [ 33] setprop 538 ............................. reportObj = 0
+  [ 36] pushzero ................................ <0>
+  [ 37] pusharglistnoret 1 ...................... <0>
+  [ 39] extcall 21 .............................. return 0
+  [ 41] ret
+end
+
+on getCurrentMember me, argCnt
+  [  0] getparam 8 .............................. <argCnt>
+  [  2] pusharglist 1 ........................... <argCnt>
+  [  4] extcall 68 .............................. <voidp(argCnt)>
+  [  7] jmpifz [ 20] ............................ if voidp(argCnt) then
+  [ 10] getprop 542 ............................. <cnt>
+  [ 13] pusharglist 1 ........................... <cnt>
+  [ 15] extcall 54 .............................. <integer(cnt)>
+  [ 18] setparam 8 .............................. argCnt = integer(cnt)
+  [ 20] getprop 533 ............................. <frameList>
+  [ 23] pusharglist 1 ........................... <frameList>
+  [ 25] extcall 136 ............................. <listp(frameList)>
+  [ 28] jmpifz [ 55] ............................ if listp(frameList) then / else
+  [ 31] getprop 536 ............................. <firstFrame>
+  [ 34] getprop 533 ............................. <frameList>
+  [ 37] getparam 8 .............................. <argCnt>
+  [ 39] pusharglist 2 ........................... <frameList, argCnt>
+  [ 41] objcall 34 .............................. <frameList[argCnt]>
+  [ 44] add ..................................... <firstFrame + frameList[argCnt]>
+  [ 45] pusharglist 1 ........................... <firstFrame + frameList[argCnt]>
+  [ 47] extcall 296 ............................. <member(firstFrame + frameList[argCnt])>
+  [ 50] setlocal 0 .............................. tmpMemb = member(firstFrame + frameList[argCnt])
+  [ 52] jmp [ 68]
+  [ 55] getprop 536 ............................. <firstFrame>
+  [ 58] getparam 8 .............................. <argCnt>
+  [ 60] add ..................................... <firstFrame + argCnt>
+  [ 61] pusharglist 1 ........................... <firstFrame + argCnt>
+  [ 63] extcall 296 ............................. <member(firstFrame + argCnt)>
+  [ 66] setlocal 0 .............................. tmpMemb = member(firstFrame + argCnt)
+  [ 68] getlocal 0 .............................. <tmpMemb>
+  [ 70] pusharglistnoret 1 ...................... <tmpMemb>
+  [ 72] extcall 21 .............................. return tmpMemb
+  [ 74] ret
+end
+
+on timeTick me
+  [  0] getprop 541 ............................. <Active>
+  [  3] not ..................................... <not Active>
+  [  4] jmpifz [  8] ............................ if not Active then
+  [  7] ret ..................................... exit
+  [  8] getprop 542 ............................. <cnt>
+  [ 11] getprop 211 ............................. <speed>
+  [ 14] add ..................................... <cnt + speed>
+  [ 15] setprop 542 ............................. cnt = cnt + speed
+  [ 18] getprop 542 ............................. <cnt>
+  [ 21] pusharglist 1 ........................... <cnt>
+  [ 23] extcall 54 .............................. <integer(cnt)>
+  [ 26] setlocal 0 .............................. cntInt = integer(cnt)
+  [ 28] getlocal 0 .............................. <cntInt>
+  [ 30] getprop 534 ............................. <numFrames>
+  [ 33] gt ...................................... <cntInt > numFrames>
+  [ 34] jmpifz [113] ............................ if cntInt > numFrames then
+  [ 37] getprop 538 ............................. <reportObj>
+  [ 40] pusharglist 1 ........................... <reportObj>
+  [ 42] extcall 71 .............................. <objectp(reportObj)>
+  [ 45] jmpifz [ 75] ............................ if objectp(reportObj) then / else
+  [ 48] getprop 534 ............................. <numFrames>
+  [ 51] setprop 542 ............................. cnt = numFrames
+  [ 54] getprop 538 ............................. <reportObj>
+  [ 57] getparam 0 .............................. <me>
+  [ 59] pushsymb 553 ............................ <#done>
+  [ 62] pusharglistnoret 3 ...................... <reportObj, me, #done>
+  [ 64] objcall 74 .............................. reportObj.Report(me, #done)
+  [ 67] pushzero ................................ <0>
+  [ 68] setprop 541 ............................. Active = 0
+  [ 71] ret ..................................... exit
+  [ 72] jmp [113]
+  [ 75] getprop 532 ............................. <options>
+  [ 78] pushsymb 554 ............................ <#StopWhenDone>
+  [ 81] pusharglist 2 ........................... <options, #StopWhenDone>
+  [ 83] objcall 34 .............................. <options[#StopWhenDone]>
+  [ 86] pushint8 1 .............................. <1>
+  [ 89] eq ...................................... <options[#StopWhenDone] = 1>
+  [ 90] jmpifz [107] ............................ if options[#StopWhenDone] = 1 then / else
+  [ 93] getprop 534 ............................. <numFrames>
+  [ 96] setprop 542 ............................. cnt = numFrames
+  [ 99] pushzero ................................ <0>
+  [100] setprop 541 ............................. Active = 0
+  [103] ret ..................................... exit
+  [104] jmp [113]
+  [107] pushint8 1 .............................. <1>
+  [110] setprop 542 ............................. cnt = 1
+  [113] getparam 0 .............................. <me>
+  [115] getlocal 0 .............................. <cntInt>
+  [117] pusharglist 2 ........................... <me, cntInt>
+  [119] objcall 531 ............................. <me.getCurrentMember(cntInt)>
+  [122] setlocal 8 .............................. tmpMemb = me.getCurrentMember(cntInt)
+  [124] getprop 539 ............................. <SP>
+  [127] getlocal 8 .............................. <tmpMemb>
+  [129] setobjprop 296 .......................... SP.member = tmpMemb
+  [132] getprop 532 ............................. <options>
+  [135] pushsymb 555 ............................ <#rect>
+  [138] pusharglist 2 ........................... <options, #rect>
+  [140] objcall 34 .............................. <options[#rect]>
+  [143] pusharglist 1 ........................... <options[#rect]>
+  [145] extcall 136 ............................. <listp(options[#rect])>
+  [148] jmpifz [171] ............................ if listp(options[#rect]) then / else
+  [151] getprop 539 ............................. <SP>
+  [154] getprop 532 ............................. <options>
+  [157] pushsymb 555 ............................ <#rect>
+  [160] pusharglist 2 ........................... <options, #rect>
+  [162] objcall 34 .............................. <options[#rect]>
+  [165] setobjprop 555 .......................... SP.rect = options[#rect]
+  [168] jmp [252]
+  [171] getprop 532 ............................. <options>
+  [174] pushsymb 556 ............................ <#stretch>
+  [177] pusharglist 2 ........................... <options, #stretch>
+  [179] objcall 34 .............................. <options[#stretch]>
+  [182] pusharglist 1 ........................... <options[#stretch]>
+  [184] extcall 136 ............................. <listp(options[#stretch])>
+  [187] jmpifz [252] ............................ if listp(options[#stretch]) then
+  [190] getprop 539 ............................. <SP>
+  [193] getlocal 8 .............................. <tmpMemb>
+  [195] getobjprop 557 .......................... <tmpMemb.width>
+  [198] getprop 532 ............................. <options>
+  [201] pushsymb 556 ............................ <#stretch>
+  [204] pusharglist 2 ........................... <options, #stretch>
+  [206] objcall 34 .............................. <options[#stretch]>
+  [209] pushint8 1 .............................. <1>
+  [212] pusharglist 2 ........................... <options[#stretch], 1>
+  [214] objcall 34 .............................. <options[#stretch][1]>
+  [217] mul ..................................... <tmpMemb.width * options[#stretch][1]>
+  [218] setobjprop 557 .......................... SP.width = tmpMemb.width * options[#stretch][1]
+  [221] getprop 539 ............................. <SP>
+  [224] getlocal 8 .............................. <tmpMemb>
+  [226] getobjprop 558 .......................... <tmpMemb.height>
+  [229] getprop 532 ............................. <options>
+  [232] pushsymb 556 ............................ <#stretch>
+  [235] pusharglist 2 ........................... <options, #stretch>
+  [237] objcall 34 .............................. <options[#stretch]>
+  [240] pushint8 2 .............................. <2>
+  [243] pusharglist 2 ........................... <options[#stretch], 2>
+  [245] objcall 34 .............................. <options[#stretch][2]>
+  [248] mul ..................................... <tmpMemb.height * options[#stretch][2]>
+  [249] setobjprop 558 .......................... SP.height = tmpMemb.height * options[#stretch][2]
+  [252] ret
+end

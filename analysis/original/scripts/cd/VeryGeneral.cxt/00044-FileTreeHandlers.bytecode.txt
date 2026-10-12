@@ -1,0 +1,378 @@
+on showFileIOErrors
+  [  0] pushcons 0 .............................. <"FileIO">
+  [  2] pusharglist 1 ........................... <"FileIO">
+  [  4] extcall 47 .............................. <xtra("FileIO")>
+  [  7] pusharglist 1 ........................... <xtra("FileIO")>
+  [  9] extcall 0 ............................... <new(xtra("FileIO"))>
+  [ 11] setlocal 0 .............................. b = new(xtra("FileIO"))
+  [ 13] pushint8 1 .............................. <1>
+  [ 16] setlocal 8
+  [ 18] getlocal 8
+  [ 20] pushint8 10000 .......................... <10000>
+  [ 23] inv ..................................... <-10000>
+  [ 24] gteq
+  [ 25] jmpifz [ 77] ............................ repeat with n = 1 down to -10000
+  [ 28] getlocal 0 .............................. <b>
+  [ 30] getlocal 8 .............................. <n>
+  [ 32] pusharglist 2 ........................... <b, n>
+  [ 34] objcall 551 ............................. <b.error(n)>
+  [ 37] setlocal 16 ............................. tmpStr = b.error(n)
+  [ 39] getlocal 16 ............................. <tmpStr>
+  [ 41] pusharglist 1 ........................... <tmpStr>
+  [ 43] extcall 416 ............................. <stringp(tmpStr)>
+  [ 46] jmpifz [ 66] ............................ if stringp(tmpStr) then
+  [ 49] getlocal 16 ............................. <tmpStr>
+  [ 51] pushcons 8 .............................. <"Unknown error">
+  [ 53] nteq .................................... <tmpStr <> "Unknown error">
+  [ 54] jmpifz [ 66] ............................ if tmpStr <> "Unknown error" then
+  [ 57] getlocal 16 ............................. <tmpStr>
+  [ 59] getlocal 8 .............................. <n>
+  [ 61] pusharglistnoret 2 ...................... <tmpStr, n>
+  [ 63] extcall 142 ............................. put tmpStr, n
+  [ 66] pushint8 -1
+  [ 69] getlocal 8
+  [ 71] add
+  [ 72] setlocal 8
+  [ 74] endrepeat [ 18]
+  [ 77] ret
+end
+
+on getFileTree argFolder, argFoldersOnly, arg_zMaxDepth, arg_zDepth
+  [  0] pusharglist 0 ........................... <[:]>
+  [  2] pushproplist ............................ <[:]>
+  [  3] setlocal 0 .............................. tmpList = [:]
+  [  5] getlocal 0 .............................. <tmpList>
+  [  7] pusharglistnoret 1 ...................... <tmpList>
+  [  9] extcall 197 ............................. sort(tmpList)
+  [ 12] getparam 24 ............................. <arg_zDepth>
+  [ 14] pushint8 1 .............................. <1>
+  [ 17] add ..................................... <arg_zDepth + 1>
+  [ 18] setparam 24 ............................. arg_zDepth = arg_zDepth + 1
+  [ 20] getparam 16 ............................. <arg_zMaxDepth>
+  [ 22] pushzero ................................ <0>
+  [ 23] gt ...................................... <arg_zMaxDepth > 0>
+  [ 24] getparam 24 ............................. <arg_zDepth>
+  [ 26] getparam 16 ............................. <arg_zMaxDepth>
+  [ 28] gt ...................................... <arg_zDepth > arg_zMaxDepth>
+  [ 29] and ..................................... <(arg_zMaxDepth > 0) and (arg_zDepth > arg_zMaxDepth)>
+  [ 30] jmpifz [ 40] ............................ if (arg_zMaxDepth > 0) and (arg_zDepth > arg_zMaxDepth) then
+  [ 33] getlocal 0 .............................. <tmpList>
+  [ 35] pusharglistnoret 1 ...................... <tmpList>
+  [ 37] extcall 32 .............................. return tmpList
+  [ 40] pushint8 1 .............................. <1>
+  [ 43] setlocal 8
+  [ 45] getlocal 8
+  [ 47] pusharglist 0 ........................... <>
+  [ 49] thebuiltin 567 .......................... <the maxinteger>
+  [ 52] lteq
+  [ 53] jmpifz [167] ............................ repeat with n = 1 to the maxinteger
+  [ 56] getparam 0 .............................. <argFolder>
+  [ 58] getlocal 8 .............................. <n>
+  [ 60] pusharglist 2 ........................... <argFolder, n>
+  [ 62] extcall 568 ............................. <getNthFileNameInFolder(argFolder, n)>
+  [ 65] setlocal 16 ............................. tmpName = getNthFileNameInFolder(argFolder, n)
+  [ 67] getlocal 16 ............................. <tmpName>
+  [ 69] pushcons 16 ............................. <EMPTY>
+  [ 71] eq ...................................... <tmpName = EMPTY>
+  [ 72] jmpifz [ 78] ............................ if tmpName = EMPTY then
+  [ 75] jmp [167] ............................... exit repeat
+  [ 78] getparam 0 .............................. <argFolder>
+  [ 80] pushcons 24 ............................. <"\\">
+  [ 82] joinstr ................................. <argFolder & "\\">
+  [ 83] getlocal 16 ............................. <tmpName>
+  [ 85] joinstr ................................. <argFolder & "\\" & tmpName>
+  [ 86] getparam 8 .............................. <argFoldersOnly>
+  [ 88] getparam 16 ............................. <arg_zMaxDepth>
+  [ 90] getparam 24 ............................. <arg_zDepth>
+  [ 92] pusharglist 4 ........................... <argFolder & "\\" & tmpName, argFoldersOnly, arg_zMaxDepth, arg_zDepth>
+  [ 94] localcall 1 ............................. <getFileTree(argFolder & "\\" & tmpName, argFoldersOnly, arg_zMaxDepth, arg_zDepth)>
+  [ 96] setlocal 24 ............................. tmpSubList = getFileTree(argFolder & "\\" & tmpName, argFoldersOnly, arg_zMaxDepth, arg_zDepth)
+  [ 98] getlocal 24 ............................. <tmpSubList>
+  [100] pusharglist 1 ........................... <tmpSubList>
+  [102] extcall 175 ............................. <count(tmpSubList)>
+  [105] setlocal 32 ............................. tmpIsFolder = count(tmpSubList)
+  [107] getlocal 32 ............................. <tmpIsFolder>
+  [109] not ..................................... <not tmpIsFolder>
+  [110] jmpifz [121] ............................ if not tmpIsFolder then
+  [113] getlocal 16 ............................. <tmpName>
+  [115] pusharglist 1 ........................... <tmpName>
+  [117] localcall 3 ............................. <checkFileNameIfFolder(tmpName)>
+  [119] setlocal 32 ............................. tmpIsFolder = checkFileNameIfFolder(tmpName)
+  [121] getlocal 32 ............................. <tmpIsFolder>
+  [123] jmpifz [140] ............................ if tmpIsFolder then
+  [126] getlocal 0 .............................. <tmpList>
+  [128] getlocal 16 ............................. <tmpName>
+  [130] getlocal 24 ............................. <tmpSubList>
+  [132] pusharglistnoret 3 ...................... <tmpList, tmpName, tmpSubList>
+  [134] objcall 45 .............................. tmpList.addProp(tmpName, tmpSubList)
+  [137] jmp [156] ............................... next repeat
+  [140] getparam 8 .............................. <argFoldersOnly>
+  [142] not ..................................... <not argFoldersOnly>
+  [143] jmpifz [156] ............................ if not argFoldersOnly then
+  [146] getlocal 0 .............................. <tmpList>
+  [148] getlocal 16 ............................. <tmpName>
+  [150] pushzero ................................ <0>
+  [151] pusharglistnoret 3 ...................... <tmpList, tmpName, 0>
+  [153] objcall 45 .............................. tmpList.addProp(tmpName, 0)
+  [156] pushint8 1
+  [159] getlocal 8
+  [161] add
+  [162] setlocal 8
+  [164] endrepeat [ 45]
+  [167] getlocal 0 .............................. <tmpList>
+  [169] pusharglistnoret 1 ...................... <tmpList>
+  [171] extcall 32 .............................. return tmpList
+  [174] ret
+end
+
+on getFolderContents argFolder
+  [  0] pusharglist 0 ........................... <[]>
+  [  2] pushlist ................................ <[]>
+  [  3] setlocal 0 .............................. tmpFiles = []
+  [  5] pusharglist 0 ........................... <[]>
+  [  7] pushlist ................................ <[]>
+  [  8] setlocal 8 .............................. tmpFolders = []
+  [ 10] getparam 0 .............................. <argFolder>
+  [ 12] pushzero ................................ <0>
+  [ 13] pushint8 1 .............................. <1>
+  [ 16] pusharglist 3 ........................... <argFolder, 0, 1>
+  [ 18] localcall 1 ............................. <getFileTree(argFolder, 0, 1)>
+  [ 20] setlocal 16 ............................. tmpList = getFileTree(argFolder, 0, 1)
+  [ 22] pushint8 1 .............................. <1>
+  [ 25] setlocal 24
+  [ 27] getlocal 24
+  [ 29] getlocal 16 ............................. <tmpList>
+  [ 31] pusharglist 1 ........................... <tmpList>
+  [ 33] objcall 175 ............................. <tmpList.count()>
+  [ 36] lteq
+  [ 37] jmpifz [ 99] ............................ repeat with n = 1 to tmpList.count()
+  [ 40] getlocal 16 ............................. <tmpList>
+  [ 42] getlocal 24 ............................. <n>
+  [ 44] pusharglist 2 ........................... <tmpList, n>
+  [ 46] objcall 207 ............................. <tmpList.getPropAt(n)>
+  [ 49] setlocal 32 ............................. tmpName = tmpList.getPropAt(n)
+  [ 51] getlocal 16 ............................. <tmpList>
+  [ 53] getlocal 24 ............................. <n>
+  [ 55] pusharglist 2 ........................... <tmpList, n>
+  [ 57] objcall 23 .............................. <tmpList[n]>
+  [ 59] pusharglist 1 ........................... <tmpList[n]>
+  [ 61] extcall 128 ............................. <listp(tmpList[n])>
+  [ 64] jmpifz [ 79] ............................ if listp(tmpList[n]) then
+  [ 67] getlocal 8 .............................. <tmpFolders>
+  [ 69] getlocal 32 ............................. <tmpName>
+  [ 71] pusharglistnoret 2 ...................... <tmpFolders, tmpName>
+  [ 73] objcall 183 ............................. tmpFolders.add(tmpName)
+  [ 76] jmp [ 88] ............................... next repeat
+  [ 79] getlocal 0 .............................. <tmpFiles>
+  [ 81] getlocal 32 ............................. <tmpName>
+  [ 83] pusharglistnoret 2 ...................... <tmpFiles, tmpName>
+  [ 85] objcall 183 ............................. tmpFiles.add(tmpName)
+  [ 88] pushint8 1
+  [ 91] getlocal 24
+  [ 93] add
+  [ 94] setlocal 24
+  [ 96] endrepeat [ 27]
+  [ 99] pushsymb 918 ............................ <#Folders>
+  [102] getlocal 8 .............................. <tmpFolders>
+  [104] pushsymb 919 ............................ <#Files>
+  [107] getlocal 0 .............................. <tmpFiles>
+  [109] pusharglist 4 ........................... <[#Folders: tmpFolders, #Files: tmpFiles]>
+  [111] pushproplist ............................ <[#Folders: tmpFolders, #Files: tmpFiles]>
+  [112] pusharglistnoret 1 ...................... <[#Folders: tmpFolders, #Files: tmpFiles]>
+  [114] extcall 32 .............................. return [#Folders: tmpFolders, #Files: tmpFiles]
+  [117] ret
+end
+
+on checkFileNameIfFolder argName, argPath
+  [  0] pushzero ................................ <0>
+  [  1] setlocal 0 .............................. tmpOK = 0
+  [  3] pushcons 32 ............................. <".">
+  [  5] getparam 0 .............................. <argName>
+  [  7] pusharglist 2 ........................... <".", argName>
+  [  9] extcall 118 ............................. <offset(".", argName)>
+  [ 12] jmpifz [ 86] ............................ if offset(".", argName) then / else
+  [ 15] getparam 0 .............................. <argName>
+  [ 17] getobjprop 556 .......................... <argName.length>
+  [ 20] setlocal 8
+  [ 22] getlocal 8
+  [ 24] pushint8 1 .............................. <1>
+  [ 27] gteq
+  [ 28] jmpifz [ 83] ............................ repeat with n = argName.length down to 1
+  [ 31] getparam 0 .............................. <argName>
+  [ 33] pushsymb 119 ............................ <#char>
+  [ 36] getlocal 8 .............................. <n>
+  [ 38] pusharglist 3 ........................... <argName, #char, n>
+  [ 40] objcall 124 ............................. <argName.char[n]>
+  [ 43] pushcons 40 ............................. <".">
+  [ 45] eq ...................................... <argName.char[n] = ".">
+  [ 46] jmpifz [ 72] ............................ if argName.char[n] = "." then
+  [ 49] getlocal 8 .............................. <n>
+  [ 51] getparam 0 .............................. <argName>
+  [ 53] getobjprop 556 .......................... <argName.length>
+  [ 56] pushint8 4 .............................. <4>
+  [ 59] sub ..................................... <argName.length - 4>
+  [ 60] lt ...................................... <n < (argName.length - 4)>
+  [ 61] jmpifz [ 72] ............................ if n < (argName.length - 4) then
+  [ 64] pushint8 1 .............................. <1>
+  [ 67] setlocal 0 .............................. tmpOK = 1
+  [ 69] jmp [ 83] ............................... exit repeat
+  [ 72] pushint8 -1
+  [ 75] getlocal 8
+  [ 77] add
+  [ 78] setlocal 8
+  [ 80] endrepeat [ 22]
+  [ 83] jmp [ 91]
+  [ 86] pushint8 1 .............................. <1>
+  [ 89] setlocal 0 .............................. tmpOK = 1
+  [ 91] getlocal 0 .............................. <tmpOK>
+  [ 93] jmpifz [ 96] ............................ if tmpOK then
+  [ 96] getlocal 0 .............................. <tmpOK>
+  [ 98] pusharglistnoret 1 ...................... <tmpOK>
+  [100] extcall 32 .............................. return tmpOK
+  [103] ret
+end
+
+on convFileTreeToStr argList, argDelim, argLevel
+  [  0] pushcons 48 ............................. <EMPTY>
+  [  2] setlocal 0 .............................. tmpStr = EMPTY
+  [  4] pushcons 56 ............................. <RETURN>
+  [  6] setlocal 8 .............................. tmpLF = RETURN
+  [  8] pushcons 64 ............................. <EMPTY>
+  [ 10] setlocal 16 ............................. tmpLvlStr = EMPTY
+  [ 12] pushint8 1 .............................. <1>
+  [ 15] setlocal 24
+  [ 17] getlocal 24
+  [ 19] getparam 16 ............................. <argLevel>
+  [ 21] lteq
+  [ 22] jmpifz [ 42] ............................ repeat with tmpLbl = 1 to argLevel
+  [ 25] getlocal 16 ............................. <tmpLvlStr>
+  [ 27] getparam 8 .............................. <argDelim>
+  [ 29] joinstr ................................. <tmpLvlStr & argDelim>
+  [ 30] setlocal 16 ............................. tmpLvlStr = tmpLvlStr & argDelim
+  [ 32] pushint8 1
+  [ 35] getlocal 24
+  [ 37] add
+  [ 38] setlocal 24
+  [ 40] endrepeat [ 17]
+  [ 42] pushint8 1 .............................. <1>
+  [ 45] setlocal 32
+  [ 47] getlocal 32
+  [ 49] getparam 0 .............................. <argList>
+  [ 51] pusharglist 1 ........................... <argList>
+  [ 53] objcall 175 ............................. <argList.count()>
+  [ 56] lteq
+  [ 57] jmpifz [134] ............................ repeat with n = 1 to argList.count()
+  [ 60] getparam 0 .............................. <argList>
+  [ 62] getlocal 32 ............................. <n>
+  [ 64] pusharglist 2 ........................... <argList, n>
+  [ 66] objcall 207 ............................. <argList.getPropAt(n)>
+  [ 69] setlocal 40 ............................. tmpName = argList.getPropAt(n)
+  [ 71] getlocal 0 .............................. <tmpStr>
+  [ 73] getlocal 16 ............................. <tmpLvlStr>
+  [ 75] joinstr ................................. <tmpStr & tmpLvlStr>
+  [ 76] getlocal 40 ............................. <tmpName>
+  [ 78] joinstr ................................. <tmpStr & tmpLvlStr & tmpName>
+  [ 79] getlocal 8 .............................. <tmpLF>
+  [ 81] joinstr ................................. <tmpStr & tmpLvlStr & tmpName & tmpLF>
+  [ 82] setlocal 0 .............................. tmpStr = tmpStr & tmpLvlStr & tmpName & tmpLF
+  [ 84] getparam 0 .............................. <argList>
+  [ 86] getlocal 32 ............................. <n>
+  [ 88] pusharglist 2 ........................... <argList, n>
+  [ 90] objcall 23 .............................. <argList[n]>
+  [ 92] setlocal 48 ............................. tmpSub = argList[n]
+  [ 94] getlocal 48 ............................. <tmpSub>
+  [ 96] pusharglist 1 ........................... <tmpSub>
+  [ 98] extcall 128 ............................. <listp(tmpSub)>
+  [101] jmpifz [123] ............................ if listp(tmpSub) then
+  [104] getlocal 0 .............................. <tmpStr>
+  [106] getlocal 48 ............................. <tmpSub>
+  [108] getparam 8 .............................. <argDelim>
+  [110] getparam 16 ............................. <argLevel>
+  [112] pushint8 1 .............................. <1>
+  [115] add ..................................... <argLevel + 1>
+  [116] pusharglist 3 ........................... <tmpSub, argDelim, argLevel + 1>
+  [118] localcall 4 ............................. <convFileTreeToStr(tmpSub, argDelim, argLevel + 1)>
+  [120] joinstr ................................. <tmpStr & convFileTreeToStr(tmpSub, argDelim, argLevel + 1)>
+  [121] setlocal 0 .............................. tmpStr = tmpStr & convFileTreeToStr(tmpSub, argDelim, argLevel + 1)
+  [123] pushint8 1
+  [126] getlocal 32
+  [128] add
+  [129] setlocal 32
+  [131] endrepeat [ 47]
+  [134] getlocal 0 .............................. <tmpStr>
+  [136] pusharglistnoret 1 ...................... <tmpStr>
+  [138] extcall 32 .............................. return tmpStr
+  [141] ret
+end
+
+on convFileTreeToStr2Cols argList, argInFolder
+  [  0] pushcons 72 ............................. <EMPTY>
+  [  2] setlocal 0 .............................. tmpDirs = EMPTY
+  [  4] pushcons 80 ............................. <EMPTY>
+  [  6] setlocal 8 .............................. tmpFiles = EMPTY
+  [  8] pushcons 88 ............................. <" ">
+  [ 10] setlocal 16 ............................. tmpDelim = " "
+  [ 12] pushcons 96 ............................. <RETURN>
+  [ 14] setlocal 24 ............................. tmpLF = RETURN
+  [ 16] pushint8 1 .............................. <1>
+  [ 19] setlocal 32
+  [ 21] getlocal 32
+  [ 23] getparam 0 .............................. <argList>
+  [ 25] pusharglist 1 ........................... <argList>
+  [ 27] extcall 175 ............................. <count(argList)>
+  [ 30] lteq
+  [ 31] jmpifz [123] ............................ repeat with n = 1 to count(argList)
+  [ 34] getparam 0 .............................. <argList>
+  [ 36] getlocal 32 ............................. <n>
+  [ 38] pusharglist 2 ........................... <argList, n>
+  [ 40] extcall 23 .............................. <getAt(argList, n)>
+  [ 42] setlocal 40 ............................. tmpSub = getAt(argList, n)
+  [ 44] getparam 0 .............................. <argList>
+  [ 46] getlocal 32 ............................. <n>
+  [ 48] pusharglist 2 ........................... <argList, n>
+  [ 50] extcall 207 ............................. <getPropAt(argList, n)>
+  [ 53] setlocal 48 ............................. tmpName = getPropAt(argList, n)
+  [ 55] getlocal 40 ............................. <tmpSub>
+  [ 57] pusharglist 1 ........................... <tmpSub>
+  [ 59] extcall 128 ............................. <listp(tmpSub)>
+  [ 62] jmpifz [ 99] ............................ if listp(tmpSub) then
+  [ 65] getlocal 0 .............................. <tmpDirs>
+  [ 67] getparam 8 .............................. <argInFolder>
+  [ 69] joinstr ................................. <tmpDirs & argInFolder>
+  [ 70] pushcons 104 ............................ <"\\">
+  [ 72] joinstr ................................. <tmpDirs & argInFolder & "\\">
+  [ 73] getlocal 48 ............................. <tmpName>
+  [ 75] joinstr ................................. <tmpDirs & argInFolder & "\\" & tmpName>
+  [ 76] getlocal 24 ............................. <tmpLF>
+  [ 78] joinstr ................................. <tmpDirs & argInFolder & "\\" & tmpName & tmpLF>
+  [ 79] getlocal 40 ............................. <tmpSub>
+  [ 81] getparam 8 .............................. <argInFolder>
+  [ 83] pushcons 112 ............................ <"\\">
+  [ 85] joinstr ................................. <argInFolder & "\\">
+  [ 86] getlocal 48 ............................. <tmpName>
+  [ 88] joinstr ................................. <argInFolder & "\\" & tmpName>
+  [ 89] pusharglist 2 ........................... <tmpSub, argInFolder & "\\" & tmpName>
+  [ 91] localcall 5 ............................. <convFileTreeToStr2Cols(tmpSub, argInFolder & "\\" & tmpName)>
+  [ 93] joinstr ................................. <tmpDirs & argInFolder & "\\" & tmpName & tmpLF & convFileTreeToStr2Cols(tmpSub, argInFolder & "\\" & tmpName)>
+  [ 94] setlocal 0 .............................. tmpDirs = tmpDirs & argInFolder & "\\" & tmpName & tmpLF & convFileTreeToStr2Cols(tmpSub, argInFolder & "\\" & tmpName)
+  [ 96] jmp [112] ............................... next repeat
+  [ 99] getlocal 8 .............................. <tmpFiles>
+  [101] getlocal 16 ............................. <tmpDelim>
+  [103] joinstr ................................. <tmpFiles & tmpDelim>
+  [104] getlocal 48 ............................. <tmpName>
+  [106] joinstr ................................. <tmpFiles & tmpDelim & tmpName>
+  [107] getlocal 24 ............................. <tmpLF>
+  [109] joinstr ................................. <tmpFiles & tmpDelim & tmpName & tmpLF>
+  [110] setlocal 8 .............................. tmpFiles = tmpFiles & tmpDelim & tmpName & tmpLF
+  [112] pushint8 1
+  [115] getlocal 32
+  [117] add
+  [118] setlocal 32
+  [120] endrepeat [ 21]
+  [123] getlocal 8 .............................. <tmpFiles>
+  [125] getlocal 0 .............................. <tmpDirs>
+  [127] joinstr ................................. <tmpFiles & tmpDirs>
+  [128] pusharglistnoret 1 ...................... <tmpFiles & tmpDirs>
+  [130] extcall 32 .............................. return tmpFiles & tmpDirs
+  [133] ret
+end

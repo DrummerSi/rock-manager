@@ -1,0 +1,318 @@
+property ancestor, m_place_r, m_gotContract, m_player_r, m_actions_r, m_gotOtherContract, m_scroller, m_categoryHelper, m_sndObj, m_waitObj, m_protectMouseObj, m_selectedCategory
+global gDir, gRock, gUseful
+
+on new me, argOptions
+  ID = argOptions[#ID]
+  m_place_r = gRock.m_classManager.getObjByIDAndClass(ID, #place)
+  gRock.m_context.setFocus(#place, m_place_r)
+  human_r = m_place_r.getHuman()
+  gRock.m_context.setFocus(#Human, human_r)
+  gRock.m_context.setFocus(#Record, m_place_r)
+  argOptions.setaProp(#ReportTo, me)
+  argOptions.setaProp(#child, me)
+  m_player_r = gRock.m_classManager.getObjByIDAndClass(#player, #player)
+  if m_player_r.CPContractor = m_place_r.ID then
+    dialog_r = gRock.m_classManager.getObjByIDAndClass(#DlgRecord, #Dialog)
+    dialog_r.dataMemberName = "DlgRecordData"
+    m_gotContract = 1
+    m_gotOtherContract = 0
+  else
+    dialog_r = gRock.m_classManager.getObjByIDAndClass(#DlgRecordNoContract, #Dialog)
+    dialog_r.dataMemberName = "DlgRecordNoContractData"
+    m_gotContract = 0
+    if m_player_r.CPContractor <> #none then
+      m_gotOtherContract = 1
+    end if
+  end if
+  argOptions[#DlgInfoObj] = dialog_r
+  ancestor = script("DlgRockAncestorScript").new(argOptions)
+  if m_gotContract then
+    me.setPlace()
+    ancestor.m_objDlg.recalc(#DontPaint)
+    m_categoryHelper = script("CategoryScript").new(me)
+    me.updateScroller()
+  else
+    me.setPlace()
+    ancestor.m_objDlg.recalc(#DontPaint)
+  end if
+  itemObj = ancestor.m_objDlg.getItem(#Pic)
+  portraitRect = itemObj.getOnStageRect()
+  loc = point(portraitRect[1], portraitRect[2])
+  ancestor.showFace(1, m_place_r.ID, loc, #LeftTop)
+  ancestor.render()
+  if m_gotContract then
+    tmpMood = #Happy
+    if argOptions[#SignedContract] = 1 then
+      tmpFile = EMPTY
+    else
+      tmpFile = getSpeechFile(human_r, [#Greeting, #Contract, tmpMood])
+    end if
+  else
+    tmpMood = #normal
+    tmpFile = getSpeechFile(human_r, [#Greeting, tmpMood])
+  end if
+  speakAndSetFace(tmpFile, tmpMood)
+  return me
+end
+
+on kill me
+  if objectp(m_protectMouseObj) then
+    m_protectMouseObj = m_protectMouseObj.kill()
+  end if
+  if objectp(m_waitObj) then
+    m_waitObj = m_waitObj.kill()
+  end if
+  if objectp(m_sndObj) then
+    m_sndObj = m_sndObj.kill()
+  end if
+  gUseful.setSoundSystem(#Director)
+  if objectp(m_categoryHelper) then
+    m_categoryHelper = m_categoryHelper.kill()
+  end if
+  if objectp(m_scroller) then
+    m_scroller = m_scroller.kill()
+  end if
+  ancestor.kill()
+  m_place_r = 0
+  return 0
+end
+
+on Report me, argObj, argWhat, argOption
+  if m_gotContract then
+    if argWhat = #DoAction then
+      argObj.kill()
+      m_action_r = argOption
+      if m_selectedCategory <> #ActCatRecordAdvance then
+        gRock.m_player.transactMoney(-m_action_r.price, [#Record])
+      end if
+      gRock.m_context.setFocus(#dlg, me)
+      rPlayerOkayedAction(m_action_r)
+    else
+      if argWhat = #DlgConfirm then
+        alert("Confirm dlg should be actionChooser!")
+        argObj.kill()
+        if not m_categoryHelper.getIsChosenOfClass(#Action) then
+          exit
+        end if
+        if argOption <> #ButtonOK then
+          exit
+        end if
+        rPlayerOkayedAction(m_categoryHelper.m_chosenObj)
+        if m_categoryHelper.m_chosenObj.ID = #ActRecordCancelContract then
+          me.kill()
+          exit
+        end if
+      else
+        if argWhat = #signContract then
+          alert("SignContract shouldn't happen! (1)")
+          exit
+        else
+          if argWhat = #select then
+            tmpSelectedObj_r = argOption.m_ID
+            m_selectedCategory = tmpSelectedObj_r.ID
+            if tmpSelectedObj_r.className = #Action then
+              if tmpSelectedObj_r.ID = #ActRecordSurvey then
+                gDir.m_objDialogsMaster.openDialog(#RecordSurvey)
+                exit
+              else
+                if tmpSelectedObj_r.ID = #ActRecordDemo then
+                  me.playDemo()
+                  exit
+                end if
+              end if
+            end if
+          end if
+          if m_categoryHelper.checkCategoryReport(argObj, argWhat, argOption) then
+            exit
+          end if
+        end if
+      end if
+    end if
+  else
+    if argWhat = #signContract then
+      alert("SignContract shouldn't happen! (2)")
+      exit
+    end if
+  end if
+  if argWhat = #WaitDone then
+    m_waitObj = 0
+    if objectp(m_sndObj) then
+      m_sndObj = m_sndObj.kill()
+    end if
+    gUseful.setSoundSystem(#Director)
+    me.decideIfSign()
+  end if
+end
+
+on mouse me, argObj, argWhat, argOption
+  if argObj = m_protectMouseObj then
+    if argWhat = #click then
+    end if
+    exit
+  end if
+  if objectp(argOption) then
+    if argWhat = #click then
+      ID = argOption.getOneProp(#ID)
+      IDStr = string(ID)
+      if m_gotContract then
+        ancestor.mouse(argObj, argWhat, argOption)
+      else
+        if ID = #ButtonOK then
+          me.playDemo()
+          exit
+        end if
+        ancestor.mouse(argObj, argWhat, argOption)
+      end if
+    end if
+  end if
+end
+
+on actionCall me, argWhat
+  if argWhat = #cancelContract then
+    m_place_r.cancelContract()
+    me.kill()
+  else
+    if argWhat = #CancelContractConfirm then
+      m_place_r.cancelContract()
+      me.kill()
+    end if
+  end if
+end
+
+on setPlace me
+  dlgObj = ancestor.m_objDlg
+  itemObj = dlgObj.getItem(#Pic)
+  tmpInfo = CPgetActorInfo(string(m_place_r.ID))
+  if objectp(tmpInfo[#BGMember]) then
+    itemObj.setOneProp(#Pic, tmpInfo[#BGMember])
+    tmpSize = getRectSize(tmpInfo[#BGMember].rect)
+  else
+    itemObj.setOneProp(#Pic, "Studio01_environment01")
+  end if
+  if not m_gotContract then
+    itemObj = dlgObj.getItemByPath([#InfoDlg, #Head, #icon])
+    itemObj.setOneProp(#Pic, "icon_golden record02")
+    itemObj = dlgObj.getItemByPath([#InfoDlg, #Head, #Info])
+    itemObj.setOneProp(#editData, rGetStr(#szidRecordFrameText))
+    itemObj = dlgObj.getItemByPath([#InfoDlg, #dlg, #Pic])
+    itemObj.setOneProp(#Pic, rFormatText([m_place_r.comment], "RecordFormatting"))
+  end if
+end
+
+on playDemo me
+  cheat = rOKCheatPass()
+  mission_r = gRock.m_context.getFocus(#Mission)
+  ecard_r = 0
+  band_r = gRock.m_context.getFocus(#Band)
+  if ecard_r = 0 then
+    if band_r.members.count() = 0 then
+      ecard_r = gRock.m_classManager.getObjByIDAndClass(#ECContractNoBand, #EventCard)
+    end if
+  end if
+  album_r = gRock.m_context.getFocus(#album)
+  if ecard_r = 0 then
+    if not objectp(album_r) then
+      ecard_r = gRock.m_classManager.getObjByIDAndClass(#ECContractNoDemo, #EventCard)
+    end if
+  end if
+  if ecard_r = 0 then
+    if m_gotOtherContract then
+      ecard_r = gRock.m_classManager.getObjByIDAndClass(#ECOCContractAlreadyGot, #EventCard)
+    end if
+  end if
+  if not cheat and objectp(ecard_r) then
+    gRock.m_eventCardsManager.tryNewShowEventCard(ecard_r, [#prio: 0])
+    exit
+  end if
+  if objectp(m_protectMouseObj) then
+    m_protectMouseObj.activate(1)
+  else
+    m_protectMouseObj = script("MouseObject").new(me, rect(0, 0, 1000, 1000), [#cursorRoll: #NoClick, #noPassRoll: 1, #layer: 1000000])
+  end if
+  speakAndSetFace(EMPTY)
+  if objectp(ancestor.m_placeBgSnd) then
+    ancestor.m_placeBgSnd = ancestor.m_placeBgSnd.kill()
+  end if
+  tmpSndPath = gRock.m_paths.getPath(#RenderedMusic) & "mixdown.wav"
+  if objectp(m_sndObj) then
+    m_sndObj = m_sndObj.kill()
+  end if
+  gUseful.setSoundSystem(#xtra)
+  m_sndObj = script("SoundScript").new(tmpSndPath, [#vol: #DemoVol])
+  m_waitObj = script("WaitScript").new(me, 3)
+end
+
+on decideIfSign me
+  if objectp(m_protectMouseObj) then
+    m_protectMouseObj.activate(0)
+  end if
+  if objectp(m_sndObj) then
+    m_sndObj = m_sndObj.kill()
+  end if
+  gUseful.setSoundSystem(#Director)
+  cheat = rOKCheatPass()
+  gonnaSign = 0
+  band_r = gRock.m_context.getFocus(#Band)
+  album_r = gRock.m_context.getFocus(#album)
+  if objectp(album_r) then
+    likeAlbum = m_place_r.willSignAlbumWithBand(album_r, band_r)
+  else
+    likeAlbum = 1.0
+  end if
+  if listp(likeAlbum) then
+  else
+    gonnaSign = 1
+  end if
+  if cheat then
+    gonnaSign = 1
+  end if
+  if gonnaSign then
+    tmpMood = #Happy
+  else
+    tmpMood = #Angry
+  end if
+  if gonnaSign then
+    if not floatp(likeAlbum) then
+      likeAlbum = 0.0
+    end if
+    if m_gotContract then
+      me.signContract(VOID, 0, gRock.m_player.CPContractPriceModel.Royalty)
+      tmpFile = getSpeechFile(m_place_r.getHuman(), [#NextContract, #Happy])
+      speakAndSetFace(tmpFile, #Happy)
+    else
+      gDir.m_objDialogsMaster.openDialog(#RecordContract, [#ID: symbol(string(m_place_r.ID) & "Contract"), #place: m_place_r, #likeAlbum: likeAlbum])
+    end if
+  else
+    gDir.m_objDialogsMaster.openDialog(#RecordRefuse, [#place: m_place_r, #RefuseText: likeAlbum[#text], #WorstReason: likeAlbum[#WorstReason], #AlreadyGotContract: m_gotContract])
+  end if
+end
+
+on signContract me, argCallingDialogObj, argAdvance, argRoyalty
+  album_r = gRock.m_context.getFocus(#album)
+  m_place_r.signContract(argAdvance, argRoyalty, album_r, m_place_r.PreferredNumAlbums)
+  gRock.m_msgManager.msg(#signContract)
+  gRock.autoSave()
+  if m_gotContract = 0 then
+    tmpID = m_place_r.ID
+    gRock.m_eventCardsManager.setOKToShowOnTopOfNumDialogs(-1)
+    argCallingDialogObj.kill()
+    gDir.m_objDialogsMaster.ImNOTExitingDialog()
+    me.kill()
+    gDir.m_objDialogsMaster.openDialog(tmpID, [#SignedContract: 1])
+    gRock.m_eventCardsManager.setOKToShowOnTopOfNumDialogs(0)
+  else
+    me.updateScroller()
+  end if
+end
+
+on updateScroller me
+  pott("Update scrolller")
+  allScrollItems = m_categoryHelper.createScrollData()
+  itemObj = ancestor.m_objDlg.getItemByPath([#ScrollView, #Frame2])
+  rct = itemObj.getOnStageRect()
+  rct = rct + rect(2, 2, -2, -2)
+  if objectp(m_scroller) then
+    m_scroller = m_scroller.kill()
+  end if
+  m_scroller = script("CPScrollerScript").new(me, ancestor.getSPOverDlg(), allScrollItems, rct, ancestor.m_objDlg.highestMouseLayer)
+end

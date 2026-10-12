@@ -1,0 +1,558 @@
+property m_sndInsteadOfFaceObj, m_waitAndSpeakObj
+global gRock
+
+on new me
+  m_waitAndSpeakObj = script("SpeakNextFrameScript").new()
+  return me
+end
+
+on kill me
+  if objectp(m_waitAndSpeakObj) then
+    m_waitAndSpeakObj = m_waitAndSpeakObj.kill()
+  end if
+  return 0
+end
+
+on strcat me, argStr1, argStr2
+  return argStr1 & argStr2
+end
+
+on strlen me, argStr
+  return argStr.length
+end
+
+on isObject me, argObj
+  return objectp(argObj)
+end
+
+on isSymbol me, argSymb
+  return symbol(argSymb)
+end
+
+on isVoid me, argVar
+  return voidp(argVar)
+end
+
+on debug me, arg1, arg2, arg3
+  put arg1, arg2, arg3
+end
+
+on count me, argList
+  return argList.count()
+end
+
+on add me, argList, argVal
+  argList.add(argVal)
+end
+
+on deleteAt me, argList, argPos
+  argList.deleteAt(argPos)
+end
+
+on emptyThisList me, argList
+  emptyList(argList)
+end
+
+on listAdd me, argList, argVal
+  if not listp(argList) then
+    return VOID
+  end if
+  argList.add(argVal)
+end
+
+on listGetPos me, argList, argItem
+  if not listp(argList) then
+    return VOID
+  end if
+  return argList.getPos(argItem)
+end
+
+on listGetAt me, argList, argPos
+  if not listp(argList) then
+    return VOID
+  end if
+  return argList[argPos]
+end
+
+on listCount me, argList
+  if not listp(argList) then
+    return VOID
+  end if
+  return argList.count
+end
+
+on makeRandom me, argVal
+  if argVal < 1 then
+    return 0
+  end if
+  return random(integer(argVal))
+end
+
+on lingo me, argCommand, argArg
+  case argCommand of
+    #objectp:
+      return objectp(argArg)
+    #symbolp:
+      return symbolp(argArg)
+    #count:
+      if listp(argArg) then
+        return argArg.count
+      end if
+      return 0
+    #ilk:
+      return ilk(argArg)
+    #length:
+      if stringp(argArg) then
+        return argArg.length
+      end if
+      return 0
+    otherwise:
+      pott("Undefined lingo command", argCommand, argArg)
+  end case
+  return 0
+end
+
+on makePropList me, argProp1, argVal1, argProp2, argVal2, argProp3, argVal3, argProp4, argVal4
+  tmpList = [:]
+  if not voidp(argProp1) then
+    tmpList.addProp(argProp1, argVal1)
+  end if
+  if not voidp(argProp2) then
+    tmpList.addProp(argProp2, argVal2)
+  end if
+  if not voidp(argProp3) then
+    tmpList.addProp(argProp3, argVal3)
+  end if
+  if not voidp(argProp4) then
+    tmpList.addProp(argProp4, argVal4)
+  end if
+  return tmpList
+end
+
+on makeList me, argVal1, argVal2, argVal3, argVal4, argVal5, argVal6, argVal7, argVal8
+  tmpList = []
+  if not voidp(argVal1) then
+    tmpList.add(argVal1)
+  end if
+  if not voidp(argVal2) then
+    tmpList.add(argVal2)
+  end if
+  if not voidp(argVal3) then
+    tmpList.add(argVal3)
+  end if
+  if not voidp(argVal4) then
+    tmpList.add(argVal4)
+  end if
+  if not voidp(argVal5) then
+    tmpList.add(argVal5)
+  end if
+  if not voidp(argVal6) then
+    tmpList.add(argVal6)
+  end if
+  if not voidp(argVal7) then
+    tmpList.add(argVal7)
+  end if
+  if not voidp(argVal8) then
+    tmpList.add(argVal8)
+  end if
+  return tmpList
+end
+
+on listDiff me, argList1, argList2
+  return listArithmetics(argList1, "-", argList2)
+end
+
+on percentChance me, argPercent, arg1, arg2
+  global gCheatChance
+  if not voidp(gCheatChance) then
+    return gCheatChance
+  end if
+  return (float(random(1000)) / 10.0) < argPercent
+end
+
+on getObjByID me, argID, argClass
+  if symbolp(argClass) then
+    return gRock.m_classManager.getObjByIDAndClass(argID, argClass)
+  end if
+  return gRock.m_classManager.getObjByID(argID)
+end
+
+on getobjectbyID me, argID, argClass
+  if symbolp(argClass) then
+    return gRock.m_classManager.getObjByIDAndClass(argID, argClass)
+  end if
+  return gRock.m_classManager.getObjByID(argID)
+end
+
+on advertise me, argMediaID, argStartDate, argDuration, argIntensity, argQuality
+  alert("No! do with media.advertise()")
+end
+
+on expose me, argWhatIDOrObj, argIntensity, argQuality, argDuration, argMediaID
+  expo_r = gRock.m_classManager.createObj(#AudienceExposure)
+  expo_r.ID = gRock.m_classManager.genUniqueID(expo_r)
+  if voidp(argWhatIDOrObj) then
+    argWhatIDOrObj = 0
+  else
+    if symbolp(argWhatIDOrObj) then
+      expo_r.InfluenceWhat.addProp(argWhatIDOrObj, 1.0)
+    end if
+  end if
+  if not voidp(argMediaID) then
+    expo_r.MediaID = argMediaID
+  end if
+  expo_r.setDates(gRock.m_date.getDateInt() + 1, argDuration)
+  expo_r.Intensity = argIntensity
+  expo_r.quality = argQuality
+  expo_r.stdFillInBlanks()
+end
+
+on activate me, argID
+  obj = gRock.m_classManager.getObjByID(argID)
+  if not objectp(obj) then
+    pott("No object to activate", argID)
+    exit
+  end if
+  if obj.handler(#activate) then
+    obj.activate()
+  else
+    pott("Object can't be activated!", obj)
+  end if
+end
+
+on setFocus me, argObjOrClassName, argObj
+  if objectp(argObjOrClassName) then
+    gRock.m_context.setFocus(argObjOrClassName.className, argObjOrClassName)
+  else
+    if symbolp(argObjOrClassName) then
+      if symbolp(argObj) then
+        argObj = gRock.m_classManager.getObjByID(argObj)
+      end if
+      gRock.m_context.setFocus(argObjOrClassName, argObj)
+    end if
+  end if
+end
+
+on EventCard me, argID, argArgsOrOptionalMusicianID, argOptionalMusicianID
+  Args = [:]
+  if listp(argArgsOrOptionalMusicianID) then
+    Args = argArgsOrOptionalMusicianID
+    if symbolp(argOptionalMusicianID) or objectp(argOptionalMusicianID) then
+      if objectp(argOptionalMusicianID) then
+        argOptionalMusicianID = argOptionalMusicianID.ID
+      end if
+      if not listp(Args[#EventCardOptions]) then
+        Args[#EventCardOptions] = [:]
+      end if
+      Args[#EventCardOptions][#HumanID] = argOptionalMusicianID
+    end if
+  else
+    if symbolp(argArgsOrOptionalMusicianID) or objectp(argArgsOrOptionalMusicianID) then
+      if objectp(argArgsOrOptionalMusicianID) then
+        argArgsOrOptionalMusicianID = argArgsOrOptionalMusicianID.ID
+      end if
+      if not listp(Args[#EventCardOptions]) then
+        Args[#EventCardOptions] = [:]
+      end if
+      Args[#EventCardOptions][#HumanID] = argArgsOrOptionalMusicianID
+    end if
+  end if
+  gRock.m_eventCardsManager.tryNewShowEventCard(argID, Args)
+end
+
+on createObj me, argClass
+  obj_r = gRock.m_classManager.createObj(argClass)
+  obj_r.ID = gRock.m_classManager.genUniqueID(obj_r)
+  return obj_r
+end
+
+on bookDialog me, argEventToBook_r, argBookOptions, argDialogProps
+  rBookDialog(argEventToBook_r, argBookOptions, argDialogProps)
+end
+
+on CreateModifier me, argModifierID, argModWhichID, argVar, argChangeVal, argNumDays, argEnvelope
+  if (argEnvelope <> #Constant) and (argNumDays <= 0) then
+    exit
+  end if
+  rCreateModifier(argModifierID, argModWhichID, argVar, argChangeVal, argNumDays, argEnvelope)
+end
+
+on findModifier me, argModifierID, argModWhichID, argVar
+  tmp = rFindModifiers(argModifierID, argModWhichID, argVar)
+  if not listp(tmp) then
+    return 0
+  end if
+  if tmp.count then
+    return tmp[1]
+  end if
+  return 0
+end
+
+on getTotalModifyingID me, argModifierID
+  return gRock.m_modifiersManager.getTotalModifyingID(argModifierID)
+end
+
+on hasModifier me, argModWhichIDorObj, argModifierID, argVar
+  if objectp(argModWhichIDorObj) then
+    argModWhichIDorObj = argModWhichIDorObj.ID
+  end if
+  return objectp(me.findModifier(argModifierID, argModWhichIDorObj, argVar))
+end
+
+on sendMsg me, argSymbol, argArg, argArg2
+  gRock.m_msgManager.msg(argSymbol, argArg, argArg2)
+end
+
+on fixSoundName me, argSndName
+  tmpLastChar = argSndName.char[argSndName.length]
+  if tmpLastChar = "X" then
+    put string(random(2)) into me.char[the length of argSndName]
+  else
+    if tmpLastChar = "Y" then
+      put string(random(3)) into me.char[the length of argSndName]
+    else
+      if tmpLastChar = "Z" then
+        put string(random(5)) into me.char[the length of argSndName]
+      else
+        tmpOff = offset("(", argSndName)
+        if tmpOff then
+          tmpEnd = offset(")", argSndName)
+          if tmpEnd then
+            tmpRnd = value(argSndName.char[tmpOff + 1..tmpEnd - 1])
+            tmpRnd = random(tmpRnd)
+            put convItoS(tmpRnd, 1) into me.char[tmpOff..tmpEnd]
+          end if
+        end if
+      end if
+    end if
+  end if
+  return argSndName
+end
+
+on Speak me, argSndName
+  global gUseful
+  argSndName = me.fixSoundName(argSndName)
+  tmpOff = offset("ÛÛ", argSndName)
+  if tmpOff then
+    human_r = gRock.m_context.getFocus(#Human)
+    if not objectp(human_r) then
+      exit
+    end if
+    Prefix = human_r.getSoundFilePrefix()
+    tmpPrefixOff = offset("ÛÛÛ", argSndName)
+    if tmpPrefixOff then
+      put Prefix into me.char[tmpOff..tmpOff + 2]
+    else
+      put Prefix.char[2..Prefix.length] into me.char[tmpOff..tmpOff + 1]
+    end if
+  end if
+  faceObj = gRock.m_context.getFocus(#Speaker)
+  m_waitAndSpeakObj.Speak(EMPTY)
+  if objectp(faceObj) then
+    m_waitAndSpeakObj.Speak(argSndName)
+  else
+    if objectp(m_sndInsteadOfFaceObj) then
+      m_sndInsteadOfFaceObj = m_sndInsteadOfFaceObj.kill()
+    end if
+    if argSndName = EMPTY then
+      exit
+    end if
+    m_sndInsteadOfFaceObj = script("SoundScript").new(gRock.m_paths.getPath(#ActorSounds) & argSndName & gUseful.soundFileExt, [#vol: #SpeakVol])
+  end if
+end
+
+on playSound me, argSndName
+  global gRock
+  argSndName = me.fixSoundName(argSndName)
+  tmpPath = fileExtractPath(argSndName)
+  if tmpPath.length = 0 then
+    tmpPath = gRock.m_paths.getPath(#sound)
+  end if
+  script("SoundScript").new(tmpPath & argSndName, [#vol: #FXVol])
+end
+
+on getExtremeMusician me, argVar, argHiOrLo
+  band_r = gRock.m_context.getFocus(#Band)
+  musicians = band_r.getMusicianObjs()
+  sortedList = [:]
+  sortedList.sort()
+  repeat with mus_r in musicians
+    sortedList.addProp(rgetProp(mus_r, argVar), mus_r)
+  end repeat
+  if sortedList.count = 0 then
+    return 0
+  end if
+  if argHiOrLo = #Hi then
+    return sortedList[sortedList.count]
+  else
+    return sortedList[1]
+  end if
+end
+
+on FaceMood me, argMood
+  faceObj = gRock.m_context.getFocus(#Speaker)
+  if objectp(faceObj) then
+    if (argMood = -1) or (argMood = #Angry) then
+      faceObj.setMood(#Angry)
+    else
+      if (argMood = 0) or (argMood = #normal) then
+        faceObj.setMood(#normal)
+      else
+        if (argMood = 1) or (argMood = #Happy) then
+          faceObj.setMood(#Happy)
+        else
+          if argMood = #LLL then
+            nothing()
+          else
+            if symbolp(argMood) then
+              faceObj.setMood(argMood)
+            end if
+          end if
+        end if
+      end if
+    end if
+  end if
+end
+
+on getContractor me
+  ID = gRock.m_player.CPContractor
+  record_r = gRock.m_classManager.getObjByIDAndClass(ID, #Record)
+  return record_r
+end
+
+on bribePerson me, argAmount
+  human_r = gRock.m_context.getFocus(#Human)
+  if not objectp(human_r) then
+    exit
+  end if
+  if not human_r.handler(#giveBribe) then
+    exit
+  end if
+  reaction = human_r.giveBribe(argAmount)
+  return reaction
+end
+
+on getRandomMusician me, argExceptMusicians
+  band_r = gRock.m_context.getFocus(#Band)
+  tmpMembers = band_r.members.duplicate()
+  if not voidp(argExceptMusicians) then
+    if objectp(argExceptMusicians) then
+      argExceptMusicians = argExceptMusicians.ID
+    end if
+    if symbolp(argExceptMusicians) then
+      argExceptMusicians = [argExceptMusicians]
+    end if
+    repeat with tmpID in argExceptMusicians
+      tmpMembers.deleteOne(tmpID)
+    end repeat
+  end if
+  cnt = tmpMembers.count
+  if cnt = 0 then
+    return 0
+  end if
+  ID = tmpMembers[random(cnt)]
+  return gRock.m_classManager.getObjByIDAndClass(ID, #RealMusician)
+end
+
+on getString me, argStrID, argUpperCase
+  if argUpperCase = 1 then
+    return gRock.m_languageManager.getStr(argStrID, [#FirstUppercase: 1])
+  end if
+  return gRock.m_languageManager.getStr(argStrID)
+end
+
+on getNumUpcomingEventsOfType me, argType
+  objs = gRock.m_classManager.getObjsOfClass(argType)
+  okObjs = []
+  today = gRock.m_date.getDateInt()
+  repeat with obj in objs
+    if obj.StartDate > today then
+      okObjs.add(obj)
+    end if
+  end repeat
+  return okObjs.count
+end
+
+on getNextUpcomingEventOfType me, argType
+  objs = gRock.m_classManager.getObjsOfClass(argType)
+  sorted = [:]
+  sorted.sort()
+  today = gRock.m_date.getDateInt()
+  repeat with obj in objs
+    if obj.StartDate > today then
+      sorted.addProp(obj.StartDate, obj)
+    end if
+  end repeat
+  if sorted.count then
+    return sorted[1]
+  end if
+  return 0
+end
+
+on getOngoingEventOfType me, argType, argCheckNumDaysBefore
+  tmpEvents = gRock.m_eventsManager.getOngoingEvents()
+  repeat with obj in tmpEvents
+    if obj.className = argType then
+      return obj
+    end if
+  end repeat
+  if voidp(argCheckNumDaysBefore) then
+    return 0
+  end if
+  tmpStartDate = gRock.m_date.getDateInt() - argCheckNumDaysBefore
+  tmpEvents = gRock.m_eventsManager.getOngoingEventsBetweenDates(tmpStartDate, tmpStartDate + 1)
+  repeat with obj in tmpEvents
+    if obj.className = argType then
+      return obj
+    end if
+  end repeat
+  return 0
+end
+
+on getIsWholeBandFreeWhen me, argStartDate, argDuration
+  tmpEvents = gRock.m_eventsManager.getOngoingEventsBetweenDates(argStartDate, argStartDate + argDuration)
+  tmpClashing = gRock.m_eventsManager.checkNeededResources([#Band], tmpEvents)
+  return tmpClashing.count = 0
+end
+
+on makePlacesAvailable me, argClassName, argIsTRUE
+  if voidp(argIsTRUE) then
+    argIsTRUE = 1
+  end if
+  objs = gRock.m_classManager.getObjsOfClass(argClassName)
+  repeat with obj in objs
+    obj.makeAvailable(argIsTRUE)
+  end repeat
+end
+
+on refreshGfx me, argWhat
+  global gDir
+  if argWhat = #Band then
+    if not objectp(gDir) then
+      exit
+    end if
+    if not objectp(gDir[#m_interfaceBar]) then
+      exit
+    end if
+    gDir.m_interfaceBar.redrawBand()
+  end if
+end
+
+on formatInteger me, argInt
+  return rCurrency(argInt)
+end
+
+on formatCurrency me, argInt
+  return rCurrency(argInt, 0, 1)
+end
+
+on createBoozeTrigger me, argMusician_r, argVal
+  trigger_r = me.createObj(#Trigger)
+  trigger_r.ReactToMsgStr = "what==#ExitToCity"
+  set the floatPrecision to 4
+  lst = []
+  lst.add("Û#" & string(argMusician_r.ID) & ".needs.satisfy(#NeedParty, " & string(argVal) & ")")
+  lst.add("me.activate(0)")
+  trigger_r.ExecuteThis = string(lst)
+  trigger_r.activate(1)
+end

@@ -1,0 +1,1405 @@
+property m_events, m_startDateSortedEvents, m_durationSortedEvents, m_ongoingEvents, m_lastCheck, m_busyLooping, m_startTicker, m_endTicker
+global gRock
+
+on new me
+  [  0] getparam 0 .............................. <me>
+  [  2] pusharglistnoret 1 ...................... <me>
+  [  4] objcall 202 ............................. me.cleanUp()
+  [  7] pushcons 0 .............................. <"AdditionalTickerScript">
+  [  9] pusharglist 1 ........................... <"AdditionalTickerScript">
+  [ 11] extcall 10 .............................. <script("AdditionalTickerScript")>
+  [ 13] getglobal 23 ............................ <gRock>
+  [ 15] getobjprop 64 ........................... <gRock.m_gameTimer>
+  [ 18] pusharglist 0 ........................... <>
+  [ 20] extcall 151 ............................. <VOID>
+  [ 23] pushint8 1 .............................. <1>
+  [ 26] pushsymb 2047 ........................... <#object>
+  [ 29] getparam 0 .............................. <me>
+  [ 31] pushsymb 180 ............................ <#handler>
+  [ 34] pushsymb 2095 ........................... <#checkEventsEnding>
+  [ 37] pusharglist 4 ........................... <[#object: me, #handler: #checkEventsEnding]>
+  [ 39] pushproplist ............................ <[#object: me, #handler: #checkEventsEnding]>
+  [ 40] pusharglist 5 ........................... <script("AdditionalTickerScript"), gRock.m_gameTimer, VOID, 1, [#object: me, #handler: #checkEventsEnding]>
+  [ 42] objcall 11 .............................. <script("AdditionalTickerScript").new(gRock.m_gameTimer, VOID, 1, [#object: me, #handler: #checkEventsEnding])>
+  [ 44] setprop 2102 ............................ m_endTicker = script("AdditionalTickerScript").new(gRock.m_gameTimer, VOID, 1, [#object: me, #handler: #checkEventsEnding])
+  [ 47] pushcons 8 .............................. <"AdditionalTickerScript">
+  [ 49] pusharglist 1 ........................... <"AdditionalTickerScript">
+  [ 51] extcall 10 .............................. <script("AdditionalTickerScript")>
+  [ 53] getglobal 23 ............................ <gRock>
+  [ 55] getobjprop 64 ........................... <gRock.m_gameTimer>
+  [ 58] pusharglist 0 ........................... <>
+  [ 60] extcall 151 ............................. <VOID>
+  [ 63] pushint8 3 .............................. <3>
+  [ 66] pushsymb 2047 ........................... <#object>
+  [ 69] getparam 0 .............................. <me>
+  [ 71] pushsymb 180 ............................ <#handler>
+  [ 74] pushsymb 1489 ........................... <#checkEventsStarting>
+  [ 77] pusharglist 4 ........................... <[#object: me, #handler: #checkEventsStarting]>
+  [ 79] pushproplist ............................ <[#object: me, #handler: #checkEventsStarting]>
+  [ 80] pusharglist 5 ........................... <script("AdditionalTickerScript"), gRock.m_gameTimer, VOID, 3, [#object: me, #handler: #checkEventsStarting]>
+  [ 82] objcall 11 .............................. <script("AdditionalTickerScript").new(gRock.m_gameTimer, VOID, 3, [#object: me, #handler: #checkEventsStarting])>
+  [ 84] setprop 2103 ............................ m_startTicker = script("AdditionalTickerScript").new(gRock.m_gameTimer, VOID, 3, [#object: me, #handler: #checkEventsStarting])
+  [ 87] pushzero ................................ <0>
+  [ 88] setprop 2104 ............................ m_busyLooping = 0
+  [ 91] getparam 0 .............................. <me>
+  [ 93] pusharglistnoret 1 ...................... <me>
+  [ 95] extcall 69 .............................. return me
+  [ 98] ret
+end
+
+on kill me
+  [  0] getparam 0 .............................. <me>
+  [  2] pusharglistnoret 1 ...................... <me>
+  [  4] objcall 202 ............................. me.cleanUp()
+  [  7] getprop 2103 ............................ <m_startTicker>
+  [ 10] pusharglist 1 ........................... <m_startTicker>
+  [ 12] extcall 8 ............................... <objectp(m_startTicker)>
+  [ 14] jmpifz [ 27] ............................ if objectp(m_startTicker) then
+  [ 17] getprop 2103 ............................ <m_startTicker>
+  [ 20] pusharglist 1 ........................... <m_startTicker>
+  [ 22] objcall 31 .............................. <m_startTicker.kill()>
+  [ 24] setprop 2103 ............................ m_startTicker = m_startTicker.kill()
+  [ 27] getprop 2102 ............................ <m_endTicker>
+  [ 30] pusharglist 1 ........................... <m_endTicker>
+  [ 32] extcall 8 ............................... <objectp(m_endTicker)>
+  [ 34] jmpifz [ 47] ............................ if objectp(m_endTicker) then
+  [ 37] getprop 2102 ............................ <m_endTicker>
+  [ 40] pusharglist 1 ........................... <m_endTicker>
+  [ 42] objcall 31 .............................. <m_endTicker.kill()>
+  [ 44] setprop 2102 ............................ m_endTicker = m_endTicker.kill()
+  [ 47] pushzero ................................ <0>
+  [ 48] pusharglistnoret 1 ...................... <0>
+  [ 50] extcall 69 .............................. return 0
+  [ 53] ret
+end
+
+on cleanUp me
+  [  0] pusharglist 0 ........................... <[:]>
+  [  2] pushproplist ............................ <[:]>
+  [  3] setprop 2105 ............................ m_events = [:]
+  [  6] pusharglist 0 ........................... <[]>
+  [  8] pushlist ................................ <[]>
+  [  9] setprop 1487 ............................ m_ongoingEvents = []
+  [ 12] pusharglist 0 ........................... <[:]>
+  [ 14] pushproplist ............................ <[:]>
+  [ 15] setprop 1015 ............................ m_startDateSortedEvents = [:]
+  [ 18] getprop 1015 ............................ <m_startDateSortedEvents>
+  [ 21] pusharglistnoret 1 ...................... <m_startDateSortedEvents>
+  [ 23] objcall 609 ............................. m_startDateSortedEvents.sort()
+  [ 26] pusharglist 0 ........................... <[:]>
+  [ 28] pushproplist ............................ <[:]>
+  [ 29] setprop 2106 ............................ m_durationSortedEvents = [:]
+  [ 32] getprop 2106 ............................ <m_durationSortedEvents>
+  [ 35] pusharglistnoret 1 ...................... <m_durationSortedEvents>
+  [ 37] objcall 609 ............................. m_durationSortedEvents.sort()
+  [ 40] pusharglist 0 ........................... <[]>
+  [ 42] pushlist ................................ <[]>
+  [ 43] setlocal 0 .............................. m_addedToday = []
+  [ 45] pushzero ................................ <0>
+  [ 46] setprop 2107 ............................ m_lastCheck = 0
+  [ 49] ret
+end
+
+on getOngoingEvents me
+  [  0] getprop 1487 ............................ <m_ongoingEvents>
+  [  3] pusharglistnoret 1 ...................... <m_ongoingEvents>
+  [  5] extcall 69 .............................. return m_ongoingEvents
+  [  8] ret
+end
+
+on addEvent me, argEventObj, argDontStartIt
+  [  0] getprop 2104 ............................ <m_busyLooping>
+  [  3] jmpifz [ 18] ............................ if m_busyLooping then
+  [  6] pushcons 16 ............................. <"EVENTS WARNING, add while busy">
+  [  8] getparam 8 .............................. <argEventObj>
+  [ 10] getobjprop 154 .......................... <argEventObj.ID>
+  [ 13] pusharglistnoret 2 ...................... <"EVENTS WARNING, add while busy", argEventObj.ID>
+  [ 15] extcall 122 ............................. pott("EVENTS WARNING, add while busy", argEventObj.ID)
+  [ 18] getprop 2105 ............................ <m_events>
+  [ 21] getparam 8 .............................. <argEventObj>
+  [ 23] getobjprop 154 .......................... <argEventObj.ID>
+  [ 26] getparam 8 .............................. <argEventObj>
+  [ 28] pusharglistnoret 3 ...................... <m_events, argEventObj.ID, argEventObj>
+  [ 30] objcall 309 ............................. m_events.addProp(argEventObj.ID, argEventObj)
+  [ 33] getprop 1015 ............................ <m_startDateSortedEvents>
+  [ 36] getparam 8 .............................. <argEventObj>
+  [ 38] getobjprop 216 .......................... <argEventObj.StartDate>
+  [ 41] getparam 8 .............................. <argEventObj>
+  [ 43] pusharglistnoret 3 ...................... <m_startDateSortedEvents, argEventObj.StartDate, argEventObj>
+  [ 45] objcall 309 ............................. m_startDateSortedEvents.addProp(argEventObj.StartDate, argEventObj)
+  [ 48] getprop 2106 ............................ <m_durationSortedEvents>
+  [ 51] getparam 8 .............................. <argEventObj>
+  [ 53] getobjprop 1484 ......................... <argEventObj.duration>
+  [ 56] getparam 8 .............................. <argEventObj>
+  [ 58] pusharglistnoret 3 ...................... <m_durationSortedEvents, argEventObj.duration, argEventObj>
+  [ 60] objcall 309 ............................. m_durationSortedEvents.addProp(argEventObj.duration, argEventObj)
+  [ 63] getparam 16 ............................. <argDontStartIt>
+  [ 65] pushint8 1 .............................. <1>
+  [ 68] nteq .................................... <argDontStartIt <> 1>
+  [ 69] jmpifz [115] ............................ if argDontStartIt <> 1 then
+  [ 72] getparam 8 .............................. <argEventObj>
+  [ 74] getobjprop 216 .......................... <argEventObj.StartDate>
+  [ 77] getglobal 23 ............................ <gRock>
+  [ 79] getobjprop 76 ........................... <gRock.m_date>
+  [ 82] pusharglist 1 ........................... <gRock.m_date>
+  [ 84] objcall 220 ............................. <gRock.m_date.getDateInt()>
+  [ 87] eq ...................................... <argEventObj.StartDate = gRock.m_date.getDateInt()>
+  [ 88] getprop 2107 ............................ <m_lastCheck>
+  [ 91] getglobal 23 ............................ <gRock>
+  [ 93] getobjprop 76 ........................... <gRock.m_date>
+  [ 96] pusharglist 1 ........................... <gRock.m_date>
+  [ 98] objcall 220 ............................. <gRock.m_date.getDateInt()>
+  [101] eq ...................................... <m_lastCheck = gRock.m_date.getDateInt()>
+  [102] and ..................................... <(argEventObj.StartDate = gRock.m_date.getDateInt()) and (m_lastCheck = gRock.m_date.getDateInt())>
+  [103] jmpifz [115] ............................ if (argEventObj.StartDate = gRock.m_date.getDateInt()) and (m_lastCheck = gRock.m_date.getDateInt()) then
+  [106] getparam 0 .............................. <me>
+  [108] getparam 8 .............................. <argEventObj>
+  [110] pusharglistnoret 2 ...................... <me, argEventObj>
+  [112] objcall 2097 ............................ me.startObject(argEventObj)
+  [115] ret
+end
+
+on changeEvent me, argEventObj
+  [  0] getprop 1015 ............................ <m_startDateSortedEvents>
+  [  3] getparam 8 .............................. <argEventObj>
+  [  5] pusharglist 2 ........................... <m_startDateSortedEvents, argEventObj>
+  [  7] objcall 337 ............................. <m_startDateSortedEvents.getPos(argEventObj)>
+  [ 10] setlocal 0 .............................. tmpHadItBefore = m_startDateSortedEvents.getPos(argEventObj)
+  [ 12] getprop 1487 ............................ <m_ongoingEvents>
+  [ 15] getparam 8 .............................. <argEventObj>
+  [ 17] pusharglist 2 ........................... <m_ongoingEvents, argEventObj>
+  [ 19] objcall 337 ............................. <m_ongoingEvents.getPos(argEventObj)>
+  [ 22] setlocal 8 .............................. tmpIsOngoing = m_ongoingEvents.getPos(argEventObj)
+  [ 24] getparam 0 .............................. <me>
+  [ 26] getparam 8 .............................. <argEventObj>
+  [ 28] pusharglistnoret 2 ...................... <me, argEventObj>
+  [ 30] objcall 1485 ............................ me.deleteEvent(argEventObj)
+  [ 33] getparam 0 .............................. <me>
+  [ 35] getparam 8 .............................. <argEventObj>
+  [ 37] getlocal 0 .............................. <tmpHadItBefore>
+  [ 39] pusharglistnoret 3 ...................... <me, argEventObj, tmpHadItBefore>
+  [ 41] objcall 2094 ............................ me.addEvent(argEventObj, tmpHadItBefore)
+  [ 44] getlocal 8 .............................. <tmpIsOngoing>
+  [ 46] jmpifz [ 97] ............................ if tmpIsOngoing then
+  [ 49] getglobal 23 ............................ <gRock>
+  [ 51] getobjprop 76 ........................... <gRock.m_date>
+  [ 54] pusharglist 1 ........................... <gRock.m_date>
+  [ 56] objcall 220 ............................. <gRock.m_date.getDateInt()>
+  [ 59] setlocal 16 ............................. tmpToday = gRock.m_date.getDateInt()
+  [ 61] getparam 8 .............................. <argEventObj>
+  [ 63] getobjprop 216 .......................... <argEventObj.StartDate>
+  [ 66] getlocal 16 ............................. <tmpToday>
+  [ 68] lteq .................................... <argEventObj.StartDate <= tmpToday>
+  [ 69] getparam 8 .............................. <argEventObj>
+  [ 71] getobjprop 216 .......................... <argEventObj.StartDate>
+  [ 74] getparam 8 .............................. <argEventObj>
+  [ 76] getobjprop 1484 ......................... <argEventObj.duration>
+  [ 79] add ..................................... <argEventObj.StartDate + argEventObj.duration>
+  [ 80] getlocal 16 ............................. <tmpToday>
+  [ 82] gteq .................................... <(argEventObj.StartDate + argEventObj.duration) >= tmpToday>
+  [ 83] and ..................................... <(argEventObj.StartDate <= tmpToday) and ((argEventObj.StartDate + argEventObj.duration) >= tmpToday)>
+  [ 84] jmpifz [ 97] ............................ if (argEventObj.StartDate <= tmpToday) and ((argEventObj.StartDate + argEventObj.duration) >= tmpToday) then
+  [ 87] getprop 1487 ............................ <m_ongoingEvents>
+  [ 90] getparam 8 .............................. <argEventObj>
+  [ 92] pusharglistnoret 2 ...................... <m_ongoingEvents, argEventObj>
+  [ 94] objcall 229 ............................. m_ongoingEvents.add(argEventObj)
+  [ 97] ret
+end
+
+on deleteEvent me, argEventObj
+  [  0] getprop 2104 ............................ <m_busyLooping>
+  [  3] jmpifz [ 18] ............................ if m_busyLooping then
+  [  6] pushcons 24 ............................. <"EVENTS WARNING, delete while busy">
+  [  8] getparam 8 .............................. <argEventObj>
+  [ 10] getobjprop 154 .......................... <argEventObj.ID>
+  [ 13] pusharglistnoret 2 ...................... <"EVENTS WARNING, delete while busy", argEventObj.ID>
+  [ 15] extcall 122 ............................. pott("EVENTS WARNING, delete while busy", argEventObj.ID)
+  [ 18] getprop 2105 ............................ <m_events>
+  [ 21] getparam 8 .............................. <argEventObj>
+  [ 23] pusharglistnoret 2 ...................... <m_events, argEventObj>
+  [ 25] objcall 335 ............................. m_events.deleteOne(argEventObj)
+  [ 28] getprop 1015 ............................ <m_startDateSortedEvents>
+  [ 31] getparam 8 .............................. <argEventObj>
+  [ 33] pusharglistnoret 2 ...................... <m_startDateSortedEvents, argEventObj>
+  [ 35] objcall 335 ............................. m_startDateSortedEvents.deleteOne(argEventObj)
+  [ 38] getprop 2106 ............................ <m_durationSortedEvents>
+  [ 41] getparam 8 .............................. <argEventObj>
+  [ 43] pusharglistnoret 2 ...................... <m_durationSortedEvents, argEventObj>
+  [ 45] objcall 335 ............................. m_durationSortedEvents.deleteOne(argEventObj)
+  [ 48] getprop 1487 ............................ <m_ongoingEvents>
+  [ 51] getparam 8 .............................. <argEventObj>
+  [ 53] pusharglist 2 ........................... <m_ongoingEvents, argEventObj>
+  [ 55] objcall 337 ............................. <m_ongoingEvents.getPos(argEventObj)>
+  [ 58] jmpifz [ 71] ............................ if m_ongoingEvents.getPos(argEventObj) then
+  [ 61] getprop 1487 ............................ <m_ongoingEvents>
+  [ 64] getparam 8 .............................. <argEventObj>
+  [ 66] pusharglistnoret 2 ...................... <m_ongoingEvents, argEventObj>
+  [ 68] objcall 335 ............................. m_ongoingEvents.deleteOne(argEventObj)
+  [ 71] ret
+end
+
+on checkEventsStarting me, argDate
+  [  0] getparam 8 .............................. <argDate>
+  [  2] pusharglist 1 ........................... <argDate>
+  [  4] extcall 61 .............................. <voidp(argDate)>
+  [  7] jmpifz [ 28] ............................ if voidp(argDate) then
+  [ 10] getglobal 23 ............................ <gRock>
+  [ 12] getobjprop 76 ........................... <gRock.m_date>
+  [ 15] pusharglist 1 ........................... <gRock.m_date>
+  [ 17] objcall 220 ............................. <gRock.m_date.getDateInt()>
+  [ 20] setprop 2107 ............................ m_lastCheck = gRock.m_date.getDateInt()
+  [ 23] getprop 2107 ............................ <m_lastCheck>
+  [ 26] setparam 8 .............................. argDate = m_lastCheck
+  [ 28] getprop 1015 ............................ <m_startDateSortedEvents>
+  [ 31] getparam 8 .............................. <argDate>
+  [ 33] pushint8 1 .............................. <1>
+  [ 36] inv ..................................... <-1>
+  [ 37] pusharglistnoret 3 ...................... <m_startDateSortedEvents, argDate, -1>
+  [ 39] objcall 309 ............................. m_startDateSortedEvents.addProp(argDate, -1)
+  [ 42] getprop 1015 ............................ <m_startDateSortedEvents>
+  [ 45] pushint8 1 .............................. <1>
+  [ 48] inv ..................................... <-1>
+  [ 49] pusharglist 2 ........................... <m_startDateSortedEvents, -1>
+  [ 51] objcall 337 ............................. <m_startDateSortedEvents.getPos(-1)>
+  [ 54] setlocal 0 .............................. tmpPos = m_startDateSortedEvents.getPos(-1)
+  [ 56] getprop 1015 ............................ <m_startDateSortedEvents>
+  [ 59] pushint8 1 .............................. <1>
+  [ 62] inv ..................................... <-1>
+  [ 63] pusharglistnoret 2 ...................... <m_startDateSortedEvents, -1>
+  [ 65] objcall 335 ............................. m_startDateSortedEvents.deleteOne(-1)
+  [ 68] pusharglist 0 ........................... <[]>
+  [ 70] pushlist ................................ <[]>
+  [ 71] setlocal 8 .............................. objsStartingToday = []
+  [ 73] getlocal 0 .............................. <tmpPos>
+  [ 75] setlocal 16
+  [ 77] getlocal 16
+  [ 79] getprop 1015 ............................ <m_startDateSortedEvents>
+  [ 82] getobjprop 156 .......................... <m_startDateSortedEvents.count>
+  [ 85] lteq
+  [ 86] jmpifz [136] ............................ repeat with n = tmpPos to m_startDateSortedEvents.count
+  [ 89] getprop 1015 ............................ <m_startDateSortedEvents>
+  [ 92] getlocal 16 ............................. <n>
+  [ 94] pusharglist 2 ........................... <m_startDateSortedEvents, n>
+  [ 96] objcall 295 ............................. <m_startDateSortedEvents.getPropAt(n)>
+  [ 99] getparam 8 .............................. <argDate>
+  [101] nteq .................................... <m_startDateSortedEvents.getPropAt(n) <> argDate>
+  [102] jmpifz [108] ............................ if m_startDateSortedEvents.getPropAt(n) <> argDate then
+  [105] jmp [136] ............................... exit repeat
+  [108] getlocal 8 .............................. <objsStartingToday>
+  [110] getprop 1015 ............................ <m_startDateSortedEvents>
+  [113] getlocal 16 ............................. <n>
+  [115] pusharglist 2 ........................... <m_startDateSortedEvents, n>
+  [117] objcall 119 ............................. <m_startDateSortedEvents[n]>
+  [120] pusharglistnoret 2 ...................... <objsStartingToday, m_startDateSortedEvents[n]>
+  [122] objcall 229 ............................. objsStartingToday.add(m_startDateSortedEvents[n])
+  [125] pushint8 1
+  [128] getlocal 16
+  [130] add
+  [131] setlocal 16
+  [133] endrepeat [ 77]
+  [136] pushint8 1 .............................. <1>
+  [139] setprop 2104 ............................ m_busyLooping = 1
+  [142] getlocal 8 .............................. <objsStartingToday>
+  [144] peek 0
+  [146] pusharglist 1
+  [148] extcall 156
+  [151] pushint8 1
+  [153] peek 0
+  [155] peek 2
+  [157] lteq
+  [158] jmpifz [186] ............................ repeat with obj in objsStartingToday
+  [161] peek 2
+  [163] peek 1
+  [165] pusharglist 2
+  [167] extcall 119
+  [170] setlocal 24
+  [172] getparam 0 .............................. <me>
+  [174] getlocal 24 ............................. <obj>
+  [176] pusharglistnoret 2 ...................... <me, obj>
+  [178] objcall 2097 ............................ me.startObject(obj)
+  [181] pushint8 1
+  [183] add
+  [184] endrepeat [153]
+  [186] pop 3
+  [188] getprop 2105 ............................ <m_events>
+  [191] pusharglist 1 ........................... <m_events>
+  [193] objcall 287 ............................. <m_events.duplicate()>
+  [196] setlocal 32 ............................. tmpEvents = m_events.duplicate()
+  [198] getlocal 32 ............................. <tmpEvents>
+  [200] peek 0
+  [202] pusharglist 1
+  [204] extcall 156
+  [207] pushint8 1
+  [209] peek 0
+  [211] peek 2
+  [213] lteq
+  [214] jmpifz [310] ............................ repeat with obj in tmpEvents
+  [217] peek 2
+  [219] peek 1
+  [221] pusharglist 2
+  [223] extcall 119
+  [226] setlocal 24
+  [228] getlocal 24 ............................. <obj>
+  [230] getobjprop 1486 ......................... <obj.onGoing>
+  [233] pushint8 1 .............................. <1>
+  [236] nteq .................................... <obj.onGoing <> 1>
+  [237] jmpifz [304] ............................ if obj.onGoing <> 1 then
+  [240] getlocal 24 ............................. <obj>
+  [242] getobjprop 216 .......................... <obj.StartDate>
+  [245] getparam 8 .............................. <argDate>
+  [247] lteq .................................... <obj.StartDate <= argDate>
+  [248] jmpifz [304] ............................ if obj.StartDate <= argDate then
+  [251] getlocal 24 ............................. <obj>
+  [253] getobjprop 216 .......................... <obj.StartDate>
+  [256] getlocal 24 ............................. <obj>
+  [258] getobjprop 1484 ......................... <obj.duration>
+  [261] add ..................................... <obj.StartDate + obj.duration>
+  [262] getparam 8 .............................. <argDate>
+  [264] gt ...................................... <(obj.StartDate + obj.duration) > argDate>
+  [265] jmpifz [304] ............................ if (obj.StartDate + obj.duration) > argDate then
+  [268] getlocal 24 ............................. <obj>
+  [270] pushsymb 506 ............................ <#_killed>
+  [273] pusharglist 2 ........................... <obj, #_killed>
+  [275] extcall 162 ............................. <rgetProp(obj, #_killed)>
+  [278] pushzero ................................ <0>
+  [279] lteq .................................... <rgetProp(obj, #_killed) <= 0>
+  [280] jmpifz [304] ............................ if rgetProp(obj, #_killed) <= 0 then
+  [283] pushcons 32 ............................. <"SHOULD'VE STARTED EVENT!!">
+  [285] getlocal 24 ............................. <obj>
+  [287] getobjprop 154 .......................... <obj.ID>
+  [290] pusharglistnoret 2 ...................... <"SHOULD'VE STARTED EVENT!!", obj.ID>
+  [292] extcall 122 ............................. pott("SHOULD'VE STARTED EVENT!!", obj.ID)
+  [295] getparam 0 .............................. <me>
+  [297] getlocal 24 ............................. <obj>
+  [299] pusharglistnoret 2 ...................... <me, obj>
+  [301] objcall 2097 ............................ me.startObject(obj)
+  [304] pushint8 1
+  [306] add
+  [307] endrepeat [209]
+  [310] pop 3
+  [312] pushzero ................................ <0>
+  [313] setprop 2104 ............................ m_busyLooping = 0
+  [316] ret
+end
+
+on checkEventsEnding me, argDate
+  [  0] getparam 8 .............................. <argDate>
+  [  2] pusharglist 1 ........................... <argDate>
+  [  4] extcall 61 .............................. <voidp(argDate)>
+  [  7] jmpifz [ 28] ............................ if voidp(argDate) then
+  [ 10] getglobal 23 ............................ <gRock>
+  [ 12] getobjprop 76 ........................... <gRock.m_date>
+  [ 15] pusharglist 1 ........................... <gRock.m_date>
+  [ 17] objcall 220 ............................. <gRock.m_date.getDateInt()>
+  [ 20] setprop 2107 ............................ m_lastCheck = gRock.m_date.getDateInt()
+  [ 23] getprop 2107 ............................ <m_lastCheck>
+  [ 26] setparam 8 .............................. argDate = m_lastCheck
+  [ 28] pusharglist 0 ........................... <[]>
+  [ 30] pushlist ................................ <[]>
+  [ 31] setlocal 0 .............................. objsEndingToday = []
+  [ 33] getprop 1487 ............................ <m_ongoingEvents>
+  [ 36] peek 0
+  [ 38] pusharglist 1
+  [ 40] extcall 156
+  [ 43] pushint8 1
+  [ 45] peek 0
+  [ 47] peek 2
+  [ 49] lteq
+  [ 50] jmpifz [ 96] ............................ repeat with obj in m_ongoingEvents
+  [ 53] peek 2
+  [ 55] peek 1
+  [ 57] pusharglist 2
+  [ 59] extcall 119
+  [ 62] setlocal 8
+  [ 64] getlocal 8 .............................. <obj>
+  [ 66] getobjprop 216 .......................... <obj.StartDate>
+  [ 69] getlocal 8 .............................. <obj>
+  [ 71] getobjprop 1484 ......................... <obj.duration>
+  [ 74] add ..................................... <obj.StartDate + obj.duration>
+  [ 75] getparam 8 .............................. <argDate>
+  [ 77] lteq .................................... <(obj.StartDate + obj.duration) <= argDate>
+  [ 78] jmpifz [ 90] ............................ if (obj.StartDate + obj.duration) <= argDate then
+  [ 81] getlocal 0 .............................. <objsEndingToday>
+  [ 83] getlocal 8 .............................. <obj>
+  [ 85] pusharglistnoret 2 ...................... <objsEndingToday, obj>
+  [ 87] objcall 229 ............................. objsEndingToday.add(obj)
+  [ 90] pushint8 1
+  [ 92] add
+  [ 93] endrepeat [ 45]
+  [ 96] pop 3
+  [ 98] pushint8 1 .............................. <1>
+  [101] setprop 2104 ............................ m_busyLooping = 1
+  [104] getlocal 0 .............................. <objsEndingToday>
+  [106] peek 0
+  [108] pusharglist 1
+  [110] extcall 156
+  [113] pushint8 1
+  [115] peek 0
+  [117] peek 2
+  [119] lteq
+  [120] jmpifz [148] ............................ repeat with obj in objsEndingToday
+  [123] peek 2
+  [125] peek 1
+  [127] pusharglist 2
+  [129] extcall 119
+  [132] setlocal 8
+  [134] getparam 0 .............................. <me>
+  [136] getlocal 8 .............................. <obj>
+  [138] pusharglistnoret 2 ...................... <me, obj>
+  [140] objcall 2096 ............................ me.stopObject(obj)
+  [143] pushint8 1
+  [145] add
+  [146] endrepeat [115]
+  [148] pop 3
+  [150] getprop 2105 ............................ <m_events>
+  [153] peek 0
+  [155] pusharglist 1
+  [157] extcall 156
+  [160] pushint8 1
+  [162] peek 0
+  [164] peek 2
+  [166] lteq
+  [167] jmpifz [240] ............................ repeat with obj in m_events
+  [170] peek 2
+  [172] peek 1
+  [174] pusharglist 2
+  [176] extcall 119
+  [179] setlocal 8
+  [181] getlocal 8 .............................. <obj>
+  [183] getobjprop 1486 ......................... <obj.onGoing>
+  [186] pushint8 1 .............................. <1>
+  [189] eq ...................................... <obj.onGoing = 1>
+  [190] jmpifz [234] ............................ if obj.onGoing = 1 then
+  [193] getlocal 8 .............................. <obj>
+  [195] getobjprop 216 .......................... <obj.StartDate>
+  [198] getlocal 8 .............................. <obj>
+  [200] getobjprop 1484 ......................... <obj.duration>
+  [203] add ..................................... <obj.StartDate + obj.duration>
+  [204] getparam 8 .............................. <argDate>
+  [206] lteq .................................... <(obj.StartDate + obj.duration) <= argDate>
+  [207] jmpifz [234] ............................ if (obj.StartDate + obj.duration) <= argDate then
+  [210] pushcons 40 ............................. <"ALREADY STOPPED EVENT!!">
+  [212] getlocal 8 .............................. <obj>
+  [214] getobjprop 154 .......................... <obj.ID>
+  [217] pusharglistnoret 2 ...................... <"ALREADY STOPPED EVENT!!", obj.ID>
+  [219] extcall 122 ............................. pott("ALREADY STOPPED EVENT!!", obj.ID)
+  [222] getparam 0 .............................. <me>
+  [224] getlocal 8 .............................. <obj>
+  [226] pushsymb 553 ............................ <#Force>
+  [229] pusharglistnoret 3 ...................... <me, obj, #Force>
+  [231] objcall 2096 ............................ me.stopObject(obj, #Force)
+  [234] pushint8 1
+  [236] add
+  [237] endrepeat [162]
+  [240] pop 3
+  [242] pushzero ................................ <0>
+  [243] setprop 2104 ............................ m_busyLooping = 0
+  [246] ret
+end
+
+on stopObject me, argObj, argForce
+  [  0] getprop 1487 ............................ <m_ongoingEvents>
+  [  3] getparam 8 .............................. <argObj>
+  [  5] pusharglist 2 ........................... <m_ongoingEvents, argObj>
+  [  7] objcall 337 ............................. <m_ongoingEvents.getPos(argObj)>
+  [ 10] pushzero ................................ <0>
+  [ 11] eq ...................................... <m_ongoingEvents.getPos(argObj) = 0>
+  [ 12] getparam 16 ............................. <argForce>
+  [ 14] pushsymb 553 ............................ <#Force>
+  [ 17] nteq .................................... <argForce <> #Force>
+  [ 18] and ..................................... <(m_ongoingEvents.getPos(argObj) = 0) and (argForce <> #Force)>
+  [ 19] jmpifz [ 23] ............................ if (m_ongoingEvents.getPos(argObj) = 0) and (argForce <> #Force) then
+  [ 22] ret ..................................... exit
+  [ 23] getparam 8 .............................. <argObj>
+  [ 25] getobjprop 224 .......................... <argObj.className>
+  [ 28] pushsymb 1455 ........................... <#Concert>
+  [ 31] eq ...................................... <argObj.className = #Concert>
+  [ 32] jmpifz [ 65] ............................ if argObj.className = #Concert then
+  [ 35] getglobal 23 ............................ <gRock>
+  [ 37] getobjprop 77 ........................... <gRock.m_msgManager>
+  [ 40] getparam 8 .............................. <argObj>
+  [ 42] getobjprop 224 .......................... <argObj.className>
+  [ 45] pusharglist 1 ........................... <argObj.className>
+  [ 47] extcall 114 ............................. <string(argObj.className)>
+  [ 50] pushcons 48 ............................. <"PreStop">
+  [ 52] joinstr ................................. <string(argObj.className) & "PreStop">
+  [ 53] pusharglist 1 ........................... <string(argObj.className) & "PreStop">
+  [ 55] extcall 267 ............................. <symbol(string(argObj.className) & "PreStop")>
+  [ 58] getparam 8 .............................. <argObj>
+  [ 60] pusharglistnoret 3 ...................... <gRock.m_msgManager, symbol(string(argObj.className) & "PreStop"), argObj>
+  [ 62] objcall 621 ............................. gRock.m_msgManager.msg(symbol(string(argObj.className) & "PreStop"), argObj)
+  [ 65] getparam 8 .............................. <argObj>
+  [ 67] pushsymb 506 ............................ <#_killed>
+  [ 70] pusharglist 2 ........................... <argObj, #_killed>
+  [ 72] extcall 162 ............................. <rgetProp(argObj, #_killed)>
+  [ 75] pushzero ................................ <0>
+  [ 76] gt ...................................... <rgetProp(argObj, #_killed) > 0>
+  [ 77] jmpifz [ 98] ............................ if rgetProp(argObj, #_killed) > 0 then / else
+  [ 80] getprop 1487 ............................ <m_ongoingEvents>
+  [ 83] getparam 8 .............................. <argObj>
+  [ 85] pusharglistnoret 2 ...................... <m_ongoingEvents, argObj>
+  [ 87] objcall 335 ............................. m_ongoingEvents.deleteOne(argObj)
+  [ 90] pusharglistnoret 0 ...................... <>
+  [ 92] extcall 2116 ............................ nothing()
+  [ 95] jmp [163]
+  [ 98] getprop 1487 ............................ <m_ongoingEvents>
+  [101] getparam 8 .............................. <argObj>
+  [103] pusharglistnoret 2 ...................... <m_ongoingEvents, argObj>
+  [105] objcall 335 ............................. m_ongoingEvents.deleteOne(argObj)
+  [108] getparam 8 .............................. <argObj>
+  [110] pushsymb 663 ............................ <#stop>
+  [113] pusharglistnoret 2 ...................... <argObj, #stop>
+  [115] objcall 660 ............................. argObj.eventChangeState(#stop)
+  [118] getglobal 23 ............................ <gRock>
+  [120] getobjprop 77 ........................... <gRock.m_msgManager>
+  [123] pushsymb 2117 ........................... <#EventStop>
+  [126] getparam 8 .............................. <argObj>
+  [128] pusharglistnoret 3 ...................... <gRock.m_msgManager, #EventStop, argObj>
+  [130] objcall 621 ............................. gRock.m_msgManager.msg(#EventStop, argObj)
+  [133] getglobal 23 ............................ <gRock>
+  [135] getobjprop 77 ........................... <gRock.m_msgManager>
+  [138] getparam 8 .............................. <argObj>
+  [140] getobjprop 224 .......................... <argObj.className>
+  [143] pusharglist 1 ........................... <argObj.className>
+  [145] extcall 114 ............................. <string(argObj.className)>
+  [148] pushcons 56 ............................. <"Stop">
+  [150] joinstr ................................. <string(argObj.className) & "Stop">
+  [151] pusharglist 1 ........................... <string(argObj.className) & "Stop">
+  [153] extcall 267 ............................. <symbol(string(argObj.className) & "Stop")>
+  [156] getparam 8 .............................. <argObj>
+  [158] pusharglistnoret 3 ...................... <gRock.m_msgManager, symbol(string(argObj.className) & "Stop"), argObj>
+  [160] objcall 621 ............................. gRock.m_msgManager.msg(symbol(string(argObj.className) & "Stop"), argObj)
+  [163] ret
+end
+
+on startObject me, argObj
+  [  0] getprop 1487 ............................ <m_ongoingEvents>
+  [  3] getparam 8 .............................. <argObj>
+  [  5] pusharglist 2 ........................... <m_ongoingEvents, argObj>
+  [  7] objcall 337 ............................. <m_ongoingEvents.getPos(argObj)>
+  [ 10] pushzero ................................ <0>
+  [ 11] gt ...................................... <m_ongoingEvents.getPos(argObj) > 0>
+  [ 12] jmpifz [ 16] ............................ if m_ongoingEvents.getPos(argObj) > 0 then
+  [ 15] ret ..................................... exit
+  [ 16] getparam 8 .............................. <argObj>
+  [ 18] pushsymb 43 ............................. <#start>
+  [ 21] pusharglist 2 ........................... <argObj, #start>
+  [ 23] objcall 660 ............................. <argObj.eventChangeState(#start)>
+  [ 26] setlocal 0 .............................. tmp = argObj.eventChangeState(#start)
+  [ 28] getlocal 0 .............................. <tmp>
+  [ 30] pusharglist 1 ........................... <tmp>
+  [ 32] extcall 61 .............................. <voidp(tmp)>
+  [ 35] not ..................................... <not voidp(tmp)>
+  [ 36] getlocal 0 .............................. <tmp>
+  [ 38] pushzero ................................ <0>
+  [ 39] eq ...................................... <tmp = 0>
+  [ 40] getlocal 0 .............................. <tmp>
+  [ 42] pushsymb 1463 ........................... <#DontStart>
+  [ 45] eq ...................................... <tmp = #DontStart>
+  [ 46] or ...................................... <(tmp = 0) or (tmp = #DontStart)>
+  [ 47] and ..................................... <not voidp(tmp) and ((tmp = 0) or (tmp = #DontStart))>
+  [ 48] jmpifz [ 52] ............................ if not voidp(tmp) and ((tmp = 0) or (tmp = #DontStart)) then
+  [ 51] ret ..................................... exit
+  [ 52] getglobal 23 ............................ <gRock>
+  [ 54] getobjprop 77 ........................... <gRock.m_msgManager>
+  [ 57] pushsymb 215 ............................ <#Event>
+  [ 60] getparam 8 .............................. <argObj>
+  [ 62] pusharglistnoret 3 ...................... <gRock.m_msgManager, #Event, argObj>
+  [ 64] objcall 621 ............................. gRock.m_msgManager.msg(#Event, argObj)
+  [ 67] getglobal 23 ............................ <gRock>
+  [ 69] getobjprop 77 ........................... <gRock.m_msgManager>
+  [ 72] getparam 8 .............................. <argObj>
+  [ 74] getobjprop 224 .......................... <argObj.className>
+  [ 77] getparam 8 .............................. <argObj>
+  [ 79] pusharglistnoret 3 ...................... <gRock.m_msgManager, argObj.className, argObj>
+  [ 81] objcall 621 ............................. gRock.m_msgManager.msg(argObj.className, argObj)
+  [ 84] getparam 8 .............................. <argObj>
+  [ 86] pushsymb 506 ............................ <#_killed>
+  [ 89] pusharglist 2 ........................... <argObj, #_killed>
+  [ 91] extcall 162 ............................. <rgetProp(argObj, #_killed)>
+  [ 94] pushzero ................................ <0>
+  [ 95] gt ...................................... <rgetProp(argObj, #_killed) > 0>
+  [ 96] jmpifz [100] ............................ if rgetProp(argObj, #_killed) > 0 then
+  [ 99] ret ..................................... exit
+  [100] getparam 8 .............................. <argObj>
+  [102] pushsymb 216 ............................ <#StartDate>
+  [105] pusharglist 2 ........................... <argObj, #StartDate>
+  [107] extcall 1045 ............................ <rgetPropSimple(argObj, #StartDate)>
+  [110] pusharglist 1 ........................... <rgetPropSimple(argObj, #StartDate)>
+  [112] extcall 61 .............................. <voidp(rgetPropSimple(argObj, #StartDate))>
+  [115] jmpifz [134] ............................ if voidp(rgetPropSimple(argObj, #StartDate)) then
+  [118] pushcons 64 ............................. <"StartObject: Not an event!">
+  [120] getparam 8 .............................. <argObj>
+  [122] pusharglist 1 ........................... <argObj>
+  [124] extcall 114 ............................. <string(argObj)>
+  [127] joinpadstr .............................. <"StartObject: Not an event!" && string(argObj)>
+  [128] pusharglistnoret 1 ...................... <"StartObject: Not an event!" && string(argObj)>
+  [130] extcall 118 ............................. alert("StartObject: Not an event!" && string(argObj))
+  [133] ret ..................................... exit
+  [134] getprop 1487 ............................ <m_ongoingEvents>
+  [137] getparam 8 .............................. <argObj>
+  [139] pusharglistnoret 2 ...................... <m_ongoingEvents, argObj>
+  [141] objcall 229 ............................. m_ongoingEvents.add(argObj)
+  [144] ret
+end
+
+on closestPossibleDate me, argEventObj, argAltStartDate, argMaxNumSimultaneousVisibleEvents
+  [  0] pushint8 4 .............................. <4>
+  [  3] setparam 24 ............................. argMaxNumSimultaneousVisibleEvents = 4
+  [  5] pushzero ................................ <0>
+  [  6] setlocal 0
+  [  8] getlocal 0
+  [ 10] pushint8 100 ............................ <100>
+  [ 13] lteq
+  [ 14] jmpifz [184] ............................ repeat with n = 0 to 100
+  [ 17] getparam 0 .............................. <me>
+  [ 19] getparam 8 .............................. <argEventObj>
+  [ 21] getparam 16 ............................. <argAltStartDate>
+  [ 23] getlocal 0 .............................. <n>
+  [ 25] add ..................................... <argAltStartDate + n>
+  [ 26] getparam 16 ............................. <argAltStartDate>
+  [ 28] getparam 8 .............................. <argEventObj>
+  [ 30] getobjprop 1484 ......................... <argEventObj.duration>
+  [ 33] add ..................................... <argAltStartDate + argEventObj.duration>
+  [ 34] getlocal 0 .............................. <n>
+  [ 36] add ..................................... <argAltStartDate + argEventObj.duration + n>
+  [ 37] pusharglist 4 ........................... <me, argEventObj, argAltStartDate + n, argAltStartDate + argEventObj.duration + n>
+  [ 39] objcall 2099 ............................ <me.whichOccupySameSpaceAs(argEventObj, argAltStartDate + n, argAltStartDate + argEventObj.duration + n)>
+  [ 42] setlocal 8 .............................. otherEvents = me.whichOccupySameSpaceAs(argEventObj, argAltStartDate + n, argAltStartDate + argEventObj.duration + n)
+  [ 44] getlocal 8 .............................. <otherEvents>
+  [ 46] getobjprop 156 .......................... <otherEvents.count>
+  [ 49] jmpifz [163] ............................ if otherEvents.count then
+  [ 52] pushzero ................................ <0>
+  [ 53] setlocal 16 ............................. numVisible = 0
+  [ 55] getlocal 8 .............................. <otherEvents>
+  [ 57] peek 0
+  [ 59] pusharglist 1
+  [ 61] extcall 156
+  [ 64] pushint8 1
+  [ 66] peek 0
+  [ 68] peek 2
+  [ 70] lteq
+  [ 71] jmpifz [111] ............................ repeat with tmpEvent in otherEvents
+  [ 74] peek 2
+  [ 76] peek 1
+  [ 78] pusharglist 2
+  [ 80] extcall 119
+  [ 83] setlocal 24
+  [ 85] getlocal 24 ............................. <tmpEvent>
+  [ 87] getobjprop 1026 ......................... <tmpEvent.visible>
+  [ 90] pushint8 1 .............................. <1>
+  [ 93] eq ...................................... <tmpEvent.visible = 1>
+  [ 94] jmpifz [105] ............................ if tmpEvent.visible = 1 then
+  [ 97] getlocal 16 ............................. <numVisible>
+  [ 99] pushint8 1 .............................. <1>
+  [102] add ..................................... <numVisible + 1>
+  [103] setlocal 16 ............................. numVisible = numVisible + 1
+  [105] pushint8 1
+  [107] add
+  [108] endrepeat [ 66]
+  [111] pop 3
+  [113] getlocal 16 ............................. <numVisible>
+  [115] getparam 24 ............................. <argMaxNumSimultaneousVisibleEvents>
+  [117] gteq .................................... <numVisible >= argMaxNumSimultaneousVisibleEvents>
+  [118] jmpifz [124] ............................ if numVisible >= argMaxNumSimultaneousVisibleEvents then
+  [121] jmp [173] ............................... next repeat
+  [124] getparam 0 .............................. <me>
+  [126] getparam 8 .............................. <argEventObj>
+  [128] getobjprop 1016 ......................... <argEventObj.neededIDs>
+  [131] getlocal 8 .............................. <otherEvents>
+  [133] pusharglist 3 ........................... <me, argEventObj.neededIDs, otherEvents>
+  [135] objcall 2101 ............................ <me.checkNeededResources(argEventObj.neededIDs, otherEvents)>
+  [138] setlocal 32 ............................. tmpResourceConflicting = me.checkNeededResources(argEventObj.neededIDs, otherEvents)
+  [140] getlocal 32 ............................. <tmpResourceConflicting>
+  [142] getobjprop 156 .......................... <tmpResourceConflicting.count>
+  [145] pushzero ................................ <0>
+  [146] eq ...................................... <tmpResourceConflicting.count = 0>
+  [147] jmpifz [160] ............................ if tmpResourceConflicting.count = 0 then
+  [150] getparam 16 ............................. <argAltStartDate>
+  [152] getlocal 0 .............................. <n>
+  [154] add ..................................... <argAltStartDate + n>
+  [155] pusharglistnoret 1 ...................... <argAltStartDate + n>
+  [157] extcall 69 .............................. return argAltStartDate + n
+  [160] jmp [173] ............................... next repeat
+  [163] getparam 16 ............................. <argAltStartDate>
+  [165] getlocal 0 .............................. <n>
+  [167] add ..................................... <argAltStartDate + n>
+  [168] pusharglistnoret 1 ...................... <argAltStartDate + n>
+  [170] extcall 69 .............................. return argAltStartDate + n
+  [173] pushint8 1
+  [176] getlocal 0
+  [178] add
+  [179] setlocal 0
+  [181] endrepeat [  8]
+  [184] pushint8 1 .............................. <1>
+  [187] inv ..................................... <-1>
+  [188] pusharglistnoret 1 ...................... <-1>
+  [190] extcall 69 .............................. return -1
+  [193] pushint8 10 ............................. <10>
+  [196] setlocal 40 ............................. step = 10
+  [198] pushint8 1 .............................. <1>
+  [201] inv ..................................... <-1>
+  [202] setlocal 48 ............................. OKDate = -1
+  [204] pushint8 1 .............................. <1>
+  [207] setlocal 56
+  [209] getlocal 56
+  [211] pushint8 100 ............................ <100>
+  [214] lteq
+  [215] jmpifz [369] ............................ repeat with stepNum = 1 to 100
+  [218] getparam 0 .............................. <me>
+  [220] getparam 8 .............................. <argEventObj>
+  [222] getparam 16 ............................. <argAltStartDate>
+  [224] getparam 16 ............................. <argAltStartDate>
+  [226] getparam 8 .............................. <argEventObj>
+  [228] getobjprop 1484 ......................... <argEventObj.duration>
+  [231] add ..................................... <argAltStartDate + argEventObj.duration>
+  [232] getlocal 40 ............................. <step>
+  [234] add ..................................... <argAltStartDate + argEventObj.duration + step>
+  [235] pusharglist 4 ........................... <me, argEventObj, argAltStartDate, argAltStartDate + argEventObj.duration + step>
+  [237] objcall 2099 ............................ <me.whichOccupySameSpaceAs(argEventObj, argAltStartDate, argAltStartDate + argEventObj.duration + step)>
+  [240] setlocal 8 .............................. otherEvents = me.whichOccupySameSpaceAs(argEventObj, argAltStartDate, argAltStartDate + argEventObj.duration + step)
+  [242] pushzero ................................ <0>
+  [243] setlocal 0
+  [245] getlocal 0
+  [247] getlocal 40 ............................. <step>
+  [249] pushint8 1 .............................. <1>
+  [252] sub ..................................... <step - 1>
+  [253] lteq
+  [254] jmpifz [341] ............................ repeat with n = 0 to step - 1
+  [257] getparam 0 .............................. <me>
+  [259] pusharglist 0 ........................... <>
+  [261] extcall 151 ............................. <VOID>
+  [264] getlocal 8 .............................. <otherEvents>
+  [266] getlocal 0 .............................. <n>
+  [268] getparam 16 ............................. <argAltStartDate>
+  [270] add ..................................... <n + argAltStartDate>
+  [271] getlocal 0 .............................. <n>
+  [273] getparam 16 ............................. <argAltStartDate>
+  [275] add ..................................... <n + argAltStartDate>
+  [276] getparam 8 .............................. <argEventObj>
+  [278] getobjprop 1484 ......................... <argEventObj.duration>
+  [281] add ..................................... <n + argAltStartDate + argEventObj.duration>
+  [282] pusharglist 2 ........................... <[n + argAltStartDate, n + argAltStartDate + argEventObj.duration]>
+  [284] pushlist ................................ <[n + argAltStartDate, n + argAltStartDate + argEventObj.duration]>
+  [285] pusharglist 4 ........................... <me, VOID, otherEvents, [n + argAltStartDate, n + argAltStartDate + argEventObj.duration]>
+  [287] objcall 2100 ............................ <me.checkTheseSimultaneous(VOID, otherEvents, [n + argAltStartDate, n + argAltStartDate + argEventObj.duration])>
+  [290] setlocal 64 ............................. tmp = me.checkTheseSimultaneous(VOID, otherEvents, [n + argAltStartDate, n + argAltStartDate + argEventObj.duration])
+  [292] getparam 0 .............................. <me>
+  [294] getparam 8 .............................. <argEventObj>
+  [296] getobjprop 1016 ......................... <argEventObj.neededIDs>
+  [299] getlocal 64 ............................. <tmp>
+  [301] pusharglist 3 ........................... <me, argEventObj.neededIDs, tmp>
+  [303] objcall 2101 ............................ <me.checkNeededResources(argEventObj.neededIDs, tmp)>
+  [306] setlocal 64 ............................. tmp = me.checkNeededResources(argEventObj.neededIDs, tmp)
+  [308] getlocal 64 ............................. <tmp>
+  [310] pusharglist 1 ........................... <tmp>
+  [312] objcall 156 ............................. <tmp.count()>
+  [315] pushzero ................................ <0>
+  [316] eq ...................................... <tmp.count() = 0>
+  [317] jmpifz [330] ............................ if tmp.count() = 0 then
+  [320] getparam 16 ............................. <argAltStartDate>
+  [322] getlocal 0 .............................. <n>
+  [324] add ..................................... <argAltStartDate + n>
+  [325] setlocal 48 ............................. OKDate = argAltStartDate + n
+  [327] jmp [341] ............................... exit repeat
+  [330] pushint8 1
+  [333] getlocal 0
+  [335] add
+  [336] setlocal 0
+  [338] endrepeat [245]
+  [341] getlocal 48 ............................. <OKDate>
+  [343] pushzero ................................ <0>
+  [344] gteq .................................... <OKDate >= 0>
+  [345] jmpifz [351] ............................ if OKDate >= 0 then
+  [348] jmp [369] ............................... exit repeat
+  [351] getparam 16 ............................. <argAltStartDate>
+  [353] getlocal 40 ............................. <step>
+  [355] add ..................................... <argAltStartDate + step>
+  [356] setparam 16 ............................. argAltStartDate = argAltStartDate + step
+  [358] pushint8 1
+  [361] getlocal 56
+  [363] add
+  [364] setlocal 56
+  [366] endrepeat [209]
+  [369] getlocal 48 ............................. <OKDate>
+  [371] pusharglistnoret 1 ...................... <OKDate>
+  [373] extcall 69 .............................. return OKDate
+  [376] ret
+end
+
+on findClashingEvents me, argEventObj, argAltStartDate
+  [  0] getparam 16 ............................. <argAltStartDate>
+  [  2] pusharglist 1 ........................... <argAltStartDate>
+  [  4] extcall 61 .............................. <voidp(argAltStartDate)>
+  [  7] jmpifz [ 17] ............................ if voidp(argAltStartDate) then
+  [ 10] getparam 8 .............................. <argEventObj>
+  [ 12] getobjprop 216 .......................... <argEventObj.StartDate>
+  [ 15] setparam 16 ............................. argAltStartDate = argEventObj.StartDate
+  [ 17] getparam 0 .............................. <me>
+  [ 19] getparam 8 .............................. <argEventObj>
+  [ 21] getparam 16 ............................. <argAltStartDate>
+  [ 23] getparam 16 ............................. <argAltStartDate>
+  [ 25] getparam 8 .............................. <argEventObj>
+  [ 27] getobjprop 1484 ......................... <argEventObj.duration>
+  [ 30] add ..................................... <argAltStartDate + argEventObj.duration>
+  [ 31] pusharglist 4 ........................... <me, argEventObj, argAltStartDate, argAltStartDate + argEventObj.duration>
+  [ 33] objcall 2099 ............................ <me.whichOccupySameSpaceAs(argEventObj, argAltStartDate, argAltStartDate + argEventObj.duration)>
+  [ 36] setlocal 0 .............................. occupies = me.whichOccupySameSpaceAs(argEventObj, argAltStartDate, argAltStartDate + argEventObj.duration)
+  [ 38] getparam 0 .............................. <me>
+  [ 40] getparam 8 .............................. <argEventObj>
+  [ 42] getobjprop 1016 ......................... <argEventObj.neededIDs>
+  [ 45] getlocal 0 .............................. <occupies>
+  [ 47] pusharglist 3 ........................... <me, argEventObj.neededIDs, occupies>
+  [ 49] objcall 2101 ............................ <me.checkNeededResources(argEventObj.neededIDs, occupies)>
+  [ 52] pusharglistnoret 1 ...................... <me.checkNeededResources(argEventObj.neededIDs, occupies)>
+  [ 54] extcall 69 .............................. return me.checkNeededResources(argEventObj.neededIDs, occupies)
+  [ 57] ret
+end
+
+on whichOccupySameSpaceAs me, argEventObj, argAltStartDate, argAltEndDate
+  [  0] getparam 16 ............................. <argAltStartDate>
+  [  2] pusharglist 1 ........................... <argAltStartDate>
+  [  4] extcall 61 .............................. <voidp(argAltStartDate)>
+  [  7] jmpifz [ 17] ............................ if voidp(argAltStartDate) then
+  [ 10] getparam 8 .............................. <argEventObj>
+  [ 12] getobjprop 216 .......................... <argEventObj.StartDate>
+  [ 15] setparam 16 ............................. argAltStartDate = argEventObj.StartDate
+  [ 17] getparam 24 ............................. <argAltEndDate>
+  [ 19] pusharglist 1 ........................... <argAltEndDate>
+  [ 21] extcall 61 .............................. <voidp(argAltEndDate)>
+  [ 24] jmpifz [ 40] ............................ if voidp(argAltEndDate) then
+  [ 27] getparam 8 .............................. <argEventObj>
+  [ 29] getobjprop 216 .......................... <argEventObj.StartDate>
+  [ 32] getparam 8 .............................. <argEventObj>
+  [ 34] getobjprop 1484 ......................... <argEventObj.duration>
+  [ 37] add ..................................... <argEventObj.StartDate + argEventObj.duration>
+  [ 38] setparam 24 ............................. argAltEndDate = argEventObj.StartDate + argEventObj.duration
+  [ 40] getparam 0 .............................. <me>
+  [ 42] getparam 16 ............................. <argAltStartDate>
+  [ 44] getparam 24 ............................. <argAltEndDate>
+  [ 46] pusharglist 3 ........................... <me, argAltStartDate, argAltEndDate>
+  [ 48] objcall 1662 ............................ <me.getOngoingEventsBetweenDates(argAltStartDate, argAltEndDate)>
+  [ 51] setlocal 0 .............................. tmp = me.getOngoingEventsBetweenDates(argAltStartDate, argAltEndDate)
+  [ 53] getlocal 0 .............................. <tmp>
+  [ 55] getparam 8 .............................. <argEventObj>
+  [ 57] pusharglistnoret 2 ...................... <tmp, argEventObj>
+  [ 59] objcall 335 ............................. tmp.deleteOne(argEventObj)
+  [ 62] getlocal 0 .............................. <tmp>
+  [ 64] pusharglistnoret 1 ...................... <tmp>
+  [ 66] extcall 69 .............................. return tmp
+  [ 69] pusharglist 0 ........................... <[]>
+  [ 71] pushlist ................................ <[]>
+  [ 72] setlocal 8 .............................. coincidingList = []
+  [ 74] getprop 1015 ............................ <m_startDateSortedEvents>
+  [ 77] getparam 24 ............................. <argAltEndDate>
+  [ 79] pushint8 1 .............................. <1>
+  [ 82] inv ..................................... <-1>
+  [ 83] pusharglistnoret 3 ...................... <m_startDateSortedEvents, argAltEndDate, -1>
+  [ 85] objcall 309 ............................. m_startDateSortedEvents.addProp(argAltEndDate, -1)
+  [ 88] getprop 1015 ............................ <m_startDateSortedEvents>
+  [ 91] pushint8 1 .............................. <1>
+  [ 94] inv ..................................... <-1>
+  [ 95] pusharglist 2 ........................... <m_startDateSortedEvents, -1>
+  [ 97] objcall 337 ............................. <m_startDateSortedEvents.getPos(-1)>
+  [100] setlocal 16 ............................. startPos = m_startDateSortedEvents.getPos(-1)
+  [102] getprop 1015 ............................ <m_startDateSortedEvents>
+  [105] pushint8 1 .............................. <1>
+  [108] inv ..................................... <-1>
+  [109] pusharglistnoret 2 ...................... <m_startDateSortedEvents, -1>
+  [111] objcall 335 ............................. m_startDateSortedEvents.deleteOne(-1)
+  [114] getlocal 16 ............................. <startPos>
+  [116] pushint8 1 .............................. <1>
+  [119] sub ..................................... <startPos - 1>
+  [120] setlocal 16 ............................. startPos = startPos - 1
+  [122] getlocal 16 ............................. <startPos>
+  [124] pushzero ................................ <0>
+  [125] eq ...................................... <startPos = 0>
+  [126] jmpifz [136] ............................ if startPos = 0 then
+  [129] getlocal 8 .............................. <coincidingList>
+  [131] pusharglistnoret 1 ...................... <coincidingList>
+  [133] extcall 69 .............................. return coincidingList
+  [136] getlocal 16 ............................. <startPos>
+  [138] setlocal 24
+  [140] getlocal 24
+  [142] getprop 1015 ............................ <m_startDateSortedEvents>
+  [145] pusharglist 1 ........................... <m_startDateSortedEvents>
+  [147] objcall 156 ............................. <m_startDateSortedEvents.count()>
+  [150] lteq
+  [151] jmpifz [188] ............................ repeat with n = startPos to m_startDateSortedEvents.count()
+  [154] getprop 1015 ............................ <m_startDateSortedEvents>
+  [157] getlocal 24 ............................. <n>
+  [159] pusharglist 2 ........................... <m_startDateSortedEvents, n>
+  [161] objcall 295 ............................. <m_startDateSortedEvents.getPropAt(n)>
+  [164] getparam 24 ............................. <argAltEndDate>
+  [166] gt ...................................... <m_startDateSortedEvents.getPropAt(n) > argAltEndDate>
+  [167] jmpifz [173] ............................ if m_startDateSortedEvents.getPropAt(n) > argAltEndDate then
+  [170] jmp [188] ............................... exit repeat
+  [173] getlocal 24 ............................. <n>
+  [175] setlocal 16 ............................. startPos = n
+  [177] pushint8 1
+  [180] getlocal 24
+  [182] add
+  [183] setlocal 24
+  [185] endrepeat [140]
+  [188] getlocal 16 ............................. <startPos>
+  [190] setlocal 24
+  [192] getlocal 24
+  [194] pushint8 1 .............................. <1>
+  [197] gteq
+  [198] jmpifz [367] ............................ repeat with n = startPos down to 1
+  [201] getprop 1015 ............................ <m_startDateSortedEvents>
+  [204] getlocal 24 ............................. <n>
+  [206] pusharglist 2 ........................... <m_startDateSortedEvents, n>
+  [208] objcall 119 ............................. <m_startDateSortedEvents[n]>
+  [211] setlocal 32 ............................. obj = m_startDateSortedEvents[n]
+  [213] getlocal 32 ............................. <obj>
+  [215] getparam 8 .............................. <argEventObj>
+  [217] eq ...................................... <obj = argEventObj>
+  [218] jmpifz [224] ............................ if obj = argEventObj then
+  [221] jmp [356] ............................... next repeat
+  [224] getlocal 32 ............................. <obj>
+  [226] getobjprop 216 .......................... <obj.StartDate>
+  [229] getparam 16 ............................. <argAltStartDate>
+  [231] gteq .................................... <obj.StartDate >= argAltStartDate>
+  [232] jmpifz [258] ............................ if obj.StartDate >= argAltStartDate then
+  [235] getlocal 32 ............................. <obj>
+  [237] getobjprop 216 .......................... <obj.StartDate>
+  [240] getparam 24 ............................. <argAltEndDate>
+  [242] lt ...................................... <obj.StartDate < argAltEndDate>
+  [243] jmpifz [255] ............................ if obj.StartDate < argAltEndDate then
+  [246] getlocal 8 .............................. <coincidingList>
+  [248] getlocal 32 ............................. <obj>
+  [250] pusharglistnoret 2 ...................... <coincidingList, obj>
+  [252] objcall 229 ............................. coincidingList.add(obj)
+  [255] jmp [356] ............................... next repeat
+  [258] getparam 16 ............................. <argAltStartDate>
+  [260] getlocal 32 ............................. <obj>
+  [262] getobjprop 216 .......................... <obj.StartDate>
+  [265] sub ..................................... <argAltStartDate - obj.StartDate>
+  [266] setlocal 40 ............................. minDurationNeeded = argAltStartDate - obj.StartDate
+  [268] getlocal 40 ............................. <minDurationNeeded>
+  [270] pushint8 1 .............................. <1>
+  [273] add ..................................... <minDurationNeeded + 1>
+  [274] setlocal 40 ............................. minDurationNeeded = minDurationNeeded + 1
+  [276] getlocal 32 ............................. <obj>
+  [278] getobjprop 1484 ......................... <obj.duration>
+  [281] getlocal 40 ............................. <minDurationNeeded>
+  [283] gteq .................................... <obj.duration >= minDurationNeeded>
+  [284] jmpifz [299] ............................ if obj.duration >= minDurationNeeded then
+  [287] getlocal 8 .............................. <coincidingList>
+  [289] getlocal 32 ............................. <obj>
+  [291] pusharglistnoret 2 ...................... <coincidingList, obj>
+  [293] objcall 229 ............................. coincidingList.add(obj)
+  [296] jmp [356] ............................... next repeat
+  [299] getprop 2106 ............................ <m_durationSortedEvents>
+  [302] getlocal 40 ............................. <minDurationNeeded>
+  [304] pushint8 1 .............................. <1>
+  [307] inv ..................................... <-1>
+  [308] pusharglistnoret 3 ...................... <m_durationSortedEvents, minDurationNeeded, -1>
+  [310] objcall 309 ............................. m_durationSortedEvents.addProp(minDurationNeeded, -1)
+  [313] getprop 2106 ............................ <m_durationSortedEvents>
+  [316] pushint8 1 .............................. <1>
+  [319] inv ..................................... <-1>
+  [320] pusharglist 2 ........................... <m_durationSortedEvents, -1>
+  [322] objcall 337 ............................. <m_durationSortedEvents.getPos(-1)>
+  [325] setlocal 48 ............................. durPos = m_durationSortedEvents.getPos(-1)
+  [327] getprop 2106 ............................ <m_durationSortedEvents>
+  [330] pushint8 1 .............................. <1>
+  [333] inv ..................................... <-1>
+  [334] pusharglistnoret 2 ...................... <m_durationSortedEvents, -1>
+  [336] objcall 335 ............................. m_durationSortedEvents.deleteOne(-1)
+  [339] getlocal 48 ............................. <durPos>
+  [341] getprop 2106 ............................ <m_durationSortedEvents>
+  [344] pusharglist 1 ........................... <m_durationSortedEvents>
+  [346] objcall 156 ............................. <m_durationSortedEvents.count()>
+  [349] eq ...................................... <durPos = m_durationSortedEvents.count()>
+  [350] jmpifz [356] ............................ if durPos = m_durationSortedEvents.count() then
+  [353] jmp [367] ............................... exit repeat
+  [356] pushint8 -1
+  [359] getlocal 24
+  [361] add
+  [362] setlocal 24
+  [364] endrepeat [192]
+  [367] getlocal 8 .............................. <coincidingList>
+  [369] getparam 8 .............................. <argEventObj>
+  [371] pusharglistnoret 2 ...................... <coincidingList, argEventObj>
+  [373] objcall 335 ............................. coincidingList.deleteOne(argEventObj)
+  [376] getlocal 8 .............................. <coincidingList>
+  [378] pusharglistnoret 1 ...................... <coincidingList>
+  [380] extcall 69 .............................. return coincidingList
+  [383] ret
+end
+
+on checkTheseSimultaneous me, argEventObj, argObjList, argAltStartNEndDates
+  [  0] getparam 24 ............................. <argAltStartNEndDates>
+  [  2] pusharglist 1 ........................... <argAltStartNEndDates>
+  [  4] extcall 115 ............................. <listp(argAltStartNEndDates)>
+  [  7] jmpifz [ 37] ............................ if listp(argAltStartNEndDates) then / else
+  [ 10] getparam 24 ............................. <argAltStartNEndDates>
+  [ 12] pushint8 1 .............................. <1>
+  [ 15] pusharglist 2 ........................... <argAltStartNEndDates, 1>
+  [ 17] objcall 119 ............................. <argAltStartNEndDates[1]>
+  [ 20] setlocal 0 .............................. argStartDate = argAltStartNEndDates[1]
+  [ 22] getparam 24 ............................. <argAltStartNEndDates>
+  [ 24] pushint8 2 .............................. <2>
+  [ 27] pusharglist 2 ........................... <argAltStartNEndDates, 2>
+  [ 29] objcall 119 ............................. <argAltStartNEndDates[2]>
+  [ 32] setlocal 8 .............................. argEndDate = argAltStartNEndDates[2]
+  [ 34] jmp [ 57]
+  [ 37] getparam 8 .............................. <argEventObj>
+  [ 39] getobjprop 216 .......................... <argEventObj.StartDate>
+  [ 42] setlocal 0 .............................. argStartDate = argEventObj.StartDate
+  [ 44] getparam 8 .............................. <argEventObj>
+  [ 46] getobjprop 216 .......................... <argEventObj.StartDate>
+  [ 49] getparam 8 .............................. <argEventObj>
+  [ 51] getobjprop 1484 ......................... <argEventObj.duration>
+  [ 54] add ..................................... <argEventObj.StartDate + argEventObj.duration>
+  [ 55] setlocal 8 .............................. argEndDate = argEventObj.StartDate + argEventObj.duration
+  [ 57] pusharglist 0 ........................... <[]>
+  [ 59] pushlist ................................ <[]>
+  [ 60] setlocal 16 ............................. coincidingList = []
+  [ 62] getparam 16 ............................. <argObjList>
+  [ 64] peek 0
+  [ 66] pusharglist 1
+  [ 68] extcall 156
+  [ 71] pushint8 1
+  [ 73] peek 0
+  [ 75] peek 2
+  [ 77] lteq
+  [ 78] jmpifz [158] ............................ repeat with obj in argObjList
+  [ 81] peek 2
+  [ 83] peek 1
+  [ 85] pusharglist 2
+  [ 87] extcall 119
+  [ 90] setlocal 24
+  [ 92] getlocal 24 ............................. <obj>
+  [ 94] getobjprop 216 .......................... <obj.StartDate>
+  [ 97] getlocal 8 .............................. <argEndDate>
+  [ 99] lteq .................................... <obj.StartDate <= argEndDate>
+  [100] jmpifz [152] ............................ if obj.StartDate <= argEndDate then
+  [103] getlocal 24 ............................. <obj>
+  [105] getobjprop 216 .......................... <obj.StartDate>
+  [108] getlocal 0 .............................. <argStartDate>
+  [110] gteq .................................... <obj.StartDate >= argStartDate>
+  [111] jmpifz [126] ............................ if obj.StartDate >= argStartDate then
+  [114] getlocal 16 ............................. <coincidingList>
+  [116] getlocal 24 ............................. <obj>
+  [118] pusharglistnoret 2 ...................... <coincidingList, obj>
+  [120] objcall 229 ............................. coincidingList.add(obj)
+  [123] jmp [152] ............................... next repeat
+  [126] getlocal 24 ............................. <obj>
+  [128] getobjprop 216 .......................... <obj.StartDate>
+  [131] getlocal 24 ............................. <obj>
+  [133] getobjprop 1484 ......................... <obj.duration>
+  [136] add ..................................... <obj.StartDate + obj.duration>
+  [137] getlocal 0 .............................. <argStartDate>
+  [139] gteq .................................... <(obj.StartDate + obj.duration) >= argStartDate>
+  [140] jmpifz [152] ............................ if (obj.StartDate + obj.duration) >= argStartDate then
+  [143] getlocal 16 ............................. <coincidingList>
+  [145] getlocal 24 ............................. <obj>
+  [147] pusharglistnoret 2 ...................... <coincidingList, obj>
+  [149] objcall 229 ............................. coincidingList.add(obj)
+  [152] pushint8 1
+  [154] add
+  [155] endrepeat [ 73]
+  [158] pop 3
+  [160] getlocal 16 ............................. <coincidingList>
+  [162] pusharglistnoret 1 ...................... <coincidingList>
+  [164] extcall 69 .............................. return coincidingList
+  [167] ret
+end
+
+on checkNeededResources me, argNeededIDs, argObjList
+  [  0] pusharglist 0 ........................... <[]>
+  [  2] pushlist ................................ <[]>
+  [  3] setlocal 0 .............................. notOK = []
+  [  5] getglobal 23 ............................ <gRock>
+  [  7] getobjprop 79 ........................... <gRock.m_context>
+  [ 10] pushsymb 171 ............................ <#Band>
+  [ 13] pusharglist 2 ........................... <gRock.m_context, #Band>
+  [ 15] objcall 146 ............................. <gRock.m_context.getFocus(#Band)>
+  [ 18] setlocal 8 .............................. band_r = gRock.m_context.getFocus(#Band)
+  [ 20] getparam 8 .............................. <argNeededIDs>
+  [ 22] pusharglist 1 ........................... <argNeededIDs>
+  [ 24] objcall 287 ............................. <argNeededIDs.duplicate()>
+  [ 27] setlocal 16 ............................. tmpNeeded = argNeededIDs.duplicate()
+  [ 29] getlocal 16 ............................. <tmpNeeded>
+  [ 31] pushsymb 171 ............................ <#Band>
+  [ 34] pusharglist 2 ........................... <tmpNeeded, #Band>
+  [ 36] objcall 337 ............................. <tmpNeeded.getPos(#Band)>
+  [ 39] jmpifz [ 54] ............................ if tmpNeeded.getPos(#Band) then
+  [ 42] getlocal 16 ............................. <tmpNeeded>
+  [ 44] getlocal 8 .............................. <band_r>
+  [ 46] getobjprop 581 .......................... <band_r.members>
+  [ 49] pusharglistnoret 2 ...................... <tmpNeeded, band_r.members>
+  [ 51] extcall 288 ............................. mergeLists(tmpNeeded, band_r.members)
+  [ 54] getparam 16 ............................. <argObjList>
+  [ 56] peek 0
+  [ 58] pusharglist 1
+  [ 60] extcall 156
+  [ 63] pushint8 1
+  [ 65] peek 0
+  [ 67] peek 2
+  [ 69] lteq
+  [ 70] jmpifz [197] ............................ repeat with obj in argObjList
+  [ 73] peek 2
+  [ 75] peek 1
+  [ 77] pusharglist 2
+  [ 79] extcall 119
+  [ 82] setlocal 24
+  [ 84] getlocal 24 ............................. <obj>
+  [ 86] getobjprop 1016 ......................... <obj.neededIDs>
+  [ 89] pusharglist 1 ........................... <obj.neededIDs>
+  [ 91] objcall 287 ............................. <obj.neededIDs.duplicate()>
+  [ 94] setlocal 32 ............................. tmpNeeded2 = obj.neededIDs.duplicate()
+  [ 96] getlocal 32 ............................. <tmpNeeded2>
+  [ 98] pushsymb 171 ............................ <#Band>
+  [101] pusharglist 2 ........................... <tmpNeeded2, #Band>
+  [103] objcall 337 ............................. <tmpNeeded2.getPos(#Band)>
+  [106] jmpifz [121] ............................ if tmpNeeded2.getPos(#Band) then
+  [109] getlocal 32 ............................. <tmpNeeded2>
+  [111] getlocal 8 .............................. <band_r>
+  [113] getobjprop 581 .......................... <band_r.members>
+  [116] pusharglistnoret 2 ...................... <tmpNeeded2, band_r.members>
+  [118] extcall 288 ............................. mergeLists(tmpNeeded2, band_r.members)
+  [121] getlocal 16 ............................. <tmpNeeded>
+  [123] peek 0
+  [125] pusharglist 1
+  [127] extcall 156
+  [130] pushint8 1
+  [132] peek 0
+  [134] peek 2
+  [136] lteq
+  [137] jmpifz [189] ............................ repeat with ID in tmpNeeded
+  [140] peek 2
+  [142] peek 1
+  [144] pusharglist 2
+  [146] extcall 119
+  [149] setlocal 40
+  [151] getlocal 32 ............................. <tmpNeeded2>
+  [153] getlocal 40 ............................. <ID>
+  [155] pusharglist 2 ........................... <tmpNeeded2, ID>
+  [157] objcall 337 ............................. <tmpNeeded2.getPos(ID)>
+  [160] jmpifz [183] ............................ if tmpNeeded2.getPos(ID) then
+  [163] getlocal 0 .............................. <notOK>
+  [165] pushsymb 215 ............................ <#Event>
+  [168] getlocal 24 ............................. <obj>
+  [170] pushsymb 154 ............................ <#ID>
+  [173] getlocal 40 ............................. <ID>
+  [175] pusharglist 4 ........................... <[#Event: obj, #ID: ID]>
+  [177] pushproplist ............................ <[#Event: obj, #ID: ID]>
+  [178] pusharglistnoret 2 ...................... <notOK, [#Event: obj, #ID: ID]>
+  [180] objcall 229 ............................. notOK.add([#Event: obj, #ID: ID])
+  [183] pushint8 1
+  [185] add
+  [186] endrepeat [132]
+  [189] pop 3
+  [191] pushint8 1
+  [193] add
+  [194] endrepeat [ 65]
+  [197] pop 3
+  [199] getlocal 0 .............................. <notOK>
+  [201] pusharglistnoret 1 ...................... <notOK>
+  [203] extcall 69 .............................. return notOK
+  [206] ret
+end
+
+on findFirstEventAfterDate me, argDate, argClassName
+  [  0] getprop 1015 ............................ <m_startDateSortedEvents>
+  [  3] getparam 8 .............................. <argDate>
+  [  5] pushint8 1 .............................. <1>
+  [  8] inv ..................................... <-1>
+  [  9] pusharglistnoret 3 ...................... <m_startDateSortedEvents, argDate, -1>
+  [ 11] objcall 309 ............................. m_startDateSortedEvents.addProp(argDate, -1)
+  [ 14] getprop 1015 ............................ <m_startDateSortedEvents>
+  [ 17] pushint8 1 .............................. <1>
+  [ 20] inv ..................................... <-1>
+  [ 21] pusharglist 2 ........................... <m_startDateSortedEvents, -1>
+  [ 23] objcall 337 ............................. <m_startDateSortedEvents.getPos(-1)>
+  [ 26] setlocal 0 .............................. startPos = m_startDateSortedEvents.getPos(-1)
+  [ 28] getprop 1015 ............................ <m_startDateSortedEvents>
+  [ 31] pushint8 1 .............................. <1>
+  [ 34] inv ..................................... <-1>
+  [ 35] pusharglistnoret 2 ...................... <m_startDateSortedEvents, -1>
+  [ 37] objcall 335 ............................. m_startDateSortedEvents.deleteOne(-1)
+  [ 40] getlocal 0 .............................. <startPos>
+  [ 42] getprop 1015 ............................ <m_startDateSortedEvents>
+  [ 45] getobjprop 156 .......................... <m_startDateSortedEvents.count>
+  [ 48] gt ...................................... <startPos > m_startDateSortedEvents.count>
+  [ 49] jmpifz [ 58] ............................ if startPos > m_startDateSortedEvents.count then
+  [ 52] pushzero ................................ <0>
+  [ 53] pusharglistnoret 1 ...................... <0>
+  [ 55] extcall 69 .............................. return 0
+  [ 58] getparam 16 ............................. <argClassName>
+  [ 60] pusharglist 1 ........................... <argClassName>
+  [ 62] extcall 61 .............................. <voidp(argClassName)>
+  [ 65] jmpifz [ 83] ............................ if voidp(argClassName) then
+  [ 68] getprop 1015 ............................ <m_startDateSortedEvents>
+  [ 71] getlocal 0 .............................. <startPos>
+  [ 73] pusharglist 2 ........................... <m_startDateSortedEvents, startPos>
+  [ 75] objcall 119 ............................. <m_startDateSortedEvents[startPos]>
+  [ 78] pusharglistnoret 1 ...................... <m_startDateSortedEvents[startPos]>
+  [ 80] extcall 69 .............................. return m_startDateSortedEvents[startPos]
+  [ 83] getlocal 0 .............................. <startPos>
+  [ 85] setlocal 8
+  [ 87] getlocal 8
+  [ 89] getprop 1015 ............................ <m_startDateSortedEvents>
+  [ 92] getobjprop 156 .......................... <m_startDateSortedEvents.count>
+  [ 95] lteq
+  [ 96] jmpifz [140] ............................ repeat with n = startPos to m_startDateSortedEvents.count
+  [ 99] getprop 1015 ............................ <m_startDateSortedEvents>
+  [102] getlocal 8 .............................. <n>
+  [104] pusharglist 2 ........................... <m_startDateSortedEvents, n>
+  [106] objcall 119 ............................. <m_startDateSortedEvents[n]>
+  [109] setlocal 16 ............................. obj = m_startDateSortedEvents[n]
+  [111] getlocal 16 ............................. <obj>
+  [113] getobjprop 224 .......................... <obj.className>
+  [116] getparam 16 ............................. <argClassName>
+  [118] eq ...................................... <obj.className = argClassName>
+  [119] jmpifz [129] ............................ if obj.className = argClassName then
+  [122] getlocal 16 ............................. <obj>
+  [124] pusharglistnoret 1 ...................... <obj>
+  [126] extcall 69 .............................. return obj
+  [129] pushint8 1
+  [132] getlocal 8
+  [134] add
+  [135] setlocal 8
+  [137] endrepeat [ 87]
+  [140] pushzero ................................ <0>
+  [141] pusharglistnoret 1 ...................... <0>
+  [143] extcall 69 .............................. return 0
+  [146] ret
+end
+
+on getOngoingEventsBetweenDates me, argStartDate, argEndDate
+  [  0] pusharglist 0 ........................... <[]>
+  [  2] pushlist ................................ <[]>
+  [  3] setlocal 0 .............................. ongoingEvents = []
+  [  5] getprop 1015 ............................ <m_startDateSortedEvents>
+  [  8] getparam 16 ............................. <argEndDate>
+  [ 10] pushint8 1 .............................. <1>
+  [ 13] inv ..................................... <-1>
+  [ 14] pusharglistnoret 3 ...................... <m_startDateSortedEvents, argEndDate, -1>
+  [ 16] objcall 309 ............................. m_startDateSortedEvents.addProp(argEndDate, -1)
+  [ 19] getprop 1015 ............................ <m_startDateSortedEvents>
+  [ 22] pushint8 1 .............................. <1>
+  [ 25] inv ..................................... <-1>
+  [ 26] pusharglist 2 ........................... <m_startDateSortedEvents, -1>
+  [ 28] objcall 337 ............................. <m_startDateSortedEvents.getPos(-1)>
+  [ 31] setlocal 8 .............................. startPos = m_startDateSortedEvents.getPos(-1)
+  [ 33] getprop 1015 ............................ <m_startDateSortedEvents>
+  [ 36] pushint8 1 .............................. <1>
+  [ 39] inv ..................................... <-1>
+  [ 40] pusharglistnoret 2 ...................... <m_startDateSortedEvents, -1>
+  [ 42] objcall 335 ............................. m_startDateSortedEvents.deleteOne(-1)
+  [ 45] getlocal 8 .............................. <startPos>
+  [ 47] pushint8 1 .............................. <1>
+  [ 50] sub ..................................... <startPos - 1>
+  [ 51] setlocal 8 .............................. startPos = startPos - 1
+  [ 53] getlocal 8 .............................. <startPos>
+  [ 55] pushzero ................................ <0>
+  [ 56] eq ...................................... <startPos = 0>
+  [ 57] jmpifz [ 67] ............................ if startPos = 0 then
+  [ 60] getlocal 0 .............................. <ongoingEvents>
+  [ 62] pusharglistnoret 1 ...................... <ongoingEvents>
+  [ 64] extcall 69 .............................. return ongoingEvents
+  [ 67] getlocal 8 .............................. <startPos>
+  [ 69] setlocal 16
+  [ 71] getlocal 16
+  [ 73] getprop 1015 ............................ <m_startDateSortedEvents>
+  [ 76] getobjprop 156 .......................... <m_startDateSortedEvents.count>
+  [ 79] lteq
+  [ 80] jmpifz [117] ............................ repeat with n = startPos to m_startDateSortedEvents.count
+  [ 83] getprop 1015 ............................ <m_startDateSortedEvents>
+  [ 86] getlocal 16 ............................. <n>
+  [ 88] pusharglist 2 ........................... <m_startDateSortedEvents, n>
+  [ 90] objcall 295 ............................. <m_startDateSortedEvents.getPropAt(n)>
+  [ 93] getparam 16 ............................. <argEndDate>
+  [ 95] gt ...................................... <m_startDateSortedEvents.getPropAt(n) > argEndDate>
+  [ 96] jmpifz [102] ............................ if m_startDateSortedEvents.getPropAt(n) > argEndDate then
+  [ 99] jmp [117] ............................... exit repeat
+  [102] getlocal 16 ............................. <n>
+  [104] setlocal 8 .............................. startPos = n
+  [106] pushint8 1
+  [109] getlocal 16
+  [111] add
+  [112] setlocal 16
+  [114] endrepeat [ 71]
+  [117] getlocal 8 .............................. <startPos>
+  [119] setlocal 16
+  [121] getlocal 16
+  [123] pushint8 1 .............................. <1>
+  [126] gteq
+  [127] jmpifz [283] ............................ repeat with n = startPos down to 1
+  [130] getprop 1015 ............................ <m_startDateSortedEvents>
+  [133] getlocal 16 ............................. <n>
+  [135] pusharglist 2 ........................... <m_startDateSortedEvents, n>
+  [137] objcall 119 ............................. <m_startDateSortedEvents[n]>
+  [140] setlocal 24 ............................. obj = m_startDateSortedEvents[n]
+  [142] getlocal 24 ............................. <obj>
+  [144] getobjprop 216 .......................... <obj.StartDate>
+  [147] getparam 8 .............................. <argStartDate>
+  [149] gteq .................................... <obj.StartDate >= argStartDate>
+  [150] jmpifz [176] ............................ if obj.StartDate >= argStartDate then
+  [153] getlocal 24 ............................. <obj>
+  [155] getobjprop 216 .......................... <obj.StartDate>
+  [158] getparam 16 ............................. <argEndDate>
+  [160] lt ...................................... <obj.StartDate < argEndDate>
+  [161] jmpifz [173] ............................ if obj.StartDate < argEndDate then
+  [164] getlocal 0 .............................. <ongoingEvents>
+  [166] getlocal 24 ............................. <obj>
+  [168] pusharglistnoret 2 ...................... <ongoingEvents, obj>
+  [170] objcall 229 ............................. ongoingEvents.add(obj)
+  [173] jmp [272] ............................... next repeat
+  [176] getparam 8 .............................. <argStartDate>
+  [178] getlocal 24 ............................. <obj>
+  [180] getobjprop 216 .......................... <obj.StartDate>
+  [183] sub ..................................... <argStartDate - obj.StartDate>
+  [184] setlocal 32 ............................. minDurationNeeded = argStartDate - obj.StartDate
+  [186] getlocal 32 ............................. <minDurationNeeded>
+  [188] pushint8 1 .............................. <1>
+  [191] add ..................................... <minDurationNeeded + 1>
+  [192] setlocal 32 ............................. minDurationNeeded = minDurationNeeded + 1
+  [194] getlocal 24 ............................. <obj>
+  [196] getobjprop 1484 ......................... <obj.duration>
+  [199] getlocal 32 ............................. <minDurationNeeded>
+  [201] gteq .................................... <obj.duration >= minDurationNeeded>
+  [202] jmpifz [217] ............................ if obj.duration >= minDurationNeeded then
+  [205] getlocal 0 .............................. <ongoingEvents>
+  [207] getlocal 24 ............................. <obj>
+  [209] pusharglistnoret 2 ...................... <ongoingEvents, obj>
+  [211] objcall 229 ............................. ongoingEvents.add(obj)
+  [214] jmp [272] ............................... next repeat
+  [217] getprop 2106 ............................ <m_durationSortedEvents>
+  [220] getlocal 32 ............................. <minDurationNeeded>
+  [222] pushint8 1 .............................. <1>
+  [225] inv ..................................... <-1>
+  [226] pusharglistnoret 3 ...................... <m_durationSortedEvents, minDurationNeeded, -1>
+  [228] objcall 309 ............................. m_durationSortedEvents.addProp(minDurationNeeded, -1)
+  [231] getprop 2106 ............................ <m_durationSortedEvents>
+  [234] pushint8 1 .............................. <1>
+  [237] inv ..................................... <-1>
+  [238] pusharglist 2 ........................... <m_durationSortedEvents, -1>
+  [240] objcall 337 ............................. <m_durationSortedEvents.getPos(-1)>
+  [243] setlocal 40 ............................. durPos = m_durationSortedEvents.getPos(-1)
+  [245] getprop 2106 ............................ <m_durationSortedEvents>
+  [248] pushint8 1 .............................. <1>
+  [251] inv ..................................... <-1>
+  [252] pusharglistnoret 2 ...................... <m_durationSortedEvents, -1>
+  [254] objcall 335 ............................. m_durationSortedEvents.deleteOne(-1)
+  [257] getlocal 40 ............................. <durPos>
+  [259] getprop 2106 ............................ <m_durationSortedEvents>
+  [262] getobjprop 156 .......................... <m_durationSortedEvents.count>
+  [265] gt ...................................... <durPos > m_durationSortedEvents.count>
+  [266] jmpifz [272] ............................ if durPos > m_durationSortedEvents.count then
+  [269] jmp [283] ............................... exit repeat
+  [272] pushint8 -1
+  [275] getlocal 16
+  [277] add
+  [278] setlocal 16
+  [280] endrepeat [121]
+  [283] getlocal 0 .............................. <ongoingEvents>
+  [285] pusharglistnoret 1 ...................... <ongoingEvents>
+  [287] extcall 69 .............................. return ongoingEvents
+  [290] ret
+end

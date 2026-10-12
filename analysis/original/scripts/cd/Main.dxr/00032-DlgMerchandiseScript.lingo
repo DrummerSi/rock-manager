@@ -1,0 +1,206 @@
+property ancestor, m_merchandises_r, m_merchandise_r, m_pos, m_addedPicItems, m_band_r
+global gDir, gRock
+
+on new me, argOptions
+  ID = argOptions[#ID]
+  argOptions.setaProp(#ReportTo, me)
+  argOptions.setaProp(#child, me)
+  dialog_r = gRock.m_classManager.getObjByIDAndClass(#DlgDesignMerchandise, #Dialog)
+  dialog_r.dataMemberName = "DlgMerchandiseData"
+  argOptions[#DlgInfoObj] = dialog_r
+  ancestor = script("DlgRockAncestorScript").new(argOptions)
+  me.refreshMerchandiseList()
+  m_pos = 0
+  m_addedPicItems = []
+  me.setMerchandise(1)
+  ancestor.render()
+  return me
+end
+
+on kill me
+  m_addedPicItems = []
+  m_merchandise_r = 0
+  m_merchandises_r = []
+  m_band_r = 0
+  ancestor.kill()
+  return 0
+end
+
+on refreshMerchandiseList me
+  m_merchandises_r = gRock.m_classManager.getObjsOfClass(#Merchandise).duplicate()
+  m_band_r = gRock.m_context.getFocus(#Band)
+  repeat with n = m_merchandises_r.count down to 1
+    merc_r = m_merchandises_r[n]
+    if m_band_r.Merchandise.getPos(merc_r.ID) then
+      m_merchandises_r.deleteAt(n)
+    end if
+  end repeat
+  if m_merchandises_r.count = 0 then
+  end if
+end
+
+on Report me, argObj, argWhat, argOptions
+  if argWhat = #DlgConfirm then
+    if argOptions = #ButtonOK then
+      argObj.kill()
+      me.makePurchase()
+      me.refreshMerchandiseList()
+      m_pos = 0
+      me.setMerchandise(1)
+    end if
+  end if
+end
+
+on mouse me, argObj, argWhat, argOption
+  if objectp(argOption) then
+    if argWhat = #click then
+      ID = argOption.getOneProp(#ID)
+      IDStr = string(ID)
+      if offset("Arrow", IDStr) then
+        if ID = #ArrowRight then
+          me.setMerchandise(1)
+        else
+          if ID = #ArrowLeft then
+            me.setMerchandise(-1)
+          end if
+        end if
+        exit
+      end if
+      if ID = #ButtonOK then
+        if objectp(m_merchandise_r) then
+          if gRock.m_player.hasThisMoney(m_merchandise_r.DesignCost) = 0 then
+            rWarnMoney()
+            exit
+          else
+            if m_band_r.Merchandise.count then
+              newDlg = gDir.m_objDialogsMaster.openDialog(#Confirm, [#InfoImage: rGetStr(#szidMercDiscardOld)])
+              newDlg.m_objReportTo = me
+              exit
+            end if
+            me.makePurchase()
+          end if
+        end if
+      end if
+      ancestor.mouse(argObj, argWhat, argOption)
+    end if
+  end if
+end
+
+on makePurchase me
+  gRock.m_player.transactMoney(-m_merchandise_r.DesignCost, [#Merchandise])
+  emptyList(m_band_r.Merchandise)
+  m_band_r.Merchandise.add(m_merchandise_r.ID)
+end
+
+on setMerchandise me, argDir
+  repeat with n = m_addedPicItems.count down to 1
+    ancestor.m_objDlg.deleteItem(m_addedPicItems[n])
+  end repeat
+  m_addedPicItems = []
+  m_pos = m_pos + argDir
+  if m_pos < 1 then
+    m_pos = 1
+  else
+    if m_pos > m_merchandises_r.count then
+      m_pos = m_merchandises_r.count
+    end if
+  end if
+  m_merchandise_r = m_merchandises_r[m_pos]
+  itemObj = ancestor.m_objDlg.getItem(#Pic)
+  if objectp(itemObj) then
+    itemObj.setOneProp(#ch, 0)
+  end if
+  layers = m_merchandise_r.CompositeInfo
+  repeat with n = 1 to layers.count
+    img = 0
+    tmpQuad = 0
+    membName = layers[n]
+    tmpOff = point(0, 0)
+    if stringp(membName) then
+      memb = member(membName)
+      sizeFact = 1.0
+      tmpOff = point(20, 20)
+      tmpRect = rect(tmpOff, tmpOff) + memb.rect - rect(memb.regPoint, memb.regPoint)
+      img = memb.image
+    else
+      Info = membName
+      if not listp(Info) then
+        next repeat
+      end if
+      tmpWhich = Info[1]
+      if tmpWhich = #Musician then
+        musList_r = m_band_r.getMusicianObjs()
+        if musList_r.count() = 0 then
+          next repeat
+        end if
+        repeat with mus_r in musList_r
+          if mus_r.NowPlaying = #Vocals then
+            exit repeat
+          end if
+        end repeat
+        membName = getMusicianPose(mus_r, 1)
+        memb = member(membName)
+        tmpOff = point(20, 20)
+        sizeFact = 0.27400000000000002
+        tmpRect = rect(tmpOff, tmpOff) + ((memb.rect - rect(memb.regPoint, memb.regPoint)) * sizeFact)
+        img = memb.image
+      else
+        if tmpWhich = #BandName then
+          if Info.count > 1 then
+            tmpQuad = Info[2].duplicate()
+          end if
+          if m_band_r.name = "firewolf" then
+            memb = member("firewolflogo01")
+            img = memb.image
+          else
+            img = image(100, 60, 24)
+            img.fill(img.rect, rgb(0, 0, 0))
+            createLogo(img, point(0, 20))
+          end if
+        else
+          if tmpWhich = #AlbumSleeve then
+            if Info.count > 1 then
+              tmpQuad = Info[2].duplicate()
+            end if
+            img = makeAlbumCover()
+          end if
+        end if
+      end if
+      if listp(tmpQuad) then
+        quadSrndRect = rect(9999, 9999, -9999, -9999)
+        repeat with n = 1 to tmpQuad.count
+          tmpQuad[n] = tmpQuad[n] + tmpOff
+          tmpPoint = tmpQuad[n]
+          if tmpPoint[1] > quadSrndRect[3] then
+            quadSrndRect[3] = tmpPoint[1]
+          end if
+          if tmpPoint[1] < quadSrndRect[1] then
+            quadSrndRect[1] = tmpPoint[1]
+          end if
+          if tmpPoint[2] > quadSrndRect[4] then
+            quadSrndRect[4] = tmpPoint[2]
+          end if
+          if tmpPoint[2] < quadSrndRect[2] then
+            quadSrndRect[2] = tmpPoint[2]
+          end if
+        end repeat
+        quadSize = getRectSize(quadSrndRect)
+        tmpUpLeft = point(quadSrndRect[1], quadSrndRect[2])
+        repeat with n = 1 to tmpQuad.count
+          tmpQuad[n] = tmpQuad[n] - tmpUpLeft
+        end repeat
+        tmpRect = quadSrndRect
+      end if
+    end if
+    if objectp(img) then
+      itemList = [#ID: symbol("AAA" & string(n)), #type: #Pic, #Pic: img, #rel: [[#Pic, 1], [#Pic, 2], [#Pic, 1], [#Pic, 2]], #inOffsetRect: tmpRect, #ch: 3 + n, #topLeftMeansWhat: [0, 0]]
+      if listp(tmpQuad) then
+        itemList.addProp(#quad, tmpQuad)
+      end if
+      newItem = ancestor.m_objDlg.addItem(itemList)
+      m_addedPicItems.add(newItem)
+    end if
+  end repeat
+  itemObj = ancestor.m_objDlg.getItem(#Info)
+  itemObj.setOneProp(#Pic, rFormatText([m_merchandise_r.name, m_merchandise_r.comment, #szidMercDesignCost, rCurrency(m_merchandise_r.DesignCost, 0, 1), #szidMercRevenue, rCurrency(m_merchandise_r.Revenue, 0, 1)], "MerchandiseFormatting", [#shadow: 1]))
+end

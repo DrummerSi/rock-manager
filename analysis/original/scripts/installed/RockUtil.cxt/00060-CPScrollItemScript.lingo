@@ -1,0 +1,203 @@
+property m_mouseObj, m_orgRect, m_ID, m_hilited, m_masterObj, m_renderList, m_preRendered, m_usePreRendered, m_srndRect, m_grayed
+
+on new me, argScrollMaster, argInfo, argLeftTopOffLoc, argLayer, argForcedSize
+  m_masterObj = argScrollMaster
+  if not listp(argInfo) then
+    argInfo = [:]
+  end if
+  m_ID = argInfo[#ID]
+  m_renderList = argInfo[#items]
+  m_grayed = argInfo[#Grayed] > 0
+  if not listp(m_renderList) then
+    m_renderList = [#BG: [#type: #Pic, #Pic: member("ColorPic").image, #rect: rect(0, 0, 290, 34)], #icon: [#type: #Pic, #Pic: member(member("icon_accept01").number + 1 + (random(50) * 2)), #loc: point(18, 15)], #text: [#type: #text, #text: string(random(1000000)), #textMember: member("RockInfoText"), #loc: point(88, 5)]]
+  end if
+  me.calcSrndSize()
+  if listp(argForcedSize) then
+    pott("FORCED SIZE")
+    m_orgRect = rect(argLeftTopOffLoc, argLeftTopOffLoc) + rect(point(0, 0), argForcedSize)
+  else
+    m_orgRect = rect(argLeftTopOffLoc, argLeftTopOffLoc) + m_srndRect
+  end if
+  if voidp(argLayer) then
+    argLayer = 10000
+  end if
+  if m_grayed = 0 then
+    m_mouseObj = script("MouseObject").new(me, rect(0, 0, 0, 0), [#layer: argLayer, #doubleClick: 1])
+  end if
+  m_hilited = 0
+  m_usePreRendered = 1
+  return me
+end
+
+on kill me
+  m_masterObj = 0
+  m_ID = 0
+  m_renderList = 0
+  if objectp(m_mouseObj) then
+    m_mouseObj = m_mouseObj.kill()
+  end if
+  return 0
+end
+
+on mouse me, argObj, argWhat
+  if argWhat = #click then
+    m_masterObj.Report(me, #select)
+  else
+    if argWhat = #doubleClick then
+      m_masterObj.Report(me, #doubleClick)
+    else
+      if argWhat = #enter then
+        me.hilite(1)
+        m_masterObj.scroll()
+      else
+        if argWhat = #Leave then
+          me.hilite(0)
+          m_masterObj.scroll()
+        end if
+      end if
+    end if
+  end if
+end
+
+on setScroll me, argDeltaFromTop, argDstImg
+  rct = intersect(m_orgRect + rect(-argDeltaFromTop, -argDeltaFromTop), m_masterObj.m_viewRect)
+  if (rct[1] <> 0) or (rct[2] <> 0) or (rct[3] <> 0) or (rct[4] <> 0) then
+    me.draw(argDstImg, -argDeltaFromTop)
+  end if
+  if objectp(m_mouseObj) then
+    m_mouseObj.myRect = rct + rect(m_masterObj.m_onScreenOffLoc, m_masterObj.m_onScreenOffLoc)
+  end if
+end
+
+on draw me, argDstImage, argOffLoc
+  offrect = rect(argOffLoc, argOffLoc)
+  offrect = offrect + rect(m_orgRect[1], m_orgRect[2], m_orgRect[1], m_orgRect[2])
+  if m_usePreRendered then
+    if not objectp(m_preRendered) then
+      me.calcSrndSize()
+      size = getRectSize(m_srndRect)
+      m_preRendered = image(size[1], size[2], 16)
+      me.compose(m_renderList, m_preRendered, -point(m_srndRect[1], m_srndRect[2]))
+    end if
+    clr = rgb(0, 0, 0)
+    argDstImage.copyPixels(m_preRendered, m_srndRect + offrect, m_preRendered.rect, [#ink: 36, #color: clr])
+  else
+    me.compose(m_renderList, argDstImage, offrect)
+  end if
+end
+
+on hilite me, argIsTRUE
+  m_hilited = argIsTRUE
+  m_preRendered = 0
+end
+
+on compose me, argList, argDstImage, argOffsetLoc
+  if ilk(argOffsetLoc) = #rect then
+    offrect = argOffsetLoc
+  else
+    if ilk(argOffsetLoc) = #point then
+      offrect = rect(argOffsetLoc, argOffsetLoc)
+    end if
+  end if
+  X = the milliSeconds
+  repeat with lst in argList
+    ink = 36
+    clr = rgb(0, 0, 0)
+    off = lst[#loc]
+    if voidp(off) then
+      off = point(0, 0)
+    end if
+    if voidp(lst[#type]) or (lst[#type] = #Pic) then
+      memb = lst[#Pic]
+      if ilk(memb) = #member then
+        if memb.number < 1 then
+          next repeat
+        end if
+        if memb.type <> #bitmap then
+          next repeat
+        end if
+        img = memb.image
+        off = off - memb.regPoint
+      else
+        img = memb
+      end if
+    else
+      if lst[#type] = #text then
+        memb = member(lst[#textMember])
+        memb.text = lst[#text]
+        img = memb.image
+      end if
+    end if
+    if listp(lst[#rect]) then
+      tmpDstRect = lst[#rect] + offrect
+    else
+      tmpDstRect = rect(off, off) + img.rect + offrect
+    end if
+    if 0 and not voidp(lst[#shadow]) then
+      if ilk(lst[#shadow]) = #point then
+        tmpShadowOff = lst[#shadow]
+      else
+        tmpShadowOff = point(1, 1)
+      end if
+      if img.useAlpha = 1 then
+        tmpImg = image(img.rect[3] + tmpShadowOff[1], img.rect[4] + tmpShadowOff[2], 16)
+        tmpImg2 = img.extractAlpha()
+        tmpImg.copyPixels(tmpImg2, tmpImg2.rect + rect(tmpShadowOff, tmpShadowOff), tmpImg2.rect)
+      else
+        tmpImg = image(img.rect[3] + tmpShadowOff[1], img.rect[4] + tmpShadowOff[2], 1)
+        tmpImg2 = image(img.rect[3], img.rect[4], 16)
+      end if
+      tmpImg.copyPixels(img, img.rect, img.rect)
+      img = tmpImg
+    end if
+    if not voidp(lst[#color]) then
+      clr = lst[#color]
+    end if
+    argDstImage.copyPixels(img, tmpDstRect, img.rect, [#ink: ink, #color: clr])
+  end repeat
+  if m_grayed then
+    img = image(1, 1, 16)
+    img.fill(rect(0, 0, 1, 1), rgb(0, 0, 0))
+    argDstImage.copyPixels(img, argDstImage.rect, img.rect, [#blend: 80])
+  else
+    if m_hilited <> 1 then
+      img = image(1, 1, 16)
+      img.fill(rect(0, 0, 1, 1), rgb(0, 0, 0))
+      argDstImage.copyPixels(img, argDstImage.rect, img.rect, [#blend: 30])
+    end if
+  end if
+end
+
+on calcSrndSize me
+  if listp(m_srndRect) then
+    return getRectSize(m_srndRect)
+  end if
+  tmp = m_renderList[#BG]
+  if not listp(tmp) then
+    return rect(0, 0, 0, 0)
+  end if
+  m_srndRect = tmp[#rect]
+  if voidp(m_srndRect) then
+    m_srndRect = tmp[#Pic].rect
+  end if
+  if 0 then
+    m_srndRect = rect(10000, 10000, -10000, -10000)
+    repeat with lst in m_renderList
+      if lst[#type] = #Pic then
+        rct = lst[#rect]
+        if voidp(rct) then
+          off = lst[#loc]
+          if voidp(off) then
+            off = point(0, 0)
+          end if
+          if ilk(lst[#Pic]) = #member then
+            off = off - lst[#Pic].regPoint
+          end if
+          rct = lst[#Pic].rect + rect(off, off)
+        end if
+        expandRectToInclude(m_srndRect, rct)
+      end if
+    end repeat
+  end if
+  return getRectSize(m_srndRect)
+end

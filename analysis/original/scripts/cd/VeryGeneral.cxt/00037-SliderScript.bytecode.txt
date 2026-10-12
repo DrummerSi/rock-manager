@@ -1,0 +1,791 @@
+property startLoc, dragging, SP, myMemb, constraints, protMouseObj, dragMouseObj, behindMouseObj, Reg, currentLoc, axis, draggerRect, stepSize, constraintSize, factor, topLeft, reportObj, lastLoc, options, minMaxObjs, whichCursor
+global gDir
+
+on new me, argReportObj, argSPNum, argMemb, argConstraints, argSteps, argOptions
+  [  0] getparam 8 .............................. <argReportObj>
+  [  2] setprop 691 ............................. reportObj = argReportObj
+  [  5] getparam 16 ............................. <argSPNum>
+  [  7] setprop 294 ............................. SP = argSPNum
+  [ 10] getparam 32 ............................. <argConstraints>
+  [ 12] setprop 794 ............................. constraints = argConstraints
+  [ 15] getprop 794 ............................. <constraints>
+  [ 18] pushint8 1 .............................. <1>
+  [ 21] pusharglist 2 ........................... <constraints, 1>
+  [ 23] extcall 23 .............................. <getAt(constraints, 1)>
+  [ 25] getprop 794 ............................. <constraints>
+  [ 28] pushint8 2 .............................. <2>
+  [ 31] pusharglist 2 ........................... <constraints, 2>
+  [ 33] extcall 23 .............................. <getAt(constraints, 2)>
+  [ 35] pusharglist 2 ........................... <getAt(constraints, 1), getAt(constraints, 2)>
+  [ 37] extcall 75 .............................. <point(getAt(constraints, 1), getAt(constraints, 2))>
+  [ 40] setprop 731 ............................. topLeft = point(getAt(constraints, 1), getAt(constraints, 2))
+  [ 43] getprop 794 ............................. <constraints>
+  [ 46] pushint8 3 .............................. <3>
+  [ 49] pusharglist 2 ........................... <constraints, 3>
+  [ 51] extcall 23 .............................. <getAt(constraints, 3)>
+  [ 53] getprop 794 ............................. <constraints>
+  [ 56] pushint8 4 .............................. <4>
+  [ 59] pusharglist 2 ........................... <constraints, 4>
+  [ 61] extcall 23 .............................. <getAt(constraints, 4)>
+  [ 63] pusharglist 2 ........................... <getAt(constraints, 3), getAt(constraints, 4)>
+  [ 65] extcall 75 .............................. <point(getAt(constraints, 3), getAt(constraints, 4))>
+  [ 68] getprop 731 ............................. <topLeft>
+  [ 71] sub ..................................... <point(getAt(constraints, 3), getAt(constraints, 4)) - topLeft>
+  [ 72] setprop 795 ............................. constraintSize = point(getAt(constraints, 3), getAt(constraints, 4)) - topLeft
+  [ 75] getparam 24 ............................. <argMemb>
+  [ 77] setprop 796 ............................. myMemb = argMemb
+  [ 80] pushzero ................................ <0>
+  [ 81] setprop 797 ............................. axis = 0
+  [ 84] pushzero ................................ <0>
+  [ 85] pushzero ................................ <0>
+  [ 86] pusharglist 2 ........................... <0, 0>
+  [ 88] extcall 75 .............................. <point(0, 0)>
+  [ 91] setprop 798 ............................. lastLoc = point(0, 0)
+  [ 94] getparam 48 ............................. <argOptions>
+  [ 96] setprop 468 ............................. options = argOptions
+  [ 99] getprop 468 ............................. <options>
+  [102] pusharglist 1 ........................... <options>
+  [104] extcall 104 ............................. <voidp(options)>
+  [107] jmpifz [116] ............................ if voidp(options) then
+  [110] pusharglist 0 ........................... <[:]>
+  [112] pushproplist ............................ <[:]>
+  [113] setprop 468 ............................. options = [:]
+  [116] pushzero ................................ <0>
+  [117] pushzero ................................ <0>
+  [118] pusharglist 2 ........................... <0, 0>
+  [120] extcall 75 .............................. <point(0, 0)>
+  [123] setprop 799 ............................. stepSize = point(0, 0)
+  [126] getparam 40 ............................. <argSteps>
+  [128] pusharglist 1 ........................... <argSteps>
+  [130] extcall 104 ............................. <voidp(argSteps)>
+  [133] jmpifz [139] ............................ if voidp(argSteps) then / else
+  [136] jmp [222]
+  [139] getparam 40 ............................. <argSteps>
+  [141] pushint8 1 .............................. <1>
+  [144] pushint8 1 .............................. <1>
+  [147] pusharglist 2 ........................... <1, 1>
+  [149] extcall 75 .............................. <point(1, 1)>
+  [152] sub ..................................... <argSteps - point(1, 1)>
+  [153] setparam 40 ............................. argSteps = argSteps - point(1, 1)
+  [155] pushint8 1 .............................. <1>
+  [158] setlocal 0
+  [160] getlocal 0
+  [162] pushint8 2 .............................. <2>
+  [165] lteq
+  [166] jmpifz [222] ............................ repeat with n = 1 to 2
+  [169] getparam 40 ............................. <argSteps>
+  [171] getlocal 0 .............................. <n>
+  [173] pusharglist 2 ........................... <argSteps, n>
+  [175] extcall 23 .............................. <getAt(argSteps, n)>
+  [177] setlocal 8 .............................. tmp = getAt(argSteps, n)
+  [179] getlocal 8 .............................. <tmp>
+  [181] jmpifz [211] ............................ if tmp then
+  [184] getprop 799 ............................. <stepSize>
+  [187] getlocal 0 .............................. <n>
+  [189] getprop 795 ............................. <constraintSize>
+  [192] getlocal 0 .............................. <n>
+  [194] pusharglist 2 ........................... <constraintSize, n>
+  [196] extcall 23 .............................. <getAt(constraintSize, n)>
+  [198] pusharglist 1 ........................... <getAt(constraintSize, n)>
+  [200] extcall 92 .............................. <float(getAt(constraintSize, n))>
+  [203] getlocal 8 .............................. <tmp>
+  [205] div ..................................... <float(getAt(constraintSize, n)) / tmp>
+  [206] pusharglistnoret 3 ...................... <stepSize, n, float(getAt(constraintSize, n)) / tmp>
+  [208] extcall 77 .............................. setAt(stepSize, n, float(getAt(constraintSize, n)) / tmp)
+  [211] pushint8 1
+  [214] getlocal 0
+  [216] add
+  [217] setlocal 0
+  [219] endrepeat [160]
+  [222] getprop 468 ............................. <options>
+  [225] pushsymb 242 ............................ <#layer>
+  [228] pusharglist 2 ........................... <options, #layer>
+  [230] extcall 152 ............................. <getaProp(options, #layer)>
+  [233] setlocal 16 ............................. tmpLayer = getaProp(options, #layer)
+  [235] getlocal 16 ............................. <tmpLayer>
+  [237] pusharglist 1 ........................... <tmpLayer>
+  [239] extcall 104 ............................. <voidp(tmpLayer)>
+  [242] jmpifz [250] ............................ if voidp(tmpLayer) then
+  [245] pushint8 500 ............................ <500>
+  [248] setlocal 16 ............................. tmpLayer = 500
+  [250] getprop 796 ............................. <myMemb>
+  [253] getobjprop 801 .......................... <myMemb.regPoint>
+  [256] setprop 800 ............................. Reg = myMemb.regPoint
+  [259] getprop 796 ............................. <myMemb>
+  [262] pusharglist 1 ........................... <myMemb>
+  [264] extcall 464 ............................. <getMemberRect(myMemb)>
+  [267] setprop 802 ............................. draggerRect = getMemberRect(myMemb)
+  [270] pushzero ................................ <0>
+  [271] pushzero ................................ <0>
+  [272] pusharglist 2 ........................... <0, 0>
+  [274] extcall 75 .............................. <point(0, 0)>
+  [277] setprop 803 ............................. currentLoc = point(0, 0)
+  [280] pushcons 0 .............................. <"MouseObject">
+  [282] pusharglist 1 ........................... <"MouseObject">
+  [284] extcall 11 .............................. <script("MouseObject")>
+  [286] getparam 0 .............................. <me>
+  [288] getprop 802 ............................. <draggerRect>
+  [291] pushsymb 242 ............................ <#layer>
+  [294] getlocal 16 ............................. <tmpLayer>
+  [296] pusharglist 2 ........................... <[#layer: tmpLayer]>
+  [298] pushproplist ............................ <[#layer: tmpLayer]>
+  [299] pusharglist 4 ........................... <script("MouseObject"), me, draggerRect, [#layer: tmpLayer]>
+  [301] extcall 0 ............................... <new(script("MouseObject"), me, draggerRect, [#layer: tmpLayer])>
+  [303] setprop 804 ............................. dragMouseObj = new(script("MouseObject"), me, draggerRect, [#layer: tmpLayer])
+  [306] pushcons 8 .............................. <"MouseObject">
+  [308] pusharglist 1 ........................... <"MouseObject">
+  [310] extcall 11 .............................. <script("MouseObject")>
+  [312] getparam 0 .............................. <me>
+  [314] pushint8 100 ............................ <100>
+  [317] inv ..................................... <-100>
+  [318] pushint8 100 ............................ <100>
+  [321] inv ..................................... <-100>
+  [322] pushint8 1000 ........................... <1000>
+  [325] pushint8 1000 ........................... <1000>
+  [328] pusharglist 4 ........................... <-100, -100, 1000, 1000>
+  [330] extcall 105 ............................. <rect(-100, -100, 1000, 1000)>
+  [333] pushsymb 242 ............................ <#layer>
+  [336] getlocal 16 ............................. <tmpLayer>
+  [338] pushint8 1 .............................. <1>
+  [341] add ..................................... <tmpLayer + 1>
+  [342] pusharglist 2 ........................... <[#layer: tmpLayer + 1]>
+  [344] pushproplist ............................ <[#layer: tmpLayer + 1]>
+  [345] pusharglist 4 ........................... <script("MouseObject"), me, rect(-100, -100, 1000, 1000), [#layer: tmpLayer + 1]>
+  [347] extcall 0 ............................... <new(script("MouseObject"), me, rect(-100, -100, 1000, 1000), [#layer: tmpLayer + 1])>
+  [349] setprop 805 ............................. protMouseObj = new(script("MouseObject"), me, rect(-100, -100, 1000, 1000), [#layer: tmpLayer + 1])
+  [352] getprop 805 ............................. <protMouseObj>
+  [355] pushzero ................................ <0>
+  [356] pusharglistnoret 2 ...................... <protMouseObj, 0>
+  [358] extcall 158 ............................. activate(protMouseObj, 0)
+  [361] pushint8 15 ............................. <15>
+  [364] setlocal 24 ............................. tmpExtraClickSpace = 15
+  [366] getprop 794 ............................. <constraints>
+  [369] pusharglist 1 ........................... <constraints>
+  [371] extcall 312 ............................. <duplicate(constraints)>
+  [374] setlocal 32 ............................. tmpRect = duplicate(constraints)
+  [376] getprop 794 ............................. <constraints>
+  [379] pushint8 3 .............................. <3>
+  [382] pusharglist 2 ........................... <constraints, 3>
+  [384] extcall 23 .............................. <getAt(constraints, 3)>
+  [386] getprop 794 ............................. <constraints>
+  [389] pushint8 1 .............................. <1>
+  [392] pusharglist 2 ........................... <constraints, 1>
+  [394] extcall 23 .............................. <getAt(constraints, 1)>
+  [396] sub ..................................... <getAt(constraints, 3) - getAt(constraints, 1)>
+  [397] pushzero ................................ <0>
+  [398] eq ...................................... <(getAt(constraints, 3) - getAt(constraints, 1)) = 0>
+  [399] jmpifz [453] ............................ if (getAt(constraints, 3) - getAt(constraints, 1)) = 0 then / else
+  [402] getparam 0 .............................. <me>
+  [404] pushint8 2 .............................. <2>
+  [407] pusharglistnoret 2 ...................... <me, 2>
+  [409] localcall 3 ............................. setAxisOfInterest(me, 2)
+  [411] getprop 802 ............................. <draggerRect>
+  [414] pushint8 1 .............................. <1>
+  [417] pusharglist 2 ........................... <draggerRect, 1>
+  [419] extcall 23 .............................. <getAt(draggerRect, 1)>
+  [421] getlocal 24 ............................. <tmpExtraClickSpace>
+  [423] inv ..................................... <-tmpExtraClickSpace>
+  [424] getprop 802 ............................. <draggerRect>
+  [427] pushint8 3 .............................. <3>
+  [430] pusharglist 2 ........................... <draggerRect, 3>
+  [432] extcall 23 .............................. <getAt(draggerRect, 3)>
+  [434] getlocal 24 ............................. <tmpExtraClickSpace>
+  [436] pusharglist 4 ........................... <getAt(draggerRect, 1), -tmpExtraClickSpace, getAt(draggerRect, 3), tmpExtraClickSpace>
+  [438] extcall 105 ............................. <rect(getAt(draggerRect, 1), -tmpExtraClickSpace, getAt(draggerRect, 3), tmpExtraClickSpace)>
+  [441] setlocal 8 .............................. tmp = rect(getAt(draggerRect, 1), -tmpExtraClickSpace, getAt(draggerRect, 3), tmpExtraClickSpace)
+  [443] getlocal 32 ............................. <tmpRect>
+  [445] getlocal 8 .............................. <tmp>
+  [447] add ..................................... <tmpRect + tmp>
+  [448] setlocal 32 ............................. tmpRect = tmpRect + tmp
+  [450] jmp [527]
+  [453] getprop 794 ............................. <constraints>
+  [456] pushint8 4 .............................. <4>
+  [459] pusharglist 2 ........................... <constraints, 4>
+  [461] extcall 23 .............................. <getAt(constraints, 4)>
+  [463] getprop 794 ............................. <constraints>
+  [466] pushint8 2 .............................. <2>
+  [469] pusharglist 2 ........................... <constraints, 2>
+  [471] extcall 23 .............................. <getAt(constraints, 2)>
+  [473] sub ..................................... <getAt(constraints, 4) - getAt(constraints, 2)>
+  [474] pushzero ................................ <0>
+  [475] eq ...................................... <(getAt(constraints, 4) - getAt(constraints, 2)) = 0>
+  [476] jmpifz [527] ............................ if (getAt(constraints, 4) - getAt(constraints, 2)) = 0 then
+  [479] getparam 0 .............................. <me>
+  [481] pushint8 1 .............................. <1>
+  [484] pusharglistnoret 2 ...................... <me, 1>
+  [486] localcall 3 ............................. setAxisOfInterest(me, 1)
+  [488] getlocal 24 ............................. <tmpExtraClickSpace>
+  [490] inv ..................................... <-tmpExtraClickSpace>
+  [491] getprop 802 ............................. <draggerRect>
+  [494] pushint8 2 .............................. <2>
+  [497] pusharglist 2 ........................... <draggerRect, 2>
+  [499] extcall 23 .............................. <getAt(draggerRect, 2)>
+  [501] getlocal 24 ............................. <tmpExtraClickSpace>
+  [503] getprop 802 ............................. <draggerRect>
+  [506] pushint8 4 .............................. <4>
+  [509] pusharglist 2 ........................... <draggerRect, 4>
+  [511] extcall 23 .............................. <getAt(draggerRect, 4)>
+  [513] pusharglist 4 ........................... <-tmpExtraClickSpace, getAt(draggerRect, 2), tmpExtraClickSpace, getAt(draggerRect, 4)>
+  [515] extcall 105 ............................. <rect(-tmpExtraClickSpace, getAt(draggerRect, 2), tmpExtraClickSpace, getAt(draggerRect, 4))>
+  [518] setlocal 8 .............................. tmp = rect(-tmpExtraClickSpace, getAt(draggerRect, 2), tmpExtraClickSpace, getAt(draggerRect, 4))
+  [520] getlocal 32 ............................. <tmpRect>
+  [522] getlocal 8 .............................. <tmp>
+  [524] add ..................................... <tmpRect + tmp>
+  [525] setlocal 32 ............................. tmpRect = tmpRect + tmp
+  [527] pushcons 16 ............................. <"MouseObject">
+  [529] pusharglist 1 ........................... <"MouseObject">
+  [531] extcall 11 .............................. <script("MouseObject")>
+  [533] getparam 0 .............................. <me>
+  [535] getlocal 32 ............................. <tmpRect>
+  [537] pushsymb 242 ............................ <#layer>
+  [540] getlocal 16 ............................. <tmpLayer>
+  [542] pushint8 1 .............................. <1>
+  [545] sub ..................................... <tmpLayer - 1>
+  [546] pusharglist 2 ........................... <[#layer: tmpLayer - 1]>
+  [548] pushproplist ............................ <[#layer: tmpLayer - 1]>
+  [549] pusharglist 4 ........................... <script("MouseObject"), me, tmpRect, [#layer: tmpLayer - 1]>
+  [551] extcall 0 ............................... <new(script("MouseObject"), me, tmpRect, [#layer: tmpLayer - 1])>
+  [553] setprop 806 ............................. behindMouseObj = new(script("MouseObject"), me, tmpRect, [#layer: tmpLayer - 1])
+  [556] getprop 294 ............................. <SP>
+  [559] getprop 796 ............................. <myMemb>
+  [562] pushint8 37 ............................. <37>
+  [565] set 6 ................................... set the member of sprite SP to myMemb
+  [567] getparam 0 .............................. <me>
+  [569] pushzero ................................ <0>
+  [570] pushzero ................................ <0>
+  [571] pusharglist 2 ........................... <0, 0>
+  [573] extcall 75 .............................. <point(0, 0)>
+  [576] pusharglistnoret 2 ...................... <me, point(0, 0)>
+  [578] localcall 9 ............................. setFactor(me, point(0, 0))
+  [580] getparam 0 .............................. <me>
+  [582] pusharglistnoret 1 ...................... <me>
+  [584] extcall 32 .............................. return me
+  [587] ret
+end
+
+on kill me
+  [  0] getprop 805 ............................. <protMouseObj>
+  [  3] pusharglist 1 ........................... <protMouseObj>
+  [  5] extcall 34 .............................. <objectp(protMouseObj)>
+  [  8] jmpifz [ 21] ............................ if objectp(protMouseObj) then
+  [ 11] getprop 805 ............................. <protMouseObj>
+  [ 14] pusharglist 1 ........................... <protMouseObj>
+  [ 16] objcall 1 ............................... <protMouseObj.kill()>
+  [ 18] setprop 805 ............................. protMouseObj = protMouseObj.kill()
+  [ 21] getprop 804 ............................. <dragMouseObj>
+  [ 24] pusharglist 1 ........................... <dragMouseObj>
+  [ 26] extcall 34 .............................. <objectp(dragMouseObj)>
+  [ 29] jmpifz [ 42] ............................ if objectp(dragMouseObj) then
+  [ 32] getprop 804 ............................. <dragMouseObj>
+  [ 35] pusharglist 1 ........................... <dragMouseObj>
+  [ 37] objcall 1 ............................... <dragMouseObj.kill()>
+  [ 39] setprop 804 ............................. dragMouseObj = dragMouseObj.kill()
+  [ 42] getprop 806 ............................. <behindMouseObj>
+  [ 45] pusharglist 1 ........................... <behindMouseObj>
+  [ 47] extcall 34 .............................. <objectp(behindMouseObj)>
+  [ 50] jmpifz [ 63] ............................ if objectp(behindMouseObj) then
+  [ 53] getprop 806 ............................. <behindMouseObj>
+  [ 56] pusharglist 1 ........................... <behindMouseObj>
+  [ 58] objcall 1 ............................... <behindMouseObj.kill()>
+  [ 60] setprop 806 ............................. behindMouseObj = behindMouseObj.kill()
+  [ 63] getprop 294 ............................. <SP>
+  [ 66] pusharglist 1 ........................... <SP>
+  [ 68] extcall 379 ............................. <sprite(SP)>
+  [ 71] pushcons 24 ............................. <"Dummy">
+  [ 73] pusharglist 1 ........................... <"Dummy">
+  [ 75] extcall 307 ............................. <member("Dummy")>
+  [ 78] setobjprop 307 .......................... sprite(SP).member = member("Dummy")
+  [ 81] pushzero ................................ <0>
+  [ 82] pusharglistnoret 1 ...................... <0>
+  [ 84] extcall 32 .............................. return 0
+  [ 87] ret
+end
+
+on setCursor me, argCursor
+  [  0] getparam 8 .............................. <argCursor>
+  [  2] setprop 811 ............................. whichCursor = argCursor
+  [  5] getprop 805 ............................. <protMouseObj>
+  [  8] pusharglist 1 ........................... <protMouseObj>
+  [ 10] extcall 34 .............................. <objectp(protMouseObj)>
+  [ 13] jmpifz [ 27] ............................ if objectp(protMouseObj) then
+  [ 16] getprop 805 ............................. <protMouseObj>
+  [ 19] getprop 811 ............................. <whichCursor>
+  [ 22] pusharglistnoret 2 ...................... <protMouseObj, whichCursor>
+  [ 24] objcall 219 ............................. protMouseObj.setCursor(whichCursor)
+  [ 27] getprop 804 ............................. <dragMouseObj>
+  [ 30] pusharglist 1 ........................... <dragMouseObj>
+  [ 32] extcall 34 .............................. <objectp(dragMouseObj)>
+  [ 35] jmpifz [ 49] ............................ if objectp(dragMouseObj) then
+  [ 38] getprop 804 ............................. <dragMouseObj>
+  [ 41] getprop 811 ............................. <whichCursor>
+  [ 44] pusharglistnoret 2 ...................... <dragMouseObj, whichCursor>
+  [ 46] objcall 219 ............................. dragMouseObj.setCursor(whichCursor)
+  [ 49] ret
+end
+
+on setAxisOfInterest me, argAxis
+  [  0] getparam 8 .............................. <argAxis>
+  [  2] setprop 797 ............................. axis = argAxis
+  [  5] ret
+end
+
+on refresh me
+  [  0] getparam 0 .............................. <me>
+  [  2] getprop 803 ............................. <currentLoc>
+  [  5] pusharglist 2 ........................... <me, currentLoc>
+  [  7] localcall 6 ............................. <confine(me, currentLoc)>
+  [  9] setprop 803 ............................. currentLoc = confine(me, currentLoc)
+  [ 12] getprop 798 ............................. <lastLoc>
+  [ 15] getprop 803 ............................. <currentLoc>
+  [ 18] eq ...................................... <lastLoc = currentLoc>
+  [ 19] jmpifz [ 23] ............................ if lastLoc = currentLoc then
+  [ 22] ret ..................................... exit
+  [ 23] getprop 803 ............................. <currentLoc>
+  [ 26] pusharglist 1 ........................... <currentLoc>
+  [ 28] extcall 312 ............................. <duplicate(currentLoc)>
+  [ 31] setprop 798 ............................. lastLoc = duplicate(currentLoc)
+  [ 34] getprop 804 ............................. <dragMouseObj>
+  [ 37] getprop 803 ............................. <currentLoc>
+  [ 40] getprop 803 ............................. <currentLoc>
+  [ 43] pusharglist 2 ........................... <currentLoc, currentLoc>
+  [ 45] extcall 105 ............................. <rect(currentLoc, currentLoc)>
+  [ 48] getprop 802 ............................. <draggerRect>
+  [ 51] add ..................................... <rect(currentLoc, currentLoc) + draggerRect>
+  [ 52] setobjprop 239 .......................... dragMouseObj.myRect = rect(currentLoc, currentLoc) + draggerRect
+  [ 55] getprop 294 ............................. <SP>
+  [ 58] getprop 803 ............................. <currentLoc>
+  [ 61] pushint8 33 ............................. <33>
+  [ 64] set 6 ................................... set the loc of sprite SP to currentLoc
+  [ 66] getprop 691 ............................. <reportObj>
+  [ 69] pusharglist 1 ........................... <reportObj>
+  [ 71] extcall 34 .............................. <objectp(reportObj)>
+  [ 74] jmpifz [102] ............................ if objectp(reportObj) then
+  [ 77] getparam 0 .............................. <me>
+  [ 79] pusharglistnoret 1 ...................... <me>
+  [ 81] localcall 7 ............................. calcFactor(me)
+  [ 83] getprop 691 ............................. <reportObj>
+  [ 86] getparam 0 .............................. <me>
+  [ 88] pushsymb 814 ............................ <#changed>
+  [ 91] getparam 0 .............................. <me>
+  [ 93] pusharglist 1 ........................... <me>
+  [ 95] localcall 8 ............................. <getFactor(me)>
+  [ 97] pusharglistnoret 4 ...................... <reportObj, me, #changed, getFactor(me)>
+  [ 99] extcall 785 ............................. Report(reportObj, me, #changed, getFactor(me))
+  [102] ret
+end
+
+on mouse me, argObj, argWhat
+  [  0] getparam 8 .............................. <argObj>
+  [  2] getprop 804 ............................. <dragMouseObj>
+  [  5] eq ...................................... <argObj = dragMouseObj>
+  [  6] jmpifz [ 76] ............................ if argObj = dragMouseObj then / else
+  [  9] getparam 16 ............................. <argWhat>
+  [ 11] pushsymb 223 ............................ <#down>
+  [ 14] eq ...................................... <argWhat = #down>
+  [ 15] jmpifz [ 73] ............................ if argWhat = #down then
+  [ 18] getprop 805 ............................. <protMouseObj>
+  [ 21] pushint8 1 .............................. <1>
+  [ 24] pusharglistnoret 2 ...................... <protMouseObj, 1>
+  [ 26] extcall 158 ............................. activate(protMouseObj, 1)
+  [ 29] getprop 805 ............................. <protMouseObj>
+  [ 32] pushint8 1 .............................. <1>
+  [ 35] setobjprop 257 .......................... protMouseObj.downOn = 1
+  [ 38] getprop 804 ............................. <dragMouseObj>
+  [ 41] pushzero ................................ <0>
+  [ 42] setobjprop 257 .......................... dragMouseObj.downOn = 0
+  [ 45] pusharglist 0 ........................... <>
+  [ 47] thebuiltin 211 .......................... <the mouseH>
+  [ 50] pusharglist 0 ........................... <>
+  [ 52] thebuiltin 212 .......................... <the mouseV>
+  [ 55] pusharglist 2 ........................... <the mouseH, the mouseV>
+  [ 57] extcall 75 .............................. <point(the mouseH, the mouseV)>
+  [ 60] getprop 803 ............................. <currentLoc>
+  [ 63] sub ..................................... <point(the mouseH, the mouseV) - currentLoc>
+  [ 64] setprop 815 ............................. startLoc = point(the mouseH, the mouseV) - currentLoc
+  [ 67] pushint8 1 .............................. <1>
+  [ 70] setprop 816 ............................. dragging = 1
+  [ 73] jmp [314]
+  [ 76] getparam 8 .............................. <argObj>
+  [ 78] getprop 805 ............................. <protMouseObj>
+  [ 81] eq ...................................... <argObj = protMouseObj>
+  [ 82] jmpifz [163] ............................ if argObj = protMouseObj then / else
+  [ 85] getprop 816 ............................. <dragging>
+  [ 88] jmpifz [160] ............................ if dragging then
+  [ 91] getparam 16 ............................. <argWhat>
+  [ 93] pushsymb 262 ............................ <#stillDown>
+  [ 96] eq ...................................... <argWhat = #stillDown>
+  [ 97] jmpifz [135] ............................ if argWhat = #stillDown then / else
+  [100] pusharglist 0 ........................... <>
+  [102] thebuiltin 211 .......................... <the mouseH>
+  [105] pusharglist 0 ........................... <>
+  [107] thebuiltin 212 .......................... <the mouseV>
+  [110] pusharglist 2 ........................... <the mouseH, the mouseV>
+  [112] extcall 75 .............................. <point(the mouseH, the mouseV)>
+  [115] setlocal 0 .............................. tmpLoc = point(the mouseH, the mouseV)
+  [117] getlocal 0 .............................. <tmpLoc>
+  [119] getprop 815 ............................. <startLoc>
+  [122] sub ..................................... <tmpLoc - startLoc>
+  [123] setprop 803 ............................. currentLoc = tmpLoc - startLoc
+  [126] getparam 0 .............................. <me>
+  [128] pusharglistnoret 1 ...................... <me>
+  [130] localcall 4 ............................. refresh(me)
+  [132] jmp [160]
+  [135] getparam 16 ............................. <argWhat>
+  [137] pushsymb 250 ............................ <#click>
+  [140] eq ...................................... <argWhat = #click>
+  [141] getparam 16 ............................. <argWhat>
+  [143] pushsymb 259 ............................ <#UpOutside>
+  [146] eq ...................................... <argWhat = #UpOutside>
+  [147] or ...................................... <(argWhat = #click) or (argWhat = #UpOutside)>
+  [148] jmpifz [160] ............................ if (argWhat = #click) or (argWhat = #UpOutside) then
+  [151] getprop 805 ............................. <protMouseObj>
+  [154] pushzero ................................ <0>
+  [155] pusharglistnoret 2 ...................... <protMouseObj, 0>
+  [157] extcall 158 ............................. activate(protMouseObj, 0)
+  [160] jmp [314]
+  [163] getparam 8 .............................. <argObj>
+  [165] getprop 806 ............................. <behindMouseObj>
+  [168] eq ...................................... <argObj = behindMouseObj>
+  [169] jmpifz [314] ............................ if argObj = behindMouseObj then
+  [172] getparam 16 ............................. <argWhat>
+  [174] pushsymb 223 ............................ <#down>
+  [177] eq ...................................... <argWhat = #down>
+  [178] jmpifz [314] ............................ if argWhat = #down then
+  [181] pushzero ................................ <0>
+  [182] setprop 816 ............................. dragging = 0
+  [185] getprop 797 ............................. <axis>
+  [188] pushzero ................................ <0>
+  [189] gt ...................................... <axis > 0>
+  [190] jmpifz [314] ............................ if axis > 0 then
+  [193] getprop 805 ............................. <protMouseObj>
+  [196] pushint8 1 .............................. <1>
+  [199] setobjprop 257 .......................... protMouseObj.downOn = 1
+  [202] getprop 806 ............................. <behindMouseObj>
+  [205] pushzero ................................ <0>
+  [206] setobjprop 257 .......................... behindMouseObj.downOn = 0
+  [209] pusharglist 0 ........................... <>
+  [211] thebuiltin 211 .......................... <the mouseH>
+  [214] pusharglist 0 ........................... <>
+  [216] thebuiltin 212 .......................... <the mouseV>
+  [219] pusharglist 2 ........................... <the mouseH, the mouseV>
+  [221] extcall 75 .............................. <point(the mouseH, the mouseV)>
+  [224] setlocal 0 .............................. tmpLoc = point(the mouseH, the mouseV)
+  [226] getlocal 0 .............................. <tmpLoc>
+  [228] getprop 803 ............................. <currentLoc>
+  [231] sub ..................................... <tmpLoc - currentLoc>
+  [232] getprop 797 ............................. <axis>
+  [235] pusharglist 2 ........................... <tmpLoc - currentLoc, axis>
+  [237] extcall 23 .............................. <getAt(tmpLoc - currentLoc, axis)>
+  [239] pusharglist 1 ........................... <getAt(tmpLoc - currentLoc, axis)>
+  [241] extcall 817 ............................. <getSign(getAt(tmpLoc - currentLoc, axis))>
+  [244] setlocal 8 .............................. tmpSign = getSign(getAt(tmpLoc - currentLoc, axis))
+  [246] getprop 799 ............................. <stepSize>
+  [249] getprop 797 ............................. <axis>
+  [252] pusharglist 2 ........................... <stepSize, axis>
+  [254] extcall 23 .............................. <getAt(stepSize, axis)>
+  [256] setlocal 16 ............................. tmpStepSize = getAt(stepSize, axis)
+  [258] getlocal 16 ............................. <tmpStepSize>
+  [260] pushzero ................................ <0>
+  [261] lteq .................................... <tmpStepSize <= 0>
+  [262] jmpifz [281] ............................ if tmpStepSize <= 0 then
+  [265] getprop 795 ............................. <constraintSize>
+  [268] getprop 797 ............................. <axis>
+  [271] pusharglist 2 ........................... <constraintSize, axis>
+  [273] extcall 23 .............................. <getAt(constraintSize, axis)>
+  [275] pushint8 10 ............................. <10>
+  [278] div ..................................... <getAt(constraintSize, axis) / 10>
+  [279] setlocal 16 ............................. tmpStepSize = getAt(constraintSize, axis) / 10
+  [281] getprop 803 ............................. <currentLoc>
+  [284] getprop 797 ............................. <axis>
+  [287] getprop 803 ............................. <currentLoc>
+  [290] getprop 797 ............................. <axis>
+  [293] pusharglist 2 ........................... <currentLoc, axis>
+  [295] extcall 23 .............................. <getAt(currentLoc, axis)>
+  [297] getlocal 8 .............................. <tmpSign>
+  [299] getlocal 16 ............................. <tmpStepSize>
+  [301] mul ..................................... <tmpSign * tmpStepSize>
+  [302] add ..................................... <getAt(currentLoc, axis) + (tmpSign * tmpStepSize)>
+  [303] pusharglistnoret 3 ...................... <currentLoc, axis, getAt(currentLoc, axis) + (tmpSign * tmpStepSize)>
+  [305] extcall 77 .............................. setAt(currentLoc, axis, getAt(currentLoc, axis) + (tmpSign * tmpStepSize))
+  [308] getparam 0 .............................. <me>
+  [310] pusharglistnoret 1 ...................... <me>
+  [312] localcall 4 ............................. refresh(me)
+  [314] ret
+end
+
+on confine me, argLoc
+  [  0] getparam 8 .............................. <argLoc>
+  [  2] pushint8 1 .............................. <1>
+  [  5] pusharglist 2 ........................... <argLoc, 1>
+  [  7] extcall 23 .............................. <getAt(argLoc, 1)>
+  [  9] getprop 794 ............................. <constraints>
+  [ 12] pushint8 3 .............................. <3>
+  [ 15] pusharglist 2 ........................... <constraints, 3>
+  [ 17] extcall 23 .............................. <getAt(constraints, 3)>
+  [ 19] gt ...................................... <getAt(argLoc, 1) > getAt(constraints, 3)>
+  [ 20] jmpifz [ 46] ............................ if getAt(argLoc, 1) > getAt(constraints, 3) then / else
+  [ 23] getparam 8 .............................. <argLoc>
+  [ 25] pushint8 1 .............................. <1>
+  [ 28] getprop 794 ............................. <constraints>
+  [ 31] pushint8 3 .............................. <3>
+  [ 34] pusharglist 2 ........................... <constraints, 3>
+  [ 36] extcall 23 .............................. <getAt(constraints, 3)>
+  [ 38] pusharglistnoret 3 ...................... <argLoc, 1, getAt(constraints, 3)>
+  [ 40] extcall 77 .............................. setAt(argLoc, 1, getAt(constraints, 3))
+  [ 43] jmp [ 89]
+  [ 46] getparam 8 .............................. <argLoc>
+  [ 48] pushint8 1 .............................. <1>
+  [ 51] pusharglist 2 ........................... <argLoc, 1>
+  [ 53] extcall 23 .............................. <getAt(argLoc, 1)>
+  [ 55] getprop 794 ............................. <constraints>
+  [ 58] pushint8 1 .............................. <1>
+  [ 61] pusharglist 2 ........................... <constraints, 1>
+  [ 63] extcall 23 .............................. <getAt(constraints, 1)>
+  [ 65] lt ...................................... <getAt(argLoc, 1) < getAt(constraints, 1)>
+  [ 66] jmpifz [ 89] ............................ if getAt(argLoc, 1) < getAt(constraints, 1) then
+  [ 69] getparam 8 .............................. <argLoc>
+  [ 71] pushint8 1 .............................. <1>
+  [ 74] getprop 794 ............................. <constraints>
+  [ 77] pushint8 1 .............................. <1>
+  [ 80] pusharglist 2 ........................... <constraints, 1>
+  [ 82] extcall 23 .............................. <getAt(constraints, 1)>
+  [ 84] pusharglistnoret 3 ...................... <argLoc, 1, getAt(constraints, 1)>
+  [ 86] extcall 77 .............................. setAt(argLoc, 1, getAt(constraints, 1))
+  [ 89] getparam 8 .............................. <argLoc>
+  [ 91] pushint8 2 .............................. <2>
+  [ 94] pusharglist 2 ........................... <argLoc, 2>
+  [ 96] extcall 23 .............................. <getAt(argLoc, 2)>
+  [ 98] getprop 794 ............................. <constraints>
+  [101] pushint8 4 .............................. <4>
+  [104] pusharglist 2 ........................... <constraints, 4>
+  [106] extcall 23 .............................. <getAt(constraints, 4)>
+  [108] gt ...................................... <getAt(argLoc, 2) > getAt(constraints, 4)>
+  [109] jmpifz [135] ............................ if getAt(argLoc, 2) > getAt(constraints, 4) then / else
+  [112] getparam 8 .............................. <argLoc>
+  [114] pushint8 2 .............................. <2>
+  [117] getprop 794 ............................. <constraints>
+  [120] pushint8 4 .............................. <4>
+  [123] pusharglist 2 ........................... <constraints, 4>
+  [125] extcall 23 .............................. <getAt(constraints, 4)>
+  [127] pusharglistnoret 3 ...................... <argLoc, 2, getAt(constraints, 4)>
+  [129] extcall 77 .............................. setAt(argLoc, 2, getAt(constraints, 4))
+  [132] jmp [178]
+  [135] getparam 8 .............................. <argLoc>
+  [137] pushint8 2 .............................. <2>
+  [140] pusharglist 2 ........................... <argLoc, 2>
+  [142] extcall 23 .............................. <getAt(argLoc, 2)>
+  [144] getprop 794 ............................. <constraints>
+  [147] pushint8 2 .............................. <2>
+  [150] pusharglist 2 ........................... <constraints, 2>
+  [152] extcall 23 .............................. <getAt(constraints, 2)>
+  [154] lt ...................................... <getAt(argLoc, 2) < getAt(constraints, 2)>
+  [155] jmpifz [178] ............................ if getAt(argLoc, 2) < getAt(constraints, 2) then
+  [158] getparam 8 .............................. <argLoc>
+  [160] pushint8 2 .............................. <2>
+  [163] getprop 794 ............................. <constraints>
+  [166] pushint8 2 .............................. <2>
+  [169] pusharglist 2 ........................... <constraints, 2>
+  [171] extcall 23 .............................. <getAt(constraints, 2)>
+  [173] pusharglistnoret 3 ...................... <argLoc, 2, getAt(constraints, 2)>
+  [175] extcall 77 .............................. setAt(argLoc, 2, getAt(constraints, 2))
+  [178] getparam 8 .............................. <argLoc>
+  [180] getprop 731 ............................. <topLeft>
+  [183] sub ..................................... <argLoc - topLeft>
+  [184] setparam 8 .............................. argLoc = argLoc - topLeft
+  [186] pushint8 1 .............................. <1>
+  [189] setlocal 0
+  [191] getlocal 0
+  [193] pushint8 2 .............................. <2>
+  [196] lteq
+  [197] jmpifz [288] ............................ repeat with n = 1 to 2
+  [200] getprop 799 ............................. <stepSize>
+  [203] getlocal 0 .............................. <n>
+  [205] pusharglist 2 ........................... <stepSize, n>
+  [207] extcall 23 .............................. <getAt(stepSize, n)>
+  [209] setlocal 8 .............................. tmpStep = getAt(stepSize, n)
+  [211] getlocal 8 .............................. <tmpStep>
+  [213] pushzero ................................ <0>
+  [214] gt ...................................... <tmpStep > 0>
+  [215] jmpifz [277] ............................ if tmpStep > 0 then
+  [218] getparam 8 .............................. <argLoc>
+  [220] getlocal 0 .............................. <n>
+  [222] pusharglist 2 ........................... <argLoc, n>
+  [224] extcall 23 .............................. <getAt(argLoc, n)>
+  [226] setlocal 16 ............................. tmp = getAt(argLoc, n)
+  [228] getlocal 16 ............................. <tmp>
+  [230] getprop 799 ............................. <stepSize>
+  [233] getlocal 0 .............................. <n>
+  [235] pusharglist 2 ........................... <stepSize, n>
+  [237] extcall 23 .............................. <getAt(stepSize, n)>
+  [239] div ..................................... <tmp / getAt(stepSize, n)>
+  [240] setlocal 24 ............................. tmpDec = tmp / getAt(stepSize, n)
+  [242] getlocal 24 ............................. <tmpDec>
+  [244] pusharglist 1 ........................... <tmpDec>
+  [246] extcall 95 .............................. <integer(tmpDec)>
+  [249] setlocal 24 ............................. tmpDec = integer(tmpDec)
+  [251] getparam 8 .............................. <argLoc>
+  [253] getlocal 0 .............................. <n>
+  [255] getlocal 24 ............................. <tmpDec>
+  [257] getprop 799 ............................. <stepSize>
+  [260] getlocal 0 .............................. <n>
+  [262] pusharglist 2 ........................... <stepSize, n>
+  [264] extcall 23 .............................. <getAt(stepSize, n)>
+  [266] mul ..................................... <tmpDec * getAt(stepSize, n)>
+  [267] pusharglist 1 ........................... <tmpDec * getAt(stepSize, n)>
+  [269] extcall 95 .............................. <integer(tmpDec * getAt(stepSize, n))>
+  [272] pusharglistnoret 3 ...................... <argLoc, n, integer(tmpDec * getAt(stepSize, n))>
+  [274] extcall 77 .............................. setAt(argLoc, n, integer(tmpDec * getAt(stepSize, n)))
+  [277] pushint8 1
+  [280] getlocal 0
+  [282] add
+  [283] setlocal 0
+  [285] endrepeat [191]
+  [288] getparam 8 .............................. <argLoc>
+  [290] getprop 731 ............................. <topLeft>
+  [293] add ..................................... <argLoc + topLeft>
+  [294] setparam 8 .............................. argLoc = argLoc + topLeft
+  [296] getparam 8 .............................. <argLoc>
+  [298] pusharglistnoret 1 ...................... <argLoc>
+  [300] extcall 32 .............................. return argLoc
+  [303] ret
+end
+
+on calcFactor me
+  [  0] getprop 803 ............................. <currentLoc>
+  [  3] pushint8 1 .............................. <1>
+  [  6] pusharglist 2 ........................... <currentLoc, 1>
+  [  8] extcall 23 .............................. <getAt(currentLoc, 1)>
+  [ 10] getprop 794 ............................. <constraints>
+  [ 13] pushint8 1 .............................. <1>
+  [ 16] pusharglist 2 ........................... <constraints, 1>
+  [ 18] extcall 23 .............................. <getAt(constraints, 1)>
+  [ 20] sub ..................................... <getAt(currentLoc, 1) - getAt(constraints, 1)>
+  [ 21] getprop 803 ............................. <currentLoc>
+  [ 24] pushint8 2 .............................. <2>
+  [ 27] pusharglist 2 ........................... <currentLoc, 2>
+  [ 29] extcall 23 .............................. <getAt(currentLoc, 2)>
+  [ 31] getprop 794 ............................. <constraints>
+  [ 34] pushint8 2 .............................. <2>
+  [ 37] pusharglist 2 ........................... <constraints, 2>
+  [ 39] extcall 23 .............................. <getAt(constraints, 2)>
+  [ 41] sub ..................................... <getAt(currentLoc, 2) - getAt(constraints, 2)>
+  [ 42] pusharglist 2 ........................... <[getAt(currentLoc, 1) - getAt(constraints, 1), getAt(currentLoc, 2) - getAt(constraints, 2)]>
+  [ 44] pushlist ................................ <[getAt(currentLoc, 1) - getAt(constraints, 1), getAt(currentLoc, 2) - getAt(constraints, 2)]>
+  [ 45] setlocal 0 .............................. tmp = [getAt(currentLoc, 1) - getAt(constraints, 1), getAt(currentLoc, 2) - getAt(constraints, 2)]
+  [ 47] pushzero ................................ <0>
+  [ 48] pushzero ................................ <0>
+  [ 49] pusharglist 2 ........................... <0, 0>
+  [ 51] extcall 75 .............................. <point(0, 0)>
+  [ 54] setprop 821 ............................. factor = point(0, 0)
+  [ 57] pushint8 1 .............................. <1>
+  [ 60] setlocal 8
+  [ 62] getlocal 8
+  [ 64] pushint8 2 .............................. <2>
+  [ 67] lteq
+  [ 68] jmpifz [129] ............................ repeat with n = 1 to 2
+  [ 71] getprop 795 ............................. <constraintSize>
+  [ 74] getlocal 8 .............................. <n>
+  [ 76] pusharglist 2 ........................... <constraintSize, n>
+  [ 78] extcall 23 .............................. <getAt(constraintSize, n)>
+  [ 80] pushzero ................................ <0>
+  [ 81] gt ...................................... <getAt(constraintSize, n) > 0>
+  [ 82] jmpifz [118] ............................ if getAt(constraintSize, n) > 0 then
+  [ 85] getprop 821 ............................. <factor>
+  [ 88] getlocal 8 .............................. <n>
+  [ 90] getlocal 0 .............................. <tmp>
+  [ 92] getlocal 8 .............................. <n>
+  [ 94] pusharglist 2 ........................... <tmp, n>
+  [ 96] extcall 23 .............................. <getAt(tmp, n)>
+  [ 98] getprop 795 ............................. <constraintSize>
+  [101] getlocal 8 .............................. <n>
+  [103] pusharglist 2 ........................... <constraintSize, n>
+  [105] extcall 23 .............................. <getAt(constraintSize, n)>
+  [107] pusharglist 1 ........................... <getAt(constraintSize, n)>
+  [109] extcall 92 .............................. <float(getAt(constraintSize, n))>
+  [112] div ..................................... <getAt(tmp, n) / float(getAt(constraintSize, n))>
+  [113] pusharglistnoret 3 ...................... <factor, n, getAt(tmp, n) / float(getAt(constraintSize, n))>
+  [115] extcall 77 .............................. setAt(factor, n, getAt(tmp, n) / float(getAt(constraintSize, n)))
+  [118] pushint8 1
+  [121] getlocal 8
+  [123] add
+  [124] setlocal 8
+  [126] endrepeat [ 62]
+  [129] getprop 821 ............................. <factor>
+  [132] pusharglistnoret 1 ...................... <factor>
+  [134] extcall 32 .............................. return factor
+  [137] ret
+end
+
+on getFactor me
+  [  0] getprop 797 ............................. <axis>
+  [  3] pushzero ................................ <0>
+  [  4] nteq .................................... <axis <> 0>
+  [  5] jmpifz [ 26] ............................ if axis <> 0 then / else
+  [  8] getprop 821 ............................. <factor>
+  [ 11] getprop 797 ............................. <axis>
+  [ 14] pusharglist 2 ........................... <factor, axis>
+  [ 16] extcall 23 .............................. <getAt(factor, axis)>
+  [ 18] pusharglistnoret 1 ...................... <getAt(factor, axis)>
+  [ 20] extcall 32 .............................. return getAt(factor, axis)
+  [ 23] jmp [ 34]
+  [ 26] getprop 821 ............................. <factor>
+  [ 29] pusharglistnoret 1 ...................... <factor>
+  [ 31] extcall 32 .............................. return factor
+  [ 34] ret
+end
+
+on setFactor me, argFact
+  [  0] getparam 8 .............................. <argFact>
+  [  2] pusharglist 1 ........................... <argFact>
+  [  4] extcall 128 ............................. <listp(argFact)>
+  [  7] jmpifz [ 13] ............................ if listp(argFact) then / else
+  [ 10] jmp [103]
+  [ 13] getprop 797 ............................. <axis>
+  [ 16] pushzero ................................ <0>
+  [ 17] nteq .................................... <axis <> 0>
+  [ 18] jmpifz [ 96] ............................ if axis <> 0 then / else
+  [ 21] getprop 797 ............................. <axis>
+  [ 24] pushint8 1 .............................. <1>
+  [ 27] eq ...................................... <axis = 1>
+  [ 28] jmpifz [ 39] ............................ if axis = 1 then
+  [ 31] pushint8 1 .............................. <1>
+  [ 34] getparam 8 .............................. <argFact>
+  [ 36] sub ..................................... <1 - argFact>
+  [ 37] setparam 8 .............................. argFact = 1 - argFact
+  [ 39] getprop 803 ............................. <currentLoc>
+  [ 42] getprop 797 ............................. <axis>
+  [ 45] getprop 794 ............................. <constraints>
+  [ 48] getprop 797 ............................. <axis>
+  [ 51] pushint8 2 .............................. <2>
+  [ 54] add ..................................... <axis + 2>
+  [ 55] pusharglist 2 ........................... <constraints, axis + 2>
+  [ 57] extcall 23 .............................. <getAt(constraints, axis + 2)>
+  [ 59] getparam 8 .............................. <argFact>
+  [ 61] getprop 794 ............................. <constraints>
+  [ 64] getprop 797 ............................. <axis>
+  [ 67] pusharglist 2 ........................... <constraints, axis>
+  [ 69] extcall 23 .............................. <getAt(constraints, axis)>
+  [ 71] getprop 794 ............................. <constraints>
+  [ 74] getprop 797 ............................. <axis>
+  [ 77] pushint8 2 .............................. <2>
+  [ 80] add ..................................... <axis + 2>
+  [ 81] pusharglist 2 ........................... <constraints, axis + 2>
+  [ 83] extcall 23 .............................. <getAt(constraints, axis + 2)>
+  [ 85] sub ..................................... <getAt(constraints, axis) - getAt(constraints, axis + 2)>
+  [ 86] mul ..................................... <argFact * (getAt(constraints, axis) - getAt(constraints, axis + 2))>
+  [ 87] add ..................................... <getAt(constraints, axis + 2) + (argFact * (getAt(constraints, axis) - getAt(constraints, axis + 2)))>
+  [ 88] pusharglistnoret 3 ...................... <currentLoc, axis, getAt(constraints, axis + 2) + (argFact * (getAt(constraints, axis) - getAt(constraints, axis + 2)))>
+  [ 90] extcall 77 .............................. setAt(currentLoc, axis, getAt(constraints, axis + 2) + (argFact * (getAt(constraints, axis) - getAt(constraints, axis + 2))))
+  [ 93] jmp [103]
+  [ 96] pushcons 32 ............................. <"SetFactor err">
+  [ 98] pusharglistnoret 1 ...................... <"SetFactor err">
+  [100] extcall 142 ............................. put "SetFactor err"
+  [103] getparam 0 .............................. <me>
+  [105] pusharglistnoret 1 ...................... <me>
+  [107] localcall 4 ............................. refresh(me)
+  [109] ret
+end
+
+on setSize me, argSize
+  [  0] ret
+end

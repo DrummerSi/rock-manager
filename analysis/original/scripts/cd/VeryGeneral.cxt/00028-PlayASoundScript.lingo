@@ -1,0 +1,34 @@
+property reportObj, sndId, myTimer
+global gSound, gUseful
+
+on new me, argReportObj, argSnd, argPrec, argTimer
+  reportObj = argReportObj
+  sndId = play(gSound, argSnd, argPrec)
+  if sndId = 0 then
+    return 0
+  end if
+  myTimer = argTimer
+  if voidp(myTimer) then
+    myTimer = gUseful.frameTimer
+  end if
+  addObject(myTimer, me)
+  return me
+end
+
+on kill me
+  if sndId then
+    stop(gSound, sndId)
+  end if
+  sndId = 0
+  deleteObject(myTimer, me)
+  reportObj = 0
+  return 0
+end
+
+on timeTick me
+  if finished(gSound, sndId) then
+    soundFinished(reportObj, me)
+    sndId = 0
+    kill(me)
+  end if
+end

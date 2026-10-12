@@ -1,0 +1,285 @@
+property flippers, running, Translate, reportObj, selectedID, numDone
+global gDB, gUseful
+
+on new me, argReportObj, argSP, argLoc
+  [  0] getparam 8 .............................. <argReportObj>
+  [  2] setprop 538 ............................. reportObj = argReportObj
+  [  5] getparam 16 ............................. <argSP>
+  [  7] pusharglist 1 ........................... <argSP>
+  [  9] extcall 68 .............................. <voidp(argSP)>
+  [ 12] jmpifz [ 20] ............................ if voidp(argSP) then
+  [ 15] pushint8 10 ............................. <10>
+  [ 18] setparam 16 ............................. argSP = 10
+  [ 20] getparam 24 ............................. <argLoc>
+  [ 22] pusharglist 1 ........................... <argLoc>
+  [ 24] extcall 68 .............................. <voidp(argLoc)>
+  [ 27] jmpifz [ 39] ............................ if voidp(argLoc) then
+  [ 30] getparam 16 ............................. <argSP>
+  [ 32] pushint8 33 ............................. <33>
+  [ 35] get 6 ................................... <the loc of sprite argSP>
+  [ 37] setparam 24 ............................. argLoc = the loc of sprite argSP
+  [ 39] pushcons 0 .............................. <"-">
+  [ 41] pushint8 30 ............................. <30>
+  [ 44] pushcons 8 .............................. <".">
+  [ 46] pushint8 30 ............................. <30>
+  [ 49] pushcons 16 ............................. <",">
+  [ 51] pushint8 41 ............................. <41>
+  [ 54] pushcons 24 ............................. <" ">
+  [ 56] pushint8 42 ............................. <42>
+  [ 59] pushcons 32 ............................. <"\u0081">
+  [ 61] pushint8 27 ............................. <27>
+  [ 64] pushcons 40 ............................. <"\u0080">
+  [ 66] pushint8 28 ............................. <28>
+  [ 69] pushcons 48 ............................. <"\u0085">
+  [ 71] pushint8 29 ............................. <29>
+  [ 74] pusharglist 14 .......................... <["-", 30, ".", 30, ",", 41, " ", 42, "\u0081", 27, "\u0080", 28, "\u0085", 29]>
+  [ 76] pushlist ................................ <["-", 30, ".", 30, ",", 41, " ", 42, "\u0081", 27, "\u0080", 28, "\u0085", 29]>
+  [ 77] setprop 2009 ............................ Translate = ["-", 30, ".", 30, ",", 41, " ", 42, "\u0081", 27, "\u0080", 28, "\u0085", 29]
+  [ 80] pusharglist 0 ........................... <[]>
+  [ 82] pushlist ................................ <[]>
+  [ 83] setprop 2010 ............................ flippers = []
+  [ 86] pushint8 1 .............................. <1>
+  [ 89] setlocal 0
+  [ 91] getlocal 0
+  [ 93] pushint8 13 ............................. <13>
+  [ 96] lteq
+  [ 97] jmpifz [149] ............................ repeat with n = 1 to 13
+  [100] getprop 2010 ............................ <flippers>
+  [103] pushcons 56 ............................. <"FlipLetterScript">
+  [105] pusharglist 1 ........................... <"FlipLetterScript">
+  [107] extcall 284 ............................. <script("FlipLetterScript")>
+  [110] getparam 0 .............................. <me>
+  [112] getparam 16 ............................. <argSP>
+  [114] getlocal 0 .............................. <n>
+  [116] pushint8 1 .............................. <1>
+  [119] sub ..................................... <n - 1>
+  [120] pushint8 3 .............................. <3>
+  [123] mul ..................................... <(n - 1) * 3>
+  [124] add ..................................... <argSP + ((n - 1) * 3)>
+  [125] getlocal 0 .............................. <n>
+  [127] getparam 24 ............................. <argLoc>
+  [129] pusharglist 5 ........................... <script("FlipLetterScript"), me, argSP + ((n - 1) * 3), n, argLoc>
+  [131] extcall 0 ............................... <new(script("FlipLetterScript"), me, argSP + ((n - 1) * 3), n, argLoc)>
+  [133] pusharglistnoret 2 ...................... <flippers, new(script("FlipLetterScript"), me, argSP + ((n - 1) * 3), n, argLoc)>
+  [135] extcall 50 .............................. add(flippers, new(script("FlipLetterScript"), me, argSP + ((n - 1) * 3), n, argLoc))
+  [138] pushint8 1
+  [141] getlocal 0
+  [143] add
+  [144] setlocal 0
+  [146] endrepeat [ 91]
+  [149] pushzero ................................ <0>
+  [150] setprop 2011 ............................ running = 0
+  [153] pushzero ................................ <0>
+  [154] setprop 2012 ............................ selectedID = 0
+  [157] getglobal 23 ............................ <gUseful>
+  [159] getobjprop 24 ........................... <gUseful.frameTimer>
+  [161] getparam 0 .............................. <me>
+  [163] pusharglistnoret 2 ...................... <gUseful.frameTimer, me>
+  [165] extcall 56 .............................. addObject(gUseful.frameTimer, me)
+  [168] getparam 0 .............................. <me>
+  [170] pusharglistnoret 1 ...................... <me>
+  [172] extcall 21 .............................. return me
+  [174] ret
+end
+
+on kill me
+  [  0] getglobal 23 ............................ <gUseful>
+  [  2] getobjprop 24 ........................... <gUseful.frameTimer>
+  [  4] getparam 0 .............................. <me>
+  [  6] pusharglistnoret 2 ...................... <gUseful.frameTimer, me>
+  [  8] extcall 25 .............................. deleteObject(gUseful.frameTimer, me)
+  [ 10] pushzero ................................ <0>
+  [ 11] pusharglistnoret 1 ...................... <0>
+  [ 13] extcall 21 .............................. return 0
+  [ 15] ret
+end
+
+on go me, argName, argID
+  [  0] pushzero ................................ <0>
+  [  1] setprop 2013 ............................ numDone = 0
+  [  4] getparam 16 ............................. <argID>
+  [  6] setprop 2012 ............................ selectedID = argID
+  [  9] getparam 8 .............................. <argName>
+  [ 11] pusharglist 1 ........................... <argName>
+  [ 13] extcall 151 ............................. <length(argName)>
+  [ 16] getprop 2010 ............................ <flippers>
+  [ 19] pusharglist 1 ........................... <flippers>
+  [ 21] extcall 32 .............................. <count(flippers)>
+  [ 24] gt ...................................... <length(argName) > count(flippers)>
+  [ 25] jmpifz [ 50] ............................ if length(argName) > count(flippers) then
+  [ 28] pushint8 1 .............................. <1>
+  [ 31] getprop 2010 ............................ <flippers>
+  [ 34] pusharglist 1 ........................... <flippers>
+  [ 36] extcall 32 .............................. <count(flippers)>
+  [ 39] pushzero ................................ <0>
+  [ 40] pushzero ................................ <0>
+  [ 41] pushzero ................................ <0>
+  [ 42] pushzero ................................ <0>
+  [ 43] pushzero ................................ <0>
+  [ 44] pushzero ................................ <0>
+  [ 45] getparam 8 .............................. <argName>
+  [ 47] getchunk ................................ <char 1 to count(flippers) of argName>
+  [ 48] setparam 8 .............................. argName = char 1 to count(flippers) of argName
+  [ 50] getparam 8 .............................. <argName>
+  [ 52] pusharglist 1 ........................... <argName>
+  [ 54] extcall 151 ............................. <length(argName)>
+  [ 57] setlocal 0
+  [ 59] getlocal 0
+  [ 61] getprop 2010 ............................ <flippers>
+  [ 64] pusharglist 1 ........................... <flippers>
+  [ 66] extcall 32 .............................. <count(flippers)>
+  [ 69] pushint8 1 .............................. <1>
+  [ 72] sub ..................................... <count(flippers) - 1>
+  [ 73] lteq
+  [ 74] jmpifz [ 95] ............................ repeat with n = length(argName) to count(flippers) - 1
+  [ 77] getparam 8 .............................. <argName>
+  [ 79] pushcons 64 ............................. <" ">
+  [ 81] joinstr ................................. <argName & " ">
+  [ 82] setparam 8 .............................. argName = argName & " "
+  [ 84] pushint8 1
+  [ 87] getlocal 0
+  [ 89] add
+  [ 90] setlocal 0
+  [ 92] endrepeat [ 59]
+  [ 95] pushint8 1 .............................. <1>
+  [ 98] setlocal 0
+  [100] getlocal 0
+  [102] getprop 2010 ............................ <flippers>
+  [105] pusharglist 1 ........................... <flippers>
+  [107] extcall 32 .............................. <count(flippers)>
+  [110] lteq
+  [111] jmpifz [267] ............................ repeat with n = 1 to count(flippers)
+  [114] getlocal 0 .............................. <n>
+  [116] pushzero ................................ <0>
+  [117] pushzero ................................ <0>
+  [118] pushzero ................................ <0>
+  [119] pushzero ................................ <0>
+  [120] pushzero ................................ <0>
+  [121] pushzero ................................ <0>
+  [122] pushzero ................................ <0>
+  [123] getparam 8 .............................. <argName>
+  [125] getchunk ................................ <char n of argName>
+  [126] pusharglist 1 ........................... <char n of argName>
+  [128] extcall 1290 ............................ <charToNum(char n of argName)>
+  [131] setlocal 8 .............................. tmpLetter = charToNum(char n of argName)
+  [133] getprop 2009 ............................ <Translate>
+  [136] getlocal 0 .............................. <n>
+  [138] pushzero ................................ <0>
+  [139] pushzero ................................ <0>
+  [140] pushzero ................................ <0>
+  [141] pushzero ................................ <0>
+  [142] pushzero ................................ <0>
+  [143] pushzero ................................ <0>
+  [144] pushzero ................................ <0>
+  [145] getparam 8 .............................. <argName>
+  [147] getchunk ................................ <char n of argName>
+  [148] pusharglist 2 ........................... <Translate, char n of argName>
+  [150] extcall 92 .............................. <getPos(Translate, char n of argName)>
+  [153] setlocal 16 ............................. tmpPos = getPos(Translate, char n of argName)
+  [155] getlocal 16 ............................. <tmpPos>
+  [157] jmpifz [179] ............................ if tmpPos then / else
+  [160] getprop 2009 ............................ <Translate>
+  [163] getlocal 16 ............................. <tmpPos>
+  [165] pushint8 1 .............................. <1>
+  [168] add ..................................... <tmpPos + 1>
+  [169] pusharglist 2 ........................... <Translate, tmpPos + 1>
+  [171] extcall 34 .............................. <getAt(Translate, tmpPos + 1)>
+  [174] setlocal 8 .............................. tmpLetter = getAt(Translate, tmpPos + 1)
+  [176] jmp [239]
+  [179] getlocal 8 .............................. <tmpLetter>
+  [181] pushint8 57 ............................. <57>
+  [184] lteq .................................... <tmpLetter <= 57>
+  [185] getlocal 8 .............................. <tmpLetter>
+  [187] pushint8 48 ............................. <48>
+  [190] gteq .................................... <tmpLetter >= 48>
+  [191] and ..................................... <(tmpLetter <= 57) and (tmpLetter >= 48)>
+  [192] jmpifz [231] ............................ if (tmpLetter <= 57) and (tmpLetter >= 48) then / else
+  [195] getlocal 8 .............................. <tmpLetter>
+  [197] pushint8 48 ............................. <48>
+  [200] eq ...................................... <tmpLetter = 48>
+  [201] jmpifz [212] ............................ if tmpLetter = 48 then / else
+  [204] pushint8 58 ............................. <58>
+  [207] setlocal 8 .............................. tmpLetter = 58
+  [209] jmp [220]
+  [212] getlocal 8 .............................. <tmpLetter>
+  [214] pushint8 48 ............................. <48>
+  [217] sub ..................................... <tmpLetter - 48>
+  [218] setlocal 8 .............................. tmpLetter = tmpLetter - 48
+  [220] getlocal 8 .............................. <tmpLetter>
+  [222] pushint8 30 ............................. <30>
+  [225] add ..................................... <tmpLetter + 30>
+  [226] setlocal 8 .............................. tmpLetter = tmpLetter + 30
+  [228] jmp [239]
+  [231] getlocal 8 .............................. <tmpLetter>
+  [233] pushint8 64 ............................. <64>
+  [236] sub ..................................... <tmpLetter - 64>
+  [237] setlocal 8 .............................. tmpLetter = tmpLetter - 64
+  [239] getprop 2010 ............................ <flippers>
+  [242] getlocal 0 .............................. <n>
+  [244] pusharglist 2 ........................... <flippers, n>
+  [246] extcall 34 .............................. <getAt(flippers, n)>
+  [249] getlocal 8 .............................. <tmpLetter>
+  [251] pusharglistnoret 2 ...................... <getAt(flippers, n), tmpLetter>
+  [253] extcall 2014 ............................ gotoLetter(getAt(flippers, n), tmpLetter)
+  [256] pushint8 1
+  [259] getlocal 0
+  [261] add
+  [262] setlocal 0
+  [264] endrepeat [100]
+  [267] pushint8 1 .............................. <1>
+  [270] setprop 2011 ............................ running = 1
+  [273] ret
+end
+
+on timeTick me
+  [  0] getprop 2011 ............................ <running>
+  [  3] jmpifz [ 50] ............................ if running then
+  [  6] getprop 2010 ............................ <flippers>
+  [  9] peek 0
+  [ 11] pusharglist 1
+  [ 13] extcall 32
+  [ 16] pushint8 1
+  [ 18] peek 0
+  [ 20] peek 2
+  [ 22] lteq
+  [ 23] jmpifz [ 48] ............................ repeat with tmpObj in flippers
+  [ 26] peek 2
+  [ 28] peek 1
+  [ 30] pusharglist 2
+  [ 32] extcall 34
+  [ 35] setlocal 0
+  [ 37] getlocal 0 .............................. <tmpObj>
+  [ 39] pusharglistnoret 1 ...................... <tmpObj>
+  [ 41] localcall 3 ............................. timeTick(tmpObj)
+  [ 43] pushint8 1
+  [ 45] add
+  [ 46] endrepeat [ 18]
+  [ 48] pop 3
+  [ 50] ret
+end
+
+on oneDone me, argObj
+  [  0] getprop 2013 ............................ <numDone>
+  [  3] pushint8 1 .............................. <1>
+  [  6] add ..................................... <numDone + 1>
+  [  7] setprop 2013 ............................ numDone = numDone + 1
+  [ 10] getprop 2013 ............................ <numDone>
+  [ 13] getprop 2010 ............................ <flippers>
+  [ 16] pusharglist 1 ........................... <flippers>
+  [ 18] extcall 32 .............................. <count(flippers)>
+  [ 21] eq ...................................... <numDone = count(flippers)>
+  [ 22] jmpifz [ 56] ............................ if numDone = count(flippers) then
+  [ 25] pushzero ................................ <0>
+  [ 26] setprop 2011 ............................ running = 0
+  [ 29] getprop 538 ............................. <reportObj>
+  [ 32] pusharglist 1 ........................... <reportObj>
+  [ 34] extcall 71 .............................. <objectp(reportObj)>
+  [ 37] jmpifz [ 56] ............................ if objectp(reportObj) then
+  [ 40] getprop 538 ............................. <reportObj>
+  [ 43] getparam 0 .............................. <me>
+  [ 45] pushsymb 553 ............................ <#done>
+  [ 48] getprop 2012 ............................ <selectedID>
+  [ 51] pusharglistnoret 4 ...................... <reportObj, me, #done, selectedID>
+  [ 53] extcall 74 .............................. Report(reportObj, me, #done, selectedID)
+  [ 56] ret
+end

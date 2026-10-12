@@ -1,0 +1,79 @@
+property m_freeCasts
+
+on new me
+  [  0] pusharglist 0 ........................... <[]>
+  [  2] pushlist ................................ <[]>
+  [  3] setprop 88 .............................. m_freeCasts = []
+  [  6] pushint8 1 .............................. <1>
+  [  9] setlocal 0
+  [ 11] getlocal 0
+  [ 13] pushint8 4 .............................. <4>
+  [ 16] get 8 ................................... <the number of castLibs>
+  [ 18] lteq
+  [ 19] jmpifz [ 75] ............................ repeat with n = 1 to the number of castLibs
+  [ 22] pushcons 0 .............................. <"Actor">
+  [ 24] getlocal 0 .............................. <n>
+  [ 26] pusharglist 1 ........................... <n>
+  [ 28] extcall 72 .............................. <castLib(n)>
+  [ 31] getobjprop 90 ........................... <castLib(n).name>
+  [ 34] pusharglist 2 ........................... <"Actor", castLib(n).name>
+  [ 36] extcall 89 .............................. <offset("Actor", castLib(n).name)>
+  [ 39] pushint8 1 .............................. <1>
+  [ 42] eq ...................................... <offset("Actor", castLib(n).name) = 1>
+  [ 43] jmpifz [ 64] ............................ if offset("Actor", castLib(n).name) = 1 then
+  [ 46] getprop 88 .............................. <m_freeCasts>
+  [ 49] getlocal 0 .............................. <n>
+  [ 51] pusharglist 1 ........................... <n>
+  [ 53] extcall 72 .............................. <castLib(n)>
+  [ 56] getobjprop 90 ........................... <castLib(n).name>
+  [ 59] pusharglistnoret 2 ...................... <m_freeCasts, castLib(n).name>
+  [ 61] objcall 91 .............................. m_freeCasts.add(castLib(n).name)
+  [ 64] pushint8 1
+  [ 67] getlocal 0
+  [ 69] add
+  [ 70] setlocal 0
+  [ 72] endrepeat [ 11]
+  [ 75] getparam 0 .............................. <me>
+  [ 77] pusharglistnoret 1 ...................... <me>
+  [ 79] extcall 12 .............................. return me
+  [ 81] ret
+end
+
+on kill me
+  [  0] pushzero ................................ <0>
+  [  1] pusharglistnoret 1 ...................... <0>
+  [  3] extcall 12 .............................. return 0
+  [  5] ret
+end
+
+on getCast me
+  [  0] getprop 88 .............................. <m_freeCasts>
+  [  3] getobjprop 67 ........................... <m_freeCasts.count>
+  [  6] pushzero ................................ <0>
+  [  7] eq ...................................... <m_freeCasts.count = 0>
+  [  8] jmpifz [ 16] ............................ if m_freeCasts.count = 0 then
+  [ 11] pushzero ................................ <0>
+  [ 12] pusharglistnoret 1 ...................... <0>
+  [ 14] extcall 12 .............................. return 0
+  [ 16] getprop 88 .............................. <m_freeCasts>
+  [ 19] pushint8 1 .............................. <1>
+  [ 22] pusharglist 2 ........................... <m_freeCasts, 1>
+  [ 24] objcall 19 .............................. <m_freeCasts[1]>
+  [ 26] setlocal 0 .............................. tmp = m_freeCasts[1]
+  [ 28] getprop 88 .............................. <m_freeCasts>
+  [ 31] pushint8 1 .............................. <1>
+  [ 34] pusharglistnoret 2 ...................... <m_freeCasts, 1>
+  [ 36] objcall 145 ............................. m_freeCasts.deleteAt(1)
+  [ 39] getlocal 0 .............................. <tmp>
+  [ 41] pusharglistnoret 1 ...................... <tmp>
+  [ 43] extcall 12 .............................. return tmp
+  [ 45] ret
+end
+
+on returnCast me, argObj, argCast
+  [  0] getprop 88 .............................. <m_freeCasts>
+  [  3] getparam 16 ............................. <argCast>
+  [  5] pusharglistnoret 2 ...................... <m_freeCasts, argCast>
+  [  7] objcall 91 .............................. m_freeCasts.add(argCast)
+  [ 10] ret
+end

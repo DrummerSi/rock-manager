@@ -1,0 +1,97 @@
+property ancestor, child, className, belongsTo, ID, name, comment, StartDate, duration, neededIDs, visible, Modifies, Moveable, AutoRemove
+global gRock
+
+on new me, argChild, argBelongsTo
+  if objectp(argChild) then
+    child = argChild
+  else
+    child = me
+  end if
+  belongsTo = argBelongsTo
+  className = #Event
+  ID = #none
+  name = EMPTY
+  comment = EMPTY
+  StartDate = 0
+  duration = 0
+  neededIDs = []
+  visible = 0
+  Modifies = [:]
+  Moveable = 1
+  AutoRemove = 0
+  return me
+end
+
+on kill me
+  if objectp(gRock) then
+    gRock.m_eventsManager.deleteEvent(child)
+  end if
+  if objectp(ancestor) then
+    ancestor = ancestor.kill()
+  end if
+  child = 0
+  belongsTo = 0
+  return 0
+end
+
+on setDates me, argDate, argDuration
+  if not voidp(argDate) then
+    StartDate = argDate
+  end if
+  if StartDate = #Now then
+    StartDate = gRock.m_date.getDateInt()
+  end if
+  if not voidp(argDuration) then
+    duration = argDuration
+  end if
+  if objectp(gRock) then
+    gRock.m_eventsManager.changeEvent(child)
+  end if
+end
+
+on eventChangeState me, argAction, argOption
+  if argAction = #start then
+    me.startModifying()
+  else
+    if argAction = #stop then
+      me.stopModifying()
+      if AutoRemove then
+        gRock.m_classManager.removeObj(child)
+      end if
+    end if
+  end if
+end
+
+on startModifying me
+  repeat with n = 1 to Modifies.count
+    obj = gRock.m_classManager.getObjByID(Modifies.getPropAt(n))
+    if not objectp(obj) then
+      pott("Mod fail", Modifies.getPropAt(n))
+      next repeat
+    end if
+    obj.addModifier(me)
+  end repeat
+end
+
+on stopModifying me
+  repeat with n = 1 to Modifies.count
+    obj = gRock.m_classManager.getObjByID(Modifies.getPropAt(n))
+    if not objectp(obj) then
+      next repeat
+    end if
+    obj.deleteModifier(me)
+  end repeat
+end
+
+on tellNeededObjsAboutChange me, argAction
+  repeat with tmpID in neededIDs
+    if listp(tmpID) then
+      obj_r = gRock.m_classManager.getObjByIDAndClass(tmpID[1], tmpID[2])
+    else
+      obj_r = gRock.m_classManager.getObjByID(tmpID)
+    end if
+    if objectp(obj_r) then
+      call(#eventChanged, [obj_r], child, argAction)
+    end if
+  end repeat
+end

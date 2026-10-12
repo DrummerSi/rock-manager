@@ -1,0 +1,56 @@
+property m_sound, m_file, m_fullFileName, m_reportTo, m_startedPlaying
+global gUseful
+
+on new me, argFile, argOptions
+  if voidp(argOptions) then
+    argOptions = [:]
+  end if
+  m_reportTo = argOptions[#ReportTo]
+  if castLib(the number of castLibs).name = "Snd" then
+    pott("Got castLib!")
+  end if
+  m_file = argFile
+  if filePathContainsDrive(m_file) then
+    m_fullFileName = m_file
+  else
+    m_fullFileName = gUseful.soundObj.soundPath & "Mp3\" & m_file
+  end if
+  extension = fileGetExtension(m_fullFileName)
+  if extension = EMPTY then
+    m_fullFileName = m_fullFileName & ".mp3"
+  end if
+  tmpInfo = getWaveFileInfo(m_fullFileName)
+  m_sound = sound(1)
+  if m_sound.isBusy() then
+    m_sound.stop()
+  end if
+  m_sound.volume = 128
+  m_sound.queue([#member: member("LinkedAudio"), #loopCount: 1])
+  m_startedPlaying = 0
+  gUseful.frameTimer.addObject(me)
+  return me
+end
+
+on kill me
+  gUseful.frameTimer.deleteObject(me)
+  m_sound.stop()
+  m_sound = 0
+  return 0
+end
+
+on timeTick me
+  if m_startedPlaying = 0 then
+    m_sound.play()
+    if objectp(m_reportTo) then
+      m_reportTo.Report(me, #play)
+    end if
+    m_startedPlaying = 1
+  else
+    if m_sound.isBusy() = 0 then
+      if objectp(m_reportTo) then
+        m_reportTo.Report(me, #finished)
+      end if
+      gUseful.frameTimer.deleteObject(me)
+    end if
+  end if
+end

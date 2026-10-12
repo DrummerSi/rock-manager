@@ -1,0 +1,94 @@
+on checkForPlugins argPluginsPath
+  tmpCasts = []
+  repeat with n = 1 to the maxinteger
+    tmpName = getNthFileNameInFolder(argPluginsPath, n)
+    if tmpName = EMPTY then
+      exit repeat
+    end if
+    if offset(".cst", tmpName) or offset(".cxt", tmpName) then
+      add(tmpCasts, tmpName)
+    end if
+  end repeat
+  return tmpCasts
+end
+
+on xferPlugins argPluginsPath, argCasts, argCopyToCastName, argCallBackInfo
+  tmpSwitchCastLibName = "Source"
+  tmpSwitchCastLib = castLib(tmpSwitchCastLibName)
+  if voidp(argCopyToCastName) then
+    argCopyToCastName = "Destination"
+  end if
+  tmpDeleteCasts = []
+  repeat with tmpCast in argCasts
+    tmpXferOK = 1
+    tmpSwitchCastLib.fileName = argPluginsPath & tmpCast
+    if tmpSwitchCastLib.fileName <> (argPluginsPath & tmpCast) then
+      alert(string(tmpCast) & " is corrupt.")
+      next repeat
+    end if
+    numMembersInCast = the number of castMembers of castLib tmpSwitchCastLibName
+    numMembersToCopy = 0
+    numBytes = 0
+    repeat with n = 1 to numMembersInCast
+      srcMember = member(n, tmpSwitchCastLibName)
+      tmpType = srcMember.type
+      if tmpType = #empty then
+        next repeat
+      end if
+      numMembersToCopy = numMembersToCopy + 1
+      numBytes = numBytes + srcMember.size
+    end repeat
+    if numBytes = 0 then
+      numBytes = 1
+    end if
+    bytesCopied = 0
+    repeat with n = 1 to numMembersInCast
+      srcMember = member(n, tmpSwitchCastLibName)
+      tmpType = srcMember.type
+      if tmpType = #empty then
+        next repeat
+      end if
+      if the freeBlock < srcMember.size then
+        tmpXferOK = 0
+        next repeat
+      end if
+      tmpName = srcMember.name
+      if the number of member tmpName of castLib argCopyToCastName <= 0 then
+        DstMember = new(tmpType, member(1 + the number of castMembers of castLib argCopyToCastName, argCopyToCastName))
+        DstMember.name = tmpName
+      else
+        DstMember = member(tmpName, argCopyToCastName)
+      end if
+      DstMember.media = srcMember.media
+      if tmpType = #script then
+        DstMember.scriptType = srcMember.scriptType
+      end if
+      bytesCopied = bytesCopied + srcMember.size
+      if the freeBlock < (512 * 1024) then
+        castLib(argCopyToCastName).save()
+      end if
+      if listp(argCallBackInfo) then
+        call(argCallBackInfo[1], argCallBackInfo[2], #XferMember, float(bytesCopied) / numBytes)
+      end if
+    end repeat
+    if not tmpXferOK then
+      alert("Out of memory.")
+    else
+      add(tmpDeleteCasts, argPluginsPath & tmpCast)
+    end if
+    if listp(argCallBackInfo) then
+      call(argCallBackInfo[1], argCallBackInfo[2], #XferCast)
+    end if
+  end repeat
+  castLib(tmpSwitchCastLibName).fileName = "Empty"
+  castLib(argCopyToCastName).save()
+  tmpFileXtra = new(xtra("FileIO"))
+  repeat with tmpFileName in tmpDeleteCasts
+    openFile(tmpFileXtra, tmpFileName, 0)
+    if status(tmpFileXtra) = 0 then
+      delete(tmpFileXtra)
+    end if
+    closeFile(tmpFileXtra)
+  end repeat
+  tmpFileXtra = 0
+end

@@ -1,0 +1,132 @@
+property ancestor, child, className, belongsTo, _killed, albumID
+global gRock
+
+on new me, argChild, argBelongsTo
+  [  0] getparam 8 .............................. <argChild>
+  [  2] pusharglist 1 ........................... <argChild>
+  [  4] extcall 8 ............................... <objectp(argChild)>
+  [  6] jmpifz [ 17] ............................ if objectp(argChild) then / else
+  [  9] getparam 8 .............................. <argChild>
+  [ 11] setprop 496 ............................. child = argChild
+  [ 14] jmp [ 22]
+  [ 17] getparam 0 .............................. <me>
+  [ 19] setprop 496 ............................. child = me
+  [ 22] getparam 16 ............................. <argBelongsTo>
+  [ 24] setprop 208 ............................. belongsTo = argBelongsTo
+  [ 27] pushcons 0 .............................. <"ClassEventScript">
+  [ 29] pusharglist 1 ........................... <"ClassEventScript">
+  [ 31] extcall 10 .............................. <script("ClassEventScript")>
+  [ 33] getprop 496 ............................. <child>
+  [ 36] pusharglist 2 ........................... <script("ClassEventScript"), child>
+  [ 38] objcall 11 .............................. <script("ClassEventScript").new(child)>
+  [ 40] setprop 347 ............................. ancestor = script("ClassEventScript").new(child)
+  [ 43] pushsymb 661 ............................ <#AlbumRelease>
+  [ 46] setprop 224 ............................. className = #AlbumRelease
+  [ 49] pushsymb 268 ............................ <#none>
+  [ 52] setprop 662 ............................. albumID = #none
+  [ 55] getparam 0 .............................. <me>
+  [ 57] pusharglistnoret 1 ...................... <me>
+  [ 59] extcall 69 .............................. return me
+  [ 62] ret
+end
+
+on kill me
+  [  0] pushint8 1 .............................. <1>
+  [  3] setprop 506 ............................. _killed = 1
+  [  6] getprop 347 ............................. <ancestor>
+  [  9] pusharglist 1 ........................... <ancestor>
+  [ 11] extcall 8 ............................... <objectp(ancestor)>
+  [ 13] jmpifz [ 26] ............................ if objectp(ancestor) then
+  [ 16] getprop 347 ............................. <ancestor>
+  [ 19] pusharglist 1 ........................... <ancestor>
+  [ 21] objcall 31 .............................. <ancestor.kill()>
+  [ 23] setprop 347 ............................. ancestor = ancestor.kill()
+  [ 26] pushzero ................................ <0>
+  [ 27] setprop 496 ............................. child = 0
+  [ 30] pushzero ................................ <0>
+  [ 31] setprop 208 ............................. belongsTo = 0
+  [ 34] pushzero ................................ <0>
+  [ 35] pusharglistnoret 1 ...................... <0>
+  [ 37] extcall 69 .............................. return 0
+  [ 40] ret
+end
+
+on eventChangeState me, argAction, argOption
+  [  0] getparam 8 .............................. <argAction>
+  [  2] pushsymb 43 ............................. <#start>
+  [  5] eq ...................................... <argAction = #start>
+  [  6] jmpifz [ 12] ............................ if argAction = #start then / else
+  [  9] jmp [158]
+  [ 12] getparam 8 .............................. <argAction>
+  [ 14] pushsymb 663 ............................ <#stop>
+  [ 17] eq ...................................... <argAction = #stop>
+  [ 18] jmpifz [158] ............................ if argAction = #stop then
+  [ 21] getglobal 23 ............................ <gRock>
+  [ 23] getobjprop 79 ........................... <gRock.m_context>
+  [ 26] pushsymb 217 ............................ <#album>
+  [ 29] pusharglist 2 ........................... <gRock.m_context, #album>
+  [ 31] objcall 146 ............................. <gRock.m_context.getFocus(#album)>
+  [ 34] setlocal 0 .............................. album_r = gRock.m_context.getFocus(#album)
+  [ 36] getglobal 23 ............................ <gRock>
+  [ 38] getobjprop 82 ........................... <gRock.m_classManager>
+  [ 41] pushsymb 664 ............................ <#Reporter>
+  [ 44] pusharglist 2 ........................... <gRock.m_classManager, #Reporter>
+  [ 46] objcall 155 ............................. <gRock.m_classManager.getObjsOfClass(#Reporter)>
+  [ 49] setlocal 8 .............................. reporters_r = gRock.m_classManager.getObjsOfClass(#Reporter)
+  [ 51] getlocal 8 .............................. <reporters_r>
+  [ 53] peek 0
+  [ 55] pusharglist 1
+  [ 57] extcall 156
+  [ 60] pushint8 1
+  [ 62] peek 0
+  [ 64] peek 2
+  [ 66] lteq
+  [ 67] jmpifz [ 95] ............................ repeat with reporter_r in reporters_r
+  [ 70] peek 2
+  [ 72] peek 1
+  [ 74] pusharglist 2
+  [ 76] extcall 119
+  [ 79] setlocal 16
+  [ 81] getlocal 16 ............................. <reporter_r>
+  [ 83] getlocal 0 .............................. <album_r>
+  [ 85] pusharglistnoret 2 ...................... <reporter_r, album_r>
+  [ 87] objcall 665 ............................. reporter_r.AlbumWasReleased(album_r)
+  [ 90] pushint8 1
+  [ 92] add
+  [ 93] endrepeat [ 62]
+  [ 95] pop 3
+  [ 97] getglobal 23 ............................ <gRock>
+  [ 99] getobjprop 82 ........................... <gRock.m_classManager>
+  [102] pushsymb 589 ............................ <#Group>
+  [105] pusharglist 2 ........................... <gRock.m_classManager, #Group>
+  [107] objcall 155 ............................. <gRock.m_classManager.getObjsOfClass(#Group)>
+  [110] setlocal 24 ............................. groups_r = gRock.m_classManager.getObjsOfClass(#Group)
+  [112] getlocal 24 ............................. <groups_r>
+  [114] peek 0
+  [116] pusharglist 1
+  [118] extcall 156
+  [121] pushint8 1
+  [123] peek 0
+  [125] peek 2
+  [127] lteq
+  [128] jmpifz [156] ............................ repeat with group_r in groups_r
+  [131] peek 2
+  [133] peek 1
+  [135] pusharglist 2
+  [137] extcall 119
+  [140] setlocal 32
+  [142] getlocal 32 ............................. <group_r>
+  [144] getlocal 0 .............................. <album_r>
+  [146] pusharglistnoret 2 ...................... <group_r, album_r>
+  [148] objcall 665 ............................. group_r.AlbumWasReleased(album_r)
+  [151] pushint8 1
+  [153] add
+  [154] endrepeat [123]
+  [156] pop 3
+  [158] getprop 347 ............................. <ancestor>
+  [161] getparam 8 .............................. <argAction>
+  [163] getparam 16 ............................. <argOption>
+  [165] pusharglistnoret 3 ...................... <ancestor, argAction, argOption>
+  [167] objcall 660 ............................. ancestor.eventChangeState(argAction, argOption)
+  [170] ret
+end

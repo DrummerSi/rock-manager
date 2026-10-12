@@ -1,0 +1,190 @@
+property soundObjs, maxMemory, usedMemory, maxNumChannels, numPlaying, nowPlayingObjs, waitingToPreloadObjs, waitingToPlayObjs, addObjs, deleteObjs, soundPath, volume, usedIDs, freeIDs, isDX
+global gUseful
+
+on new me
+  isDX = 0
+  soundPath = the moviePath & "Sound\"
+  if the machineType = 256 then
+    ticksPerSec = 63
+  else
+    ticksPerSec = 60
+  end if
+  addObjs = []
+  deleteObjs = []
+  soundObjs = [:]
+  soundObjs.sort()
+  nowPlayingObjs = [:]
+  nowPlayingObjs.sort()
+  waitingToPreloadObjs = [:]
+  waitingToPreloadObjs.sort()
+  waitingToPlayObjs = [:]
+  waitingToPlayObjs.sort()
+  maxMemory = 2048 * 1024
+  usedMemory = 0
+  maxNumChannels = 8
+  numPlaying = 0
+  usedIDs = []
+  freeIDs = []
+  repeat with n = 1 to maxNumChannels
+    freeIDs.add(n)
+  end repeat
+  return me
+end
+
+on init me
+  gUseful.frameTimer.addObject(me)
+end
+
+on kill me
+  repeat with tmpObj in soundObjs
+    kill(tmpObj)
+  end repeat
+  soundObjs = [:]
+  gUseful.frameTimer.deleteObject(me)
+  return 0
+end
+
+on addObject me, argObj
+  addObjs.add(argObj)
+end
+
+on deleteObject me, argObj
+  if argObj.sndId then
+    me.returnId(argObj.sndId)
+  end if
+  usedMemory = usedMemory - argObj.size
+  deleteObjs.add(argObj)
+end
+
+on updateObjects me
+  repeat with tmpObj in addObjs
+    if soundObjs.getPos(tmpObj) = 0 then
+      soundObjs.addProp(tmpObj.prio, tmpObj)
+    end if
+  end repeat
+  addObjs = []
+  repeat with tmpObj in deleteObjs
+    soundObjs.deleteOne(tmpObj)
+  end repeat
+  deleteObjs = []
+end
+
+on getNumOfHigherPrio me, argObj
+  soundObjs.addProp(argObj.prio + 1, -1)
+  tmpPos = soundObjs.getPos(-1)
+  soundObjs.deleteAt(tmpPos)
+  return tmpPos
+end
+
+on preload me, argObj
+  tmpNeededMem = argObj.getSize()
+  tmpGainedMem = 0
+  argObj.masterSays(#preload, me.getFreeID())
+  if argObj.sndId = 0 then
+    put "Couldn't load sound!"
+    return 0
+  end if
+  usedMemory = usedMemory + tmpNeededMem - tmpGainedMem
+  return 1
+end
+
+on play me, argObj
+  if nowPlayingObjs.getPos(argObj) then
+    exit
+  end if
+  tmpCnt = nowPlayingObjs.count()
+  if tmpCnt = maxNumChannels then
+    if nowPlayingObjs[1].prio < argObj.prio then
+      me.Interrupt(nowPlayingObjs[1])
+    else
+      waitingToPlayObjs.addProp(argObj.prio, argObj)
+      exit
+    end if
+  end if
+  nowPlayingObjs.addProp(argObj.prio, argObj)
+  if argObj.sndId = 0 then
+    argObj.masterSays(#play, me.getFreeID())
+  else
+    argObj.masterSays(#play)
+  end if
+end
+
+on getFreeID me
+  if freeIDs.count() = 0 then
+    return 0
+  end if
+  tmpID = freeIDs[1]
+  freeIDs.deleteAt(1)
+  usedIDs.add(tmpID)
+  return tmpID
+end
+
+on returnId me, argID
+  freeIDs.add(argID)
+  usedIDs.deleteOne(argID)
+end
+
+on Interrupt me, argObj
+  if argObj.isPlaying() then
+    argObj.masterSays(#Interrupt)
+    nowPlayingObjs.deleteOne(argObj)
+  end if
+end
+
+on stop me, argObj
+  nowPlayingObjs.deleteOne(argObj)
+  argObj.masterSays(#stop)
+  me.letTheWaitingPlay()
+end
+
+on stopAll me
+  repeat with tmpObj in soundObjs
+  end repeat
+end
+
+on cuePassed me
+end
+
+on letTheWaitingPlay me
+  tmpFree = maxNumChannels - nowPlayingObjs.count()
+  if tmpFree then
+    tmpStart = waitingToPlayObjs.count()
+    tmp = tmpStart
+    if tmp > tmpFree then
+      tmp = tmpFree
+    end if
+    repeat with n = tmpStart down to tmpStart - tmp + 1
+      tmpObj = waitingToPlayObjs[n]
+      waitingToPlayObjs.deleteAt(n)
+      tmpObj.masterSays(#play)
+    end repeat
+  end if
+end
+
+on timeTick me
+  tmpBeforeMem = usedMemory
+  repeat with n = nowPlayingObjs.count() down to 1
+    tmpObj = nowPlayingObjs[n]
+    if tmpObj.finished() then
+      nowPlayingObjs.deleteAt(n)
+      tmpObj.masterSays(#finished)
+    end if
+  end repeat
+  if (tmpBeforeMem - usedMemory) > 0 then
+    tmp = waitingToPreloadObjs.count()
+    repeat with n = tmp down to 1
+      tmpObj = waitingToPreloadObjs[n]
+      if (tmpObj.getSize() + usedMemory) <= maxMemory then
+        tmpObj.masterSays(#preload)
+        if tmpObj.sndId then
+          usedMemory = usedMemory + tmpObj.getSize()
+          waitingToPreloadObjs.deleteAt(n)
+        end if
+        next repeat
+      end if
+      exit repeat
+    end repeat
+  end if
+  me.letTheWaitingPlay()
+  me.updateObjects()
+end

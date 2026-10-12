@@ -1,0 +1,155 @@
+property ancestor, m_place_r, m_actions_r, m_action_r, m_scroller, m_categoryHelper, m_selectedCategory
+global gDir, gRock
+
+on new me, argOptions
+  ID = argOptions[#ID]
+  m_place_r = gRock.m_classManager.getObjByIDAndClass(ID, #place)
+  argOptions.setaProp(#ReportTo, me)
+  argOptions.setaProp(#child, me)
+  dialog_r = gRock.m_classManager.getObjByIDAndClass(#DlgGangsta, #Dialog)
+  dialog_r.dataMemberName = "DlgGangstaData"
+  argOptions[#DlgInfoObj] = dialog_r
+  ancestor = script("DlgRockAncestorScript").new(argOptions)
+  m_categoryHelper = script("CategoryScript").new(me)
+  allScrollItems = m_categoryHelper.createScrollData()
+  me.setPlace()
+  ancestor.m_objDlg.recalc(#DontPaint)
+  itemObj = ancestor.m_objDlg.getItemByPath([#ScrollView, #Frame2])
+  rct = itemObj.getOnStageRect()
+  rct = rct + rect(2, 2, -2, -2)
+  m_scroller = script("CPScrollerScript").new(me, ancestor.getSPOverDlg(), allScrollItems, rct, ancestor.m_objDlg.highestMouseLayer)
+  itemObj = ancestor.m_objDlg.getItem(#Pic)
+  portraitRect = itemObj.getOnStageRect()
+  loc = point(portraitRect[1], portraitRect[2])
+  ancestor.showFace(1, m_place_r.ID, loc, #LeftTop)
+  ancestor.render()
+  rExecuteActions(dialog_r.ExecuteThis)
+  if 0 then
+    mission_r = gRock.m_context.getFocus(#Mission)
+    tmpDebt = mission_r.Vars.getaProp(#GangDebt)
+    if not voidp(tmpDebt) and (tmpDebt <> 0) then
+      tmpMood = #Angry
+    else
+      tmpMood = #normal
+    end if
+    human_r = m_place_r.getHuman()
+    tmpFile = getSpeechFile(human_r, [#Greeting, tmpMood])
+    speakAndSetFace(tmpFile, tmpMood)
+  end if
+  return me
+end
+
+on getPlayerAccount me
+  if m_selectedCategory = #ActCatGangShylock then
+    cat = [#Gangsta, #Loan]
+  else
+    if m_selectedCategory = #ActCatGangMurder then
+      cat = [#Gangsta, #Murder]
+    else
+      if m_selectedCategory = #ActCatGangThreat then
+        cat = [#Gangsta, #Threat]
+      else
+        if m_selectedCategory = #ActCatGangTamper then
+          cat = [#Gangsta, #Tamper]
+        else
+          if m_selectedCategory = #ActCatGangBribe then
+            cat = [#Gangsta, #Bribe]
+          else
+            if m_selectedCategory = #ActCatGangSecurity then
+              cat = [#Gangsta, #Security]
+            else
+              cat = [#Gangsta]
+            end if
+          end if
+        end if
+      end if
+    end if
+  end if
+  return cat
+end
+
+on kill me
+  m_categoryHelper = m_categoryHelper.kill()
+  m_scroller = m_scroller.kill()
+  ancestor.kill()
+  return 0
+end
+
+on Report me, argObj, argWhat, argOption
+  if argWhat = #DoAction then
+    m_action_r = argOption
+    if m_selectedCategory = #ActCatGangMurder then
+      gDir.m_objDialogsMaster.openDialog(#MusicianChoose, [#callback: [#object: me, #handler: #Report]])
+      exit
+    end if
+    argObj.kill()
+    cat = me.getPlayerAccount()
+    gRock.m_player.transactMoney(-m_action_r.price, cat)
+    rPlayerOkayedAction(m_action_r)
+  else
+    if argWhat = #ChoseMusician then
+      if m_selectedCategory = #ActCatGangMurder then
+        gDir.m_objDialogsMaster.closeDialogsOnTopOf(me)
+        cat = me.getPlayerAccount()
+        gRock.m_player.transactMoney(-m_action_r.price, cat)
+        rPlayerOkayedAction(m_action_r)
+      end if
+    else
+      if argObj = m_categoryHelper then
+        if argWhat = #ActionCategory then
+          m_selectedCategory = argOption.ID
+        end if
+      else
+        if argObj = m_scroller then
+          if argWhat = #select then
+            if argOption.m_ID.className = #ActionCategory then
+              m_selectedCategory = argOption.m_ID.ID
+              if argOption.m_ID.CategoryType = #Book then
+                m_action_r = gRock.m_classManager.getObjByIDAndClass(argOption.m_ID.Actions[1], #Action)
+                eventToBook_r = gRock.m_classManager.createObj(#Security)
+                eventToBook_r.ID = gRock.m_classManager.genUniqueID(eventToBook_r)
+                eventToBook_r.setDates(1 + gRock.m_date.getDateInt(), 7)
+                infoImg = rFormatText([m_action_r.name, m_action_r.comment, #szidCost, rCurrency(m_action_r.price, 0, 1)], "LiveBookFormatting", [#shadow: 1])
+                dlg = gDir.m_objDialogsMaster.openDialog(#Book, [#UseDlgID: #DlgRehearsalTrainingBook, #bookOptions: [#EventToBook: eventToBook_r, #InfoImage: infoImg, #PicImage: member(m_action_r.Gfx).image, #CheckPrice: m_action_r.price]])
+                dlg.m_objReportTo = me
+                exit
+              end if
+            end if
+          end if
+          if m_categoryHelper.checkCategoryReport(argObj, argWhat, argOption) then
+            exit
+          end if
+        else
+          if argWhat = #BookedOK then
+            cat = me.getPlayerAccount()
+            tmpPrice = argObj.m_bookOptions[#CheckPrice]
+            if tmpPrice > 0 then
+              gRock.m_player.transactMoney(-m_action_r.price, cat)
+            end if
+          end if
+        end if
+      end if
+    end if
+  end if
+end
+
+on mouse me, argObj, argWhat, argOption
+  if objectp(argOption) then
+    if argWhat = #click then
+      ID = argOption.getOneProp(#ID)
+      IDStr = string(ID)
+      ancestor.mouse(argObj, argWhat, argOption)
+    end if
+  end if
+end
+
+on setPlace me
+  dlgObj = ancestor.m_objDlg
+  itemObj = dlgObj.getItem(#Pic)
+  tmpInfo = CPgetActorInfo(string(m_place_r.ID))
+  if objectp(tmpInfo[#BGMember]) then
+    itemObj.setOneProp(#Pic, tmpInfo[#BGMember])
+  end if
+  itemObj = dlgObj.getItem(#Info)
+  itemObj.setOneProp(#Pic, "Dummy")
+end

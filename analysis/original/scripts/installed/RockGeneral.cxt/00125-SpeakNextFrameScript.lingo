@@ -1,0 +1,39 @@
+property m_waitingToSpeak, m_numFramesLeft
+global gRock, gUseful
+
+on new me
+  gUseful.frameTimer.addObject(me)
+  m_waitingToSpeak = 0
+  return me
+end
+
+on kill me
+  gUseful.frameTimer.deleteObject(me)
+  return 0
+end
+
+on Speak me, argSndName
+  if (argSndName = EMPTY) or not stringp(argSndName) then
+    faceObj = gRock.m_context.getFocus(#Speaker)
+    if objectp(faceObj) then
+      faceObj.say(EMPTY, #Mp3)
+    end if
+    m_numFramesLeft = 0
+  else
+    m_waitingToSpeak = argSndName
+    m_numFramesLeft = 2
+  end if
+end
+
+on timeTick me
+  if m_numFramesLeft > 0 then
+    m_numFramesLeft = m_numFramesLeft - 1
+    if m_numFramesLeft = 0 then
+      faceObj = gRock.m_context.getFocus(#Speaker)
+      if objectp(faceObj) then
+        faceObj.say(m_waitingToSpeak, #Mp3)
+      end if
+      m_waitingToSpeak = 0
+    end if
+  end if
+end

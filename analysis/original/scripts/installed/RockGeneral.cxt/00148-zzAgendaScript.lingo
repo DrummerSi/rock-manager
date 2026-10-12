@@ -1,0 +1,275 @@
+property m_size, m_displaySize, m_channelObjs, m_datesViewRange, m_pixelsPerDay, m_showNumDays, m_datePlotter, m_dlg, m_imagePtr, m_viewRect, m_spriteList, m_todayDate, m_frameShrinkRect, m_clr, m_stdTextClr, m_bottomOffset
+
+on new me
+  m_datesViewRange = [1, 0]
+  m_datePlotter = script("DatePlotterScript").new(me)
+  m_channelObjs = [:]
+  m_clr = rgb(0, 0, 0)
+  m_stdTextClr = rgb(120, 120, 120)
+  return me
+end
+
+on kill me
+  if objectp(m_datePlotter) then
+    m_datePlotter = m_datePlotter.kill()
+  end if
+  if objectp(m_dlg) then
+    m_dlg = m_dlg.kill()
+  end if
+  return 0
+end
+
+on load me, argList
+  tmp = argList[#channels]
+  if voidp(tmp) then
+    tmp = [#Band: [#name: "Bandets planering", #type: #Planning], #Money: [#name: "Bandkassa", #type: #Graph]]
+  end if
+  repeat with obj in m_channelObjs
+    obj.kill()
+  end repeat
+  m_channelObjs = [:]
+  repeat with n = 1 to tmp.count
+    me.addChannel(tmp.getPropAt(n), tmp[n])
+  end repeat
+end
+
+on save me
+  return [:]
+end
+
+on setTodayDate me, argTodayDateInt
+  m_todayDate = argTodayDateInt
+  if voidp(m_todayDate) then
+    m_todayDate = 20
+  end if
+end
+
+on openDlg me, argRect, argSpriteList, argMidDate, argOptions
+  if voidp(argSpriteList) then
+    if voidp(m_spriteList) then
+      argSpriteList = [#dlg: 55, #Drag: 150]
+    else
+      argSpriteList = m_spriteList
+    end if
+  end if
+  m_spriteList = argSpriteList
+  sprite(m_spriteList[#dlg]).ink = 36
+  if voidp(argOptions) then
+    argOptions = [:]
+  end if
+  m_dlg = script("Dialog").new([#AttachImageToMember: #temp, #StartSpriteNum: m_spriteList[#dlg], #NumSprites: 2, #OKtoResize: 1])
+  lst = []
+  m_frameShrinkRect = rect(0, 0, 0, 0)
+  tmpBGPic = argOptions[#bgPic]
+  if voidp(tmpBGPic) then
+    tmpBGPic = "Dummy"
+  end if
+  lst.add([#ID: #BG, #ch: 1, #type: #Pic, #rel: [0, 0, #Auto, #Auto], #inOffsetRect: [0, 0, 0, 0], #Pic: tmpBGPic])
+  lst.add([#ID: #ScrollRight, #type: #button, #Pic: "arrowRight", #PicOverName: "1", #inOffsetRect: [0, 0, m_frameShrinkRect[3] - 10, m_frameShrinkRect[4]], #rel: [#Auto, #Auto, [#BG, 3], [#BG, 4]]])
+  lst.add([#ID: #ScrollLeft, #type: #button, #Pic: "arrowLeft", #PicOverName: "1", #inOffsetRect: [m_frameShrinkRect[1] + 10, 0, 0, m_frameShrinkRect[4]], #rel: [[#BG, 1], #Auto, #Auto, [#BG, 4]]])
+  m_dlg.rawCreate(lst)
+  lst = m_dlg.getItemsByType(#button)
+  repeat with obj in lst
+    obj.scriptInstanceList.addAt(1, me)
+  end repeat
+  m_dlg.renderAtLoc(point(100, 100))
+  m_imagePtr = m_dlg.myImagePtr
+  m_showNumDays = 16
+  if voidp(argMidDate) then
+    argMidDate = m_todayDate
+  else
+    if floatp(argMidDate) then
+      argMidDate = m_todayDate + integer(m_showNumDays * argMidDate)
+    end if
+  end if
+  m_datesViewRange = [argMidDate, argMidDate]
+  if voidp(argRect) then
+    argRect = rect(100, 100, 500, 300)
+  end if
+  size = getRectSize(argRect)
+  me.resize(size, #center)
+  m_dlg.renderAtLoc(point(argRect[1], argRect[2]))
+  me.draw()
+end
+
+on closeDlg me
+  if objectp(m_dlg) then
+    m_dlg = m_dlg.kill()
+  end if
+  repeat with obj in m_channelObjs
+    obj.display(0)
+  end repeat
+end
+
+on mouse me, argObj, argWhat, argOption
+  if argWhat = #click then
+    if objectp(argOption) then
+      if argOption.ID = #ScrollLeft then
+        me.scroll(point(-m_displaySize[1] / 8, 0))
+      else
+        if argOption.ID = #ScrollRight then
+          me.scroll(point(m_displaySize[1] / 8, 0))
+        else
+          if argOption.ID = #ZoomIn then
+            m_showNumDays = integer(m_showNumDays * 0.5)
+            if (m_showNumDays mod 2) = 0 then
+              m_showNumDays = m_showNumDays - 1
+            end if
+            me.resize(VOID, #center)
+            me.draw()
+          else
+            if argOption.ID = #ZoomOut then
+              m_showNumDays = integer(m_showNumDays * 2)
+              if (m_showNumDays mod 2) = 0 then
+                m_showNumDays = m_showNumDays + 1
+              end if
+              me.resize(VOID, #center)
+              me.draw()
+            else
+              if argOption.ID = #close then
+                me.kill()
+              end if
+            end if
+          end if
+        end if
+      end if
+    end if
+  end if
+end
+
+on Report me, argObj, argWhat
+end
+
+on resize me, argSize, argKeepDate
+  if voidp(argSize) then
+    argSize = m_size
+  end if
+  if voidp(argKeepDate) then
+    argKeepDate = #center
+  end if
+  m_size = argSize
+  m_viewRect = rect(0, 0, m_size[1], m_size[2]) + m_frameShrinkRect
+  m_displaySize = getRectSize(m_viewRect)
+  startDay = m_datesViewRange[1]
+  midDate = ((m_datesViewRange[2] - m_datesViewRange[1]) / 2) + m_datesViewRange[1]
+  m_pixelsPerDay = float(m_displaySize[1]) / m_showNumDays
+  numDays = float(m_showNumDays)
+  if argKeepDate = #left then
+    m_datesViewRange = [startDay, startDay + numDays]
+  else
+    if argKeepDate = #center then
+      m_datesViewRange = [midDate - ((numDays - 1) / 2.0), midDate + ((numDays - 1) / 2.0)]
+    end if
+  end if
+  obj = m_dlg.getItem(#BG)
+  obj.setOneProp(#inOffsetRect, [0, 0, m_size[1], m_size[2]])
+  m_dlg.renderAtLoc()
+  obj = m_dlg.getItem(#ScrollRight)
+  m_bottomOffset = obj.getOneProp(#calcRect)
+  m_bottomOffset = m_size[2] - m_bottomOffset[2]
+  lastBottomV = m_frameShrinkRect[2]
+  m_datePlotter.setViewRect(rect(m_viewRect[1], lastBottomV, m_viewRect[3], m_viewRect[4] - m_bottomOffset))
+  lastBottomV = m_datePlotter.getBottomV()
+  repeat with n = 1 to m_channelObjs.count
+    obj = m_channelObjs[n]
+    obj.setViewRect(rect(point(m_viewRect[1], lastBottomV), point(m_viewRect[3], 0)))
+    lastBottomV = obj.getBottomV()
+  end repeat
+end
+
+on expandedChannel me, argChannel
+  me.resize()
+  me.draw()
+end
+
+on addChannel me, argID, argInfo
+  tmpScript = "Channel" & string(argInfo[#type]) & "Script"
+  obj = script(tmpScript).new(me, 0, argInfo)
+  m_channelObjs.addProp(argID, obj)
+end
+
+on dateToLocH me, argDate
+  rangeDiff = 1 + m_datesViewRange[2] - m_datesViewRange[1]
+  pix = m_displaySize[1] * (float(argDate) - m_datesViewRange[1]) / rangeDiff
+  return pix
+end
+
+on locHtoDate me, argLocH, argRelTo
+  if argRelTo = #Screen then
+    argLocH = argLocH - m_dlg.myLoc[1]
+  end if
+  frac = float(argLocH) / m_displaySize[1]
+  rangeDiff = m_datesViewRange[2] - m_datesViewRange[1]
+  date = (frac * rangeDiff) + m_datesViewRange[1]
+  return date
+end
+
+on isLocOverChannel me, argLoc
+  argLoc = argLoc - m_dlg.myLoc
+  repeat with n = 1 to m_channelObjs.count
+    obj = m_channelObjs[n]
+    if argLoc.inside(obj.m_viewRect) then
+      return obj
+    end if
+  end repeat
+end
+
+on scroll me, argPoint
+  numDays = argPoint[1] / float(m_pixelsPerDay)
+  numDays = integer(numDays)
+  newRange = m_datesViewRange + [numDays, numDays]
+  if newRange[1] < 1 then
+    newRange = newRange + 1 - newRange[1]
+  end if
+  realScrolled = m_pixelsPerDay * (newRange[1] - m_datesViewRange[1])
+  m_datesViewRange = newRange
+  if realScrolled = 0 then
+    exit
+  end if
+  tmpR = m_viewRect + rect(0, 0, 0, -m_bottomOffset)
+  m_imagePtr[1].fill(tmpR, m_clr)
+  repeat with obj in m_channelObjs
+    obj.scroll(point(realScrolled, 0))
+  end repeat
+  m_datePlotter.scroll(point(realScrolled, 0))
+  if realScrolled < 0 then
+    tmpR = rect(0, 0, -realScrolled, m_displaySize[2])
+  else
+    tmpR = rect(m_displaySize[1] - realScrolled, 0, m_displaySize[1], m_displaySize[2])
+  end if
+  me.draw(tmpR)
+end
+
+on draw me, argRect
+  if voidp(argRect) then
+    argRect = rect(point(0, 0), m_displaySize) + rect(0, 0, 0, -m_bottomOffset)
+  end if
+  argRect[4] = m_displaySize[2] - m_bottomOffset
+  m_imagePtr[1].fill(argRect + rect(m_viewRect[1], m_viewRect[2], m_viewRect[1], m_viewRect[2]), m_clr)
+  repeat with n = 1 to m_channelObjs.count
+    obj = m_channelObjs[n]
+    obj.draw(m_datesViewRange, argRect)
+  end repeat
+  m_datePlotter.draw(m_datesViewRange, argRect)
+  todayLocH = me.dateToLocH(m_todayDate)
+  DstRect = m_viewRect.duplicate()
+  DstRect[3] = DstRect[1]
+  DstRect = DstRect + rect(todayLocH, 0, todayLocH + m_pixelsPerDay, -m_bottomOffset)
+  img = image(2, 2, 8)
+  img.fill(rect(0, 0, 2, 2), rgb(255, 0, 0))
+  m_imagePtr[1].copyPixels(img, DstRect, img.rect, [#ink: 32, #blend: 25])
+end
+
+on getPlannedEvent me, argID
+  repeat with obj in m_channelObjs
+    if obj.m_type = #Planning then
+      repeat with plannedObj in obj.m_events
+        event_r = plannedObj.m_event_r
+        if event_r.ID = argID then
+          return plannedObj
+        end if
+      end repeat
+    end if
+  end repeat
+  return VOID
+end

@@ -1,0 +1,107 @@
+property m_globeObj, m_frameNum, m_longLatList, m_tmpLoc, m_reportObj, m_SP, m_planeLastLoc, m_planeFirstFrame, m_active
+global gRock, gUseful
+
+on new me, argReportObj, argGlobeObj, argSPNum
+  m_reportObj = argReportObj
+  m_globeObj = argGlobeObj
+  gUseful.frameTimer.deleteObject(m_globeObj)
+  m_globeObj.timeTick()
+  m_tmpLoc = m_globeObj.m_onStageLoc + point(m_globeObj.m_radius, m_globeObj.m_radius)
+  m_SP = sprite(argSPNum)
+  m_SP.member = member("Dummy")
+  m_planeFirstFrame = -1 + member("plane02_0012").number
+  m_planeLastLoc = point(0, 0)
+  m_active = 1
+  gUseful.frameTimer.addObject(me)
+  return me
+end
+
+on kill me
+  m_SP.member = member("Dummy")
+  m_SP.stretch = 0
+  m_globeObj = m_globeObj.kill()
+  gRock.m_gameTimer.deleteObject(me)
+  gUseful.frameTimer.deleteObject(me)
+  return 0
+end
+
+on timeTick me, argObj
+  if argObj = gRock.m_gameTimer then
+    gRock.m_gameTimer.deleteObject(me)
+    gUseful.frameTimer.addObject(me)
+    exit
+  end if
+  if not m_active then
+    exit
+  end if
+  if m_frameNum > 0 then
+    tmpLongLat = m_longLatList[m_frameNum]
+    tmpDiff = (PI * 2) - m_globeObj.m_equatorialRotation - tmpLongLat[1]
+    if abs(tmpDiff) > PI then
+      tmpDiff = getSign(tmpDiff) * -((PI * 2) - abs(tmpDiff))
+    end if
+    if abs(tmpDiff) > (0.40000000000000002 * PI / 2) then
+      tmpRotate = getSign(tmpDiff) * (abs(tmpDiff) - (0.40000000000000002 * PI / 2))
+    else
+      tmpRotate = 0
+    end if
+    if tmpRotate <> 0 then
+      m_globeObj.m_equatorialRotation = m_globeObj.m_equatorialRotation + tmpRotate
+      m_globeObj.m_invalidated = 1
+      m_globeObj.timeTick()
+    end if
+    tmp3DLoc = longLatTo3D(tmpLongLat, m_globeObj.m_radius)
+    tmp3DLoc = m_globeObj.rotate3DLocToCurrent(tmp3DLoc)
+    tmp2DLoc = point(tmp3DLoc[1], tmp3DLoc[2]) + m_tmpLoc
+    if (m_frameNum + 1) < m_longLatList.count then
+      tmpNext3DLoc = longLatTo3D(m_longLatList[m_frameNum + 1], m_globeObj.m_radius)
+      tmpNext3DLoc = m_globeObj.rotate3DLocToCurrent(tmpNext3DLoc)
+      tmpNext2DLoc = point(tmpNext3DLoc[1], tmpNext3DLoc[2]) + m_tmpLoc
+      tmpDir = calcDirection(tmp2DLoc, tmpNext2DLoc, 16)
+      tmpDir = 17 - tmpDir
+    else
+      tmpDir = 1
+    end if
+    tmpSizeFact = 1.0
+    partWhenSmall = 0.20000000000000001
+    partFlown = float(m_frameNum) / m_longLatList.count
+    if partFlown < partWhenSmall then
+      tmpSizeFact = partFlown / partWhenSmall
+    else
+      if partFlown > (1.0 - partWhenSmall) then
+        tmpSizeFact = (1.0 - partFlown) / partWhenSmall
+      end if
+    end if
+    tmpSizeFact = convValToRange(tmpSizeFact, [0.0, 1.0], [0.40000000000000002, 1.0], VOID, #limit)
+    tmpMemb = member(m_planeFirstFrame + tmpDir)
+    tmpRect = getMemberRect(tmpMemb)
+    m_SP.rect = rect(tmp2DLoc, tmp2DLoc) + (tmpRect * tmpSizeFact)
+    m_SP.member = tmpMemb
+    m_frameNum = m_frameNum + 1
+    if m_frameNum > m_longLatList.count then
+      m_frameNum = 0
+      m_reportObj.Report(me, #done)
+    end if
+  end if
+end
+
+on startTravel me, argFromCityID, argToCityID, argNumDays
+  m_frameNum = 1
+  numFrames = argNumDays * gUseful.frameTimer.framesPerTick * gRock.m_gameTimer.framesPerTick / gRock.m_gameTimer.speedFactor
+  fromObj = m_globeObj.getObjByID(argFromCityID)
+  toObj = m_globeObj.getObjByID(argToCityID)
+  tmpInfo = m_globeObj.calcBetweenStuff(fromObj, toObj)
+  m_longLatList = []
+  repeat with n = 1 to numFrames
+    tmpAng = n * tmpInfo[#angle] / numFrames
+    tmp3DLoc = longLatTo3D(point(tmpAng, 0), m_globeObj.m_radius)
+    tmp3DLoc = rotate3D(tmp3DLoc, tmpInfo[#rot][3], 3)
+    tmp3DLoc = rotate3D(tmp3DLoc, tmpInfo[#rot][1], 1)
+    tmp3DLoc = rotate3D(tmp3DLoc, tmpInfo[#rot][2], 2)
+    m_longLatList.add(ThreeDToLongLat(tmp3DLoc))
+  end repeat
+end
+
+on pause me, argIsTRUE
+  m_active = not argIsTRUE
+end

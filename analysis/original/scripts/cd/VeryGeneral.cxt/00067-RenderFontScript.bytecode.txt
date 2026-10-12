@@ -1,0 +1,1368 @@
+property m_replacements, m_widths, m_kerning, m_stdWidth, m_charSpace, m_charSpacePixels, m_memberOffsets, m_firstMemberNr, m_lineHeight, m_stats
+
+on new me
+  [  0] getparam 0 .............................. <me>
+  [  2] pusharglistnoret 1 ...................... <me>
+  [  4] extcall 32 .............................. return me
+  [  7] ret
+end
+
+on kill me
+  [  0] pushzero ................................ <0>
+  [  1] pusharglistnoret 1 ...................... <0>
+  [  3] extcall 32 .............................. return 0
+  [  6] ret
+end
+
+on checkSize me, argStr, argFormat
+  [  0] getparam 0 .............................. <me>
+  [  2] getparam 16 ............................. <argFormat>
+  [  4] pushsymb 1297 ........................... <#font>
+  [  7] pusharglist 2 ........................... <argFormat, #font>
+  [  9] objcall 23 .............................. <argFormat[#font]>
+  [ 11] pusharglistnoret 2 ...................... <me, argFormat[#font]>
+  [ 13] objcall 1596 ............................ me.setFont(argFormat[#font])
+  [ 16] getparam 0 .............................. <me>
+  [ 18] getparam 16 ............................. <argFormat>
+  [ 20] pusharglistnoret 2 ...................... <me, argFormat>
+  [ 22] objcall 1595 ............................ me.setFormat(argFormat)
+  [ 25] getparam 0 .............................. <me>
+  [ 27] getparam 8 .............................. <argStr>
+  [ 29] pusharglist 2 ........................... <me, argStr>
+  [ 31] objcall 1594 ............................ <me.calcWidths(argStr)>
+  [ 34] pusharglistnoret 1 ...................... <me.calcWidths(argStr)>
+  [ 36] extcall 32 .............................. return me.calcWidths(argStr)
+  [ 39] ret
+end
+
+on calcWidths me, argStr
+  [  0] pushzero ................................ <0>
+  [  1] setlocal 0 .............................. totWidth = 0
+  [  3] pushzero ................................ <0>
+  [  4] setlocal 8 .............................. lastAnsi = 0
+  [  6] pushint8 1 .............................. <1>
+  [  9] setlocal 16
+  [ 11] getlocal 16
+  [ 13] getparam 8 .............................. <argStr>
+  [ 15] getobjprop 556 .......................... <argStr.length>
+  [ 18] lteq
+  [ 19] jmpifz [130] ............................ repeat with n = 1 to argStr.length
+  [ 22] getparam 8 .............................. <argStr>
+  [ 24] pushsymb 119 ............................ <#char>
+  [ 27] getlocal 16 ............................. <n>
+  [ 29] pusharglist 3 ........................... <argStr, #char, n>
+  [ 31] objcall 124 ............................. <argStr.char[n]>
+  [ 34] pusharglist 1 ........................... <argStr.char[n]>
+  [ 36] extcall 1116 ............................ <charToNum(argStr.char[n])>
+  [ 39] setlocal 24 ............................. Ansi = charToNum(argStr.char[n])
+  [ 41] getparam 0 .............................. <me>
+  [ 43] getlocal 24 ............................. <Ansi>
+  [ 45] pusharglist 2 ........................... <me, Ansi>
+  [ 47] objcall 1598 ............................ <me.getUseThisInfo(Ansi)>
+  [ 50] setlocal 24 ............................. Ansi = me.getUseThisInfo(Ansi)
+  [ 52] getlocal 24 ............................. <Ansi>
+  [ 54] pusharglist 1 ........................... <Ansi>
+  [ 56] extcall 128 ............................. <listp(Ansi)>
+  [ 59] jmpifz [ 73] ............................ if listp(Ansi) then
+  [ 62] getlocal 24 ............................. <Ansi>
+  [ 64] pushint8 1 .............................. <1>
+  [ 67] pusharglist 2 ........................... <Ansi, 1>
+  [ 69] objcall 23 .............................. <Ansi[1]>
+  [ 71] setlocal 24 ............................. Ansi = Ansi[1]
+  [ 73] getlocal 0 .............................. <totWidth>
+  [ 75] getprop 1605 ............................ <m_widths>
+  [ 78] getlocal 24 ............................. <Ansi>
+  [ 80] pusharglist 2 ........................... <m_widths, Ansi>
+  [ 82] objcall 152 ............................. <m_widths.getaProp(Ansi)>
+  [ 85] add ..................................... <totWidth + m_widths.getaProp(Ansi)>
+  [ 86] getprop 1606 ............................ <m_charSpacePixels>
+  [ 89] add ..................................... <totWidth + m_widths.getaProp(Ansi) + m_charSpacePixels>
+  [ 90] setlocal 0 .............................. totWidth = totWidth + m_widths.getaProp(Ansi) + m_charSpacePixels
+  [ 92] getlocal 8 .............................. <lastAnsi>
+  [ 94] pushzero ................................ <0>
+  [ 95] gt ...................................... <lastAnsi > 0>
+  [ 96] jmpifz [115] ............................ if lastAnsi > 0 then
+  [ 99] getlocal 0 .............................. <totWidth>
+  [101] getparam 0 .............................. <me>
+  [103] getlocal 8 .............................. <lastAnsi>
+  [105] getlocal 24 ............................. <Ansi>
+  [107] pusharglist 3 ........................... <me, lastAnsi, Ansi>
+  [109] objcall 1599 ............................ <me.getKerningPairPixels(lastAnsi, Ansi)>
+  [112] sub ..................................... <totWidth - me.getKerningPairPixels(lastAnsi, Ansi)>
+  [113] setlocal 0 .............................. totWidth = totWidth - me.getKerningPairPixels(lastAnsi, Ansi)
+  [115] getlocal 24 ............................. <Ansi>
+  [117] setlocal 8 .............................. lastAnsi = Ansi
+  [119] pushint8 1
+  [122] getlocal 16
+  [124] add
+  [125] setlocal 16
+  [127] endrepeat [ 11]
+  [130] getlocal 0 .............................. <totWidth>
+  [132] pusharglistnoret 1 ...................... <totWidth>
+  [134] extcall 32 .............................. return totWidth
+  [137] ret
+end
+
+on setFormat me, argFormat
+  [  0] getparam 8 .............................. <argFormat>
+  [  2] pushsymb 1610 ........................... <#Kerning>
+  [  5] pusharglist 2 ........................... <argFormat, #Kerning>
+  [  7] objcall 23 .............................. <argFormat[#Kerning]>
+  [  9] pusharglist 1 ........................... <argFormat[#Kerning]>
+  [ 11] extcall 104 ............................. <voidp(argFormat[#Kerning])>
+  [ 14] jmpifz [ 29] ............................ if voidp(argFormat[#Kerning]) then
+  [ 17] getparam 8 .............................. <argFormat>
+  [ 19] pushsymb 1610 ........................... <#Kerning>
+  [ 22] pushcons 0 .............................. <1.0>
+  [ 24] pusharglistnoret 3 ...................... <argFormat, #Kerning, 1.0>
+  [ 26] objcall 77 .............................. argFormat[#Kerning] = 1.0
+  [ 29] getparam 8 .............................. <argFormat>
+  [ 31] pushsymb 1611 ........................... <#CharSpace>
+  [ 34] pusharglist 2 ........................... <argFormat, #CharSpace>
+  [ 36] objcall 23 .............................. <argFormat[#CharSpace]>
+  [ 38] pusharglist 1 ........................... <argFormat[#CharSpace]>
+  [ 40] extcall 104 ............................. <voidp(argFormat[#CharSpace])>
+  [ 43] jmpifz [ 59] ............................ if voidp(argFormat[#CharSpace]) then
+  [ 46] getparam 8 .............................. <argFormat>
+  [ 48] pushsymb 1611 ........................... <#CharSpace>
+  [ 51] getprop 1612 ............................ <m_charSpace>
+  [ 54] pusharglistnoret 3 ...................... <argFormat, #CharSpace, m_charSpace>
+  [ 56] objcall 77 .............................. argFormat[#CharSpace] = m_charSpace
+  [ 59] getparam 8 .............................. <argFormat>
+  [ 61] pushsymb 1611 ........................... <#CharSpace>
+  [ 64] pusharglist 2 ........................... <argFormat, #CharSpace>
+  [ 66] objcall 23 .............................. <argFormat[#CharSpace]>
+  [ 68] setprop 1612 ............................ m_charSpace = argFormat[#CharSpace]
+  [ 71] getprop 1612 ............................ <m_charSpace>
+  [ 74] pusharglist 1 ........................... <m_charSpace>
+  [ 76] extcall 95 .............................. <integer(m_charSpace)>
+  [ 79] setprop 1606 ............................ m_charSpacePixels = integer(m_charSpace)
+  [ 82] ret
+end
+
+on setFont me, argName
+  [  0] getparam 8 .............................. <argName>
+  [  2] pushcons 8 .............................. <"FontInfo">
+  [  4] joinstr ................................. <argName & "FontInfo">
+  [  5] pusharglist 1 ........................... <argName & "FontInfo">
+  [  7] extcall 307 ............................. <member(argName & "FontInfo")>
+  [ 10] getobjprop 310 .......................... <member(argName & "FontInfo").text>
+  [ 13] getobjprop 67 ........................... <member(argName & "FontInfo").text.value>
+  [ 16] setlocal 0 .............................. lst = member(argName & "FontInfo").text.value
+  [ 18] getlocal 0 .............................. <lst>
+  [ 20] pushsymb 1115 ........................... <#Replace>
+  [ 23] pusharglist 2 ........................... <lst, #Replace>
+  [ 25] objcall 23 .............................. <lst[#Replace]>
+  [ 27] setprop 1613 ............................ m_replacements = lst[#Replace]
+  [ 30] getprop 1613 ............................ <m_replacements>
+  [ 33] pusharglist 1 ........................... <m_replacements>
+  [ 35] extcall 104 ............................. <voidp(m_replacements)>
+  [ 38] jmpifz [ 47] ............................ if voidp(m_replacements) then
+  [ 41] pusharglist 0 ........................... <[:]>
+  [ 43] pushproplist ............................ <[:]>
+  [ 44] setprop 1613 ............................ m_replacements = [:]
+  [ 47] pushcons 16 ............................. <"CharReplacements">
+  [ 49] pusharglist 1 ........................... <"CharReplacements">
+  [ 51] localcall 14 ............................ <createReplaceList("CharReplacements")>
+  [ 53] setprop 1613 ............................ m_replacements = createReplaceList("CharReplacements")
+  [ 56] getlocal 0 .............................. <lst>
+  [ 58] pushsymb 1614 ........................... <#Widths>
+  [ 61] pusharglist 2 ........................... <lst, #Widths>
+  [ 63] objcall 23 .............................. <lst[#Widths]>
+  [ 65] setprop 1605 ............................ m_widths = lst[#Widths]
+  [ 68] getprop 1605 ............................ <m_widths>
+  [ 71] pusharglist 1 ........................... <m_widths>
+  [ 73] extcall 104 ............................. <voidp(m_widths)>
+  [ 76] jmpifz [ 85] ............................ if voidp(m_widths) then
+  [ 79] pusharglist 0 ........................... <[:]>
+  [ 81] pushproplist ............................ <[:]>
+  [ 82] setprop 1605 ............................ m_widths = [:]
+  [ 85] getlocal 0 .............................. <lst>
+  [ 87] pushsymb 1616 ........................... <#Kern>
+  [ 90] pusharglist 2 ........................... <lst, #Kern>
+  [ 92] objcall 23 .............................. <lst[#Kern]>
+  [ 94] setprop 1615 ............................ m_kerning = lst[#Kern]
+  [ 97] getprop 1615 ............................ <m_kerning>
+  [100] pusharglist 1 ........................... <m_kerning>
+  [102] extcall 104 ............................. <voidp(m_kerning)>
+  [105] jmpifz [114] ............................ if voidp(m_kerning) then
+  [108] pusharglist 0 ........................... <[:]>
+  [110] pushproplist ............................ <[:]>
+  [111] setprop 1615 ............................ m_kerning = [:]
+  [114] getlocal 0 .............................. <lst>
+  [116] pushsymb 1611 ........................... <#CharSpace>
+  [119] pusharglist 2 ........................... <lst, #CharSpace>
+  [121] objcall 23 .............................. <lst[#CharSpace]>
+  [123] setprop 1612 ............................ m_charSpace = lst[#CharSpace]
+  [126] getprop 1612 ............................ <m_charSpace>
+  [129] pusharglist 1 ........................... <m_charSpace>
+  [131] extcall 104 ............................. <voidp(m_charSpace)>
+  [134] jmpifz [142] ............................ if voidp(m_charSpace) then
+  [137] pushcons 24 ............................. <0.10000000000000001>
+  [139] setprop 1612 ............................ m_charSpace = 0.10000000000000001
+  [142] getlocal 0 .............................. <lst>
+  [144] pushsymb 1618 ........................... <#MemberOffsets>
+  [147] pusharglist 2 ........................... <lst, #MemberOffsets>
+  [149] objcall 23 .............................. <lst[#MemberOffsets]>
+  [151] setprop 1617 ............................ m_memberOffsets = lst[#MemberOffsets]
+  [154] getlocal 0 .............................. <lst>
+  [156] pushsymb 1619 ........................... <#firstMember>
+  [159] pusharglist 2 ........................... <lst, #firstMember>
+  [161] objcall 23 .............................. <lst[#firstMember]>
+  [163] setlocal 8 .............................. tmpFirstName = lst[#firstMember]
+  [165] getlocal 8 .............................. <tmpFirstName>
+  [167] pusharglist 1 ........................... <tmpFirstName>
+  [169] extcall 104 ............................. <voidp(tmpFirstName)>
+  [172] jmpifz [196] ............................ if voidp(tmpFirstName) then
+  [175] getparam 8 .............................. <argName>
+  [177] getprop 1617 ............................ <m_memberOffsets>
+  [180] pushint8 1 .............................. <1>
+  [183] pusharglist 2 ........................... <m_memberOffsets, 1>
+  [185] objcall 207 ............................. <m_memberOffsets.getPropAt(1)>
+  [188] pusharglist 1 ........................... <m_memberOffsets.getPropAt(1)>
+  [190] extcall 68 .............................. <string(m_memberOffsets.getPropAt(1))>
+  [193] joinstr ................................. <argName & string(m_memberOffsets.getPropAt(1))>
+  [194] setlocal 8 .............................. tmpFirstName = argName & string(m_memberOffsets.getPropAt(1))
+  [196] getlocal 8 .............................. <tmpFirstName>
+  [198] pusharglist 1 ........................... <tmpFirstName>
+  [200] extcall 307 ............................. <member(tmpFirstName)>
+  [203] getobjprop 845 .......................... <member(tmpFirstName).number>
+  [206] setprop 1620 ............................ m_firstMemberNr = member(tmpFirstName).number
+  [209] getprop 1620 ............................ <m_firstMemberNr>
+  [212] pushint8 1 .............................. <1>
+  [215] lt ...................................... <m_firstMemberNr < 1>
+  [216] jmpifz [231] ............................ if m_firstMemberNr < 1 then
+  [219] pushcons 32 ............................. <"EERR">
+  [221] getprop 1620 ............................ <m_firstMemberNr>
+  [224] getlocal 8 .............................. <tmpFirstName>
+  [226] pusharglistnoret 3 ...................... <"EERR", m_firstMemberNr, tmpFirstName>
+  [228] extcall 142 ............................. put "EERR", m_firstMemberNr, tmpFirstName
+  [231] pushint8 65 ............................. <65>
+  [234] pushint8 66 ............................. <66>
+  [237] pushint8 67 ............................. <67>
+  [240] pusharglist 3 ........................... <[65, 66, 67]>
+  [242] pushlist ................................ <[65, 66, 67]>
+  [243] setlocal 16 ............................. stdChars = [65, 66, 67]
+  [245] pushzero ................................ <0>
+  [246] setlocal 24 ............................. totWidth = 0
+  [248] getlocal 16 ............................. <stdChars>
+  [250] peek 0
+  [252] pusharglist 1
+  [254] extcall 175
+  [257] pushint8 1
+  [259] peek 0
+  [261] peek 2
+  [263] lteq
+  [264] jmpifz [305] ............................ repeat with tmp in stdChars
+  [267] peek 2
+  [269] peek 1
+  [271] pusharglist 2
+  [273] extcall 23
+  [275] setlocal 32
+  [277] getlocal 24 ............................. <totWidth>
+  [279] getprop 1605 ............................ <m_widths>
+  [282] getparam 0 .............................. <me>
+  [284] getlocal 32 ............................. <tmp>
+  [286] pusharglist 2 ........................... <me, tmp>
+  [288] objcall 1597 ............................ <me.getExistingAnsi(tmp)>
+  [291] pusharglist 2 ........................... <m_widths, me.getExistingAnsi(tmp)>
+  [293] objcall 152 ............................. <m_widths.getaProp(me.getExistingAnsi(tmp))>
+  [296] add ..................................... <totWidth + m_widths.getaProp(me.getExistingAnsi(tmp))>
+  [297] setlocal 24 ............................. totWidth = totWidth + m_widths.getaProp(me.getExistingAnsi(tmp))
+  [299] pushint8 1
+  [301] add
+  [302] endrepeat [259]
+  [305] pop 3
+  [307] getlocal 24 ............................. <totWidth>
+  [309] getlocal 16 ............................. <stdChars>
+  [311] pusharglist 1 ........................... <stdChars>
+  [313] objcall 175 ............................. <stdChars.count()>
+  [316] div ..................................... <totWidth / stdChars.count()>
+  [317] setprop 1621 ............................ m_stdWidth = totWidth / stdChars.count()
+  [320] getprop 1605 ............................ <m_widths>
+  [323] pushint8 32 ............................. <32>
+  [326] pusharglist 2 ........................... <m_widths, 32>
+  [328] objcall 152 ............................. <m_widths.getaProp(32)>
+  [331] setlocal 40 ............................. tmpSpace = m_widths.getaProp(32)
+  [333] getlocal 40 ............................. <tmpSpace>
+  [335] pusharglist 1 ........................... <tmpSpace>
+  [337] extcall 104 ............................. <voidp(tmpSpace)>
+  [340] jmpifz [365] ............................ if voidp(tmpSpace) then
+  [343] getprop 1605 ............................ <m_widths>
+  [346] pushint8 32 ............................. <32>
+  [349] pushcons 40 ............................. <0.29999999999999999>
+  [351] getprop 1621 ............................ <m_stdWidth>
+  [354] mul ..................................... <0.29999999999999999 * m_stdWidth>
+  [355] pusharglist 1 ........................... <0.29999999999999999 * m_stdWidth>
+  [357] extcall 95 .............................. <integer(0.29999999999999999 * m_stdWidth)>
+  [360] pusharglistnoret 3 ...................... <m_widths, 32, integer(0.29999999999999999 * m_stdWidth)>
+  [362] objcall 180 ............................. m_widths.setaProp(32, integer(0.29999999999999999 * m_stdWidth))
+  [365] getprop 1621 ............................ <m_stdWidth>
+  [368] pushcons 48 ............................. <1.5>
+  [370] mul ..................................... <m_stdWidth * 1.5>
+  [371] pusharglist 1 ........................... <m_stdWidth * 1.5>
+  [373] extcall 95 .............................. <integer(m_stdWidth * 1.5)>
+  [376] setprop 1622 ............................ m_lineHeight = integer(m_stdWidth * 1.5)
+  [379] getlocal 0 .............................. <lst>
+  [381] pushsymb 1624 ........................... <#Stats>
+  [384] pusharglist 2 ........................... <lst, #Stats>
+  [386] objcall 23 .............................. <lst[#Stats]>
+  [388] setprop 1623 ............................ m_stats = lst[#Stats]
+  [391] getprop 1623 ............................ <m_stats>
+  [394] pusharglist 1 ........................... <m_stats>
+  [396] extcall 128 ............................. <listp(m_stats)>
+  [399] jmpifz [461] ............................ if listp(m_stats) then
+  [402] getprop 1623 ............................ <m_stats>
+  [405] pushsymb 943 ............................ <#height>
+  [408] pusharglist 2 ........................... <m_stats, #height>
+  [410] objcall 23 .............................. <m_stats[#height]>
+  [412] pusharglist 1 ........................... <m_stats[#height]>
+  [414] extcall 104 ............................. <voidp(m_stats[#height])>
+  [417] not ..................................... <not voidp(m_stats[#height])>
+  [418] jmpifz [437] ............................ if not voidp(m_stats[#height]) then / else
+  [421] getprop 1623 ............................ <m_stats>
+  [424] pushsymb 943 ............................ <#height>
+  [427] pusharglist 2 ........................... <m_stats, #height>
+  [429] objcall 23 .............................. <m_stats[#height]>
+  [431] setprop 1622 ............................ m_lineHeight = m_stats[#height]
+  [434] jmp [461]
+  [437] getprop 1623 ............................ <m_stats>
+  [440] pushsymb 1625 ........................... <#bottom>
+  [443] pusharglist 2 ........................... <m_stats, #bottom>
+  [445] objcall 23 .............................. <m_stats[#bottom]>
+  [447] getprop 1623 ............................ <m_stats>
+  [450] pushsymb 1626 ........................... <#top>
+  [453] pusharglist 2 ........................... <m_stats, #top>
+  [455] objcall 23 .............................. <m_stats[#top]>
+  [457] sub ..................................... <m_stats[#bottom] - m_stats[#top]>
+  [458] setprop 1622 ............................ m_lineHeight = m_stats[#bottom] - m_stats[#top]
+  [461] ret
+end
+
+on getExistingAnsi me, argAnsi
+  [  0] getprop 1605 ............................ <m_widths>
+  [  3] getparam 8 .............................. <argAnsi>
+  [  5] pusharglist 2 ........................... <m_widths, argAnsi>
+  [  7] objcall 152 ............................. <m_widths.getaProp(argAnsi)>
+  [ 10] setlocal 0 .............................. width = m_widths.getaProp(argAnsi)
+  [ 12] getlocal 0 .............................. <width>
+  [ 14] pusharglist 1 ........................... <width>
+  [ 16] extcall 104 ............................. <voidp(width)>
+  [ 19] jmpifz [ 81] ............................ if voidp(width) then
+  [ 22] getprop 1613 ............................ <m_replacements>
+  [ 25] getparam 8 .............................. <argAnsi>
+  [ 27] pusharglist 2 ........................... <m_replacements, argAnsi>
+  [ 29] objcall 152 ............................. <m_replacements.getaProp(argAnsi)>
+  [ 32] setparam 8 .............................. argAnsi = m_replacements.getaProp(argAnsi)
+  [ 34] getparam 8 .............................. <argAnsi>
+  [ 36] pusharglist 1 ........................... <argAnsi>
+  [ 38] extcall 128 ............................. <listp(argAnsi)>
+  [ 41] jmpifz [ 58] ............................ if listp(argAnsi) then / else
+  [ 44] getparam 8 .............................. <argAnsi>
+  [ 46] pushint8 1 .............................. <1>
+  [ 49] pusharglist 2 ........................... <argAnsi, 1>
+  [ 51] objcall 23 .............................. <argAnsi[1]>
+  [ 53] setparam 8 .............................. argAnsi = argAnsi[1]
+  [ 55] jmp [ 81]
+  [ 58] getparam 8 .............................. <argAnsi>
+  [ 60] pusharglist 1 ........................... <argAnsi>
+  [ 62] extcall 104 ............................. <voidp(argAnsi)>
+  [ 65] jmpifz [ 81] ............................ if voidp(argAnsi) then
+  [ 68] getprop 1613 ............................ <m_replacements>
+  [ 71] pushsymb 1630 ........................... <#otherwise>
+  [ 74] pusharglist 2 ........................... <m_replacements, #otherwise>
+  [ 76] objcall 152 ............................. <m_replacements.getaProp(#otherwise)>
+  [ 79] setparam 8 .............................. argAnsi = m_replacements.getaProp(#otherwise)
+  [ 81] getparam 8 .............................. <argAnsi>
+  [ 83] pusharglistnoret 1 ...................... <argAnsi>
+  [ 85] extcall 32 .............................. return argAnsi
+  [ 88] ret
+end
+
+on getUseThisInfo me, argAnsi
+  [  0] getprop 1605 ............................ <m_widths>
+  [  3] getparam 8 .............................. <argAnsi>
+  [  5] pusharglist 2 ........................... <m_widths, argAnsi>
+  [  7] objcall 152 ............................. <m_widths.getaProp(argAnsi)>
+  [ 10] setlocal 0 .............................. width = m_widths.getaProp(argAnsi)
+  [ 12] getlocal 0 .............................. <width>
+  [ 14] pusharglist 1 ........................... <width>
+  [ 16] extcall 104 ............................. <voidp(width)>
+  [ 19] jmpifz [ 57] ............................ if voidp(width) then
+  [ 22] getprop 1613 ............................ <m_replacements>
+  [ 25] getparam 8 .............................. <argAnsi>
+  [ 27] pusharglist 2 ........................... <m_replacements, argAnsi>
+  [ 29] objcall 152 ............................. <m_replacements.getaProp(argAnsi)>
+  [ 32] setparam 8 .............................. argAnsi = m_replacements.getaProp(argAnsi)
+  [ 34] getparam 8 .............................. <argAnsi>
+  [ 36] pusharglist 1 ........................... <argAnsi>
+  [ 38] extcall 104 ............................. <voidp(argAnsi)>
+  [ 41] jmpifz [ 57] ............................ if voidp(argAnsi) then
+  [ 44] getprop 1613 ............................ <m_replacements>
+  [ 47] pushsymb 1630 ........................... <#otherwise>
+  [ 50] pusharglist 2 ........................... <m_replacements, #otherwise>
+  [ 52] objcall 152 ............................. <m_replacements.getaProp(#otherwise)>
+  [ 55] setparam 8 .............................. argAnsi = m_replacements.getaProp(#otherwise)
+  [ 57] getparam 8 .............................. <argAnsi>
+  [ 59] pusharglistnoret 1 ...................... <argAnsi>
+  [ 61] extcall 32 .............................. return argAnsi
+  [ 64] ret
+end
+
+on getKerningPairPixels me, argAnsi1, argAnsi2
+  [  0] getprop 1615 ............................ <m_kerning>
+  [  3] getparam 8 .............................. <argAnsi1>
+  [  5] pusharglist 2 ........................... <m_kerning, argAnsi1>
+  [  7] objcall 152 ............................. <m_kerning.getaProp(argAnsi1)>
+  [ 10] setlocal 0 .............................. lst = m_kerning.getaProp(argAnsi1)
+  [ 12] getlocal 0 .............................. <lst>
+  [ 14] pusharglist 1 ........................... <lst>
+  [ 16] extcall 104 ............................. <voidp(lst)>
+  [ 19] jmpifz [ 28] ............................ if voidp(lst) then
+  [ 22] pushzero ................................ <0>
+  [ 23] pusharglistnoret 1 ...................... <0>
+  [ 25] extcall 32 .............................. return 0
+  [ 28] getlocal 0 .............................. <lst>
+  [ 30] getparam 16 ............................. <argAnsi2>
+  [ 32] pusharglist 2 ........................... <lst, argAnsi2>
+  [ 34] objcall 152 ............................. <lst.getaProp(argAnsi2)>
+  [ 37] setlocal 8 .............................. val = lst.getaProp(argAnsi2)
+  [ 39] getlocal 8 .............................. <val>
+  [ 41] pusharglist 1 ........................... <val>
+  [ 43] extcall 104 ............................. <voidp(val)>
+  [ 46] jmpifz [ 55] ............................ if voidp(val) then
+  [ 49] pushzero ................................ <0>
+  [ 50] pusharglistnoret 1 ...................... <0>
+  [ 52] extcall 32 .............................. return 0
+  [ 55] getlocal 8 .............................. <val>
+  [ 57] pusharglistnoret 1 ...................... <val>
+  [ 59] extcall 32 .............................. return val
+  [ 62] ret
+end
+
+on getNextCharOffset me, argLeftAnsi, argRightAnsi
+  [  0] pushzero ................................ <0>
+  [  1] setlocal 0 .............................. tmpWidth = 0
+  [  3] getparam 8 .............................. <argLeftAnsi>
+  [  5] pushzero ................................ <0>
+  [  6] gt ...................................... <argLeftAnsi > 0>
+  [  7] jmpifz [ 49] ............................ if argLeftAnsi > 0 then
+  [ 10] getprop 1606 ............................ <m_charSpacePixels>
+  [ 13] getprop 1605 ............................ <m_widths>
+  [ 16] getparam 8 .............................. <argLeftAnsi>
+  [ 18] pusharglist 2 ........................... <m_widths, argLeftAnsi>
+  [ 20] objcall 152 ............................. <m_widths.getaProp(argLeftAnsi)>
+  [ 23] add ..................................... <m_charSpacePixels + m_widths.getaProp(argLeftAnsi)>
+  [ 24] setlocal 0 .............................. tmpWidth = m_charSpacePixels + m_widths.getaProp(argLeftAnsi)
+  [ 26] getparam 16 ............................. <argRightAnsi>
+  [ 28] pushzero ................................ <0>
+  [ 29] gt ...................................... <argRightAnsi > 0>
+  [ 30] jmpifz [ 49] ............................ if argRightAnsi > 0 then
+  [ 33] getlocal 0 .............................. <tmpWidth>
+  [ 35] getparam 0 .............................. <me>
+  [ 37] getparam 8 .............................. <argLeftAnsi>
+  [ 39] getparam 16 ............................. <argRightAnsi>
+  [ 41] pusharglist 3 ........................... <me, argLeftAnsi, argRightAnsi>
+  [ 43] objcall 1599 ............................ <me.getKerningPairPixels(argLeftAnsi, argRightAnsi)>
+  [ 46] sub ..................................... <tmpWidth - me.getKerningPairPixels(argLeftAnsi, argRightAnsi)>
+  [ 47] setlocal 0 .............................. tmpWidth = tmpWidth - me.getKerningPairPixels(argLeftAnsi, argRightAnsi)
+  [ 49] getlocal 0 .............................. <tmpWidth>
+  [ 51] pusharglistnoret 1 ...................... <tmpWidth>
+  [ 53] extcall 32 .............................. return tmpWidth
+  [ 56] ret
+end
+
+on getMember me, argAnsi
+  [  0] getprop 1617 ............................ <m_memberOffsets>
+  [  3] getparam 8 .............................. <argAnsi>
+  [  5] pusharglist 2 ........................... <m_memberOffsets, argAnsi>
+  [  7] objcall 152 ............................. <m_memberOffsets.getaProp(argAnsi)>
+  [ 10] setlocal 0 .............................. tmpOffset = m_memberOffsets.getaProp(argAnsi)
+  [ 12] getlocal 0 .............................. <tmpOffset>
+  [ 14] pushint8 1 .............................. <1>
+  [ 17] inv ..................................... <-1>
+  [ 18] eq ...................................... <tmpOffset = -1>
+  [ 19] jmpifz [ 28] ............................ if tmpOffset = -1 then
+  [ 22] pushzero ................................ <0>
+  [ 23] pusharglistnoret 1 ...................... <0>
+  [ 25] extcall 32 .............................. return 0
+  [ 28] getprop 1620 ............................ <m_firstMemberNr>
+  [ 31] getlocal 0 .............................. <tmpOffset>
+  [ 33] add ..................................... <m_firstMemberNr + tmpOffset>
+  [ 34] pusharglist 1 ........................... <m_firstMemberNr + tmpOffset>
+  [ 36] extcall 307 ............................. <member(m_firstMemberNr + tmpOffset)>
+  [ 39] pusharglistnoret 1 ...................... <member(m_firstMemberNr + tmpOffset)>
+  [ 41] extcall 32 .............................. return member(m_firstMemberNr + tmpOffset)
+  [ 44] ret
+end
+
+on getImage me, argAnsi
+  [  0] getparam 0 .............................. <me>
+  [  2] getparam 8 .............................. <argAnsi>
+  [  4] pusharglist 2 ........................... <me, argAnsi>
+  [  6] objcall 888 ............................. <me.getMember(argAnsi)>
+  [  9] setlocal 0 .............................. tmpMemb = me.getMember(argAnsi)
+  [ 11] getlocal 0 .............................. <tmpMemb>
+  [ 13] getobjprop 941 .......................... <tmpMemb.image>
+  [ 16] pusharglistnoret 1 ...................... <tmpMemb.image>
+  [ 18] extcall 32 .............................. return tmpMemb.image
+  [ 21] ret
+end
+
+on calcString me, argStr, argMaxWidth
+  [  0] pushcons 56 ............................. <RETURN>
+  [  2] pushcons 64 ............................. <"-">
+  [  4] pushcons 72 ............................. <" ">
+  [  6] pushint8 150 ............................ <150>
+  [  9] pushint8 151 ............................ <151>
+  [ 12] pusharglist 5 ........................... <[RETURN, "-", " ", 150, 151]>
+  [ 14] pushlist ................................ <[RETURN, "-", " ", 150, 151]>
+  [ 15] setlocal 0 .............................. OKBreakAnsi = [RETURN, "-", " ", 150, 151]
+  [ 17] pushint8 1 .............................. <1>
+  [ 20] setlocal 8
+  [ 22] getlocal 8
+  [ 24] getlocal 0 .............................. <OKBreakAnsi>
+  [ 26] pusharglist 1 ........................... <OKBreakAnsi>
+  [ 28] objcall 175 ............................. <OKBreakAnsi.count()>
+  [ 31] lteq
+  [ 32] jmpifz [ 84] ............................ repeat with n = 1 to OKBreakAnsi.count()
+  [ 35] getlocal 0 .............................. <OKBreakAnsi>
+  [ 37] getlocal 8 .............................. <n>
+  [ 39] pusharglist 2 ........................... <OKBreakAnsi, n>
+  [ 41] objcall 23 .............................. <OKBreakAnsi[n]>
+  [ 43] pusharglist 1 ........................... <OKBreakAnsi[n]>
+  [ 45] extcall 416 ............................. <stringp(OKBreakAnsi[n])>
+  [ 48] jmpifz [ 73] ............................ if stringp(OKBreakAnsi[n]) then
+  [ 51] getlocal 0 .............................. <OKBreakAnsi>
+  [ 53] getlocal 8 .............................. <n>
+  [ 55] getlocal 0 .............................. <OKBreakAnsi>
+  [ 57] getlocal 8 .............................. <n>
+  [ 59] pusharglist 2 ........................... <OKBreakAnsi, n>
+  [ 61] objcall 23 .............................. <OKBreakAnsi[n]>
+  [ 63] pusharglist 1 ........................... <OKBreakAnsi[n]>
+  [ 65] extcall 1116 ............................ <charToNum(OKBreakAnsi[n])>
+  [ 68] pusharglistnoret 3 ...................... <OKBreakAnsi, n, charToNum(OKBreakAnsi[n])>
+  [ 70] objcall 77 .............................. OKBreakAnsi[n] = charToNum(OKBreakAnsi[n])
+  [ 73] pushint8 1
+  [ 76] getlocal 8
+  [ 78] add
+  [ 79] setlocal 8
+  [ 81] endrepeat [ 22]
+  [ 84] pushzero ................................ <0>
+  [ 85] setlocal 16 ............................. lastKernToAnsi = 0
+  [ 87] pushzero ................................ <0>
+  [ 88] setlocal 24 ............................. lineLocH = 0
+  [ 90] pusharglist 0 ........................... <[]>
+  [ 92] pushlist ................................ <[]>
+  [ 93] setlocal 32 ............................. possibleLineBreakPlaces = []
+  [ 95] pushint8 1 .............................. <1>
+  [ 98] setlocal 8 .............................. n = 1
+  [100] pushint8 1 .............................. <1>
+  [103] setlocal 40 ............................. lineStartCharNr = 1
+  [105] pusharglist 0 ........................... <[]>
+  [107] pushlist ................................ <[]>
+  [108] setlocal 48 ............................. allLines = []
+  [110] pusharglist 0 ........................... <[]>
+  [112] pushlist ................................ <[]>
+  [113] setlocal 56 ............................. allLinesInAnsi = []
+  [115] pusharglist 0 ........................... <[]>
+  [117] pushlist ................................ <[]>
+  [118] setlocal 64 ............................. thisLineInAnsi = []
+  [120] pusharglist 0 ........................... <[]>
+  [122] pushlist ................................ <[]>
+  [123] setlocal 72 ............................. allLinesLocs = []
+  [125] pusharglist 0 ........................... <[]>
+  [127] pushlist ................................ <[]>
+  [128] setlocal 80 ............................. thisLinesLocs = []
+  [130] pushint8 1 .............................. <1>
+  [133] jmpifz [544] ............................ repeat while 1
+  [136] pushzero ................................ <0>
+  [137] setlocal 88 ............................. tmpDontUseLastOnThisLine = 0
+  [139] pushzero ................................ <0>
+  [140] setlocal 96 ............................. tmpNewLine = 0
+  [142] getlocal 8 .............................. <n>
+  [144] getparam 8 .............................. <argStr>
+  [146] getobjprop 556 .......................... <argStr.length>
+  [149] gt ...................................... <n > argStr.length>
+  [150] jmpifz [162] ............................ if n > argStr.length then
+  [153] pushint8 1 .............................. <1>
+  [156] setlocal 96 ............................. tmpNewLine = 1
+  [158] getlocal 8 .............................. <n>
+  [160] setlocal 104 ............................ tmpOKBreak = n
+  [162] getlocal 96 ............................. <tmpNewLine>
+  [164] not ..................................... <not tmpNewLine>
+  [165] jmpifz [268] ............................ if not tmpNewLine then
+  [168] getparam 8 .............................. <argStr>
+  [170] pushsymb 119 ............................ <#char>
+  [173] getlocal 8 .............................. <n>
+  [175] pusharglist 3 ........................... <argStr, #char, n>
+  [177] objcall 124 ............................. <argStr.char[n]>
+  [180] pusharglist 1 ........................... <argStr.char[n]>
+  [182] extcall 1116 ............................ <charToNum(argStr.char[n])>
+  [185] setlocal 112 ............................ Ansi = charToNum(argStr.char[n])
+  [187] getlocal 0 .............................. <OKBreakAnsi>
+  [189] getlocal 112 ............................ <Ansi>
+  [191] pusharglist 2 ........................... <OKBreakAnsi, Ansi>
+  [193] objcall 181 ............................. <OKBreakAnsi.getPos(Ansi)>
+  [196] jmpifz [229] ............................ if OKBreakAnsi.getPos(Ansi) then
+  [199] getlocal 112 ............................ <Ansi>
+  [201] pushint8 13 ............................. <13>
+  [204] eq ...................................... <Ansi = 13>
+  [205] jmpifz [220] ............................ if Ansi = 13 then / else
+  [208] pushint8 1 .............................. <1>
+  [211] setlocal 96 ............................. tmpNewLine = 1
+  [213] getlocal 8 .............................. <n>
+  [215] setlocal 104 ............................ tmpOKBreak = n
+  [217] jmp [229]
+  [220] getlocal 32 ............................. <possibleLineBreakPlaces>
+  [222] getlocal 8 .............................. <n>
+  [224] pusharglistnoret 2 ...................... <possibleLineBreakPlaces, n>
+  [226] objcall 183 ............................. possibleLineBreakPlaces.add(n)
+  [229] getparam 0 .............................. <me>
+  [231] getlocal 112 ............................ <Ansi>
+  [233] pusharglist 2 ........................... <me, Ansi>
+  [235] objcall 1598 ............................ <me.getUseThisInfo(Ansi)>
+  [238] setlocal 120 ............................ renderCharInfo = me.getUseThisInfo(Ansi)
+  [240] getlocal 120 ............................ <renderCharInfo>
+  [242] pusharglist 1 ........................... <renderCharInfo>
+  [244] extcall 128 ............................. <listp(renderCharInfo)>
+  [247] jmpifz [264] ............................ if listp(renderCharInfo) then / else
+  [250] getlocal 120 ............................ <renderCharInfo>
+  [252] pushint8 1 .............................. <1>
+  [255] pusharglist 2 ........................... <renderCharInfo, 1>
+  [257] objcall 23 .............................. <renderCharInfo[1]>
+  [259] setlocal 128 ............................ kernToAnsi = renderCharInfo[1]
+  [261] jmp [268]
+  [264] getlocal 120 ............................ <renderCharInfo>
+  [266] setlocal 128 ............................ kernToAnsi = renderCharInfo
+  [268] getlocal 96 ............................. <tmpNewLine>
+  [270] not ..................................... <not tmpNewLine>
+  [271] jmpifz [360] ............................ if not tmpNewLine then
+  [274] getlocal 64 ............................. <thisLineInAnsi>
+  [276] getlocal 120 ............................ <renderCharInfo>
+  [278] pusharglistnoret 2 ...................... <thisLineInAnsi, renderCharInfo>
+  [280] objcall 183 ............................. thisLineInAnsi.add(renderCharInfo)
+  [283] getlocal 16 ............................. <lastKernToAnsi>
+  [285] pushzero ................................ <0>
+  [286] gt ...................................... <lastKernToAnsi > 0>
+  [287] jmpifz [306] ............................ if lastKernToAnsi > 0 then
+  [290] getlocal 24 ............................. <lineLocH>
+  [292] getparam 0 .............................. <me>
+  [294] getlocal 16 ............................. <lastKernToAnsi>
+  [296] getlocal 128 ............................ <kernToAnsi>
+  [298] pusharglist 3 ........................... <me, lastKernToAnsi, kernToAnsi>
+  [300] objcall 1600 ............................ <me.getNextCharOffset(lastKernToAnsi, kernToAnsi)>
+  [303] add ..................................... <lineLocH + me.getNextCharOffset(lastKernToAnsi, kernToAnsi)>
+  [304] setlocal 24 ............................. lineLocH = lineLocH + me.getNextCharOffset(lastKernToAnsi, kernToAnsi)
+  [306] getlocal 80 ............................. <thisLinesLocs>
+  [308] getlocal 24 ............................. <lineLocH>
+  [310] pusharglistnoret 2 ...................... <thisLinesLocs, lineLocH>
+  [312] objcall 183 ............................. thisLinesLocs.add(lineLocH)
+  [315] getlocal 24 ............................. <lineLocH>
+  [317] getparam 16 ............................. <argMaxWidth>
+  [319] gt ...................................... <lineLocH > argMaxWidth>
+  [320] jmpifz [360] ............................ if lineLocH > argMaxWidth then
+  [323] getlocal 32 ............................. <possibleLineBreakPlaces>
+  [325] pusharglist 1 ........................... <possibleLineBreakPlaces>
+  [327] objcall 175 ............................. <possibleLineBreakPlaces.count()>
+  [330] pushzero ................................ <0>
+  [331] gt ...................................... <possibleLineBreakPlaces.count() > 0>
+  [332] jmpifz [351] ............................ if possibleLineBreakPlaces.count() > 0 then / else
+  [335] getlocal 32 ............................. <possibleLineBreakPlaces>
+  [337] getlocal 32 ............................. <possibleLineBreakPlaces>
+  [339] getobjprop 175 .......................... <possibleLineBreakPlaces.count>
+  [342] pusharglist 2 ........................... <possibleLineBreakPlaces, possibleLineBreakPlaces.count>
+  [344] objcall 23 .............................. <possibleLineBreakPlaces[possibleLineBreakPlaces.count]>
+  [346] setlocal 104 ............................ tmpOKBreak = possibleLineBreakPlaces[possibleLineBreakPlaces.count]
+  [348] jmp [355]
+  [351] getlocal 8 .............................. <n>
+  [353] setlocal 104 ............................ tmpOKBreak = n
+  [355] pushint8 1 .............................. <1>
+  [358] setlocal 96 ............................. tmpNewLine = 1
+  [360] getlocal 96 ............................. <tmpNewLine>
+  [362] not ..................................... <not tmpNewLine>
+  [363] jmpifz [386] ............................ if not tmpNewLine then
+  [366] getlocal 8 .............................. <n>
+  [368] getparam 8 .............................. <argStr>
+  [370] getobjprop 556 .......................... <argStr.length>
+  [373] eq ...................................... <n = argStr.length>
+  [374] jmpifz [386] ............................ if n = argStr.length then
+  [377] pushint8 1 .............................. <1>
+  [380] setlocal 96 ............................. tmpNewLine = 1
+  [382] getlocal 8 .............................. <n>
+  [384] setlocal 104 ............................ tmpOKBreak = n
+  [386] getlocal 96 ............................. <tmpNewLine>
+  [388] jmpifz [515] ............................ if tmpNewLine then / else
+  [391] pushint8 1 .............................. <1>
+  [394] setlocal 96 ............................. tmpNewLine = 1
+  [396] getparam 8 .............................. <argStr>
+  [398] pushsymb 119 ............................ <#char>
+  [401] getlocal 40 ............................. <lineStartCharNr>
+  [403] getlocal 104 ............................ <tmpOKBreak>
+  [405] getlocal 88 ............................. <tmpDontUseLastOnThisLine>
+  [407] sub ..................................... <tmpOKBreak - tmpDontUseLastOnThisLine>
+  [408] pusharglist 4 ........................... <argStr, #char, lineStartCharNr, tmpOKBreak - tmpDontUseLastOnThisLine>
+  [410] objcall 124 ............................. <argStr.char[lineStartCharNr..tmpOKBreak - tmpDontUseLastOnThisLine]>
+  [413] setlocal 136 ............................ tmpLine = argStr.char[lineStartCharNr..tmpOKBreak - tmpDontUseLastOnThisLine]
+  [415] getlocal 48 ............................. <allLines>
+  [417] getlocal 136 ............................ <tmpLine>
+  [419] pusharglistnoret 2 ...................... <allLines, tmpLine>
+  [421] objcall 183 ............................. allLines.add(tmpLine)
+  [424] getlocal 56 ............................. <allLinesInAnsi>
+  [426] getlocal 64 ............................. <thisLineInAnsi>
+  [428] pusharglistnoret 2 ...................... <allLinesInAnsi, thisLineInAnsi>
+  [430] objcall 183 ............................. allLinesInAnsi.add(thisLineInAnsi)
+  [433] pusharglist 0 ........................... <[]>
+  [435] pushlist ................................ <[]>
+  [436] setlocal 64 ............................. thisLineInAnsi = []
+  [438] getlocal 80 ............................. <thisLinesLocs>
+  [440] getobjprop 175 .......................... <thisLinesLocs.count>
+  [443] getlocal 136 ............................ <tmpLine>
+  [445] getobjprop 556 .......................... <tmpLine.length>
+  [448] pushint8 1 .............................. <1>
+  [451] add ..................................... <tmpLine.length + 1>
+  [452] lt ...................................... <thisLinesLocs.count < (tmpLine.length + 1)>
+  [453] jmpifz [475] ............................ if thisLinesLocs.count < (tmpLine.length + 1) then
+  [456] getlocal 80 ............................. <thisLinesLocs>
+  [458] getlocal 24 ............................. <lineLocH>
+  [460] getparam 0 .............................. <me>
+  [462] getlocal 128 ............................ <kernToAnsi>
+  [464] pusharglist 2 ........................... <me, kernToAnsi>
+  [466] objcall 1600 ............................ <me.getNextCharOffset(kernToAnsi)>
+  [469] add ..................................... <lineLocH + me.getNextCharOffset(kernToAnsi)>
+  [470] pusharglistnoret 2 ...................... <thisLinesLocs, lineLocH + me.getNextCharOffset(kernToAnsi)>
+  [472] objcall 183 ............................. thisLinesLocs.add(lineLocH + me.getNextCharOffset(kernToAnsi))
+  [475] getlocal 72 ............................. <allLinesLocs>
+  [477] getlocal 80 ............................. <thisLinesLocs>
+  [479] pusharglistnoret 2 ...................... <allLinesLocs, thisLinesLocs>
+  [481] objcall 183 ............................. allLinesLocs.add(thisLinesLocs)
+  [484] pusharglist 0 ........................... <[]>
+  [486] pushlist ................................ <[]>
+  [487] setlocal 80 ............................. thisLinesLocs = []
+  [489] getlocal 104 ............................ <tmpOKBreak>
+  [491] pushint8 1 .............................. <1>
+  [494] add ..................................... <tmpOKBreak + 1>
+  [495] setlocal 40 ............................. lineStartCharNr = tmpOKBreak + 1
+  [497] getlocal 40 ............................. <lineStartCharNr>
+  [499] setlocal 8 .............................. n = lineStartCharNr
+  [501] pushzero ................................ <0>
+  [502] setlocal 24 ............................. lineLocH = 0
+  [504] pusharglist 0 ........................... <[]>
+  [506] pushlist ................................ <[]>
+  [507] setlocal 32 ............................. possibleLineBreakPlaces = []
+  [509] pushzero ................................ <0>
+  [510] setlocal 16 ............................. lastKernToAnsi = 0
+  [512] jmp [527]
+  [515] getlocal 8 .............................. <n>
+  [517] pushint8 1 .............................. <1>
+  [520] add ..................................... <n + 1>
+  [521] setlocal 8 .............................. n = n + 1
+  [523] getlocal 128 ............................ <kernToAnsi>
+  [525] setlocal 16 ............................. lastKernToAnsi = kernToAnsi
+  [527] getlocal 8 .............................. <n>
+  [529] getparam 8 .............................. <argStr>
+  [531] getobjprop 556 .......................... <argStr.length>
+  [534] gt ...................................... <n > argStr.length>
+  [535] jmpifz [541] ............................ if n > argStr.length then
+  [538] jmp [544] ............................... exit repeat
+  [541] endrepeat [130]
+  [544] pushsymb 1609 ........................... <#Ansi>
+  [547] getlocal 56 ............................. <allLinesInAnsi>
+  [549] pushsymb 1637 ........................... <#locs>
+  [552] getlocal 72 ............................. <allLinesLocs>
+  [554] pushsymb 1130 ........................... <#Strings>
+  [557] getlocal 48 ............................. <allLines>
+  [559] pusharglist 6 ........................... <[#Ansi: allLinesInAnsi, #locs: allLinesLocs, #Strings: allLines]>
+  [561] pushproplist ............................ <[#Ansi: allLinesInAnsi, #locs: allLinesLocs, #Strings: allLines]>
+  [562] pusharglistnoret 1 ...................... <[#Ansi: allLinesInAnsi, #locs: allLinesLocs, #Strings: allLines]>
+  [564] extcall 32 .............................. return [#Ansi: allLinesInAnsi, #locs: allLinesLocs, #Strings: allLines]
+  [567] ret
+end
+
+on renderString me, argStr, argMaxWidth, argImagePtr, argSizeFactor, argAlignment, argCreateShadow, argOffLoc
+  [  0] getparam 16 ............................. <argMaxWidth>
+  [  2] pusharglist 1 ........................... <argMaxWidth>
+  [  4] extcall 104 ............................. <voidp(argMaxWidth)>
+  [  7] jmpifz [ 15] ............................ if voidp(argMaxWidth) then
+  [ 10] pushint8 400 ............................ <400>
+  [ 13] setparam 16 ............................. argMaxWidth = 400
+  [ 15] getparam 32 ............................. <argSizeFactor>
+  [ 17] pusharglist 1 ........................... <argSizeFactor>
+  [ 19] extcall 104 ............................. <voidp(argSizeFactor)>
+  [ 22] jmpifz [ 29] ............................ if voidp(argSizeFactor) then
+  [ 25] pushcons 80 ............................. <1.0>
+  [ 27] setparam 32 ............................. argSizeFactor = 1.0
+  [ 29] getparam 32 ............................. <argSizeFactor>
+  [ 31] pusharglist 1 ........................... <argSizeFactor>
+  [ 33] extcall 128 ............................. <listp(argSizeFactor)>
+  [ 36] not ..................................... <not listp(argSizeFactor)>
+  [ 37] jmpifz [ 51] ............................ if not listp(argSizeFactor) then
+  [ 40] getparam 32 ............................. <argSizeFactor>
+  [ 42] getparam 32 ............................. <argSizeFactor>
+  [ 44] pusharglist 2 ........................... <argSizeFactor, argSizeFactor>
+  [ 46] extcall 75 .............................. <point(argSizeFactor, argSizeFactor)>
+  [ 49] setparam 32 ............................. argSizeFactor = point(argSizeFactor, argSizeFactor)
+  [ 51] getprop 1612 ............................ <m_charSpace>
+  [ 54] getparam 32 ............................. <argSizeFactor>
+  [ 56] pushint8 1 .............................. <1>
+  [ 59] pusharglist 2 ........................... <argSizeFactor, 1>
+  [ 61] objcall 23 .............................. <argSizeFactor[1]>
+  [ 63] mul ..................................... <m_charSpace * argSizeFactor[1]>
+  [ 64] setprop 1606 ............................ m_charSpacePixels = m_charSpace * argSizeFactor[1]
+  [ 67] getparam 40 ............................. <argAlignment>
+  [ 69] pusharglist 1 ........................... <argAlignment>
+  [ 71] extcall 104 ............................. <voidp(argAlignment)>
+  [ 74] jmpifz [ 82] ............................ if voidp(argAlignment) then
+  [ 77] pushsymb 1268 ........................... <#left>
+  [ 80] setparam 40 ............................. argAlignment = #left
+  [ 82] getparam 56 ............................. <argOffLoc>
+  [ 84] pusharglist 1 ........................... <argOffLoc>
+  [ 86] extcall 104 ............................. <voidp(argOffLoc)>
+  [ 89] jmpifz [101] ............................ if voidp(argOffLoc) then
+  [ 92] pushzero ................................ <0>
+  [ 93] pushzero ................................ <0>
+  [ 94] pusharglist 2 ........................... <0, 0>
+  [ 96] extcall 75 .............................. <point(0, 0)>
+  [ 99] setparam 56 ............................. argOffLoc = point(0, 0)
+  [101] getparam 0 .............................. <me>
+  [103] getparam 8 .............................. <argStr>
+  [105] getparam 16 ............................. <argMaxWidth>
+  [107] getparam 32 ............................. <argSizeFactor>
+  [109] pushint8 1 .............................. <1>
+  [112] pusharglist 2 ........................... <argSizeFactor, 1>
+  [114] objcall 23 .............................. <argSizeFactor[1]>
+  [116] div ..................................... <argMaxWidth / argSizeFactor[1]>
+  [117] pusharglist 3 ........................... <me, argStr, argMaxWidth / argSizeFactor[1]>
+  [119] objcall 1602 ............................ <me.calcString(argStr, argMaxWidth / argSizeFactor[1])>
+  [122] setlocal 0 .............................. Info = me.calcString(argStr, argMaxWidth / argSizeFactor[1])
+  [124] getlocal 0 .............................. <Info>
+  [126] pushsymb 1130 ........................... <#Strings>
+  [129] pusharglist 2 ........................... <Info, #Strings>
+  [131] objcall 23 .............................. <Info[#Strings]>
+  [133] setlocal 8 .............................. allLines = Info[#Strings]
+  [135] getlocal 0 .............................. <Info>
+  [137] pushsymb 1609 ........................... <#Ansi>
+  [140] pusharglist 2 ........................... <Info, #Ansi>
+  [142] objcall 23 .............................. <Info[#Ansi]>
+  [144] setlocal 16 ............................. allLinesInAnsi = Info[#Ansi]
+  [146] getlocal 0 .............................. <Info>
+  [148] pushsymb 1637 ........................... <#locs>
+  [151] pusharglist 2 ........................... <Info, #locs>
+  [153] objcall 23 .............................. <Info[#locs]>
+  [155] setlocal 24 ............................. allLinesLocs = Info[#locs]
+  [157] getlocal 24 ............................. <allLinesLocs>
+  [159] getobjprop 175 .......................... <allLinesLocs.count>
+  [162] setlocal 32 ............................. numLines = allLinesLocs.count
+  [164] getparam 24 ............................. <argImagePtr>
+  [166] pusharglist 1 ........................... <argImagePtr>
+  [168] extcall 104 ............................. <voidp(argImagePtr)>
+  [171] not ..................................... <not voidp(argImagePtr)>
+  [172] jmpifz [1024] ........................... if not voidp(argImagePtr) then
+  [175] getparam 16 ............................. <argMaxWidth>
+  [177] getlocal 32 ............................. <numLines>
+  [179] getprop 1622 ............................ <m_lineHeight>
+  [182] mul ..................................... <numLines * m_lineHeight>
+  [183] getparam 32 ............................. <argSizeFactor>
+  [185] pushint8 2 .............................. <2>
+  [188] pusharglist 2 ........................... <argSizeFactor, 2>
+  [190] objcall 23 .............................. <argSizeFactor[2]>
+  [192] mul ..................................... <numLines * m_lineHeight * argSizeFactor[2]>
+  [193] pusharglist 2 ........................... <argMaxWidth, numLines * m_lineHeight * argSizeFactor[2]>
+  [195] extcall 75 .............................. <point(argMaxWidth, numLines * m_lineHeight * argSizeFactor[2])>
+  [198] setlocal 40 ............................. imageSize = point(argMaxWidth, numLines * m_lineHeight * argSizeFactor[2])
+  [200] getparam 24 ............................. <argImagePtr>
+  [202] pusharglist 1 ........................... <argImagePtr>
+  [204] extcall 128 ............................. <listp(argImagePtr)>
+  [207] jmpifz [234] ............................ if listp(argImagePtr) then / else
+  [210] getparam 24 ............................. <argImagePtr>
+  [212] pusharglist 1 ........................... <argImagePtr>
+  [214] objcall 175 ............................. <argImagePtr.count()>
+  [217] jmpifz [231] ............................ if argImagePtr.count() then
+  [220] getparam 24 ............................. <argImagePtr>
+  [222] pushint8 1 .............................. <1>
+  [225] pusharglist 2 ........................... <argImagePtr, 1>
+  [227] objcall 23 .............................. <argImagePtr[1]>
+  [229] setlocal 48 ............................. m_image = argImagePtr[1]
+  [231] jmp [288]
+  [234] getparam 24 ............................. <argImagePtr>
+  [236] pusharglist 1 ........................... <argImagePtr>
+  [238] extcall 129 ............................. <ilk(argImagePtr)>
+  [241] pushsymb 941 ............................ <#image>
+  [244] eq ...................................... <ilk(argImagePtr) = #image>
+  [245] jmpifz [255] ............................ if ilk(argImagePtr) = #image then / else
+  [248] getparam 24 ............................. <argImagePtr>
+  [250] setlocal 48 ............................. m_image = argImagePtr
+  [252] jmp [283]
+  [255] getlocal 40 ............................. <imageSize>
+  [257] pushint8 1 .............................. <1>
+  [260] pusharglist 2 ........................... <imageSize, 1>
+  [262] objcall 23 .............................. <imageSize[1]>
+  [264] getlocal 40 ............................. <imageSize>
+  [266] pushint8 2 .............................. <2>
+  [269] pusharglist 2 ........................... <imageSize, 2>
+  [271] objcall 23 .............................. <imageSize[2]>
+  [273] pushint8 16 ............................. <16>
+  [276] pusharglist 3 ........................... <imageSize[1], imageSize[2], 16>
+  [278] extcall 941 ............................. <image(imageSize[1], imageSize[2], 16)>
+  [281] setlocal 48 ............................. m_image = image(imageSize[1], imageSize[2], 16)
+  [283] pusharglist 0 ........................... <[]>
+  [285] pushlist ................................ <[]>
+  [286] setparam 24 ............................. argImagePtr = []
+  [288] getlocal 48 ............................. <m_image>
+  [290] pusharglist 1 ........................... <m_image>
+  [292] extcall 104 ............................. <voidp(m_image)>
+  [295] jmpifz [326] ............................ if voidp(m_image) then
+  [298] getlocal 40 ............................. <imageSize>
+  [300] pushint8 1 .............................. <1>
+  [303] pusharglist 2 ........................... <imageSize, 1>
+  [305] objcall 23 .............................. <imageSize[1]>
+  [307] getlocal 40 ............................. <imageSize>
+  [309] pushint8 2 .............................. <2>
+  [312] pusharglist 2 ........................... <imageSize, 2>
+  [314] objcall 23 .............................. <imageSize[2]>
+  [316] pushint8 16 ............................. <16>
+  [319] pusharglist 3 ........................... <imageSize[1], imageSize[2], 16>
+  [321] extcall 941 ............................. <image(imageSize[1], imageSize[2], 16)>
+  [324] setlocal 48 ............................. m_image = image(imageSize[1], imageSize[2], 16)
+  [326] getparam 24 ............................. <argImagePtr>
+  [328] pushint8 1 .............................. <1>
+  [331] getlocal 48 ............................. <m_image>
+  [333] pusharglistnoret 3 ...................... <argImagePtr, 1, m_image>
+  [335] objcall 77 .............................. argImagePtr[1] = m_image
+  [338] getlocal 48 ............................. <m_image>
+  [340] pushsymb 105 ............................ <#rect>
+  [343] pushint8 3 .............................. <3>
+  [346] pusharglist 3 ........................... <m_image, #rect, 3>
+  [348] objcall 124 ............................. <m_image.rect[3]>
+  [351] setparam 16 ............................. argMaxWidth = m_image.rect[3]
+  [353] getparam 32 ............................. <argSizeFactor>
+  [355] pushint8 1 .............................. <1>
+  [358] pusharglist 2 ........................... <argSizeFactor, 1>
+  [360] objcall 23 .............................. <argSizeFactor[1]>
+  [362] getparam 32 ............................. <argSizeFactor>
+  [364] pushint8 2 .............................. <2>
+  [367] pusharglist 2 ........................... <argSizeFactor, 2>
+  [369] objcall 23 .............................. <argSizeFactor[2]>
+  [371] getparam 32 ............................. <argSizeFactor>
+  [373] pushint8 1 .............................. <1>
+  [376] pusharglist 2 ........................... <argSizeFactor, 1>
+  [378] objcall 23 .............................. <argSizeFactor[1]>
+  [380] getparam 32 ............................. <argSizeFactor>
+  [382] pushint8 2 .............................. <2>
+  [385] pusharglist 2 ........................... <argSizeFactor, 2>
+  [387] objcall 23 .............................. <argSizeFactor[2]>
+  [389] pusharglist 4 ........................... <[argSizeFactor[1], argSizeFactor[2], argSizeFactor[1], argSizeFactor[2]]>
+  [391] pushlist ................................ <[argSizeFactor[1], argSizeFactor[2], argSizeFactor[1], argSizeFactor[2]]>
+  [392] setlocal 56 ............................. sizeRect = [argSizeFactor[1], argSizeFactor[2], argSizeFactor[1], argSizeFactor[2]]
+  [394] pushint8 1 .............................. <1>
+  [397] setlocal 64
+  [399] getlocal 64
+  [401] getlocal 32 ............................. <numLines>
+  [403] lteq
+  [404] jmpifz [1024] ........................... repeat with lineNr = 1 to numLines
+  [407] getlocal 8 .............................. <allLines>
+  [409] getlocal 64 ............................. <lineNr>
+  [411] pusharglist 2 ........................... <allLines, lineNr>
+  [413] objcall 23 .............................. <allLines[lineNr]>
+  [415] setlocal 72 ............................. lineStr = allLines[lineNr]
+  [417] getlocal 16 ............................. <allLinesInAnsi>
+  [419] getlocal 64 ............................. <lineNr>
+  [421] pusharglist 2 ........................... <allLinesInAnsi, lineNr>
+  [423] objcall 23 .............................. <allLinesInAnsi[lineNr]>
+  [425] setlocal 80 ............................. ansiList = allLinesInAnsi[lineNr]
+  [427] getlocal 24 ............................. <allLinesLocs>
+  [429] getlocal 64 ............................. <lineNr>
+  [431] pusharglist 2 ........................... <allLinesLocs, lineNr>
+  [433] objcall 23 .............................. <allLinesLocs[lineNr]>
+  [435] setlocal 88 ............................. locs = allLinesLocs[lineNr]
+  [437] getlocal 72 ............................. <lineStr>
+  [439] getobjprop 556 .......................... <lineStr.length>
+  [442] setlocal 96 ............................. lineLen = lineStr.length
+  [444] getparam 40 ............................. <argAlignment>
+  [446] pushsymb 730 ............................ <#center>
+  [449] eq ...................................... <argAlignment = #center>
+  [450] jmpifz [517] ............................ if argAlignment = #center then / else
+  [453] getlocal 72 ............................. <lineStr>
+  [455] pushsymb 119 ............................ <#char>
+  [458] getlocal 96 ............................. <lineLen>
+  [460] pusharglist 3 ........................... <lineStr, #char, lineLen>
+  [462] objcall 124 ............................. <lineStr.char[lineLen]>
+  [465] pushcons 88 ............................. <" ">
+  [467] eq ...................................... <lineStr.char[lineLen] = " ">
+  [468] jmpifz [479] ............................ if lineStr.char[lineLen] = " " then
+  [471] getlocal 96 ............................. <lineLen>
+  [473] pushint8 1 .............................. <1>
+  [476] sub ..................................... <lineLen - 1>
+  [477] setlocal 96 ............................. lineLen = lineLen - 1
+  [479] getlocal 88 ............................. <locs>
+  [481] getlocal 96 ............................. <lineLen>
+  [483] pushint8 1 .............................. <1>
+  [486] add ..................................... <lineLen + 1>
+  [487] pusharglist 2 ........................... <locs, lineLen + 1>
+  [489] objcall 23 .............................. <locs[lineLen + 1]>
+  [491] setlocal 104 ............................ tmpLineSize = locs[lineLen + 1]
+  [493] getparam 16 ............................. <argMaxWidth>
+  [495] getparam 32 ............................. <argSizeFactor>
+  [497] pushint8 1 .............................. <1>
+  [500] pusharglist 2 ........................... <argSizeFactor, 1>
+  [502] objcall 23 .............................. <argSizeFactor[1]>
+  [504] div ..................................... <argMaxWidth / argSizeFactor[1]>
+  [505] getlocal 104 ............................ <tmpLineSize>
+  [507] sub ..................................... <(argMaxWidth / argSizeFactor[1]) - tmpLineSize>
+  [508] pushint8 2 .............................. <2>
+  [511] div ..................................... <((argMaxWidth / argSizeFactor[1]) - tmpLineSize) / 2>
+  [512] setlocal 112 ............................ tmpAlignOffsetH = ((argMaxWidth / argSizeFactor[1]) - tmpLineSize) / 2
+  [514] jmp [520]
+  [517] pushzero ................................ <0>
+  [518] setlocal 112 ............................ tmpAlignOffsetH = 0
+  [520] pushint8 1 .............................. <1>
+  [523] setlocal 120
+  [525] getlocal 120
+  [527] getlocal 96 ............................. <lineLen>
+  [529] lteq
+  [530] jmpifz [1013] ........................... repeat with chNr = 1 to lineLen
+  [533] getlocal 80 ............................. <ansiList>
+  [535] getlocal 120 ............................ <chNr>
+  [537] pusharglist 2 ........................... <ansiList, chNr>
+  [539] objcall 23 .............................. <ansiList[chNr]>
+  [541] setlocal 128 ............................ Ansi = ansiList[chNr]
+  [543] pushzero ................................ <0>
+  [544] setlocal 136 ............................ tmpImage = 0
+  [546] pusharglist 0 ........................... <[]>
+  [548] pushlist ................................ <[]>
+  [549] setlocal 144 ............................ blitList = []
+  [551] getlocal 128 ............................ <Ansi>
+  [553] pusharglist 1 ........................... <Ansi>
+  [555] extcall 128 ............................. <listp(Ansi)>
+  [558] jmpifz [718] ............................ if listp(Ansi) then / else
+  [561] getparam 0 .............................. <me>
+  [563] getlocal 128 ............................ <Ansi>
+  [565] pushint8 1 .............................. <1>
+  [568] pusharglist 2 ........................... <Ansi, 1>
+  [570] objcall 23 .............................. <Ansi[1]>
+  [572] pusharglist 2 ........................... <me, Ansi[1]>
+  [574] objcall 888 ............................. <me.getMember(Ansi[1])>
+  [577] setlocal 152 ............................ tmpMemb = me.getMember(Ansi[1])
+  [579] getlocal 152 ............................ <tmpMemb>
+  [581] pushsymb 801 ............................ <#regPoint>
+  [584] pushint8 2 .............................. <2>
+  [587] pusharglist 3 ........................... <tmpMemb, #regPoint, 2>
+  [589] objcall 124 ............................. <tmpMemb.regPoint[2]>
+  [592] setlocal 160 ............................ tmpOffY = tmpMemb.regPoint[2]
+  [594] getlocal 144 ............................ <blitList>
+  [596] getlocal 152 ............................ <tmpMemb>
+  [598] getobjprop 941 .......................... <tmpMemb.image>
+  [601] pushzero ................................ <0>
+  [602] getlocal 160 ............................ <tmpOffY>
+  [604] inv ..................................... <-tmpOffY>
+  [605] pusharglist 2 ........................... <0, -tmpOffY>
+  [607] extcall 75 .............................. <point(0, -tmpOffY)>
+  [610] pusharglist 2 ........................... <[tmpMemb.image, point(0, -tmpOffY)]>
+  [612] pushlist ................................ <[tmpMemb.image, point(0, -tmpOffY)]>
+  [613] pusharglistnoret 2 ...................... <blitList, [tmpMemb.image, point(0, -tmpOffY)]>
+  [615] objcall 183 ............................. blitList.add([tmpMemb.image, point(0, -tmpOffY)])
+  [618] pushint8 2 .............................. <2>
+  [621] setlocal 168
+  [623] getlocal 168
+  [625] getlocal 128 ............................ <Ansi>
+  [627] getobjprop 175 .......................... <Ansi.count>
+  [630] lteq
+  [631] jmpifz [715] ............................ repeat with n = 2 to Ansi.count
+  [634] getparam 0 .............................. <me>
+  [636] getlocal 128 ............................ <Ansi>
+  [638] getlocal 168 ............................ <n>
+  [640] pusharglist 2 ........................... <Ansi, n>
+  [642] objcall 23 .............................. <Ansi[n]>
+  [644] pusharglist 2 ........................... <me, Ansi[n]>
+  [646] objcall 888 ............................. <me.getMember(Ansi[n])>
+  [649] setlocal 176 ............................ tmpMembOver = me.getMember(Ansi[n])
+  [651] getlocal 152 ............................ <tmpMemb>
+  [653] getobjprop 942 .......................... <tmpMemb.width>
+  [656] getlocal 176 ............................ <tmpMembOver>
+  [658] getobjprop 942 .......................... <tmpMembOver.width>
+  [661] sub ..................................... <tmpMemb.width - tmpMembOver.width>
+  [662] pushint8 2 .............................. <2>
+  [665] div ..................................... <(tmpMemb.width - tmpMembOver.width) / 2>
+  [666] setlocal 184 ............................ xOff = (tmpMemb.width - tmpMembOver.width) / 2
+  [668] getlocal 144 ............................ <blitList>
+  [670] getlocal 176 ............................ <tmpMembOver>
+  [672] getobjprop 941 .......................... <tmpMembOver.image>
+  [675] getlocal 184 ............................ <xOff>
+  [677] getlocal 176 ............................ <tmpMembOver>
+  [679] pushsymb 801 ............................ <#regPoint>
+  [682] pushint8 2 .............................. <2>
+  [685] pusharglist 3 ........................... <tmpMembOver, #regPoint, 2>
+  [687] objcall 124 ............................. <tmpMembOver.regPoint[2]>
+  [690] inv ..................................... <-tmpMembOver.regPoint[2]>
+  [691] pusharglist 2 ........................... <xOff, -tmpMembOver.regPoint[2]>
+  [693] extcall 75 .............................. <point(xOff, -tmpMembOver.regPoint[2])>
+  [696] pusharglist 2 ........................... <[tmpMembOver.image, point(xOff, -tmpMembOver.regPoint[2])]>
+  [698] pushlist ................................ <[tmpMembOver.image, point(xOff, -tmpMembOver.regPoint[2])]>
+  [699] pusharglistnoret 2 ...................... <blitList, [tmpMembOver.image, point(xOff, -tmpMembOver.regPoint[2])]>
+  [701] objcall 183 ............................. blitList.add([tmpMembOver.image, point(xOff, -tmpMembOver.regPoint[2])])
+  [704] pushint8 1
+  [707] getlocal 168
+  [709] add
+  [710] setlocal 168
+  [712] endrepeat [623]
+  [715] jmp [782]
+  [718] getparam 0 .............................. <me>
+  [720] getlocal 128 ............................ <Ansi>
+  [722] pusharglist 2 ........................... <me, Ansi>
+  [724] objcall 888 ............................. <me.getMember(Ansi)>
+  [727] setlocal 152 ............................ tmpMemb = me.getMember(Ansi)
+  [729] getlocal 152 ............................ <tmpMemb>
+  [731] pusharglist 1 ........................... <tmpMemb>
+  [733] extcall 34 .............................. <objectp(tmpMemb)>
+  [736] not ..................................... <not objectp(tmpMemb)>
+  [737] jmpifz [743] ............................ if not objectp(tmpMemb) then
+  [740] jmp [1002] .............................. next repeat
+  [743] getlocal 152 ............................ <tmpMemb>
+  [745] pushsymb 801 ............................ <#regPoint>
+  [748] pushint8 2 .............................. <2>
+  [751] pusharglist 3 ........................... <tmpMemb, #regPoint, 2>
+  [753] objcall 124 ............................. <tmpMemb.regPoint[2]>
+  [756] setlocal 160 ............................ tmpOffY = tmpMemb.regPoint[2]
+  [758] getlocal 144 ............................ <blitList>
+  [760] getlocal 152 ............................ <tmpMemb>
+  [762] getobjprop 941 .......................... <tmpMemb.image>
+  [765] pushzero ................................ <0>
+  [766] getlocal 160 ............................ <tmpOffY>
+  [768] inv ..................................... <-tmpOffY>
+  [769] pusharglist 2 ........................... <0, -tmpOffY>
+  [771] extcall 75 .............................. <point(0, -tmpOffY)>
+  [774] pusharglist 2 ........................... <[tmpMemb.image, point(0, -tmpOffY)]>
+  [776] pushlist ................................ <[tmpMemb.image, point(0, -tmpOffY)]>
+  [777] pusharglistnoret 2 ...................... <blitList, [tmpMemb.image, point(0, -tmpOffY)]>
+  [779] objcall 183 ............................. blitList.add([tmpMemb.image, point(0, -tmpOffY)])
+  [782] getlocal 88 ............................. <locs>
+  [784] getlocal 120 ............................ <chNr>
+  [786] pusharglist 2 ........................... <locs, chNr>
+  [788] objcall 23 .............................. <locs[chNr]>
+  [790] getlocal 112 ............................ <tmpAlignOffsetH>
+  [792] add ..................................... <locs[chNr] + tmpAlignOffsetH>
+  [793] getlocal 64 ............................. <lineNr>
+  [795] pushint8 1 .............................. <1>
+  [798] sub ..................................... <lineNr - 1>
+  [799] getprop 1622 ............................ <m_lineHeight>
+  [802] mul ..................................... <(lineNr - 1) * m_lineHeight>
+  [803] pusharglist 2 ........................... <locs[chNr] + tmpAlignOffsetH, (lineNr - 1) * m_lineHeight>
+  [805] extcall 75 .............................. <point(locs[chNr] + tmpAlignOffsetH, (lineNr - 1) * m_lineHeight)>
+  [808] setlocal 192 ............................ tmpOff = point(locs[chNr] + tmpAlignOffsetH, (lineNr - 1) * m_lineHeight)
+  [810] pushint8 1 .............................. <1>
+  [813] setlocal 168
+  [815] getlocal 168
+  [817] getlocal 144 ............................ <blitList>
+  [819] getobjprop 175 .......................... <blitList.count>
+  [822] lteq
+  [823] jmpifz [1002] ........................... repeat with n = 1 to blitList.count
+  [826] getlocal 144 ............................ <blitList>
+  [828] getlocal 168 ............................ <n>
+  [830] pusharglist 2 ........................... <blitList, n>
+  [832] objcall 23 .............................. <blitList[n]>
+  [834] setlocal 200 ............................ tmp = blitList[n]
+  [836] getlocal 200 ............................ <tmp>
+  [838] pushint8 2 .............................. <2>
+  [841] pusharglist 2 ........................... <tmp, 2>
+  [843] objcall 23 .............................. <tmp[2]>
+  [845] setlocal 208 ............................ tmpExtraOff = tmp[2]
+  [847] getlocal 200 ............................ <tmp>
+  [849] pushint8 1 .............................. <1>
+  [852] pusharglist 2 ........................... <tmp, 1>
+  [854] objcall 23 .............................. <tmp[1]>
+  [856] setlocal 216 ............................ img = tmp[1]
+  [858] getparam 48 ............................. <argCreateShadow>
+  [860] pushint8 1 .............................. <1>
+  [863] eq ...................................... <argCreateShadow = 1>
+  [864] jmpifz [932] ............................ if argCreateShadow = 1 then
+  [867] getlocal 48 ............................. <m_image>
+  [869] getlocal 216 ............................ <img>
+  [871] pusharglist 1 ........................... <img>
+  [873] objcall 979 ............................. <img.extractAlpha()>
+  [876] getlocal 216 ............................ <img>
+  [878] getobjprop 105 .......................... <img.rect>
+  [881] getlocal 192 ............................ <tmpOff>
+  [883] getlocal 208 ............................ <tmpExtraOff>
+  [885] add ..................................... <tmpOff + tmpExtraOff>
+  [886] getlocal 192 ............................ <tmpOff>
+  [888] getlocal 208 ............................ <tmpExtraOff>
+  [890] add ..................................... <tmpOff + tmpExtraOff>
+  [891] pusharglist 2 ........................... <tmpOff + tmpExtraOff, tmpOff + tmpExtraOff>
+  [893] extcall 105 ............................. <rect(tmpOff + tmpExtraOff, tmpOff + tmpExtraOff)>
+  [896] add ..................................... <img.rect + rect(tmpOff + tmpExtraOff, tmpOff + tmpExtraOff)>
+  [897] getlocal 56 ............................. <sizeRect>
+  [899] mul ..................................... <(img.rect + rect(tmpOff + tmpExtraOff, tmpOff + tmpExtraOff)) * sizeRect>
+  [900] getparam 56 ............................. <argOffLoc>
+  [902] getparam 56 ............................. <argOffLoc>
+  [904] pusharglist 2 ........................... <argOffLoc, argOffLoc>
+  [906] extcall 105 ............................. <rect(argOffLoc, argOffLoc)>
+  [909] add ..................................... <((img.rect + rect(tmpOff + tmpExtraOff, tmpOff + tmpExtraOff)) * sizeRect) + rect(argOffLoc, argOffLoc)>
+  [910] getlocal 216 ............................ <img>
+  [912] getobjprop 105 .......................... <img.rect>
+  [915] pushsymb 386 ............................ <#ink>
+  [918] pushint8 39 ............................. <39>
+  [921] pusharglist 2 ........................... <[#ink: 39]>
+  [923] pushproplist ............................ <[#ink: 39]>
+  [924] pusharglistnoret 5 ...................... <m_image, img.extractAlpha(), ((img.rect + rect(tmpOff + tmpExtraOff, tmpOff + tmpExtraOff)) * sizeRect) + rect(argOffLoc, argOffLoc), img.rect, [#ink: 39]>
+  [926] objcall 952 ............................. m_image.copyPixels(img.extractAlpha(), ((img.rect + rect(tmpOff + tmpExtraOff, tmpOff + tmpExtraOff)) * sizeRect) + rect(argOffLoc, argOffLoc), img.rect, [#ink: 39])
+  [929] jmp [991] ............................... next repeat
+  [932] getlocal 48 ............................. <m_image>
+  [934] getlocal 216 ............................ <img>
+  [936] getlocal 216 ............................ <img>
+  [938] getobjprop 105 .......................... <img.rect>
+  [941] getlocal 192 ............................ <tmpOff>
+  [943] getlocal 208 ............................ <tmpExtraOff>
+  [945] add ..................................... <tmpOff + tmpExtraOff>
+  [946] getlocal 192 ............................ <tmpOff>
+  [948] getlocal 208 ............................ <tmpExtraOff>
+  [950] add ..................................... <tmpOff + tmpExtraOff>
+  [951] pusharglist 2 ........................... <tmpOff + tmpExtraOff, tmpOff + tmpExtraOff>
+  [953] extcall 105 ............................. <rect(tmpOff + tmpExtraOff, tmpOff + tmpExtraOff)>
+  [956] add ..................................... <img.rect + rect(tmpOff + tmpExtraOff, tmpOff + tmpExtraOff)>
+  [957] getlocal 56 ............................. <sizeRect>
+  [959] mul ..................................... <(img.rect + rect(tmpOff + tmpExtraOff, tmpOff + tmpExtraOff)) * sizeRect>
+  [960] getparam 56 ............................. <argOffLoc>
+  [962] getparam 56 ............................. <argOffLoc>
+  [964] pusharglist 2 ........................... <argOffLoc, argOffLoc>
+  [966] extcall 105 ............................. <rect(argOffLoc, argOffLoc)>
+  [969] add ..................................... <((img.rect + rect(tmpOff + tmpExtraOff, tmpOff + tmpExtraOff)) * sizeRect) + rect(argOffLoc, argOffLoc)>
+  [970] getlocal 216 ............................ <img>
+  [972] getobjprop 105 .......................... <img.rect>
+  [975] pushsymb 386 ............................ <#ink>
+  [978] pushzero ................................ <0>
+  [979] pushsymb 1654 ........................... <#useFastQuads>
+  [982] pushzero ................................ <0>
+  [983] pusharglist 4 ........................... <[#ink: 0, #useFastQuads: 0]>
+  [985] pushproplist ............................ <[#ink: 0, #useFastQuads: 0]>
+  [986] pusharglistnoret 5 ...................... <m_image, img, ((img.rect + rect(tmpOff + tmpExtraOff, tmpOff + tmpExtraOff)) * sizeRect) + rect(argOffLoc, argOffLoc), img.rect, [#ink: 0, #useFastQuads: 0]>
+  [988] objcall 952 ............................. m_image.copyPixels(img, ((img.rect + rect(tmpOff + tmpExtraOff, tmpOff + tmpExtraOff)) * sizeRect) + rect(argOffLoc, argOffLoc), img.rect, [#ink: 0, #useFastQuads: 0])
+  [991] pushint8 1
+  [994] getlocal 168
+  [996] add
+  [997] setlocal 168
+  [999] endrepeat [815]
+  [1002] pushint8 1
+  [1005] getlocal 120
+  [1007] add
+  [1008] setlocal 120
+  [1010] endrepeat [525]
+  [1013] pushint8 1
+  [1016] getlocal 64
+  [1018] add
+  [1019] setlocal 64
+  [1021] endrepeat [399]
+  [1024] ret
+end
+
+on createReplaceList me, argMemberName
+  [  0] getparam 8 .............................. <argMemberName>
+  [  2] pusharglist 1 ........................... <argMemberName>
+  [  4] extcall 104 ............................. <voidp(argMemberName)>
+  [  7] jmpifz [ 14] ............................ if voidp(argMemberName) then
+  [ 10] pushcons 96 ............................. <"CharReplacements">
+  [ 12] setparam 8 .............................. argMemberName = "CharReplacements"
+  [ 14] getparam 8 .............................. <argMemberName>
+  [ 16] pusharglist 1 ........................... <argMemberName>
+  [ 18] extcall 307 ............................. <member(argMemberName)>
+  [ 21] getobjprop 310 .......................... <member(argMemberName).text>
+  [ 24] setlocal 0 .............................. str = member(argMemberName).text
+  [ 26] getlocal 0 .............................. <str>
+  [ 28] pushint8 4 .............................. <4>
+  [ 31] get 1 ................................... <the number of lines in str>
+  [ 33] setlocal 8 .............................. numLines = the number of lines in str
+  [ 35] pusharglist 0 ........................... <[:]>
+  [ 37] pushproplist ............................ <[:]>
+  [ 38] setlocal 16 ............................. lst = [:]
+  [ 40] pushint8 1 .............................. <1>
+  [ 43] setlocal 24
+  [ 45] getlocal 24
+  [ 47] getlocal 8 .............................. <numLines>
+  [ 49] lteq
+  [ 50] jmpifz [242] ............................ repeat with lineNr = 1 to numLines
+  [ 53] getlocal 0 .............................. <str>
+  [ 55] pushsymb 1328 ........................... <#line>
+  [ 58] getlocal 24 ............................. <lineNr>
+  [ 60] pusharglist 3 ........................... <str, #line, lineNr>
+  [ 62] objcall 124 ............................. <str.line[lineNr]>
+  [ 65] setlocal 32 ............................. tmpLine = str.line[lineNr]
+  [ 67] getlocal 32 ............................. <tmpLine>
+  [ 69] getobjprop 556 .......................... <tmpLine.length>
+  [ 72] pushzero ................................ <0>
+  [ 73] eq ...................................... <tmpLine.length = 0>
+  [ 74] jmpifz [ 80] ............................ if tmpLine.length = 0 then
+  [ 77] jmp [231] ............................... next repeat
+  [ 80] getlocal 32 ............................. <tmpLine>
+  [ 82] pushsymb 119 ............................ <#char>
+  [ 85] pushint8 1 .............................. <1>
+  [ 88] pusharglist 3 ........................... <tmpLine, #char, 1>
+  [ 90] objcall 124 ............................. <tmpLine.char[1]>
+  [ 93] setlocal 40 ............................. ch = tmpLine.char[1]
+  [ 95] getlocal 24 ............................. <lineNr>
+  [ 97] getlocal 8 .............................. <numLines>
+  [ 99] eq ...................................... <lineNr = numLines>
+  [100] jmpifz [120] ............................ if lineNr = numLines then / else
+  [103] pushsymb 1630 ........................... <#otherwise>
+  [106] setlocal 48 ............................. prop = #otherwise
+  [108] getlocal 40 ............................. <ch>
+  [110] pusharglist 1 ........................... <ch>
+  [112] extcall 1116 ............................ <charToNum(ch)>
+  [115] setlocal 56 ............................. Info = charToNum(ch)
+  [117] jmp [220]
+  [120] getlocal 40 ............................. <ch>
+  [122] pusharglist 1 ........................... <ch>
+  [124] extcall 1116 ............................ <charToNum(ch)>
+  [127] setlocal 48 ............................. prop = charToNum(ch)
+  [129] getlocal 32 ............................. <tmpLine>
+  [131] getobjprop 556 .......................... <tmpLine.length>
+  [134] pushint8 2 .............................. <2>
+  [137] eq ...................................... <tmpLine.length = 2>
+  [138] jmpifz [164] ............................ if tmpLine.length = 2 then / else
+  [141] getlocal 32 ............................. <tmpLine>
+  [143] pushsymb 119 ............................ <#char>
+  [146] pushint8 2 .............................. <2>
+  [149] pusharglist 3 ........................... <tmpLine, #char, 2>
+  [151] objcall 124 ............................. <tmpLine.char[2]>
+  [154] pusharglist 1 ........................... <tmpLine.char[2]>
+  [156] extcall 1116 ............................ <charToNum(tmpLine.char[2])>
+  [159] setlocal 56 ............................. Info = charToNum(tmpLine.char[2])
+  [161] jmp [220]
+  [164] pusharglist 0 ........................... <[]>
+  [166] pushlist ................................ <[]>
+  [167] setlocal 56 ............................. Info = []
+  [169] pushint8 2 .............................. <2>
+  [172] setlocal 64
+  [174] getlocal 64
+  [176] getlocal 32 ............................. <tmpLine>
+  [178] getobjprop 556 .......................... <tmpLine.length>
+  [181] lteq
+  [182] jmpifz [220] ............................ repeat with chNr = 2 to tmpLine.length
+  [185] getlocal 56 ............................. <Info>
+  [187] getlocal 32 ............................. <tmpLine>
+  [189] pushsymb 119 ............................ <#char>
+  [192] getlocal 64 ............................. <chNr>
+  [194] pusharglist 3 ........................... <tmpLine, #char, chNr>
+  [196] objcall 124 ............................. <tmpLine.char[chNr]>
+  [199] pusharglist 1 ........................... <tmpLine.char[chNr]>
+  [201] extcall 1116 ............................ <charToNum(tmpLine.char[chNr])>
+  [204] pusharglistnoret 2 ...................... <Info, charToNum(tmpLine.char[chNr])>
+  [206] objcall 183 ............................. Info.add(charToNum(tmpLine.char[chNr]))
+  [209] pushint8 1
+  [212] getlocal 64
+  [214] add
+  [215] setlocal 64
+  [217] endrepeat [174]
+  [220] getlocal 16 ............................. <lst>
+  [222] getlocal 48 ............................. <prop>
+  [224] getlocal 56 ............................. <Info>
+  [226] pusharglistnoret 3 ...................... <lst, prop, Info>
+  [228] objcall 45 .............................. lst.addProp(prop, Info)
+  [231] pushint8 1
+  [234] getlocal 24
+  [236] add
+  [237] setlocal 24
+  [239] endrepeat [ 45]
+  [242] getlocal 16 ............................. <lst>
+  [244] pusharglistnoret 1 ...................... <lst>
+  [246] extcall 32 .............................. return lst
+  [249] ret
+end

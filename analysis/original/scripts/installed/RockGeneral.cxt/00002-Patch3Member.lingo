@@ -1,0 +1,97 @@
+global gRock
+
+on getLanguageDataFolder
+  szPathCD = gRock.m_paths.getPath(#CD)
+  szIni = readFile(szPathCD & "RockCD.INF")
+  if stringp(szIni) then
+    lstIni = iniStrToPropList(szIni)
+    if listp(lstIni) then
+      szLanguage = rgetProp(lstIni, [#settings, #Language])
+      if szLanguage.length > 1 then
+        return gRock.m_paths.getPath(#data) & szLanguage & "\"
+      end if
+    end if
+  end if
+  return VOID
+end
+
+on getRealDataFiles
+  lstSzFiles = getLatestDataFilesInFolders(gRock.m_paths.getAllAlternativePaths(#data))
+  lstSzFilesToUse = []
+  szPathPluginsLanguage = getLanguageDataFolder()
+  if stringp(szPathPluginsLanguage) then
+    lstSzFilesToUse = getFilesInFolder(szPathPluginsLanguage)
+    szFiles = RETURN
+    repeat with n = lstSzFilesToUse.count down to 1
+      szFiles = szFiles & fileStripName(lstSzFilesToUse[n]) & RETURN
+      lstSzFilesToUse[n] = szPathPluginsLanguage & "\" & lstSzFilesToUse[n]
+    end repeat
+    repeat with n = lstSzFiles.count down to 1
+      szFileName = fileStripName(lstSzFiles[n])
+      if offset(RETURN & szFileName & RETURN, szFiles) then
+        next repeat
+      end if
+      lstSzFilesToUse.add(lstSzFiles[n])
+    end repeat
+  end if
+  if listp(lstSzFilesToUse) then
+    if lstSzFilesToUse.count > 0 then
+      return lstSzFilesToUse
+    end if
+  end if
+  return lstSzFiles
+end
+
+on getPathToLanguageAndTranslation
+  tmpLanguageFile = "Translation.txt"
+  tmpPath = gRock.m_paths.findFileInOneOfPaths(tmpLanguageFile, #data)
+  szPathPluginsLanguage = getLanguageDataFolder()
+  if stringp(szPathPluginsLanguage) then
+    if fileExists2(szPathPluginsLanguage & tmpLanguageFile) then
+      return szPathPluginsLanguage
+    end if
+  end if
+  return tmpPath
+end
+
+on getPathToMissionSave argSzFileName
+  szPathPluginsLanguage = getLanguageDataFolder()
+  if stringp(szPathPluginsLanguage) then
+    if fileExists2(szPathPluginsLanguage & argSzFileName) then
+      return szPathPluginsLanguage
+    end if
+  end if
+  return gRock.m_paths.findFileInOneOfPaths(argSzFileName, #MissionSave)
+end
+
+on iniStrToPropList argStr, argIgnoreComments
+  wholeLst = [:]
+  numLines = the number of lines in argStr
+  repeat with lineNr = 1 to numLines
+    tmpLine = argStr.line[lineNr]
+    if tmpLine.char[1] = numToChar(10) then
+      delete wholeLst.char[1]
+    end if
+    if tmpLine.length = 0 then
+      next repeat
+    end if
+    if argIgnoreComments = 1 then
+      if tmpLine.char[1] = ";" then
+        next repeat
+      end if
+    end if
+    if tmpLine.char[1] = "[" then
+      category = tmpLine.char[2..tmpLine.length - 1]
+      lst = [:]
+      wholeLst.addProp(symbol(category), lst)
+      next repeat
+    end if
+    tmpOff = offset("=", tmpLine)
+    if not tmpOff then
+      next repeat
+    end if
+    prop = tmpLine.char[1..tmpOff - 1]
+    lst.addProp(symbol(prop), tmpLine.char[tmpOff + 1..tmpLine.length])
+  end repeat
+  return wholeLst
+end

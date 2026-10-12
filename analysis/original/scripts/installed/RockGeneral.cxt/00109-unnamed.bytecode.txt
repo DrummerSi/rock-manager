@@ -1,0 +1,289 @@
+global gRock
+
+on checkWithinToleranceVals argMyVal, argMyToleranceVal, argItsVal, argReturnAs
+  [  0] getparam 0 .............................. <argMyVal>
+  [  2] getparam 16 ............................. <argItsVal>
+  [  4] sub ..................................... <argMyVal - argItsVal>
+  [  5] setlocal 0 .............................. diff = argMyVal - argItsVal
+  [  7] getparam 8 .............................. <argMyToleranceVal>
+  [  9] pushint8 2 .............................. <2>
+  [ 12] gteq .................................... <argMyToleranceVal >= 2>
+  [ 13] jmpifz [ 23] ............................ if argMyToleranceVal >= 2 then / else
+  [ 16] pushcons 0 .............................. <1.0>
+  [ 18] setlocal 8 .............................. tmpLike = 1.0
+  [ 20] jmp [ 60]
+  [ 23] getparam 8 .............................. <argMyToleranceVal>
+  [ 25] pushzero ................................ <0>
+  [ 26] eq ...................................... <argMyToleranceVal = 0>
+  [ 27] jmpifz [ 38] ............................ if argMyToleranceVal = 0 then / else
+  [ 30] pushsymb 1074 ........................... <#ignore>
+  [ 33] setlocal 8 .............................. tmpLike = #ignore
+  [ 35] jmp [ 60]
+  [ 38] pushcons 8 .............................. <1.0>
+  [ 40] getparam 8 .............................. <argMyToleranceVal>
+  [ 42] div ..................................... <1.0 / argMyToleranceVal>
+  [ 43] setlocal 16 ............................. tmpAng = 1.0 / argMyToleranceVal
+  [ 45] pushcons 16 ............................. <1.0>
+  [ 47] getlocal 16 ............................. <tmpAng>
+  [ 49] getlocal 0 .............................. <diff>
+  [ 51] pusharglist 1 ........................... <diff>
+  [ 53] extcall 966 ............................. <abs(diff)>
+  [ 56] mul ..................................... <tmpAng * abs(diff)>
+  [ 57] sub ..................................... <1.0 - (tmpAng * abs(diff))>
+  [ 58] setlocal 8 .............................. tmpLike = 1.0 - (tmpAng * abs(diff))
+  [ 60] getparam 24 ............................. <argReturnAs>
+  [ 62] pushsymb 725 ............................ <#ExtraInfo>
+  [ 65] eq ...................................... <argReturnAs = #ExtraInfo>
+  [ 66] jmpifz [117] ............................ if argReturnAs = #ExtraInfo then
+  [ 69] getlocal 0 .............................. <diff>
+  [ 71] pushzero ................................ <0>
+  [ 72] gt ...................................... <diff > 0>
+  [ 73] jmpifz [ 98] ............................ if diff > 0 then / else
+  [ 76] pushsymb 719 ............................ <#Like>
+  [ 79] getlocal 8 .............................. <tmpLike>
+  [ 81] pushsymb 1737 ........................... <#why>
+  [ 84] pushsymb 2240 ........................... <#Lo>
+  [ 87] pusharglist 4 ........................... <[#Like: tmpLike, #why: #Lo]>
+  [ 89] pushproplist ............................ <[#Like: tmpLike, #why: #Lo]>
+  [ 90] pusharglistnoret 1 ...................... <[#Like: tmpLike, #why: #Lo]>
+  [ 92] extcall 69 .............................. return [#Like: tmpLike, #why: #Lo]
+  [ 95] jmp [117]
+  [ 98] pushsymb 719 ............................ <#Like>
+  [101] getlocal 8 .............................. <tmpLike>
+  [103] pushsymb 1737 ........................... <#why>
+  [106] pushsymb 2241 ........................... <#Hi>
+  [109] pusharglist 4 ........................... <[#Like: tmpLike, #why: #Hi]>
+  [111] pushproplist ............................ <[#Like: tmpLike, #why: #Hi]>
+  [112] pusharglistnoret 1 ...................... <[#Like: tmpLike, #why: #Hi]>
+  [114] extcall 69 .............................. return [#Like: tmpLike, #why: #Hi]
+  [117] getlocal 8 .............................. <tmpLike>
+  [119] pusharglistnoret 1 ...................... <tmpLike>
+  [121] extcall 69 .............................. return tmpLike
+  [124] ret
+end
+
+on checkWithinTolerance argMyObj, argMyToleranceObj, argItsObj, argReturnAs
+  [  0] getparam 0 .............................. <argMyObj>
+  [  2] pusharglist 1 ........................... <argMyObj>
+  [  4] extcall 8 ............................... <objectp(argMyObj)>
+  [  6] not ..................................... <not objectp(argMyObj)>
+  [  7] jmpifz [ 27] ............................ if not objectp(argMyObj) then
+  [ 10] getparam 0 .............................. <argMyObj>
+  [ 12] getparam 8 .............................. <argMyToleranceObj>
+  [ 14] getparam 16 ............................. <argItsObj>
+  [ 16] getparam 24 ............................. <argReturnAs>
+  [ 18] pusharglist 4 ........................... <argMyObj, argMyToleranceObj, argItsObj, argReturnAs>
+  [ 20] localcall 0 ............................. <checkWithinToleranceVals(argMyObj, argMyToleranceObj, argItsObj, argReturnAs)>
+  [ 22] pusharglistnoret 1 ...................... <checkWithinToleranceVals(argMyObj, argMyToleranceObj, argItsObj, argReturnAs)>
+  [ 24] extcall 69 .............................. return checkWithinToleranceVals(argMyObj, argMyToleranceObj, argItsObj, argReturnAs)
+  [ 27] getparam 0 .............................. <argMyObj>
+  [ 29] getparam 16 ............................. <argItsObj>
+  [ 31] pusharglist 2 ........................... <argMyObj, argItsObj>
+  [ 33] extcall 1795 ............................ <rCreateDiffObj(argMyObj, argItsObj)>
+  [ 36] setlocal 0 .............................. diffObj = rCreateDiffObj(argMyObj, argItsObj)
+  [ 38] pusharglist 0 ........................... <[:]>
+  [ 40] pushproplist ............................ <[:]>
+  [ 41] setlocal 8 .............................. tmpLikeSorted = [:]
+  [ 43] getlocal 8 .............................. <tmpLikeSorted>
+  [ 45] pusharglistnoret 1 ...................... <tmpLikeSorted>
+  [ 47] objcall 609 ............................. tmpLikeSorted.sort()
+  [ 50] getglobal 23 ............................ <gRock>
+  [ 52] getobjprop 82 ........................... <gRock.m_classManager>
+  [ 55] pushsymb 276 ............................ <#m_classesVars>
+  [ 58] getlocal 0 .............................. <diffObj>
+  [ 60] getobjprop 224 .......................... <diffObj.className>
+  [ 63] pusharglist 3 ........................... <gRock.m_classManager, #m_classesVars, diffObj.className>
+  [ 65] objcall 113 ............................. <gRock.m_classManager.m_classesVars[diffObj.className]>
+  [ 68] setlocal 16 ............................. allVars = gRock.m_classManager.m_classesVars[diffObj.className]
+  [ 70] pushzero ................................ <0>
+  [ 71] setlocal 24 ............................. totLike = 0
+  [ 73] pusharglist 0 ........................... <[:]>
+  [ 75] pushproplist ............................ <[:]>
+  [ 76] setlocal 32 ............................. weightedLike = [:]
+  [ 78] pushint8 1 .............................. <1>
+  [ 81] setlocal 40
+  [ 83] getlocal 40
+  [ 85] getlocal 16 ............................. <allVars>
+  [ 87] pusharglist 1 ........................... <allVars>
+  [ 89] objcall 156 ............................. <allVars.count()>
+  [ 92] lteq
+  [ 93] jmpifz [266] ............................ repeat with n = 1 to allVars.count()
+  [ 96] getlocal 16 ............................. <allVars>
+  [ 98] getlocal 40 ............................. <n>
+  [100] pusharglist 2 ........................... <allVars, n>
+  [102] objcall 295 ............................. <allVars.getPropAt(n)>
+  [105] setlocal 48 ............................. prop = allVars.getPropAt(n)
+  [107] getparam 8 .............................. <argMyToleranceObj>
+  [109] getlocal 48 ............................. <prop>
+  [111] pusharglist 2 ........................... <argMyToleranceObj, prop>
+  [113] objcall 183 ............................. <argMyToleranceObj.getaProp(prop)>
+  [116] setlocal 56 ............................. tolerance = argMyToleranceObj.getaProp(prop)
+  [118] pushcons 24 ............................. <1.0>
+  [120] setlocal 64 ............................. weight = 1.0
+  [122] pushsymb 2247 ........................... <#Ok>
+  [125] setlocal 72 ............................. why = #Ok
+  [127] getlocal 56 ............................. <tolerance>
+  [129] pushint8 2 .............................. <2>
+  [132] gteq .................................... <tolerance >= 2>
+  [133] jmpifz [143] ............................ if tolerance >= 2 then / else
+  [136] pushcons 32 ............................. <1.0>
+  [138] setlocal 80 ............................. tmpLike = 1.0
+  [140] jmp [214]
+  [143] getlocal 56 ............................. <tolerance>
+  [145] pushzero ................................ <0>
+  [146] eq ...................................... <tolerance = 0>
+  [147] jmpifz [161] ............................ if tolerance = 0 then / else
+  [150] pushcons 40 ............................. <0.0>
+  [152] setlocal 80 ............................. tmpLike = 0.0
+  [154] pushcons 48 ............................. <0.0>
+  [156] setlocal 64 ............................. weight = 0.0
+  [158] jmp [214]
+  [161] pushcons 56 ............................. <1.0>
+  [163] getlocal 56 ............................. <tolerance>
+  [165] div ..................................... <1.0 / tolerance>
+  [166] setlocal 88 ............................. tmpAng = 1.0 / tolerance
+  [168] getlocal 0 .............................. <diffObj>
+  [170] getlocal 48 ............................. <prop>
+  [172] pusharglist 2 ........................... <diffObj, prop>
+  [174] objcall 183 ............................. <diffObj.getaProp(prop)>
+  [177] setlocal 96 ............................. diff = diffObj.getaProp(prop)
+  [179] getlocal 96 ............................. <diff>
+  [181] pushzero ................................ <0>
+  [182] gt ...................................... <diff > 0>
+  [183] jmpifz [194] ............................ if diff > 0 then / else
+  [186] pushsymb 2240 ........................... <#Lo>
+  [189] setlocal 72 ............................. why = #Lo
+  [191] jmp [199]
+  [194] pushsymb 2241 ........................... <#Hi>
+  [197] setlocal 72 ............................. why = #Hi
+  [199] pushcons 64 ............................. <1.0>
+  [201] getlocal 88 ............................. <tmpAng>
+  [203] getlocal 96 ............................. <diff>
+  [205] pusharglist 1 ........................... <diff>
+  [207] extcall 966 ............................. <abs(diff)>
+  [210] mul ..................................... <tmpAng * abs(diff)>
+  [211] sub ..................................... <1.0 - (tmpAng * abs(diff))>
+  [212] setlocal 80 ............................. tmpLike = 1.0 - (tmpAng * abs(diff))
+  [214] getlocal 64 ............................. <weight>
+  [216] pushzero ................................ <0>
+  [217] nteq .................................... <weight <> 0>
+  [218] jmpifz [255] ............................ if weight <> 0 then
+  [221] getlocal 8 .............................. <tmpLikeSorted>
+  [223] getlocal 80 ............................. <tmpLike>
+  [225] getlocal 48 ............................. <prop>
+  [227] getlocal 72 ............................. <why>
+  [229] pusharglist 2 ........................... <[prop, why]>
+  [231] pushlist ................................ <[prop, why]>
+  [232] pusharglistnoret 3 ...................... <tmpLikeSorted, tmpLike, [prop, why]>
+  [234] objcall 309 ............................. tmpLikeSorted.addProp(tmpLike, [prop, why])
+  [237] getlocal 32 ............................. <weightedLike>
+  [239] getlocal 64 ............................. <weight>
+  [241] getlocal 80 ............................. <tmpLike>
+  [243] pusharglistnoret 3 ...................... <weightedLike, weight, tmpLike>
+  [245] objcall 309 ............................. weightedLike.addProp(weight, tmpLike)
+  [248] getlocal 24 ............................. <totLike>
+  [250] getlocal 80 ............................. <tmpLike>
+  [252] add ..................................... <totLike + tmpLike>
+  [253] setlocal 24 ............................. totLike = totLike + tmpLike
+  [255] pushint8 1
+  [258] getlocal 40
+  [260] add
+  [261] setlocal 40
+  [263] endrepeat [ 83]
+  [266] getlocal 32 ............................. <weightedLike>
+  [268] pusharglist 1 ........................... <weightedLike>
+  [270] extcall 650 ............................. <calcAverage(weightedLike)>
+  [273] setlocal 104 ............................ likeIt = calcAverage(weightedLike)
+  [275] getparam 24 ............................. <argReturnAs>
+  [277] pushsymb 725 ............................ <#ExtraInfo>
+  [280] eq ...................................... <argReturnAs = #ExtraInfo>
+  [281] jmpifz [307] ............................ if argReturnAs = #ExtraInfo then
+  [284] pushsymb 719 ............................ <#Like>
+  [287] getlocal 104 ............................ <likeIt>
+  [289] pushsymb 1101 ........................... <#LikeSorted>
+  [292] getlocal 8 .............................. <tmpLikeSorted>
+  [294] pushsymb 254 ............................ <#diff>
+  [297] getlocal 0 .............................. <diffObj>
+  [299] pusharglist 6 ........................... <[#Like: likeIt, #LikeSorted: tmpLikeSorted, #diff: diffObj]>
+  [301] pushproplist ............................ <[#Like: likeIt, #LikeSorted: tmpLikeSorted, #diff: diffObj]>
+  [302] pusharglistnoret 1 ...................... <[#Like: likeIt, #LikeSorted: tmpLikeSorted, #diff: diffObj]>
+  [304] extcall 69 .............................. return [#Like: likeIt, #LikeSorted: tmpLikeSorted, #diff: diffObj]
+  [307] getlocal 104 ............................ <likeIt>
+  [309] pusharglistnoret 1 ...................... <likeIt>
+  [311] extcall 69 .............................. return likeIt
+  [314] ret
+end
+
+on CPtestTolerance
+  [  0] getglobal 23 ............................ <gRock>
+  [  2] getobjprop 82 ........................... <gRock.m_classManager>
+  [  5] pushsymb 521 ............................ <#StyleMix>
+  [  8] pusharglist 2 ........................... <gRock.m_classManager, #StyleMix>
+  [ 10] objcall 172 ............................. <gRock.m_classManager.createObj(#StyleMix)>
+  [ 13] setlocal 0 .............................. obj1 = gRock.m_classManager.createObj(#StyleMix)
+  [ 15] getglobal 23 ............................ <gRock>
+  [ 17] getobjprop 82 ........................... <gRock.m_classManager>
+  [ 20] pushsymb 521 ............................ <#StyleMix>
+  [ 23] pusharglist 2 ........................... <gRock.m_classManager, #StyleMix>
+  [ 25] objcall 172 ............................. <gRock.m_classManager.createObj(#StyleMix)>
+  [ 28] setlocal 8 .............................. obj1Tolerance = gRock.m_classManager.createObj(#StyleMix)
+  [ 30] getglobal 23 ............................ <gRock>
+  [ 32] getobjprop 82 ........................... <gRock.m_classManager>
+  [ 35] pushsymb 521 ............................ <#StyleMix>
+  [ 38] pusharglist 2 ........................... <gRock.m_classManager, #StyleMix>
+  [ 40] objcall 172 ............................. <gRock.m_classManager.createObj(#StyleMix)>
+  [ 43] setlocal 16 ............................. obj2 = gRock.m_classManager.createObj(#StyleMix)
+  [ 45] getglobal 23 ............................ <gRock>
+  [ 47] getobjprop 82 ........................... <gRock.m_classManager>
+  [ 50] pushsymb 276 ............................ <#m_classesVars>
+  [ 53] getlocal 0 .............................. <obj1>
+  [ 55] getobjprop 224 .......................... <obj1.className>
+  [ 58] pusharglist 3 ........................... <gRock.m_classManager, #m_classesVars, obj1.className>
+  [ 60] objcall 113 ............................. <gRock.m_classManager.m_classesVars[obj1.className]>
+  [ 63] setlocal 24 ............................. allVars = gRock.m_classManager.m_classesVars[obj1.className]
+  [ 65] pushint8 1 .............................. <1>
+  [ 68] setlocal 32
+  [ 70] getlocal 32
+  [ 72] getlocal 24 ............................. <allVars>
+  [ 74] pusharglist 1 ........................... <allVars>
+  [ 76] objcall 156 ............................. <allVars.count()>
+  [ 79] lteq
+  [ 80] jmpifz [113] ............................ repeat with n = 1 to allVars.count()
+  [ 83] getlocal 8 .............................. <obj1Tolerance>
+  [ 85] getlocal 24 ............................. <allVars>
+  [ 87] getlocal 32 ............................. <n>
+  [ 89] pusharglist 2 ........................... <allVars, n>
+  [ 91] objcall 295 ............................. <allVars.getPropAt(n)>
+  [ 94] pushint8 2 .............................. <2>
+  [ 97] pusharglistnoret 3 ...................... <obj1Tolerance, allVars.getPropAt(n), 2>
+  [ 99] objcall 296 ............................. obj1Tolerance.setaProp(allVars.getPropAt(n), 2)
+  [102] pushint8 1
+  [105] getlocal 32
+  [107] add
+  [108] setlocal 32
+  [110] endrepeat [ 70]
+  [113] getlocal 0 .............................. <obj1>
+  [115] pushcons 72 ............................. <0.5>
+  [117] setobjprop 525 .......................... obj1.Pop = 0.5
+  [120] getlocal 8 .............................. <obj1Tolerance>
+  [122] pushcons 80 ............................. <0.25>
+  [124] setobjprop 525 .......................... obj1Tolerance.Pop = 0.25
+  [127] getlocal 16 ............................. <obj2>
+  [129] pushcons 88 ............................. <0.59999999999999998>
+  [131] setobjprop 525 .......................... obj2.Pop = 0.59999999999999998
+  [134] getlocal 0 .............................. <obj1>
+  [136] pushcons 96 ............................. <0.5>
+  [138] setobjprop 523 .......................... obj1.rock = 0.5
+  [141] getlocal 8 .............................. <obj1Tolerance>
+  [143] pushcons 104 ............................ <0.25>
+  [145] setobjprop 523 .......................... obj1Tolerance.rock = 0.25
+  [148] getlocal 16 ............................. <obj2>
+  [150] pushcons 112 ............................ <0.5>
+  [152] setobjprop 523 .......................... obj2.rock = 0.5
+  [155] getlocal 0 .............................. <obj1>
+  [157] getlocal 8 .............................. <obj1Tolerance>
+  [159] getlocal 16 ............................. <obj2>
+  [161] pusharglistnoret 3 ...................... <obj1, obj1Tolerance, obj2>
+  [163] localcall 1 ............................. checkWithinTolerance(obj1, obj1Tolerance, obj2)
+  [165] ret
+end

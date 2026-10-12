@@ -1,0 +1,210 @@
+on convTimeListToTimeVal argTime
+end
+
+on getTimeDiffInDays argTime1, argTime2
+  format = [#year: 0, #month: 1, #day: 1, #Hour: 0, #min: 0, #Sec: 0]
+  tmpDaysPerMonth = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
+  Secs = 0
+  tmpWholeLeft = [:]
+  repeat with n = 1 to format.count()
+    tmp = format.getPropAt(n)
+    if voidp(argTime1[tmp]) then
+      argTime1[tmp] = format[n]
+    end if
+    case tmp of
+      #month:
+        tmpTot = 0
+        repeat with m = argTime1[#month] + 1 to 12
+          tmpTot = tmpTot + tmpDaysPerMonth[m]
+        end repeat
+        tmpWholeLeft[tmp] = tmpTot
+      #day:
+        tmpWholeLeft[tmp] = tmpDaysPerMonth[argTime1[#month]] - argTime1[#day] - 1
+      #Hour:
+        tmpWholeLeft[tmp] = 24 - argTime1[#Hour] - 1
+      #min:
+        tmpWholeLeft[tmp] = 60 - argTime1[#min] - 1
+      #Sec:
+        tmpWholeLeft[tmp] = 60 - argTime1[#Sec] - 1
+    end case
+  end repeat
+  secsSinceMonthStart1 = argTime1[#Sec] + (argTime1[#min] * 60) + (argTime1[#Hour] * 60 * 60) + (argTime1[#day] * 60 * 60 * 24)
+  secsSinceMonthStart2 = argTime2[#Sec] + (argTime2[#min] * 60) + (argTime2[#Hour] * 60 * 60) + (argTime2[#day] * 60 * 60 * 24)
+  tmpDiff = argTime2 - argTime1
+  diffInDays = 0
+  if tmpDiff[#year] = 0 then
+    if tmpDiff[#month] = 0 then
+      diffInSecs = secsSinceMonthStart2 - secsSinceMonthStart1
+      diffInDays = diffInSecs / (60 * 60 * 24)
+      Secs = diffInSecs - diffInDays
+    else
+      diffInDays = tmpWholeLeft[#day]
+      tmpTot = 0
+      repeat with m = argTime1[#month] + 1 to argTime2[#month] - 1
+        tmpTot = tmpTot + tmpDaysPerMonth[m]
+      end repeat
+      diffInDays = diffInDays + tmpTot + argTime2[#day]
+    end if
+  else
+    diffInDays = tmpWholeLeft[#day] + tmpWholeLeft[#month]
+    tmpTot = 0
+    repeat with m = 1 to argTime2[#month] - 1
+      tmpTot = tmpTot + tmpDaysPerMonth[m]
+    end repeat
+    diffInDays = diffInDays + tmpTot + argTime2[#day]
+    if tmpDiff[#year] >= 2 then
+      diffInDays = diffInDays + ((tmpDiff[#year] - 1) * 365)
+    end if
+  end if
+  diffInDays = diffInDays + getNumLeapYrs(argTime1, argTime2)
+  return diffInDays
+end
+
+on getTimeDiffInSecs argTime1, argTime2
+  format = [#year: 0, #month: 1, #day: 1, #Hour: 0, #min: 0, #Sec: 0]
+  tmpDiff = argTime2 - argTime1
+  tmpDaysPerMonth = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
+  tmpDays = 365 * tmpDiff[#year]
+  tmpNumLeapYears = getNumLeapYrs(argTime1, argTime2)
+  tmpWholeLeft = [:]
+  repeat with n = 1 to format.count()
+    tmp = format.getPropAt(n)
+    if voidp(argTime1[tmp]) then
+      argTime1[tmp] = format[n]
+    end if
+    case tmp of
+      #month:
+        tmpWholeLeft[tmp] = 12 - argTime1[#month] - 1
+      #day:
+        tmpWholeLeft[tmp] = tmpDaysPerMonth[argTime1[#month]] - argTime1[#day] - 1
+      #Hour:
+        tmpWholeLeft[tmp] = 24 - argTime1[#Hour] - 1
+      #min:
+        tmpWholeLeft[tmp] = 60 - argTime1[#min] - 1
+      #Sec:
+        tmpWholeLeft[tmp] = 60 - argTime1[#Sec] - 1
+    end case
+  end repeat
+  if tmpDiff[#year] > 0 then
+    wholeMonthsLeftIn1 = 12 - argTime1[#month] - 1
+  else
+    if tmpDiff[#month] > 0 then
+      wholeDaysLeftIn1 = tmpDaysPerMonth[argTime1[#month]] - argTime1[#day] - 1
+    end if
+  end if
+  if tmpDiff[#month] <> 0 then
+    tmpDaysLeftInMonth1 = tmpDaysPerMonth[argTime1[#month]] - argTime1[#day]
+    argTime1[#month] = argTime1[#month] + 1
+    if argTime1[#month] > 12 then
+      argTime1[#month] = 1
+    end if
+    tmpDiff[#day] = tmpDaysLeftInMonth1 + argTime2[#day]
+    if argTime1[#month] <> argTime2[#month] then
+      tmpDays = tmpDays - 365
+      argTime2[#month] = argTime2[#month] - 1
+      if argTime2[#month] < 1 then
+        argTime2[#month] = 12
+      end if
+      if argTime1[#month] > argTime2[#month] then
+        argTime2[#month] = argTime2[#month] + 12
+      end if
+      repeat with n = argTime1[#month] to argTime2[#month]
+        tmp = n mod 12
+        if tmp = 0 then
+          tmp = 12
+        end if
+        tmpDays = tmpDays + tmpDaysPerMonth[tmp]
+      end repeat
+    end if
+  end if
+  tmpDays = tmpDays + tmpNumLeapYears
+  tmpDiff[#day] = tmpDiff[#day] + tmpDays
+  tmpSecs = tmpDiff[#Sec] + (tmpDiff[#min] * 60) + (tmpDiff[#Hour] * 60 * 60) + (tmpDiff[#day] * 60 * 60 * 24)
+  return tmpSecs
+end
+
+on secsToOther argSecs, argFormatList
+  tmpReturn = [:]
+  tmpList = [#Week: 60.0 * 60.0 * 24 * 7, #day: 60.0 * 60.0 * 24, #Hour: 60.0 * 60.0, #min: 60.0, #Sec: 1]
+  repeat with n = 1 to tmpList.count()
+    if argFormatList.getPos(tmpList.getPropAt(n)) then
+      argSecs = secsUtil(argSecs, tmpList[n], tmpReturn, tmpList.getPropAt(n))
+    end if
+  end repeat
+  return tmpReturn
+end
+
+on listToSecs argList
+  totSecs = 0
+  if not voidp(argList[#Sec]) then
+    totSecs = totSecs + argList[#Sec]
+  end if
+  if not voidp(argList[#min]) then
+    totSecs = totSecs + (argList[#min] * 60)
+  end if
+  if not voidp(argList[#Hour]) then
+    totSecs = totSecs + (argList[#Hour] * 60 * 60)
+  end if
+  if not voidp(argList[#day]) then
+    totSecs = totSecs + (argList[#day] * 60 * 60 * 24)
+  end if
+  return totSecs
+end
+
+on secsUtil argVal, argFact, argList, argProp
+  tmp = argVal / argFact
+  argVal = argVal - (realInteger(tmp) * argFact)
+  repeat with n = 1 to argList.count()
+    argList[n] = realInteger(argList[n])
+  end repeat
+  argList.addProp(argProp, tmp)
+  return argVal
+end
+
+on getNumLeapYrs argStartDate, argEndDate
+  leapYrs = [4: 1, 100: -1, 400: 1]
+  totPassings = 0
+  repeat with n = 1 to leapYrs.count()
+    tmp = leapYrs.getPropAt(n)
+    tmpPass = (argEndDate[#year] / tmp) - (argStartDate[#year] / tmp)
+    totPassings = totPassings + (tmpPass * leapYrs[n])
+  end repeat
+  if isLeapYear(argStartDate[#year]) then
+    tmpPassedThis = 0
+    if argStartDate[#month] <= 2 then
+      if argStartDate[#day] <= 28 then
+        if argStartDate[#year] = argEndDate[#year] then
+          if argEndDate[#month] > 2 then
+            return 1
+          else
+            return 0
+          end if
+        else
+          tmpPassedThis = 1
+        end if
+      end if
+    end if
+    if tmpPassedThis = 0 then
+      totPassings = totPassings - 1
+    end if
+  end if
+  if isLeapYear(argEndDate[#year]) then
+    if argEndDate[#month] <= 2 then
+      totPassings = totPassings - 1
+    end if
+  end if
+  return totPassings
+end
+
+on isLeapYear argYear
+  if (argYear mod 400) = 0 then
+    return 1
+  end if
+  if (argYear mod 100) = 0 then
+    return 0
+  end if
+  if (argYear mod 4) = 0 then
+    return 1
+  end if
+  return 0
+end

@@ -1,0 +1,104 @@
+property lookup, nrOfDirs
+
+on new me, argNrOfDirs
+  nrOfDirs = argNrOfDirs
+  tmpMembNr = 0
+  if tmpMembNr > 0 then
+    lookup = value(member(tmpMembNr).text)
+  else
+    lookup = []
+    repeat with n = 1 to nrOfDirs
+      add(lookup, sin(2 * PI * n / nrOfDirs))
+    end repeat
+  end if
+  return me
+end
+
+on kill me
+  return 0
+end
+
+on getCos me, argAng
+  argAng = correctAngle(me, argAng + (nrOfDirs / 4))
+  return getAt(lookup, argAng)
+end
+
+on getSin me, argAng
+  argAng = correctAngle(me, argAng)
+  return getAt(lookup, argAng)
+end
+
+on angleToPoint me, argAng, argFact
+  return point(argFact * getSin(me, argAng), -argFact * getCos(me, argAng))
+end
+
+on pointToAngle me, argPoint, argPoint2
+  if listp(argPoint2) then
+    argPoint = argPoint - argPoint2
+  end if
+  diffX = -getAt(argPoint, 1)
+  diffY = getAt(argPoint, 2)
+  if diffY = 0 then
+    if diffX < 0 then
+      tempDirection = 3 * PI / 2
+    else
+      tempDirection = PI / 2
+    end if
+  else
+    tempDirection = atan(diffX / float(diffY))
+    if diffX > 0 then
+      if diffY > 0 then
+        nothing()
+      else
+        tempDirection = tempDirection + PI
+      end if
+    else
+      if diffY > 0 then
+        tempDirection = tempDirection + (2 * PI)
+      else
+        tempDirection = tempDirection + PI
+      end if
+    end if
+  end if
+  tempDirection = integer(nrOfDirs * tempDirection / PI / 2)
+  return tempDirection
+end
+
+on correctAngle me, argAng, argNrOfDirs
+  if voidp(argNrOfDirs) then
+    argNrOfDirs = nrOfDirs
+  end if
+  argAng = argAng mod argNrOfDirs
+  if argAng = 0 then
+    return argNrOfDirs
+  end if
+  if argAng > 0 then
+    return argAng
+  else
+    return argNrOfDirs + argAng
+  end if
+end
+
+on getAngleDiff me, argAng
+  argAng = argAng mod nrOfDirs
+  if argAng > nrOfDirs then
+    return -nrOfDirs + argAng
+  else
+    if argAng < (-nrOfDirs / 2) then
+      return nrOfDirs + argAng
+    end if
+  end if
+  return argAng
+end
+
+on getAnglesDiff me, argAng1, argAng2
+  tmpDiff = argAng2 - argAng1
+  if abs(tmpDiff) > (nrOfDirs / 2) then
+    if tmpDiff < 0 then
+      tmpDiff = nrOfDirs + tmpDiff
+    else
+      tmpDiff = tmpDiff - nrOfDirs
+    end if
+  end if
+  return tmpDiff
+end

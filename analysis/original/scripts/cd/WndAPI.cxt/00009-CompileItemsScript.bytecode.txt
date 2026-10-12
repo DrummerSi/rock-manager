@@ -1,0 +1,545 @@
+property itemList, linkToList, itemLevels, itemChainToRoots, itemObjs, currentAxis
+
+on new me
+  [  0] getparam 0 .............................. <me>
+  [  2] pusharglistnoret 1 ...................... <me>
+  [  4] extcall 96 .............................. return me
+  [  7] ret
+end
+
+on kill me
+  [  0] pushzero ................................ <0>
+  [  1] pusharglistnoret 1 ...................... <0>
+  [  3] extcall 96 .............................. return 0
+  [  6] ret
+end
+
+on calcRelations me, argList
+  [  0] getparam 8 .............................. <argList>
+  [  2] setprop 466 ............................. itemList = argList
+  [  5] pusharglist 0 ........................... <[]>
+  [  7] pushlist ................................ <[]>
+  [  8] setlocal 0 .............................. tmpRetOrder = []
+  [ 10] pusharglist 0 ........................... <[:]>
+  [ 12] pushproplist ............................ <[:]>
+  [ 13] setprop 84 .............................. itemObjs = [:]
+  [ 16] pushint8 1 .............................. <1>
+  [ 19] setlocal 8
+  [ 21] getlocal 8
+  [ 23] getprop 466 ............................. <itemList>
+  [ 26] pusharglist 1 ........................... <itemList>
+  [ 28] objcall 111 ............................. <itemList.count()>
+  [ 31] lteq
+  [ 32] jmpifz [111] ............................ repeat with tmpItemNr = 1 to itemList.count()
+  [ 35] getprop 466 ............................. <itemList>
+  [ 38] getlocal 8 .............................. <tmpItemNr>
+  [ 40] pusharglist 2 ........................... <itemList, tmpItemNr>
+  [ 42] objcall 43 .............................. <itemList[tmpItemNr]>
+  [ 45] pushsymb 144 ............................ <#rel>
+  [ 48] pusharglist 2 ........................... <itemList[tmpItemNr], #rel>
+  [ 50] objcall 43 .............................. <itemList[tmpItemNr][#rel]>
+  [ 53] setlocal 16 ............................. tmpRelList = itemList[tmpItemNr][#rel]
+  [ 55] getprop 466 ............................. <itemList>
+  [ 58] getlocal 8 .............................. <tmpItemNr>
+  [ 60] pusharglist 2 ........................... <itemList, tmpItemNr>
+  [ 62] objcall 43 .............................. <itemList[tmpItemNr]>
+  [ 65] pushsymb 46 ............................. <#ID>
+  [ 68] pusharglist 2 ........................... <itemList[tmpItemNr], #ID>
+  [ 70] objcall 43 .............................. <itemList[tmpItemNr][#ID]>
+  [ 73] setlocal 24 ............................. tmpID = itemList[tmpItemNr][#ID]
+  [ 75] getprop 84 .............................. <itemObjs>
+  [ 78] getlocal 24 ............................. <tmpID>
+  [ 80] pushcons 0 .............................. <"OneItemScript">
+  [ 82] pusharglist 1 ........................... <"OneItemScript">
+  [ 84] extcall 74 .............................. <script("OneItemScript")>
+  [ 87] getlocal 24 ............................. <tmpID>
+  [ 89] getlocal 16 ............................. <tmpRelList>
+  [ 91] pusharglist 3 ........................... <script("OneItemScript"), tmpID, tmpRelList>
+  [ 93] extcall 0 ............................... <new(script("OneItemScript"), tmpID, tmpRelList)>
+  [ 95] pusharglistnoret 3 ...................... <itemObjs, tmpID, new(script("OneItemScript"), tmpID, tmpRelList)>
+  [ 97] objcall 137 ............................. itemObjs.addProp(tmpID, new(script("OneItemScript"), tmpID, tmpRelList))
+  [100] pushint8 1
+  [103] getlocal 8
+  [105] add
+  [106] setlocal 8
+  [108] endrepeat [ 21]
+  [111] pushint8 1 .............................. <1>
+  [114] setprop 467
+  [117] getprop 467
+  [120] pushint8 2 .............................. <2>
+  [123] lteq
+  [124] jmpifz [564] ............................ repeat with currentAxis = 1 to 2
+  [127] pushzero ................................ <0>
+  [128] setlocal 32
+  [130] getlocal 32
+  [132] pushint8 1 .............................. <1>
+  [135] lteq
+  [136] jmpifz [248] ............................ repeat with n = 0 to 1
+  [139] getprop 84 .............................. <itemObjs>
+  [142] peek 0
+  [144] pusharglist 1
+  [146] extcall 111
+  [149] pushint8 1
+  [151] peek 0
+  [153] peek 2
+  [155] lteq
+  [156] jmpifz [235] ............................ repeat with tmpObj in itemObjs
+  [159] peek 2
+  [161] peek 1
+  [163] pusharglist 2
+  [165] extcall 43
+  [168] setlocal 40
+  [170] getlocal 40 ............................. <tmpObj>
+  [172] getobjprop 46 ........................... <tmpObj.ID>
+  [175] pushsymb 468 ............................ <#Item1>
+  [178] eq ...................................... <tmpObj.ID = #Item1>
+  [179] jmpifz [182] ............................ if tmpObj.ID = #Item1 then
+  [182] pusharglist 0 ........................... <[]>
+  [184] pushlist ................................ <[]>
+  [185] setlocal 48 ............................. tmpLinkList = []
+  [187] getparam 0 .............................. <me>
+  [189] getlocal 40 ............................. <tmpObj>
+  [191] getlocal 48 ............................. <tmpLinkList>
+  [193] getprop 467 ............................. <currentAxis>
+  [196] getlocal 32 ............................. <n>
+  [198] pushint8 2 .............................. <2>
+  [201] mul ..................................... <n * 2>
+  [202] add ..................................... <currentAxis + (n * 2)>
+  [203] pusharglist 4 ........................... <me, tmpObj, tmpLinkList, currentAxis + (n * 2)>
+  [205] objcall 465 ............................. <me.recursiveFindItemLevel(tmpObj, tmpLinkList, currentAxis + (n * 2))>
+  [208] setlocal 56 ............................. tmpLevel = me.recursiveFindItemLevel(tmpObj, tmpLinkList, currentAxis + (n * 2))
+  [210] getlocal 56 ............................. <tmpLevel>
+  [212] pushint8 1 .............................. <1>
+  [215] inv ..................................... <-1>
+  [216] eq ...................................... <tmpLevel = -1>
+  [217] jmpifz [229] ............................ if tmpLevel = -1 then
+  [220] pushcons 8 .............................. <"Circular definition">
+  [222] getlocal 48 ............................. <tmpLinkList>
+  [224] pusharglistnoret 2 ...................... <"Circular definition", tmpLinkList>
+  [226] extcall 126 ............................. put "Circular definition", tmpLinkList
+  [229] pushint8 1
+  [231] add
+  [232] endrepeat [151]
+  [235] pop 3
+  [237] pushint8 1
+  [240] getlocal 32
+  [242] add
+  [243] setlocal 32
+  [245] endrepeat [130]
+  [248] pusharglist 0 ........................... <[:]>
+  [250] pushproplist ............................ <[:]>
+  [251] setlocal 64 ............................. tmpOrderedByChain = [:]
+  [253] getlocal 64 ............................. <tmpOrderedByChain>
+  [255] pusharglistnoret 1 ...................... <tmpOrderedByChain>
+  [257] objcall 158 ............................. tmpOrderedByChain.sort()
+  [260] getprop 84 .............................. <itemObjs>
+  [263] peek 0
+  [265] pusharglist 1
+  [267] extcall 111
+  [270] pushint8 1
+  [272] peek 0
+  [274] peek 2
+  [276] lteq
+  [277] jmpifz [450] ............................ repeat with tmpObj in itemObjs
+  [280] peek 2
+  [282] peek 1
+  [284] pusharglist 2
+  [286] extcall 43
+  [289] setlocal 40
+  [291] getlocal 40 ............................. <tmpObj>
+  [293] getobjprop 46 ........................... <tmpObj.ID>
+  [296] setlocal 72 ............................. tmpItemID = tmpObj.ID
+  [298] pushzero ................................ <0>
+  [299] setlocal 32
+  [301] getlocal 32
+  [303] pushint8 1 .............................. <1>
+  [306] lteq
+  [307] jmpifz [444] ............................ repeat with n = 0 to 1
+  [310] getlocal 40 ............................. <tmpObj>
+  [312] getprop 467 ............................. <currentAxis>
+  [315] getlocal 32 ............................. <n>
+  [317] pushint8 2 .............................. <2>
+  [320] mul ..................................... <n * 2>
+  [321] add ..................................... <currentAxis + (n * 2)>
+  [322] pusharglist 2 ........................... <tmpObj, currentAxis + (n * 2)>
+  [324] objcall 469 ............................. <tmpObj.getChain(currentAxis + (n * 2))>
+  [327] setlocal 80 ............................. tmpChain = tmpObj.getChain(currentAxis + (n * 2))
+  [329] getlocal 80 ............................. <tmpChain>
+  [331] pushint8 1 .............................. <1>
+  [334] pusharglist 2 ........................... <tmpChain, 1>
+  [336] objcall 43 .............................. <tmpChain[1]>
+  [339] setlocal 88 ............................. tmpRoot = tmpChain[1]
+  [341] getlocal 64 ............................. <tmpOrderedByChain>
+  [343] getlocal 88 ............................. <tmpRoot>
+  [345] pusharglist 2 ........................... <tmpOrderedByChain, tmpRoot>
+  [347] objcall 185 ............................. <tmpOrderedByChain.getaProp(tmpRoot)>
+  [350] setlocal 96 ............................. tmpRootList = tmpOrderedByChain.getaProp(tmpRoot)
+  [352] getlocal 96 ............................. <tmpRootList>
+  [354] pusharglist 1 ........................... <tmpRootList>
+  [356] extcall 41 .............................. <voidp(tmpRootList)>
+  [359] jmpifz [385] ............................ if voidp(tmpRootList) then
+  [362] pusharglist 0 ........................... <[:]>
+  [364] pushproplist ............................ <[:]>
+  [365] setlocal 96 ............................. tmpRootList = [:]
+  [367] getlocal 96 ............................. <tmpRootList>
+  [369] pusharglistnoret 1 ...................... <tmpRootList>
+  [371] objcall 158 ............................. tmpRootList.sort()
+  [374] getlocal 64 ............................. <tmpOrderedByChain>
+  [376] getlocal 88 ............................. <tmpRoot>
+  [378] getlocal 96 ............................. <tmpRootList>
+  [380] pusharglistnoret 3 ...................... <tmpOrderedByChain, tmpRoot, tmpRootList>
+  [382] objcall 137 ............................. tmpOrderedByChain.addProp(tmpRoot, tmpRootList)
+  [385] getlocal 40 ............................. <tmpObj>
+  [387] pushsymb 470 ............................ <#levels>
+  [390] getprop 467 ............................. <currentAxis>
+  [393] getlocal 32 ............................. <n>
+  [395] pushint8 2 .............................. <2>
+  [398] mul ..................................... <n * 2>
+  [399] add ..................................... <currentAxis + (n * 2)>
+  [400] pusharglist 3 ........................... <tmpObj, #levels, currentAxis + (n * 2)>
+  [402] objcall 145 ............................. <tmpObj.levels[currentAxis + (n * 2)]>
+  [405] setlocal 104 ............................ tmpLvl = tmpObj.levels[currentAxis + (n * 2)]
+  [407] getlocal 104 ............................ <tmpLvl>
+  [409] pushint8 2 .............................. <2>
+  [412] inv ..................................... <-2>
+  [413] gt ...................................... <tmpLvl > -2>
+  [414] jmpifz [433] ............................ if tmpLvl > -2 then
+  [417] getlocal 96 ............................. <tmpRootList>
+  [419] getlocal 104 ............................ <tmpLvl>
+  [421] getlocal 72 ............................. <tmpItemID>
+  [423] getlocal 32 ............................. <n>
+  [425] pusharglist 2 ........................... <[tmpItemID, n]>
+  [427] pushlist ................................ <[tmpItemID, n]>
+  [428] pusharglistnoret 3 ...................... <tmpRootList, tmpLvl, [tmpItemID, n]>
+  [430] objcall 137 ............................. tmpRootList.addProp(tmpLvl, [tmpItemID, n])
+  [433] pushint8 1
+  [436] getlocal 32
+  [438] add
+  [439] setlocal 32
+  [441] endrepeat [301]
+  [444] pushint8 1
+  [446] add
+  [447] endrepeat [272]
+  [450] pop 3
+  [452] pusharglist 0 ........................... <[]>
+  [454] pushlist ................................ <[]>
+  [455] setlocal 112 ............................ tmpFinalOrder = []
+  [457] pushint8 1 .............................. <1>
+  [460] setlocal 32
+  [462] getlocal 32
+  [464] getlocal 64 ............................. <tmpOrderedByChain>
+  [466] pusharglist 1 ........................... <tmpOrderedByChain>
+  [468] objcall 111 ............................. <tmpOrderedByChain.count()>
+  [471] lteq
+  [472] jmpifz [542] ............................ repeat with n = 1 to tmpOrderedByChain.count()
+  [475] getlocal 64 ............................. <tmpOrderedByChain>
+  [477] getlocal 32 ............................. <n>
+  [479] pusharglist 2 ........................... <tmpOrderedByChain, n>
+  [481] objcall 43 .............................. <tmpOrderedByChain[n]>
+  [484] setlocal 120 ............................ tmpChainList = tmpOrderedByChain[n]
+  [486] pushint8 1 .............................. <1>
+  [489] setlocal 128
+  [491] getlocal 128
+  [493] getlocal 120 ............................ <tmpChainList>
+  [495] pusharglist 1 ........................... <tmpChainList>
+  [497] objcall 111 ............................. <tmpChainList.count()>
+  [500] lteq
+  [501] jmpifz [531] ............................ repeat with m = 1 to tmpChainList.count()
+  [504] getlocal 112 ............................ <tmpFinalOrder>
+  [506] getlocal 120 ............................ <tmpChainList>
+  [508] getlocal 128 ............................ <m>
+  [510] pusharglist 2 ........................... <tmpChainList, m>
+  [512] objcall 43 .............................. <tmpChainList[m]>
+  [515] pusharglistnoret 2 ...................... <tmpFinalOrder, tmpChainList[m]>
+  [517] objcall 115 ............................. tmpFinalOrder.add(tmpChainList[m])
+  [520] pushint8 1
+  [523] getlocal 128
+  [525] add
+  [526] setlocal 128
+  [528] endrepeat [491]
+  [531] pushint8 1
+  [534] getlocal 32
+  [536] add
+  [537] setlocal 32
+  [539] endrepeat [462]
+  [542] getlocal 0 .............................. <tmpRetOrder>
+  [544] getlocal 112 ............................ <tmpFinalOrder>
+  [546] pusharglistnoret 2 ...................... <tmpRetOrder, tmpFinalOrder>
+  [548] objcall 115 ............................. tmpRetOrder.add(tmpFinalOrder)
+  [551] pushint8 1
+  [554] getprop 467
+  [557] add
+  [558] setprop 467
+  [561] endrepeat [117]
+  [564] getlocal 0 .............................. <tmpRetOrder>
+  [566] pusharglistnoret 1 ...................... <tmpRetOrder>
+  [568] extcall 96 .............................. return tmpRetOrder
+  [571] ret
+end
+
+on recursiveFindItemLevel me, argItemObj, argLinkList, argWhich
+  [  0] getparam 8 .............................. <argItemObj>
+  [  2] getobjprop 46 ........................... <argItemObj.ID>
+  [  5] setlocal 0 .............................. tmpItemID = argItemObj.ID
+  [  7] getparam 8 .............................. <argItemObj>
+  [  9] getparam 24 ............................. <argWhich>
+  [ 11] pusharglist 2 ........................... <argItemObj, argWhich>
+  [ 13] objcall 469 ............................. <argItemObj.getChain(argWhich)>
+  [ 16] setlocal 8 .............................. tmpChain = argItemObj.getChain(argWhich)
+  [ 18] getlocal 8 .............................. <tmpChain>
+  [ 20] pusharglist 1 ........................... <tmpChain>
+  [ 22] extcall 50 .............................. <listp(tmpChain)>
+  [ 25] jmpifz [ 89] ............................ if listp(tmpChain) then
+  [ 28] getlocal 8 .............................. <tmpChain>
+  [ 30] getlocal 0 .............................. <tmpItemID>
+  [ 32] pusharglist 2 ........................... <tmpChain, tmpItemID>
+  [ 34] objcall 229 ............................. <tmpChain.getPos(tmpItemID)>
+  [ 37] setlocal 16 ............................. tmpPos = tmpChain.getPos(tmpItemID)
+  [ 39] getlocal 16 ............................. <tmpPos>
+  [ 41] setlocal 24
+  [ 43] getlocal 24
+  [ 45] pushint8 1 .............................. <1>
+  [ 48] gteq
+  [ 49] jmpifz [ 82] ............................ repeat with n = tmpPos down to 1
+  [ 52] getparam 16 ............................. <argLinkList>
+  [ 54] pushint8 1 .............................. <1>
+  [ 57] getlocal 8 .............................. <tmpChain>
+  [ 59] getlocal 24 ............................. <n>
+  [ 61] pusharglist 2 ........................... <tmpChain, n>
+  [ 63] objcall 43 .............................. <tmpChain[n]>
+  [ 66] pusharglistnoret 3 ...................... <argLinkList, 1, tmpChain[n]>
+  [ 68] objcall 246 ............................. argLinkList.addAt(1, tmpChain[n])
+  [ 71] pushint8 -1
+  [ 74] getlocal 24
+  [ 76] add
+  [ 77] setlocal 24
+  [ 79] endrepeat [ 43]
+  [ 82] getlocal 16 ............................. <tmpPos>
+  [ 84] pusharglistnoret 1 ...................... <tmpPos>
+  [ 86] extcall 96 .............................. return tmpPos
+  [ 89] getparam 16 ............................. <argLinkList>
+  [ 91] getlocal 0 .............................. <tmpItemID>
+  [ 93] pusharglist 2 ........................... <argLinkList, tmpItemID>
+  [ 95] objcall 229 ............................. <argLinkList.getPos(tmpItemID)>
+  [ 98] jmpifz [122] ............................ if argLinkList.getPos(tmpItemID) then
+  [101] getparam 16 ............................. <argLinkList>
+  [103] pushint8 1 .............................. <1>
+  [106] getlocal 0 .............................. <tmpItemID>
+  [108] pusharglistnoret 3 ...................... <argLinkList, 1, tmpItemID>
+  [110] objcall 246 ............................. argLinkList.addAt(1, tmpItemID)
+  [113] pushint8 1 .............................. <1>
+  [116] inv ..................................... <-1>
+  [117] pusharglistnoret 1 ...................... <-1>
+  [119] extcall 96 .............................. return -1
+  [122] getparam 8 .............................. <argItemObj>
+  [124] pushsymb 144 ............................ <#rel>
+  [127] getparam 24 ............................. <argWhich>
+  [129] pusharglist 3 ........................... <argItemObj, #rel, argWhich>
+  [131] objcall 145 ............................. <argItemObj.rel[argWhich]>
+  [134] setlocal 32 ............................. tmpLinkToInfo = argItemObj.rel[argWhich]
+  [136] getlocal 32 ............................. <tmpLinkToInfo>
+  [138] pushsymb 280 ............................ <#Auto>
+  [141] eq ...................................... <tmpLinkToInfo = #Auto>
+  [142] jmpifz [175] ............................ if tmpLinkToInfo = #Auto then
+  [145] pushint8 2 .............................. <2>
+  [148] inv ..................................... <-2>
+  [149] pusharglistnoret 1 ...................... <-2>
+  [151] extcall 96 .............................. return -2
+  [154] getparam 8 .............................. <argItemObj>
+  [156] pushsymb 144 ............................ <#rel>
+  [159] getparam 8 .............................. <argItemObj>
+  [161] getparam 24 ............................. <argWhich>
+  [163] pusharglist 2 ........................... <argItemObj, argWhich>
+  [165] objcall 266 ............................. <argItemObj.getOther(argWhich)>
+  [168] pusharglist 3 ........................... <argItemObj, #rel, argItemObj.getOther(argWhich)>
+  [170] objcall 145 ............................. <argItemObj.rel[argItemObj.getOther(argWhich)]>
+  [173] setlocal 32 ............................. tmpLinkToInfo = argItemObj.rel[argItemObj.getOther(argWhich)]
+  [175] pushzero ................................ <0>
+  [176] setlocal 40 ............................. tmpLinkToID = 0
+  [178] getlocal 32 ............................. <tmpLinkToInfo>
+  [180] pusharglist 1 ........................... <tmpLinkToInfo>
+  [182] extcall 50 .............................. <listp(tmpLinkToInfo)>
+  [185] jmpifz [213] ............................ if listp(tmpLinkToInfo) then / else
+  [188] getlocal 32 ............................. <tmpLinkToInfo>
+  [190] pusharglist 1 ........................... <tmpLinkToInfo>
+  [192] objcall 111 ............................. <tmpLinkToInfo.count()>
+  [195] jmpifz [210] ............................ if tmpLinkToInfo.count() then
+  [198] getlocal 32 ............................. <tmpLinkToInfo>
+  [200] pushint8 1 .............................. <1>
+  [203] pusharglist 2 ........................... <tmpLinkToInfo, 1>
+  [205] objcall 43 .............................. <tmpLinkToInfo[1]>
+  [208] setlocal 40 ............................. tmpLinkToID = tmpLinkToInfo[1]
+  [210] jmp [217]
+  [213] getlocal 32 ............................. <tmpLinkToInfo>
+  [215] setlocal 40 ............................. tmpLinkToID = tmpLinkToInfo
+  [217] pushzero ................................ <0>
+  [218] setlocal 48 ............................. tmpIsLevel1 = 0
+  [220] getlocal 40 ............................. <tmpLinkToID>
+  [222] pusharglist 1 ........................... <tmpLinkToID>
+  [224] extcall 222 ............................. <symbolp(tmpLinkToID)>
+  [227] jmpifz [269] ............................ if symbolp(tmpLinkToID) then / else
+  [230] getlocal 40 ............................. <tmpLinkToID>
+  [232] pusharglist 1 ........................... <tmpLinkToID>
+  [234] extcall 135 ............................. <string(tmpLinkToID)>
+  [237] setlocal 56 ............................. tmpStr = string(tmpLinkToID)
+  [239] getlocal 56 ............................. <tmpStr>
+  [241] pushsymb 211 ............................ <#char>
+  [244] pushint8 1 .............................. <1>
+  [247] pushint8 3 .............................. <3>
+  [250] pusharglist 4 ........................... <tmpStr, #char, 1, 3>
+  [252] objcall 145 ............................. <tmpStr.char[1..3]>
+  [255] pushcons 16 ............................. <"ZYX">
+  [257] eq ...................................... <tmpStr.char[1..3] = "ZYX">
+  [258] jmpifz [266] ............................ if tmpStr.char[1..3] = "ZYX" then
+  [261] pushint8 1 .............................. <1>
+  [264] setlocal 48 ............................. tmpIsLevel1 = 1
+  [266] jmp [281]
+  [269] getlocal 40 ............................. <tmpLinkToID>
+  [271] pushzero ................................ <0>
+  [272] eq ...................................... <tmpLinkToID = 0>
+  [273] jmpifz [281] ............................ if tmpLinkToID = 0 then
+  [276] pushint8 1 .............................. <1>
+  [279] setlocal 48 ............................. tmpIsLevel1 = 1
+  [281] getlocal 48 ............................. <tmpIsLevel1>
+  [283] jmpifz [329] ............................ if tmpIsLevel1 then
+  [286] getparam 16 ............................. <argLinkList>
+  [288] pushint8 1 .............................. <1>
+  [291] getlocal 0 .............................. <tmpItemID>
+  [293] pusharglistnoret 3 ...................... <argLinkList, 1, tmpItemID>
+  [295] objcall 246 ............................. argLinkList.addAt(1, tmpItemID)
+  [298] getparam 16 ............................. <argLinkList>
+  [300] pushint8 1 .............................. <1>
+  [303] getlocal 40 ............................. <tmpLinkToID>
+  [305] pusharglistnoret 3 ...................... <argLinkList, 1, tmpLinkToID>
+  [307] objcall 246 ............................. argLinkList.addAt(1, tmpLinkToID)
+  [310] getparam 8 .............................. <argItemObj>
+  [312] getparam 24 ............................. <argWhich>
+  [314] getparam 16 ............................. <argLinkList>
+  [316] pusharglistnoret 3 ...................... <argItemObj, argWhich, argLinkList>
+  [318] objcall 483 ............................. argItemObj.setChain(argWhich, argLinkList)
+  [321] pushint8 1 .............................. <1>
+  [324] pusharglistnoret 1 ...................... <1>
+  [326] extcall 96 .............................. return 1
+  [329] getparam 16 ............................. <argLinkList>
+  [331] pushint8 1 .............................. <1>
+  [334] getlocal 0 .............................. <tmpItemID>
+  [336] pusharglistnoret 3 ...................... <argLinkList, 1, tmpItemID>
+  [338] objcall 246 ............................. argLinkList.addAt(1, tmpItemID)
+  [341] getlocal 32 ............................. <tmpLinkToInfo>
+  [343] pushint8 1 .............................. <1>
+  [346] pusharglist 2 ........................... <tmpLinkToInfo, 1>
+  [348] objcall 43 .............................. <tmpLinkToInfo[1]>
+  [351] setlocal 64 ............................. tmpLinkToNr = tmpLinkToInfo[1]
+  [353] getlocal 32 ............................. <tmpLinkToInfo>
+  [355] pushint8 2 .............................. <2>
+  [358] pusharglist 2 ........................... <tmpLinkToInfo, 2>
+  [360] objcall 43 .............................. <tmpLinkToInfo[2]>
+  [363] pushsymb 209 ............................ <#Mid>
+  [366] eq ...................................... <tmpLinkToInfo[2] = #Mid>
+  [367] jmpifz [465] ............................ if tmpLinkToInfo[2] = #Mid then / else
+  [370] getparam 16 ............................. <argLinkList>
+  [372] pusharglist 1 ........................... <argLinkList>
+  [374] objcall 168 ............................. <argLinkList.duplicate()>
+  [377] setlocal 72 ............................. tmpLinkList2 = argLinkList.duplicate()
+  [379] getparam 0 .............................. <me>
+  [381] getprop 84 .............................. <itemObjs>
+  [384] getlocal 40 ............................. <tmpLinkToID>
+  [386] pusharglist 2 ........................... <itemObjs, tmpLinkToID>
+  [388] objcall 145 ............................. <itemObjs.getProp(tmpLinkToID)>
+  [391] getparam 16 ............................. <argLinkList>
+  [393] pushint8 1 .............................. <1>
+  [396] pusharglist 4 ........................... <me, itemObjs.getProp(tmpLinkToID), argLinkList, 1>
+  [398] objcall 465 ............................. <me.recursiveFindItemLevel(itemObjs.getProp(tmpLinkToID), argLinkList, 1)>
+  [401] setlocal 80 ............................. tmpLevel = me.recursiveFindItemLevel(itemObjs.getProp(tmpLinkToID), argLinkList, 1)
+  [403] getlocal 80 ............................. <tmpLevel>
+  [405] pushint8 1 .............................. <1>
+  [408] inv ..................................... <-1>
+  [409] eq ...................................... <tmpLevel = -1>
+  [410] jmpifz [422] ............................ if tmpLevel = -1 then
+  [413] pushint8 1 .............................. <1>
+  [416] inv ..................................... <-1>
+  [417] pusharglistnoret 1 ...................... <-1>
+  [419] extcall 96 .............................. return -1
+  [422] getparam 0 .............................. <me>
+  [424] getprop 84 .............................. <itemObjs>
+  [427] getlocal 40 ............................. <tmpLinkToID>
+  [429] pusharglist 2 ........................... <itemObjs, tmpLinkToID>
+  [431] objcall 145 ............................. <itemObjs.getProp(tmpLinkToID)>
+  [434] getlocal 72 ............................. <tmpLinkList2>
+  [436] pushint8 2 .............................. <2>
+  [439] pusharglist 4 ........................... <me, itemObjs.getProp(tmpLinkToID), tmpLinkList2, 2>
+  [441] objcall 465 ............................. <me.recursiveFindItemLevel(itemObjs.getProp(tmpLinkToID), tmpLinkList2, 2)>
+  [444] setlocal 88 ............................. tmpLevel2 = me.recursiveFindItemLevel(itemObjs.getProp(tmpLinkToID), tmpLinkList2, 2)
+  [446] getlocal 88 ............................. <tmpLevel2>
+  [448] getlocal 80 ............................. <tmpLevel>
+  [450] gt ...................................... <tmpLevel2 > tmpLevel>
+  [451] jmpifz [462] ............................ if tmpLevel2 > tmpLevel then
+  [454] getlocal 88 ............................. <tmpLevel2>
+  [456] setlocal 80 ............................. tmpLevel = tmpLevel2
+  [458] getlocal 72 ............................. <tmpLinkList2>
+  [460] setparam 16 ............................. argLinkList = tmpLinkList2
+  [462] jmp [560]
+  [465] getlocal 32 ............................. <tmpLinkToInfo>
+  [467] pushint8 2 .............................. <2>
+  [470] pusharglist 2 ........................... <tmpLinkToInfo, 2>
+  [472] objcall 43 .............................. <tmpLinkToInfo[2]>
+  [475] pushsymb 210 ............................ <#Reg>
+  [478] eq ...................................... <tmpLinkToInfo[2] = #Reg>
+  [479] jmpifz [529] ............................ if tmpLinkToInfo[2] = #Reg then / else
+  [482] getparam 24 ............................. <argWhich>
+  [484] setlocal 96 ............................. tmp = argWhich
+  [486] getlocal 96 ............................. <tmp>
+  [488] pushint8 2 .............................. <2>
+  [491] gt ...................................... <tmp > 2>
+  [492] jmpifz [503] ............................ if tmp > 2 then
+  [495] getlocal 96 ............................. <tmp>
+  [497] pushint8 2 .............................. <2>
+  [500] sub ..................................... <tmp - 2>
+  [501] setlocal 96 ............................. tmp = tmp - 2
+  [503] getparam 0 .............................. <me>
+  [505] getprop 84 .............................. <itemObjs>
+  [508] getlocal 40 ............................. <tmpLinkToID>
+  [510] pusharglist 2 ........................... <itemObjs, tmpLinkToID>
+  [512] objcall 145 ............................. <itemObjs.getProp(tmpLinkToID)>
+  [515] getparam 16 ............................. <argLinkList>
+  [517] getlocal 96 ............................. <tmp>
+  [519] pusharglist 4 ........................... <me, itemObjs.getProp(tmpLinkToID), argLinkList, tmp>
+  [521] objcall 465 ............................. <me.recursiveFindItemLevel(itemObjs.getProp(tmpLinkToID), argLinkList, tmp)>
+  [524] setlocal 80 ............................. tmpLevel = me.recursiveFindItemLevel(itemObjs.getProp(tmpLinkToID), argLinkList, tmp)
+  [526] jmp [560]
+  [529] getparam 0 .............................. <me>
+  [531] getprop 84 .............................. <itemObjs>
+  [534] getlocal 40 ............................. <tmpLinkToID>
+  [536] pusharglist 2 ........................... <itemObjs, tmpLinkToID>
+  [538] objcall 145 ............................. <itemObjs.getProp(tmpLinkToID)>
+  [541] getparam 16 ............................. <argLinkList>
+  [543] getlocal 32 ............................. <tmpLinkToInfo>
+  [545] pushint8 2 .............................. <2>
+  [548] pusharglist 2 ........................... <tmpLinkToInfo, 2>
+  [550] objcall 43 .............................. <tmpLinkToInfo[2]>
+  [553] pusharglist 4 ........................... <me, itemObjs.getProp(tmpLinkToID), argLinkList, tmpLinkToInfo[2]>
+  [555] objcall 465 ............................. <me.recursiveFindItemLevel(itemObjs.getProp(tmpLinkToID), argLinkList, tmpLinkToInfo[2])>
+  [558] setlocal 80 ............................. tmpLevel = me.recursiveFindItemLevel(itemObjs.getProp(tmpLinkToID), argLinkList, tmpLinkToInfo[2])
+  [560] getlocal 80 ............................. <tmpLevel>
+  [562] pushint8 1 .............................. <1>
+  [565] inv ..................................... <-1>
+  [566] eq ...................................... <tmpLevel = -1>
+  [567] jmpifz [579] ............................ if tmpLevel = -1 then
+  [570] pushint8 1 .............................. <1>
+  [573] inv ..................................... <-1>
+  [574] pusharglistnoret 1 ...................... <-1>
+  [576] extcall 96 .............................. return -1
+  [579] getparam 8 .............................. <argItemObj>
+  [581] getparam 24 ............................. <argWhich>
+  [583] getparam 16 ............................. <argLinkList>
+  [585] pusharglistnoret 3 ...................... <argItemObj, argWhich, argLinkList>
+  [587] objcall 483 ............................. argItemObj.setChain(argWhich, argLinkList)
+  [590] getparam 8 .............................. <argItemObj>
+  [592] pushsymb 470 ............................ <#levels>
+  [595] getparam 24 ............................. <argWhich>
+  [597] pusharglist 3 ........................... <argItemObj, #levels, argWhich>
+  [599] objcall 145 ............................. <argItemObj.levels[argWhich]>
+  [602] pusharglistnoret 1 ...................... <argItemObj.levels[argWhich]>
+  [604] extcall 96 .............................. return argItemObj.levels[argWhich]
+  [607] ret
+end

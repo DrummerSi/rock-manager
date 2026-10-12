@@ -1,0 +1,67 @@
+property ancestor, m_mission_r
+global gDir, gRock
+
+on new me, argOptions
+  ID = argOptions[#ID]
+  argOptions.setaProp(#ReportTo, me)
+  argOptions.setaProp(#child, me)
+  m_mission_r = gRock.m_context.getFocus(#Mission)
+  if not objectp(m_mission_r) then
+    m_mission_r = gRock.m_classManager.getObjByIDAndClass(#Mission01, #Mission)
+  end if
+  pott(m_mission_r.ID, m_mission_r.name)
+  dialog_r = gRock.m_classManager.getObjByIDAndClass(#DlgMissionIntro, #Dialog)
+  dialog_r.name = m_mission_r.name
+  argOptions[#DlgInfoObj] = dialog_r
+  ancestor = script("DlgRockAncestorScript").new(argOptions)
+  itemObj = ancestor.m_objDlg.getItemByPath([#InfoDlg, #Head, #icon])
+  itemObj.setOneProp(#Pic, "icon_cd02")
+  itemObj = ancestor.m_objDlg.getItemByPath([#InfoDlg, #Head, #Info])
+  itemObj.setOneProp(#editData, rGetStr(#szidMissionFrameText))
+  itemObj = ancestor.m_objDlg.getItemByPath([#InfoDlg, #dlg, #Pic])
+  member("MissionIntro2Text").text = me.nldecode(m_mission_r.CriteriaText)
+  itemObj.setOneProp(#Pic, member("MissionIntro2Text"))
+  itemObj = ancestor.m_objDlg.getItem(#Info)
+  itemObj.setOneProp(#Pic, rFormatText([m_mission_r.IntroText], "MissionIntroFormatting", [#shadow: 1]))
+  ancestor.render()
+  return me
+end
+
+on nldecode me, argStr
+  repeat while 1
+    tmpOff = offset("\n", argStr)
+    if tmpOff then
+      put RETURN into me.char[tmpOff..tmpOff + 1]
+      next repeat
+    end if
+    exit repeat
+  end repeat
+  return argStr
+end
+
+on kill me
+  ancestor.kill()
+  return 0
+end
+
+on Report me, argObj, argWhat
+end
+
+on mouse me, argObj, argWhat, argOption
+  if objectp(argOption) then
+    if argWhat = #click then
+      ID = argOption.getOneProp(#ID)
+      if ID = #ButtonOK then
+        sendAllSprites(#stopSound)
+        repeat with SPNum = 1 to 100
+          sprite(SPNum).member = member("Dummy")
+        end repeat
+        gRock.startMission(m_mission_r.ID)
+        me.kill()
+        goMovie("Main")
+        exit
+      end if
+      ancestor.mouse(argObj, argWhat, argOption)
+    end if
+  end if
+end

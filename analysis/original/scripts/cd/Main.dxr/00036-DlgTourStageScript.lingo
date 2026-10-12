@@ -1,0 +1,272 @@
+property ancestor, m_selectInCategory, m_chosenElements, m_totPrice, m_addedPicItems, m_usedSPs, m_tempMember, m_animObjs, m_bandTour_r
+global gDir, gRock
+
+on new me, argOptions
+  ID = argOptions[#ID]
+  argOptions.setaProp(#ReportTo, me)
+  argOptions.setaProp(#child, me)
+  dialog_r = gRock.m_classManager.getObjByIDAndClass(#DlgTourStage, #Dialog)
+  argOptions[#DlgInfoObj] = dialog_r
+  ancestor = script("DlgRockAncestorScript").new(argOptions)
+  m_bandTour_r = argOptions[#BandTour]
+  orgItem = ancestor.m_objDlg.getItem(#Choose1)
+  orgItemProps = orgItem.copyProps()
+  cats = [#DCStageBG, #DCStageLights, #DCStageSpeakers, #DCStageEffects]
+  m_selectInCategory = [:]
+  m_chosenElements = [:]
+  repeat with n = 1 to cats.count()
+    catID = cats[n]
+    catObj_r = gRock.m_classManager.getObjByIDAndClass(catID, #DesignCategory)
+    if objectp(catObj_r) then
+      m_selectInCategory.addProp(catID, 0)
+      m_chosenElements.addProp(catID, 0)
+      if n = 1 then
+        newItem = orgItem
+      else
+        orgItemProps[#ID] = symbol("Choose" & string(n))
+        orgItemProps[#inOffsetRect] = orgItemProps[#inOffsetRect] + [0, 65, 0, 0]
+        newItem = ancestor.m_objDlg.addItem(orgItemProps)
+      end if
+      tmpObj = newItem.dialogObj.getItemByPath([#Head, #icon])
+      if objectp(tmpObj) then
+        tmpObj.setOneProp(#Pic, catObj_r.Gfx)
+      end if
+      tmpObj = newItem.dialogObj.getItemByPath([#Head, #Info])
+      if objectp(tmpObj) then
+        tmpObj.setOneProp(#editData, catObj_r.name)
+      end if
+      objsBtn = newItem.dialogObj.getItemsByType(#button)
+      repeat with obj in objsBtn
+        obj.scriptInstanceList.addAt(1, me)
+      end repeat
+    end if
+  end repeat
+  tmpAlreadyChosen = m_bandTour_r.StageDesign
+  if not listp(tmpAlreadyChosen) then
+    tmpAlreadyChosen = [:]
+  end if
+  if tmpAlreadyChosen.count then
+    repeat with n = 1 to tmpAlreadyChosen.count
+      catID = tmpAlreadyChosen.getPropAt(n)
+      elementID = tmpAlreadyChosen[n]
+      catObj_r = gRock.m_classManager.getObjByIDAndClass(catID, #DesignCategory)
+      Nr = catObj_r.elements.getPos(elementID)
+      me.setChooser(catID, Nr)
+    end repeat
+  else
+    repeat with n = 1 to m_selectInCategory.count
+      me.setChooser(m_selectInCategory.getPropAt(n), 1)
+    end repeat
+  end if
+  ancestor.m_objDlg.recalc(#DontPaint)
+  m_addedPicItems = []
+  me.makeComposite()
+  ancestor.render()
+  return me
+end
+
+on kill me
+  if objectp(m_tempMember) then
+    m_tempMember.erase()
+  end if
+  if listp(m_animObjs) then
+    repeat with obj in m_animObjs
+      obj.kill()
+    end repeat
+    m_animObjs = []
+  end if
+  m_addedPicItems = []
+  if listp(m_usedSPs) then
+    repeat with SPNum in m_usedSPs
+      sprite(SPNum).member = member("Dummy")
+      sprite(SPNum).ink = 36
+    end repeat
+  end if
+  m_bandTour_r = 0
+  m_chosenElements = 0
+  m_selectInCategory = 0
+  ancestor.kill()
+  return 0
+end
+
+on Report me, argObj, argWhat
+end
+
+on mouse me, argObj, argWhat, argOption
+  if objectp(argOption) then
+    if argWhat = #click then
+      ID = argOption.getOneProp(#ID)
+      IDStr = string(ID)
+      if offset("Arrow", IDStr) then
+        obj = argOption
+        if objectp(obj) then
+          overIDs = obj.masterObj.getOverIDs()
+          cnt = overIDs.count()
+          if cnt >= 2 then
+            belongingToID = overIDs[1]
+            tmp = string(belongingToID)
+            if offset("Choose", tmp) then
+              delete ID.char[1..6]
+              categoryNr = value(tmp)
+            else
+              exit
+            end if
+            categoryID = m_selectInCategory.getPropAt(categoryNr)
+            tmpDir = (2 * (ID = #ArrowDown)) - 1
+            if me.setChooser(categoryID, tmpDir) then
+              me.makeComposite()
+            end if
+          end if
+        end if
+      else
+        if ID = #ButtonOK then
+          m_bandTour_r.StageQuality = 0.0
+          repeat with n = 1 to m_selectInCategory.count
+            catID = m_selectInCategory.getPropAt(n)
+            elementID = me.getSelectedElementID(catID)
+            m_bandTour_r.StageDesign.setaProp(catID, elementID)
+            element_r = gRock.m_classManager.getObjByIDAndClass(elementID, #DesignElement)
+            m_bandTour_r.StageQuality = m_bandTour_r.StageQuality + element_r.quality
+          end repeat
+          obj = gDir.m_objDialogsMaster.getDialogUnder(me)
+          ancestor.mouse(argObj, argWhat, argOption)
+          if objectp(obj) then
+            obj.Report(me, #OkayedStage)
+          end if
+          exit
+        end if
+        ancestor.mouse(argObj, argWhat, argOption)
+      end if
+    end if
+  end if
+end
+
+on getSelectedElementID me, argCatID
+  currentSelectedNr = m_selectInCategory.getaProp(argCatID)
+  if voidp(currentSelectedNr) or (currentSelectedNr = 0) then
+    return VOID
+  end if
+  catObj_r = gRock.m_classManager.getObjByIDAndClass(argCatID, #DesignCategory)
+  elementID = catObj_r.elements[currentSelectedNr]
+  return elementID
+end
+
+on setChooser me, argCatID, argDirection
+  currentSelectedNr = m_selectInCategory.getProp(argCatID)
+  currentSelectedNr = currentSelectedNr + argDirection
+  if currentSelectedNr < 1 then
+    return 0
+  end if
+  catObj_r = gRock.m_classManager.getObjByIDAndClass(argCatID, #DesignCategory)
+  if currentSelectedNr > catObj_r.elements.count() then
+    return 0
+  end if
+  m_selectInCategory.setaProp(argCatID, currentSelectedNr)
+  ID = catObj_r.elements[currentSelectedNr]
+  obj_r = gRock.m_classManager.getObjByIDAndClass(ID, #DesignElement)
+  m_chosenElements[argCatID] = obj_r
+  itemPos = m_selectInCategory.findPos(argCatID)
+  changeDlgItem = ancestor.m_objDlg.getItem(symbol("Choose" & string(itemPos)))
+  if objectp(changeDlgItem) then
+    textObj = changeDlgItem.dialogObj.getItem(#text)
+    if objectp(textObj) then
+      textObj.setOneProp(#editData, obj_r.name & " " & rCurrency(obj_r.price, 0, 1))
+    end if
+  end if
+  return 1
+end
+
+on makeComposite me
+  repeat with n = m_addedPicItems.count down to 1
+    ancestor.m_objDlg.deleteItem(m_addedPicItems[n])
+  end repeat
+  m_addedPicItems = []
+  if listp(m_usedSPs) then
+    repeat with SPNum in m_usedSPs
+      sprite(SPNum).member = member("Dummy")
+    end repeat
+  end if
+  m_usedSPs = []
+  itemObj = ancestor.m_objDlg.getItem(#Pic)
+  itemObj.setOneProp(#Pic, "Dummy")
+  rct = itemObj.getOnStageRect()
+  midLoc = point(rct[1], rct[2]) + point(160, 180)
+  tmpOrderedMembers = [:]
+  tmpOrderedMembers.sort()
+  m_totPrice = 0
+  tmpOrder = [#DCStageBG: EMPTY, #Rig: EMPTY, #DCStageSpeakers: "l", #DCStageLights: EMPTY, #DCStageEffects: EMPTY, #DCStageSpeakers: "r"]
+  tmpSPNum = ancestor.getSPOverDlg()
+  repeat with n = 1 to tmpOrder.count
+    tmpCatID = tmpOrder.getPropAt(n)
+    tmpPostfix = tmpOrder[n]
+    infoList = []
+    if tmpCatID = #Rig then
+      infoList = [["stage_small_base01", 3]]
+      memb = member("stage_small_base01")
+    else
+      obj_r = m_chosenElements.getaProp(tmpCatID)
+      if not objectp(obj_r) then
+        next repeat
+      end if
+      if obj_r.Gfx.length > 0 then
+        infoList = obj_r.Gfx.value
+        if not listp(infoList) then
+          infoList = []
+        end if
+      else
+        memb = member("Dummy")
+      end if
+    end if
+    repeat with Info in infoList
+      tmpOrderedMembers.addProp(Info[2], Info[1])
+    end repeat
+  end repeat
+  if listp(m_animObjs) then
+    repeat with obj in m_animObjs
+      obj.kill()
+    end repeat
+  end if
+  m_animObjs = []
+  tmpSPNum = ancestor.getSPOverDlg()
+  repeat with n = 1 to tmpOrderedMembers.count
+    memb = 0
+    membName = tmpOrderedMembers[n]
+    if membName = #AlbumSleeve then
+      img = makeAlbumCover()
+      if not objectp(img) then
+        next repeat
+      end if
+      tmpDstQuad = [point(0, 0), point(111, 4), point(111, 151), point(2, 123)]
+      img2 = image(111, 149, 16)
+      img2.copyPixels(img, tmpDstQuad, img.rect)
+      if not objectp(m_tempMember) then
+        m_tempMember = newMember(#bitmap)
+        m_tempMember.name = "__TEMP"
+      end if
+      m_tempMember.image = img2
+      m_tempMember.regPoint = point(35, 123)
+      memb = m_tempMember
+    else
+      if offset("_0001", membName) then
+        tmpPrefix = membName.char[1..membName.length - 4]
+        membNr = member(membName).number
+        repeat with numFrames = 1 to 40
+          tmpMemb = member(membNr + numFrames)
+          if offset(tmpPrefix, tmpMemb.name) = 0 then
+            exit repeat
+          end if
+        end repeat
+        animObj = script("SimpleAnimScript").new(0, tmpSPNum, membNr - 1, [#numFrames: numFrames, #StopWhenDone: 0, #speed: 1])
+        m_animObjs.add(animObj)
+      end if
+      memb = member(membName)
+    end if
+    if objectp(memb) then
+      sprite(tmpSPNum).member = member(memb)
+    end if
+    sprite(tmpSPNum).loc = midLoc
+    sprite(tmpSPNum).ink = 0
+    m_usedSPs.add(tmpSPNum)
+    tmpSPNum = tmpSPNum + 1
+  end repeat
+end

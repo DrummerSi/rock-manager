@@ -1,0 +1,1632 @@
+property m_wordSeparators, m_str, m_nesting, m_lastWordStart, m_lineStart, m_realNestingDepth
+
+on new me, argStr
+  [  0] pushcons 0 .............................. <RETURN>
+  [  2] pusharglist 0 ........................... <>
+  [  4] extcall 2088 ............................ <SPACE>
+  [  7] pushint8 9 .............................. <9>
+  [ 10] pusharglist 1 ........................... <9>
+  [ 12] extcall 375 ............................. <numToChar(9)>
+  [ 15] pusharglist 3 ........................... <[RETURN, SPACE, numToChar(9)]>
+  [ 17] pushlist ................................ <[RETURN, SPACE, numToChar(9)]>
+  [ 18] setprop 2859 ............................ m_wordSeparators = [RETURN, SPACE, numToChar(9)]
+  [ 21] getparam 0 .............................. <me>
+  [ 23] pusharglistnoret 1 ...................... <me>
+  [ 25] extcall 69 .............................. return me
+  [ 28] ret
+end
+
+on convFile me, argFile
+  [  0] getparam 8 .............................. <argFile>
+  [  2] pusharglist 1 ........................... <argFile>
+  [  4] extcall 137 ............................. <readFile(argFile)>
+  [  7] setlocal 0 .............................. str = readFile(argFile)
+  [  9] getlocal 0 .............................. <str>
+  [ 11] pusharglist 1 ........................... <str>
+  [ 13] extcall 13 .............................. <stringp(str)>
+  [ 15] not ..................................... <not stringp(str)>
+  [ 16] jmpifz [ 20] ............................ if not stringp(str) then
+  [ 19] ret ..................................... exit
+  [ 20] pushint8 10 ............................. <10>
+  [ 23] pusharglist 1 ........................... <10>
+  [ 25] extcall 375 ............................. <numToChar(10)>
+  [ 28] pushcons 8 .............................. <EMPTY>
+  [ 30] getlocal 8 .............................. <argStr>
+  [ 32] pusharglist 3 ........................... <numToChar(10), EMPTY, argStr>
+  [ 34] extcall 2732 ............................ <changeChars(numToChar(10), EMPTY, argStr)>
+  [ 37] setlocal 8 .............................. argStr = changeChars(numToChar(10), EMPTY, argStr)
+  [ 39] getparam 0 .............................. <me>
+  [ 41] getlocal 8 .............................. <argStr>
+  [ 43] pusharglist 2 ........................... <me, argStr>
+  [ 45] objcall 2847 ............................ <me.codeToList(argStr)>
+  [ 48] setlocal 16 ............................. code = me.codeToList(argStr)
+  [ 50] getparam 8 .............................. <argFile>
+  [ 52] pusharglist 1 ........................... <argFile>
+  [ 54] extcall 2198 ............................ <fileStripName(argFile)>
+  [ 57] setlocal 24 ............................. stripped = fileStripName(argFile)
+  [ 59] getparam 8 .............................. <argFile>
+  [ 61] pusharglist 1 ........................... <argFile>
+  [ 63] extcall 123 ............................. <fileExtractPath(argFile)>
+  [ 66] setlocal 32 ............................. path = fileExtractPath(argFile)
+  [ 68] getlocal 32 ............................. <path>
+  [ 70] getlocal 24 ............................. <stripped>
+  [ 72] joinstr ................................. <path & stripped>
+  [ 73] pushcons 16 ............................. <".dat">
+  [ 75] joinstr ................................. <path & stripped & ".dat">
+  [ 76] getlocal 16 ............................. <code>
+  [ 78] pusharglist 1 ........................... <code>
+  [ 80] extcall 114 ............................. <string(code)>
+  [ 83] pusharglistnoret 2 ...................... <path & stripped & ".dat", string(code)>
+  [ 85] extcall 17 .............................. writeFile(path & stripped & ".dat", string(code))
+  [ 87] ret
+end
+
+on codeToList me, argStr
+  [  0] getparam 8 .............................. <argStr>
+  [  2] setprop 372 ............................. m_str = argStr
+  [  5] getprop 372 ............................. <m_str>
+  [  8] pusharglist 1 ........................... <m_str>
+  [ 10] extcall 61 .............................. <voidp(m_str)>
+  [ 13] jmpifz [ 29] ............................ if voidp(m_str) then
+  [ 16] pushcons 24 ............................. <"TestThisFucker">
+  [ 18] pusharglist 1 ........................... <"TestThisFucker">
+  [ 20] extcall 56 .............................. <member("TestThisFucker")>
+  [ 23] getobjprop 415 .......................... <member("TestThisFucker").scriptText>
+  [ 26] setprop 372 ............................. m_str = member("TestThisFucker").scriptText
+  [ 29] pusharglist 0 ........................... <[]>
+  [ 31] pushlist ................................ <[]>
+  [ 32] setprop 2861 ............................ m_nesting = []
+  [ 35] pusharglist 0 ........................... <[]>
+  [ 37] pushlist ................................ <[]>
+  [ 38] setlocal 0 .............................. results = []
+  [ 40] pusharglist 0 ........................... <[]>
+  [ 42] pushlist ................................ <[]>
+  [ 43] setlocal 8 .............................. currentSubList = []
+  [ 45] getlocal 0 .............................. <results>
+  [ 47] getlocal 8 .............................. <currentSubList>
+  [ 49] pusharglistnoret 2 ...................... <results, currentSubList>
+  [ 51] objcall 229 ............................. results.add(currentSubList)
+  [ 54] pushint8 1 .............................. <1>
+  [ 57] setprop 2862 ............................ m_realNestingDepth = 1
+  [ 60] pushsymb 2863 ........................... <#on>
+  [ 63] pushsymb 2829 ........................... <#if>
+  [ 66] pushsymb 2864 ........................... <#else>
+  [ 69] pushsymb 2865 ........................... <#end>
+  [ 72] pushsymb 2866 ........................... <#then>
+  [ 75] pushsymb 2867 ........................... <#repeat>
+  [ 78] pushsymb 2868 ........................... <#for>
+  [ 81] pushsymb 69 ............................. <#return>
+  [ 84] pusharglist 8 ........................... <[#on, #if, #else, #end, #then, #repeat, #for, #return]>
+  [ 86] pushlist ................................ <[#on, #if, #else, #end, #then, #repeat, #for, #return]>
+  [ 87] setlocal 16 ............................. keywords = [#on, #if, #else, #end, #then, #repeat, #for, #return]
+  [ 89] pushint8 1 .............................. <1>
+  [ 92] setlocal 24 ............................. firstWordOnThisLine = 1
+  [ 94] pushzero ................................ <0>
+  [ 95] setprop 2869 ............................ m_lastWordStart = 0
+  [ 98] pushint8 1 .............................. <1>
+  [101] setprop 2870 ............................ m_lineStart = 1
+  [104] pushint8 1 .............................. <1>
+  [107] setlocal 32 ............................. currLineNr = 1
+  [109] pushzero ................................ <0>
+  [110] setlocal 40 ............................. isOneLiner = 0
+  [112] getprop 372 ............................. <m_str>
+  [115] pushcons 32 ............................. <RETURN>
+  [117] joinstr ................................. <m_str & RETURN>
+  [118] setprop 372 ............................. m_str = m_str & RETURN
+  [121] pushint8 1 .............................. <1>
+  [124] setlocal 48
+  [126] getlocal 48
+  [128] getprop 372 ............................. <m_str>
+  [131] getobjprop 135 .......................... <m_str.length>
+  [134] lteq
+  [135] jmpifz [1498] ........................... repeat with chNr = 1 to m_str.length
+  [138] getprop 372 ............................. <m_str>
+  [141] pushsymb 138 ............................ <#char>
+  [144] getlocal 48 ............................. <chNr>
+  [146] pusharglist 3 ........................... <m_str, #char, chNr>
+  [148] objcall 113 ............................. <m_str.char[chNr]>
+  [151] setlocal 56 ............................. ch = m_str.char[chNr]
+  [153] getprop 2869 ............................ <m_lastWordStart>
+  [156] pushzero ................................ <0>
+  [157] gt ...................................... <m_lastWordStart > 0>
+  [158] jmpifz [289] ............................ if m_lastWordStart > 0 then
+  [161] getprop 372 ............................. <m_str>
+  [164] pushsymb 138 ............................ <#char>
+  [167] getprop 2869 ............................ <m_lastWordStart>
+  [170] getlocal 48 ............................. <chNr>
+  [172] pusharglist 4 ........................... <m_str, #char, m_lastWordStart, chNr>
+  [174] objcall 113 ............................. <m_str.char[m_lastWordStart..chNr]>
+  [177] pushcons 40 ............................. <"--">
+  [179] eq ...................................... <m_str.char[m_lastWordStart..chNr] = "--">
+  [180] jmpifz [289] ............................ if m_str.char[m_lastWordStart..chNr] = "--" then
+  [183] getlocal 48 ............................. <chNr>
+  [185] getprop 372 ............................. <m_str>
+  [188] getobjprop 135 .......................... <m_str.length>
+  [191] lt ...................................... <chNr < m_str.length>
+  [192] jmpifz [282] ............................ repeat while chNr < m_str.length
+  [195] getprop 372 ............................. <m_str>
+  [198] pushsymb 138 ............................ <#char>
+  [201] getlocal 48 ............................. <chNr>
+  [203] pusharglist 3 ........................... <m_str, #char, chNr>
+  [205] objcall 113 ............................. <m_str.char[chNr]>
+  [208] pushcons 48 ............................. <RETURN>
+  [210] eq ...................................... <m_str.char[chNr] = RETURN>
+  [211] jmpifz [271] ............................ if m_str.char[chNr] = RETURN then
+  [214] getlocal 48 ............................. <chNr>
+  [216] pushint8 1 .............................. <1>
+  [219] sub ..................................... <chNr - 1>
+  [220] setlocal 48 ............................. chNr = chNr - 1
+  [222] getlocal 48 ............................. <chNr>
+  [224] getprop 2869 ............................ <m_lastWordStart>
+  [227] sub ..................................... <chNr - m_lastWordStart>
+  [228] setlocal 64 ............................. tmpDeleteLen = chNr - m_lastWordStart
+  [230] pushvarref 372 .......................... <m_str>
+  [233] pushchunkvarref 3 ....................... <m_str>
+  [235] pushsymb 138 ............................ <#char>
+  [238] getprop 2869 ............................ <m_lastWordStart>
+  [241] getlocal 48 ............................. <chNr>
+  [243] pusharglist 4 ........................... <m_str, #char, m_lastWordStart, chNr>
+  [245] objcall 416 ............................. <m_str.char[m_lastWordStart..chNr]>
+  [248] pusharglistnoret 1 ...................... <m_str.char[m_lastWordStart..chNr]>
+  [250] objcall 417 ............................. delete m_str.char[m_lastWordStart..chNr]
+  [253] getlocal 48 ............................. <chNr>
+  [255] getlocal 64 ............................. <tmpDeleteLen>
+  [257] sub ..................................... <chNr - tmpDeleteLen>
+  [258] setlocal 48 ............................. chNr = chNr - tmpDeleteLen
+  [260] getlocal 32 ............................. <currLineNr>
+  [262] pushint8 1 .............................. <1>
+  [265] add ..................................... <currLineNr + 1>
+  [266] setlocal 32 ............................. currLineNr = currLineNr + 1
+  [268] jmp [282] ............................... exit repeat
+  [271] getlocal 48 ............................. <chNr>
+  [273] pushint8 1 .............................. <1>
+  [276] add ..................................... <chNr + 1>
+  [277] setlocal 48 ............................. chNr = chNr + 1
+  [279] endrepeat [183]
+  [282] pushzero ................................ <0>
+  [283] setprop 2869 ............................ m_lastWordStart = 0
+  [286] jmp [1487] .............................. next repeat
+  [289] getprop 2859 ............................ <m_wordSeparators>
+  [292] getlocal 56 ............................. <ch>
+  [294] pusharglist 2 ........................... <m_wordSeparators, ch>
+  [296] objcall 337 ............................. <m_wordSeparators.getPos(ch)>
+  [299] jmpifz [1474] ........................... if m_wordSeparators.getPos(ch) then
+  [302] getlocal 48 ............................. <chNr>
+  [304] setlocal 72 ............................. tmpStartedChNr = chNr
+  [306] pushzero ................................ <0>
+  [307] setlocal 80 ............................. isKeyword = 0
+  [309] getprop 2869 ............................ <m_lastWordStart>
+  [312] pushzero ................................ <0>
+  [313] gt ...................................... <m_lastWordStart > 0>
+  [314] jmpifz [1143] ........................... if m_lastWordStart > 0 then
+  [317] getprop 372 ............................. <m_str>
+  [320] pushsymb 138 ............................ <#char>
+  [323] getprop 2869 ............................ <m_lastWordStart>
+  [326] getlocal 48 ............................. <chNr>
+  [328] pushint8 1 .............................. <1>
+  [331] sub ..................................... <chNr - 1>
+  [332] pusharglist 4 ........................... <m_str, #char, m_lastWordStart, chNr - 1>
+  [334] objcall 113 ............................. <m_str.char[m_lastWordStart..chNr - 1]>
+  [337] setlocal 88 ............................. tmpWord = m_str.char[m_lastWordStart..chNr - 1]
+  [339] getparam 0 .............................. <me>
+  [341] pusharglist 1 ........................... <me>
+  [343] objcall 2849 ............................ <me.getLastKeyword()>
+  [346] setlocal 96 ............................. lastKeyword = me.getLastKeyword()
+  [348] getlocal 16 ............................. <keywords>
+  [350] getlocal 88 ............................. <tmpWord>
+  [352] pusharglist 1 ........................... <tmpWord>
+  [354] extcall 267 ............................. <symbol(tmpWord)>
+  [357] pusharglist 2 ........................... <keywords, symbol(tmpWord)>
+  [359] objcall 337 ............................. <keywords.getPos(symbol(tmpWord))>
+  [362] setlocal 80 ............................. isKeyword = keywords.getPos(symbol(tmpWord))
+  [364] getlocal 80 ............................. <isKeyword>
+  [366] jmpifz [1143] ........................... if isKeyword then
+  [369] getlocal 88 ............................. <tmpWord>
+  [371] pushcons 56 ............................. <"end">
+  [373] eq ...................................... <tmpWord = "end">
+  [374] jmpifz [453] ............................ if tmpWord = "end" then / else
+  [377] getparam 0 .............................. <me>
+  [379] getlocal 0 .............................. <results>
+  [381] pusharglist 2 ........................... <me, results>
+  [383] objcall 2848 ............................ <me.closeCurrentNesting(results)>
+  [386] setlocal 8 .............................. currentSubList = me.closeCurrentNesting(results)
+  [388] getlocal 8 .............................. <currentSubList>
+  [390] pusharglist 1 ........................... <currentSubList>
+  [392] extcall 115 ............................. <listp(currentSubList)>
+  [395] not ..................................... <not listp(currentSubList)>
+  [396] jmpifz [405] ............................ if not listp(currentSubList) then
+  [399] pushzero ................................ <0>
+  [400] pusharglistnoret 1 ...................... <0>
+  [402] extcall 69 .............................. return 0
+  [405] getlocal 48 ............................. <chNr>
+  [407] getprop 372 ............................. <m_str>
+  [410] getobjprop 135 .......................... <m_str.length>
+  [413] lt ...................................... <chNr < m_str.length>
+  [414] jmpifz [450] ............................ repeat while chNr < m_str.length
+  [417] getprop 372 ............................. <m_str>
+  [420] pushsymb 138 ............................ <#char>
+  [423] getlocal 48 ............................. <chNr>
+  [425] pusharglist 3 ........................... <m_str, #char, chNr>
+  [427] objcall 113 ............................. <m_str.char[chNr]>
+  [430] pushcons 64 ............................. <RETURN>
+  [432] eq ...................................... <m_str.char[chNr] = RETURN>
+  [433] jmpifz [439] ............................ if m_str.char[chNr] = RETURN then
+  [436] jmp [450] ............................... exit repeat
+  [439] getlocal 48 ............................. <chNr>
+  [441] pushint8 1 .............................. <1>
+  [444] add ..................................... <chNr + 1>
+  [445] setlocal 48 ............................. chNr = chNr + 1
+  [447] endrepeat [405]
+  [450] jmp [1082]
+  [453] getlocal 88 ............................. <tmpWord>
+  [455] pushcons 72 ............................. <"on">
+  [457] eq ...................................... <tmpWord = "on">
+  [458] jmpifz [672] ............................ if tmpWord = "on" then / else
+  [461] getlocal 48 ............................. <chNr>
+  [463] pushint8 1 .............................. <1>
+  [466] add ..................................... <chNr + 1>
+  [467] setlocal 48 ............................. chNr = chNr + 1
+  [469] getlocal 48 ............................. <chNr>
+  [471] setlocal 104 ............................ tmpHandlerStart = chNr
+  [473] pushcons 80 ............................. <EMPTY>
+  [475] setlocal 112 ............................ tmpHandlerName = EMPTY
+  [477] getlocal 48 ............................. <chNr>
+  [479] getprop 372 ............................. <m_str>
+  [482] getobjprop 135 .......................... <m_str.length>
+  [485] lt ...................................... <chNr < m_str.length>
+  [486] jmpifz [596] ............................ repeat while chNr < m_str.length
+  [489] getprop 372 ............................. <m_str>
+  [492] pushsymb 138 ............................ <#char>
+  [495] getlocal 48 ............................. <chNr>
+  [497] pusharglist 3 ........................... <m_str, #char, chNr>
+  [499] objcall 113 ............................. <m_str.char[chNr]>
+  [502] pushcons 88 ............................. <" ">
+  [504] eq ...................................... <m_str.char[chNr] = " ">
+  [505] jmpifz [532] ............................ if m_str.char[chNr] = " " then / else
+  [508] getprop 372 ............................. <m_str>
+  [511] pushsymb 138 ............................ <#char>
+  [514] getlocal 104 ............................ <tmpHandlerStart>
+  [516] getlocal 48 ............................. <chNr>
+  [518] pushint8 1 .............................. <1>
+  [521] sub ..................................... <chNr - 1>
+  [522] pusharglist 4 ........................... <m_str, #char, tmpHandlerStart, chNr - 1>
+  [524] objcall 113 ............................. <m_str.char[tmpHandlerStart..chNr - 1]>
+  [527] setlocal 112 ............................ tmpHandlerName = m_str.char[tmpHandlerStart..chNr - 1]
+  [529] jmp [585]
+  [532] getprop 372 ............................. <m_str>
+  [535] pushsymb 138 ............................ <#char>
+  [538] getlocal 48 ............................. <chNr>
+  [540] pusharglist 3 ........................... <m_str, #char, chNr>
+  [542] objcall 113 ............................. <m_str.char[chNr]>
+  [545] pushcons 96 ............................. <RETURN>
+  [547] eq ...................................... <m_str.char[chNr] = RETURN>
+  [548] jmpifz [585] ............................ if m_str.char[chNr] = RETURN then
+  [551] getlocal 112 ............................ <tmpHandlerName>
+  [553] getobjprop 135 .......................... <tmpHandlerName.length>
+  [556] pushzero ................................ <0>
+  [557] eq ...................................... <tmpHandlerName.length = 0>
+  [558] jmpifz [582] ............................ if tmpHandlerName.length = 0 then
+  [561] getprop 372 ............................. <m_str>
+  [564] pushsymb 138 ............................ <#char>
+  [567] getlocal 104 ............................ <tmpHandlerStart>
+  [569] getlocal 48 ............................. <chNr>
+  [571] pushint8 1 .............................. <1>
+  [574] sub ..................................... <chNr - 1>
+  [575] pusharglist 4 ........................... <m_str, #char, tmpHandlerStart, chNr - 1>
+  [577] objcall 113 ............................. <m_str.char[tmpHandlerStart..chNr - 1]>
+  [580] setlocal 112 ............................ tmpHandlerName = m_str.char[tmpHandlerStart..chNr - 1]
+  [582] jmp [596] ............................... exit repeat
+  [585] getlocal 48 ............................. <chNr>
+  [587] pushint8 1 .............................. <1>
+  [590] add ..................................... <chNr + 1>
+  [591] setlocal 48 ............................. chNr = chNr + 1
+  [593] endrepeat [477]
+  [596] getlocal 8 .............................. <currentSubList>
+  [598] pushsymb 2863 ........................... <#on>
+  [601] getlocal 112 ............................ <tmpHandlerName>
+  [603] pusharglist 1 ........................... <[tmpHandlerName]>
+  [605] pushlist ................................ <[tmpHandlerName]>
+  [606] pusharglist 2 ........................... <[#on, [tmpHandlerName]]>
+  [608] pushlist ................................ <[#on, [tmpHandlerName]]>
+  [609] pusharglistnoret 2 ...................... <currentSubList, [#on, [tmpHandlerName]]>
+  [611] objcall 229 ............................. currentSubList.add([#on, [tmpHandlerName]])
+  [614] getlocal 8 .............................. <currentSubList>
+  [616] getlocal 8 .............................. <currentSubList>
+  [618] getobjprop 156 .......................... <currentSubList.count>
+  [621] pusharglist 2 ........................... <currentSubList, currentSubList.count>
+  [623] objcall 119 ............................. <currentSubList[currentSubList.count]>
+  [626] setlocal 8 .............................. currentSubList = currentSubList[currentSubList.count]
+  [628] getlocal 8 .............................. <currentSubList>
+  [630] getlocal 8 .............................. <currentSubList>
+  [632] getobjprop 156 .......................... <currentSubList.count>
+  [635] pusharglist 2 ........................... <currentSubList, currentSubList.count>
+  [637] objcall 119 ............................. <currentSubList[currentSubList.count]>
+  [640] setlocal 8 .............................. currentSubList = currentSubList[currentSubList.count]
+  [642] getprop 2861 ............................ <m_nesting>
+  [645] getlocal 88 ............................. <tmpWord>
+  [647] getlocal 48 ............................. <chNr>
+  [649] getlocal 32 ............................. <currLineNr>
+  [651] pusharglist 3 ........................... <[tmpWord, chNr, currLineNr]>
+  [653] pushlist ................................ <[tmpWord, chNr, currLineNr]>
+  [654] pusharglistnoret 2 ...................... <m_nesting, [tmpWord, chNr, currLineNr]>
+  [656] objcall 229 ............................. m_nesting.add([tmpWord, chNr, currLineNr])
+  [659] getprop 2862 ............................ <m_realNestingDepth>
+  [662] pushint8 2 .............................. <2>
+  [665] add ..................................... <m_realNestingDepth + 2>
+  [666] setprop 2862 ............................ m_realNestingDepth = m_realNestingDepth + 2
+  [669] jmp [1082]
+  [672] getlocal 88 ............................. <tmpWord>
+  [674] pushcons 104 ............................ <"if">
+  [676] eq ...................................... <tmpWord = "if">
+  [677] jmpifz [754] ............................ if tmpWord = "if" then / else
+  [680] getlocal 8 .............................. <currentSubList>
+  [682] pushsymb 2829 ........................... <#if>
+  [685] pusharglist 0 ........................... <[]>
+  [687] pushlist ................................ <[]>
+  [688] pusharglist 2 ........................... <[#if, []]>
+  [690] pushlist ................................ <[#if, []]>
+  [691] pusharglistnoret 2 ...................... <currentSubList, [#if, []]>
+  [693] objcall 229 ............................. currentSubList.add([#if, []])
+  [696] getlocal 8 .............................. <currentSubList>
+  [698] getlocal 8 .............................. <currentSubList>
+  [700] getobjprop 156 .......................... <currentSubList.count>
+  [703] pusharglist 2 ........................... <currentSubList, currentSubList.count>
+  [705] objcall 119 ............................. <currentSubList[currentSubList.count]>
+  [708] setlocal 8 .............................. currentSubList = currentSubList[currentSubList.count]
+  [710] getlocal 8 .............................. <currentSubList>
+  [712] getlocal 8 .............................. <currentSubList>
+  [714] getobjprop 156 .......................... <currentSubList.count>
+  [717] pusharglist 2 ........................... <currentSubList, currentSubList.count>
+  [719] objcall 119 ............................. <currentSubList[currentSubList.count]>
+  [722] setlocal 8 .............................. currentSubList = currentSubList[currentSubList.count]
+  [724] getprop 2862 ............................ <m_realNestingDepth>
+  [727] pushint8 2 .............................. <2>
+  [730] add ..................................... <m_realNestingDepth + 2>
+  [731] setprop 2862 ............................ m_realNestingDepth = m_realNestingDepth + 2
+  [734] getprop 2861 ............................ <m_nesting>
+  [737] getlocal 88 ............................. <tmpWord>
+  [739] getlocal 48 ............................. <chNr>
+  [741] getlocal 32 ............................. <currLineNr>
+  [743] pusharglist 3 ........................... <[tmpWord, chNr, currLineNr]>
+  [745] pushlist ................................ <[tmpWord, chNr, currLineNr]>
+  [746] pusharglistnoret 2 ...................... <m_nesting, [tmpWord, chNr, currLineNr]>
+  [748] objcall 229 ............................. m_nesting.add([tmpWord, chNr, currLineNr])
+  [751] jmp [1082]
+  [754] getlocal 88 ............................. <tmpWord>
+  [756] pushcons 112 ............................ <"then">
+  [758] eq ...................................... <tmpWord = "then">
+  [759] jmpifz [906] ............................ if tmpWord = "then" then / else
+  [762] getlocal 96 ............................. <lastKeyword>
+  [764] pushcons 120 ............................ <"if">
+  [766] eq ...................................... <lastKeyword = "if">
+  [767] jmpifz [903] ............................ if lastKeyword = "if" then
+  [770] getparam 0 .............................. <me>
+  [772] pusharglist 1 ........................... <me>
+  [774] objcall 2850 ............................ <me.cleanBetweenKeywords()>
+  [777] setlocal 120 ............................ betweenKeywords = me.cleanBetweenKeywords()
+  [779] getlocal 120 ............................ <betweenKeywords>
+  [781] pushint8 1 .............................. <1>
+  [784] pusharglist 2 ........................... <betweenKeywords, 1>
+  [786] objcall 119 ............................. <betweenKeywords[1]>
+  [789] setlocal 128 ............................ tmp = betweenKeywords[1]
+  [791] getlocal 128 ............................ <tmp>
+  [793] pushsymb 138 ............................ <#char>
+  [796] pushint8 1 .............................. <1>
+  [799] pusharglist 3 ........................... <tmp, #char, 1>
+  [801] objcall 113 ............................. <tmp.char[1]>
+  [804] pushcons 128 ............................ <"(">
+  [806] eq ...................................... <tmp.char[1] = "(">
+  [807] getlocal 128 ............................ <tmp>
+  [809] pushsymb 138 ............................ <#char>
+  [812] getlocal 128 ............................ <tmp>
+  [814] getobjprop 135 .......................... <tmp.length>
+  [817] pusharglist 3 ........................... <tmp, #char, tmp.length>
+  [819] objcall 113 ............................. <tmp.char[tmp.length]>
+  [822] pushcons 136 ............................ <")">
+  [824] eq ...................................... <tmp.char[tmp.length] = ")">
+  [825] and ..................................... <(tmp.char[1] = "(") and (tmp.char[tmp.length] = ")")>
+  [826] jmpifz [873] ............................ if (tmp.char[1] = "(") and (tmp.char[tmp.length] = ")") then
+  [829] pushint8 16 ............................. <16>
+  [832] pushchunkvarref 5 ....................... <keywords>
+  [834] pushsymb 138 ............................ <#char>
+  [837] pushint8 1 .............................. <1>
+  [840] pusharglist 3 ........................... <keywords, #char, 1>
+  [842] objcall 416 ............................. <keywords.char[1]>
+  [845] pusharglistnoret 1 ...................... <keywords.char[1]>
+  [847] objcall 417 ............................. delete keywords.char[1]
+  [850] pushint8 16 ............................. <16>
+  [853] pushchunkvarref 5 ....................... <keywords>
+  [855] pushsymb 138 ............................ <#char>
+  [858] getlocal 128 ............................ <tmp>
+  [860] getobjprop 135 .......................... <tmp.length>
+  [863] pusharglist 3 ........................... <keywords, #char, tmp.length>
+  [865] objcall 416 ............................. <keywords.char[tmp.length]>
+  [868] pusharglistnoret 1 ...................... <keywords.char[tmp.length]>
+  [870] objcall 417 ............................. delete keywords.char[tmp.length]
+  [873] getlocal 8 .............................. <currentSubList>
+  [875] getlocal 128 ............................ <tmp>
+  [877] pusharglistnoret 2 ...................... <currentSubList, tmp>
+  [879] objcall 229 ............................. currentSubList.add(tmp)
+  [882] getparam 0 .............................. <me>
+  [884] getlocal 8 .............................. <currentSubList>
+  [886] pusharglist 2 ........................... <me, currentSubList>
+  [888] objcall 2855 ............................ <me.stepDown(currentSubList)>
+  [891] setlocal 8 .............................. currentSubList = me.stepDown(currentSubList)
+  [893] getprop 2862 ............................ <m_realNestingDepth>
+  [896] pushint8 1 .............................. <1>
+  [899] add ..................................... <m_realNestingDepth + 1>
+  [900] setprop 2862 ............................ m_realNestingDepth = m_realNestingDepth + 1
+  [903] jmp [1082]
+  [906] getlocal 88 ............................. <tmpWord>
+  [908] pushcons 144 ............................ <"else">
+  [910] eq ...................................... <tmpWord = "else">
+  [911] jmpifz [1003] ........................... if tmpWord = "else" then / else
+  [914] getlocal 96 ............................. <lastKeyword>
+  [916] pushcons 152 ............................ <"if">
+  [918] eq ...................................... <lastKeyword = "if">
+  [919] jmpifz [993] ............................ if lastKeyword = "if" then / else
+  [922] getprop 2862 ............................ <m_realNestingDepth>
+  [925] pushint8 1 .............................. <1>
+  [928] sub ..................................... <m_realNestingDepth - 1>
+  [929] setprop 2862 ............................ m_realNestingDepth = m_realNestingDepth - 1
+  [932] getparam 0 .............................. <me>
+  [934] getlocal 0 .............................. <results>
+  [936] getprop 2862 ............................ <m_realNestingDepth>
+  [939] pusharglist 3 ........................... <me, results, m_realNestingDepth>
+  [941] objcall 2854 ............................ <me.stepInto(results, m_realNestingDepth)>
+  [944] setlocal 8 .............................. currentSubList = me.stepInto(results, m_realNestingDepth)
+  [946] getprop 2862 ............................ <m_realNestingDepth>
+  [949] pushint8 1 .............................. <1>
+  [952] add ..................................... <m_realNestingDepth + 1>
+  [953] setprop 2862 ............................ m_realNestingDepth = m_realNestingDepth + 1
+  [956] getparam 0 .............................. <me>
+  [958] getlocal 8 .............................. <currentSubList>
+  [960] pusharglist 2 ........................... <me, currentSubList>
+  [962] objcall 2855 ............................ <me.stepDown(currentSubList)>
+  [965] setlocal 8 .............................. currentSubList = me.stepDown(currentSubList)
+  [967] getprop 2861 ............................ <m_nesting>
+  [970] getprop 2861 ............................ <m_nesting>
+  [973] getobjprop 156 .......................... <m_nesting.count>
+  [976] getlocal 88 ............................. <tmpWord>
+  [978] getlocal 48 ............................. <chNr>
+  [980] getlocal 32 ............................. <currLineNr>
+  [982] pusharglist 3 ........................... <[tmpWord, chNr, currLineNr]>
+  [984] pushlist ................................ <[tmpWord, chNr, currLineNr]>
+  [985] pusharglistnoret 3 ...................... <m_nesting, m_nesting.count, [tmpWord, chNr, currLineNr]>
+  [987] objcall 353 ............................. m_nesting[m_nesting.count] = [tmpWord, chNr, currLineNr]
+  [990] jmp [1000]
+  [993] pushcons 160 ............................ <"else without if!">
+  [995] pusharglistnoret 1 ...................... <"else without if!">
+  [997] extcall 122 ............................. pott("else without if!")
+  [1000] jmp [1082]
+  [1003] getlocal 88 ............................ <tmpWord>
+  [1005] pushcons 168 ........................... <"return">
+  [1007] eq ..................................... <tmpWord = "return">
+  [1008] jmpifz [1082] .......................... if tmpWord = "return" then
+  [1011] getlocal 8 ............................. <currentSubList>
+  [1013] pushsymb 69 ............................ <#return>
+  [1016] pusharglist 0 .......................... <[]>
+  [1018] pushlist ............................... <[]>
+  [1019] pusharglist 2 .......................... <[#return, []]>
+  [1021] pushlist ............................... <[#return, []]>
+  [1022] pusharglistnoret 2 ..................... <currentSubList, [#return, []]>
+  [1024] objcall 229 ............................ currentSubList.add([#return, []])
+  [1027] getlocal 8 ............................. <currentSubList>
+  [1029] getlocal 8 ............................. <currentSubList>
+  [1031] getobjprop 156 ......................... <currentSubList.count>
+  [1034] pusharglist 2 .......................... <currentSubList, currentSubList.count>
+  [1036] objcall 119 ............................ <currentSubList[currentSubList.count]>
+  [1039] setlocal 8 ............................. currentSubList = currentSubList[currentSubList.count]
+  [1041] getlocal 8 ............................. <currentSubList>
+  [1043] getlocal 8 ............................. <currentSubList>
+  [1045] getobjprop 156 ......................... <currentSubList.count>
+  [1048] pusharglist 2 .......................... <currentSubList, currentSubList.count>
+  [1050] objcall 119 ............................ <currentSubList[currentSubList.count]>
+  [1053] setlocal 8 ............................. currentSubList = currentSubList[currentSubList.count]
+  [1055] getprop 2862 ........................... <m_realNestingDepth>
+  [1058] pushint8 2 ............................. <2>
+  [1061] add .................................... <m_realNestingDepth + 2>
+  [1062] setprop 2862 ........................... m_realNestingDepth = m_realNestingDepth + 2
+  [1065] getprop 2861 ........................... <m_nesting>
+  [1068] getlocal 88 ............................ <tmpWord>
+  [1070] getlocal 48 ............................ <chNr>
+  [1072] getlocal 32 ............................ <currLineNr>
+  [1074] pusharglist 3 .......................... <[tmpWord, chNr, currLineNr]>
+  [1076] pushlist ............................... <[tmpWord, chNr, currLineNr]>
+  [1077] pusharglistnoret 2 ..................... <m_nesting, [tmpWord, chNr, currLineNr]>
+  [1079] objcall 229 ............................ m_nesting.add([tmpWord, chNr, currLineNr])
+  [1082] getlocal 56 ............................ <ch>
+  [1084] pushcons 176 ........................... <RETURN>
+  [1086] eq ..................................... <ch = RETURN>
+  [1087] jmpifz [1098] .......................... if ch = RETURN then
+  [1090] getlocal 32 ............................ <currLineNr>
+  [1092] pushint8 1 ............................. <1>
+  [1095] add .................................... <currLineNr + 1>
+  [1096] setlocal 32 ............................ currLineNr = currLineNr + 1
+  [1098] getprop 372 ............................ <m_str>
+  [1101] pushsymb 138 ........................... <#char>
+  [1104] getlocal 48 ............................ <chNr>
+  [1106] pusharglist 3 .......................... <m_str, #char, chNr>
+  [1108] objcall 113 ............................ <m_str.char[chNr]>
+  [1111] pushcons 184 ........................... <RETURN>
+  [1113] eq ..................................... <m_str.char[chNr] = RETURN>
+  [1114] getlocal 72 ............................ <tmpStartedChNr>
+  [1116] getlocal 48 ............................ <chNr>
+  [1118] nteq ................................... <tmpStartedChNr <> chNr>
+  [1119] and .................................... <(m_str.char[chNr] = RETURN) and (tmpStartedChNr <> chNr)>
+  [1120] jmpifz [1131] .......................... if (m_str.char[chNr] = RETURN) and (tmpStartedChNr <> chNr) then
+  [1123] getlocal 32 ............................ <currLineNr>
+  [1125] pushint8 1 ............................. <1>
+  [1128] add .................................... <currLineNr + 1>
+  [1129] setlocal 32 ............................ currLineNr = currLineNr + 1
+  [1131] getlocal 48 ............................ <chNr>
+  [1133] setprop 2870 ........................... m_lineStart = chNr
+  [1136] pushzero ............................... <0>
+  [1137] setprop 2869 ........................... m_lastWordStart = 0
+  [1140] pushzero ............................... <0>
+  [1141] setlocal 40 ............................ isOneLiner = 0
+  [1143] getlocal 80 ............................ <isKeyword>
+  [1145] pushzero ............................... <0>
+  [1146] eq ..................................... <isKeyword = 0>
+  [1147] jmpifz [1471] .......................... if isKeyword = 0 then
+  [1150] getlocal 56 ............................ <ch>
+  [1152] pushcons 192 ........................... <RETURN>
+  [1154] eq ..................................... <ch = RETURN>
+  [1155] jmpifz [1467] .......................... if ch = RETURN then
+  [1158] getlocal 96 ............................ <lastKeyword>
+  [1160] pushcons 200 ........................... <"return">
+  [1162] eq ..................................... <lastKeyword = "return">
+  [1163] jmpifz [1267] .......................... if lastKeyword = "return" then / else
+  [1166] getlocal 48 ............................ <chNr>
+  [1168] setprop 2869 ........................... m_lastWordStart = chNr
+  [1171] getparam 0 ............................. <me>
+  [1173] pusharglist 1 .......................... <me>
+  [1175] objcall 2850 ........................... <me.cleanBetweenKeywords()>
+  [1178] setlocal 120 ........................... betweenKeywords = me.cleanBetweenKeywords()
+  [1180] getlocal 120 ........................... <betweenKeywords>
+  [1182] peek 0
+  [1184] pusharglist 1
+  [1186] extcall 156
+  [1189] pushint8 1
+  [1191] peek 0
+  [1193] peek 2
+  [1195] lteq
+  [1196] jmpifz [1224] .......................... repeat with tmp in betweenKeywords
+  [1199] peek 2
+  [1201] peek 1
+  [1203] pusharglist 2
+  [1205] extcall 119
+  [1208] setlocal 128
+  [1210] getlocal 8 ............................. <currentSubList>
+  [1212] getlocal 128 ........................... <tmp>
+  [1214] pusharglistnoret 2 ..................... <currentSubList, tmp>
+  [1216] objcall 229 ............................ currentSubList.add(tmp)
+  [1219] pushint8 1
+  [1221] add
+  [1222] endrepeat [1191]
+  [1224] pop 3
+  [1226] getprop 2862 ........................... <m_realNestingDepth>
+  [1229] pushint8 2 ............................. <2>
+  [1232] sub .................................... <m_realNestingDepth - 2>
+  [1233] setprop 2862 ........................... m_realNestingDepth = m_realNestingDepth - 2
+  [1236] getparam 0 ............................. <me>
+  [1238] getlocal 0 ............................. <results>
+  [1240] getprop 2862 ........................... <m_realNestingDepth>
+  [1243] pusharglist 3 .......................... <me, results, m_realNestingDepth>
+  [1245] objcall 2854 ........................... <me.stepInto(results, m_realNestingDepth)>
+  [1248] setlocal 8 ............................. currentSubList = me.stepInto(results, m_realNestingDepth)
+  [1250] getprop 2861 ........................... <m_nesting>
+  [1253] getprop 2861 ........................... <m_nesting>
+  [1256] getobjprop 156 ......................... <m_nesting.count>
+  [1259] pusharglistnoret 2 ..................... <m_nesting, m_nesting.count>
+  [1261] objcall 221 ............................ m_nesting.deleteAt(m_nesting.count)
+  [1264] jmp [1454]
+  [1267] getprop 372 ............................ <m_str>
+  [1270] pushsymb 138 ........................... <#char>
+  [1273] getprop 2870 ........................... <m_lineStart>
+  [1276] getlocal 48 ............................ <chNr>
+  [1278] pushint8 1 ............................. <1>
+  [1281] sub .................................... <chNr - 1>
+  [1282] pusharglist 4 .......................... <m_str, #char, m_lineStart, chNr - 1>
+  [1284] objcall 113 ............................ <m_str.char[m_lineStart..chNr - 1]>
+  [1287] setlocal 136 ........................... str = m_str.char[m_lineStart..chNr - 1]
+  [1289] getlocal 136 ........................... <str>
+  [1291] getprop 2859 ........................... <m_wordSeparators>
+  [1294] pusharglist 2 .......................... <str, m_wordSeparators>
+  [1296] extcall 2087 ........................... <trimStringFromChars(str, m_wordSeparators)>
+  [1299] setlocal 144 ........................... cleaned = trimStringFromChars(str, m_wordSeparators)
+  [1301] getlocal 144 ........................... <cleaned>
+  [1303] getobjprop 135 ......................... <cleaned.length>
+  [1306] pushzero ............................... <0>
+  [1307] gt ..................................... <cleaned.length > 0>
+  [1308] jmpifz [1454] .......................... if cleaned.length > 0 then
+  [1311] getlocal 40 ............................ <isOneLiner>
+  [1313] jmpifz [1344] .......................... if isOneLiner then
+  [1316] getparam 0 ............................. <me>
+  [1318] getlocal 0 ............................. <results>
+  [1320] pusharglist 2 .......................... <me, results>
+  [1322] objcall 2848 ........................... <me.closeCurrentNesting(results)>
+  [1325] setlocal 8 ............................. currentSubList = me.closeCurrentNesting(results)
+  [1327] getlocal 8 ............................. <currentSubList>
+  [1329] pusharglist 1 .......................... <currentSubList>
+  [1331] extcall 115 ............................ <listp(currentSubList)>
+  [1334] not .................................... <not listp(currentSubList)>
+  [1335] jmpifz [1344] .......................... if not listp(currentSubList) then
+  [1338] pushzero ............................... <0>
+  [1339] pusharglistnoret 1 ..................... <0>
+  [1341] extcall 69 ............................. return 0
+  [1344] pushzero ............................... <0>
+  [1345] setlocal 40 ............................ isOneLiner = 0
+  [1347] getparam 0 ............................. <me>
+  [1349] pusharglist 1 .......................... <me>
+  [1351] objcall 2849 ........................... <me.getLastKeyword()>
+  [1354] setlocal 96 ............................ lastKeyword = me.getLastKeyword()
+  [1356] getlocal 96 ............................ <lastKeyword>
+  [1358] pushcons 208 ........................... <"if">
+  [1360] eq ..................................... <lastKeyword = "if">
+  [1361] getlocal 96 ............................ <lastKeyword>
+  [1363] pushcons 216 ........................... <"else">
+  [1365] eq ..................................... <lastKeyword = "else">
+  [1366] or ..................................... <(lastKeyword = "if") or (lastKeyword = "else")>
+  [1367] jmpifz [1434] .......................... if (lastKeyword = "if") or (lastKeyword = "else") then
+  [1370] getlocal 32 ............................ <currLineNr>
+  [1372] getprop 2861 ........................... <m_nesting>
+  [1375] getprop 2861 ........................... <m_nesting>
+  [1378] getobjprop 156 ......................... <m_nesting.count>
+  [1381] pusharglist 2 .......................... <m_nesting, m_nesting.count>
+  [1383] objcall 119 ............................ <m_nesting[m_nesting.count]>
+  [1386] pushint8 3 ............................. <3>
+  [1389] pusharglist 2 .......................... <m_nesting[m_nesting.count], 3>
+  [1391] objcall 119 ............................ <m_nesting[m_nesting.count][3]>
+  [1394] eq ..................................... <currLineNr = m_nesting[m_nesting.count][3]>
+  [1395] jmpifz [1434] .......................... if currLineNr = m_nesting[m_nesting.count][3] then
+  [1398] getlocal 144 ........................... <cleaned>
+  [1400] getobjprop 135 ......................... <cleaned.length>
+  [1403] jmpifz [1434] .......................... if cleaned.length then
+  [1406] getlocal 144 ........................... <cleaned>
+  [1408] getlocal 32 ............................ <currLineNr>
+  [1410] getprop 2861 ........................... <m_nesting>
+  [1413] getprop 2861 ........................... <m_nesting>
+  [1416] getobjprop 156 ......................... <m_nesting.count>
+  [1419] pusharglist 2 .......................... <m_nesting, m_nesting.count>
+  [1421] objcall 119 ............................ <m_nesting[m_nesting.count]>
+  [1424] pusharglistnoret 3 ..................... <cleaned, currLineNr, m_nesting[m_nesting.count]>
+  [1426] extcall 122 ............................ pott(cleaned, currLineNr, m_nesting[m_nesting.count])
+  [1429] pushint8 1 ............................. <1>
+  [1432] setlocal 40 ............................ isOneLiner = 1
+  [1434] getparam 0 ............................. <me>
+  [1436] getlocal 144 ........................... <cleaned>
+  [1438] pusharglist 2 .......................... <me, cleaned>
+  [1440] objcall 2856 ........................... <me.fixQuotes(cleaned)>
+  [1443] setlocal 144 ........................... cleaned = me.fixQuotes(cleaned)
+  [1445] getlocal 8 ............................. <currentSubList>
+  [1447] getlocal 144 ........................... <cleaned>
+  [1449] pusharglistnoret 2 ..................... <currentSubList, cleaned>
+  [1451] objcall 229 ............................ currentSubList.add(cleaned)
+  [1454] getlocal 32 ............................ <currLineNr>
+  [1456] pushint8 1 ............................. <1>
+  [1459] add .................................... <currLineNr + 1>
+  [1460] setlocal 32 ............................ currLineNr = currLineNr + 1
+  [1462] getlocal 48 ............................ <chNr>
+  [1464] setprop 2870 ........................... m_lineStart = chNr
+  [1467] pushzero ............................... <0>
+  [1468] setprop 2869 ........................... m_lastWordStart = 0
+  [1471] jmp [1487] ............................. next repeat
+  [1474] getprop 2869 ........................... <m_lastWordStart>
+  [1477] pushzero ............................... <0>
+  [1478] eq ..................................... <m_lastWordStart = 0>
+  [1479] jmpifz [1487] .......................... if m_lastWordStart = 0 then
+  [1482] getlocal 48 ............................ <chNr>
+  [1484] setprop 2869 ........................... m_lastWordStart = chNr
+  [1487] pushint8 1
+  [1490] getlocal 48
+  [1492] add
+  [1493] setlocal 48
+  [1495] endrepeat [126]
+  [1498] getlocal 0 ............................. <results>
+  [1500] pushint8 1 ............................. <1>
+  [1503] pusharglist 2 .......................... <results, 1>
+  [1505] objcall 119 ............................ <results[1]>
+  [1508] setlocal 0 ............................. results = results[1]
+  [1510] getlocal 0 ............................. <results>
+  [1512] pusharglistnoret 1 ..................... <results>
+  [1514] extcall 69 ............................. return results
+  [1517] ret
+end
+
+on closeCurrentNesting me, argResults
+  [  0] getparam 0 .............................. <me>
+  [  2] pusharglist 1 ........................... <me>
+  [  4] objcall 2849 ............................ <me.getLastKeyword()>
+  [  7] setlocal 0 .............................. lastKeyword = me.getLastKeyword()
+  [  9] getlocal 0 .............................. <lastKeyword>
+  [ 11] pushcons 224 ............................ <"if">
+  [ 13] eq ...................................... <lastKeyword = "if">
+  [ 14] getlocal 0 .............................. <lastKeyword>
+  [ 16] pushcons 232 ............................ <"else">
+  [ 18] eq ...................................... <lastKeyword = "else">
+  [ 19] or ...................................... <(lastKeyword = "if") or (lastKeyword = "else")>
+  [ 20] jmpifz [ 36] ............................ if (lastKeyword = "if") or (lastKeyword = "else") then / else
+  [ 23] getprop 2862 ............................ <m_realNestingDepth>
+  [ 26] pushint8 3 .............................. <3>
+  [ 29] sub ..................................... <m_realNestingDepth - 3>
+  [ 30] setprop 2862 ............................ m_realNestingDepth = m_realNestingDepth - 3
+  [ 33] jmp [ 64]
+  [ 36] getlocal 0 .............................. <lastKeyword>
+  [ 38] pushcons 240 ............................ <"on">
+  [ 40] eq ...................................... <lastKeyword = "on">
+  [ 41] jmpifz [ 57] ............................ if lastKeyword = "on" then / else
+  [ 44] getprop 2862 ............................ <m_realNestingDepth>
+  [ 47] pushint8 2 .............................. <2>
+  [ 50] sub ..................................... <m_realNestingDepth - 2>
+  [ 51] setprop 2862 ............................ m_realNestingDepth = m_realNestingDepth - 2
+  [ 54] jmp [ 64]
+  [ 57] pushcons 248 ............................ <"end without start of nesting!">
+  [ 59] pusharglistnoret 1 ...................... <"end without start of nesting!">
+  [ 61] extcall 122 ............................. pott("end without start of nesting!")
+  [ 64] getparam 0 .............................. <me>
+  [ 66] getparam 8 .............................. <argResults>
+  [ 68] getprop 2862 ............................ <m_realNestingDepth>
+  [ 71] pusharglist 3 ........................... <me, argResults, m_realNestingDepth>
+  [ 73] objcall 2854 ............................ <me.stepInto(argResults, m_realNestingDepth)>
+  [ 76] setlocal 8 .............................. currentSubList = me.stepInto(argResults, m_realNestingDepth)
+  [ 78] getprop 2861 ............................ <m_nesting>
+  [ 81] getobjprop 156 .......................... <m_nesting.count>
+  [ 84] pushzero ................................ <0>
+  [ 85] eq ...................................... <m_nesting.count = 0>
+  [ 86] jmpifz [103] ............................ if m_nesting.count = 0 then
+  [ 89] pushcons 256 ............................ <"Nesting error!">
+  [ 92] pusharglistnoret 1 ...................... <"Nesting error!">
+  [ 94] extcall 122 ............................. pott("Nesting error!")
+  [ 97] pushzero ................................ <0>
+  [ 98] pusharglistnoret 1 ...................... <0>
+  [100] extcall 69 .............................. return 0
+  [103] getprop 2861 ............................ <m_nesting>
+  [106] getprop 2861 ............................ <m_nesting>
+  [109] getobjprop 156 .......................... <m_nesting.count>
+  [112] pusharglistnoret 2 ...................... <m_nesting, m_nesting.count>
+  [114] objcall 221 ............................. m_nesting.deleteAt(m_nesting.count)
+  [117] getlocal 8 .............................. <currentSubList>
+  [119] pusharglistnoret 1 ...................... <currentSubList>
+  [121] extcall 69 .............................. return currentSubList
+  [124] ret
+end
+
+on getLastKeyword me
+  [  0] getprop 2861 ............................ <m_nesting>
+  [  3] getobjprop 156 .......................... <m_nesting.count>
+  [  6] setlocal 0 .............................. cnt = m_nesting.count
+  [  8] getlocal 0 .............................. <cnt>
+  [ 10] pushzero ................................ <0>
+  [ 11] eq ...................................... <cnt = 0>
+  [ 12] jmpifz [ 25] ............................ if cnt = 0 then
+  [ 15] pusharglist 0 ........................... <>
+  [ 17] extcall 151 ............................. <VOID>
+  [ 20] pusharglistnoret 1 ...................... <VOID>
+  [ 22] extcall 69 .............................. return VOID
+  [ 25] getprop 2861 ............................ <m_nesting>
+  [ 28] getlocal 0 .............................. <cnt>
+  [ 30] pusharglist 2 ........................... <m_nesting, cnt>
+  [ 32] objcall 119 ............................. <m_nesting[cnt]>
+  [ 35] pushint8 1 .............................. <1>
+  [ 38] pusharglist 2 ........................... <m_nesting[cnt], 1>
+  [ 40] objcall 119 ............................. <m_nesting[cnt][1]>
+  [ 43] pusharglistnoret 1 ...................... <m_nesting[cnt][1]>
+  [ 45] extcall 69 .............................. return m_nesting[cnt][1]
+  [ 48] ret
+end
+
+on cleanBetweenKeywords me
+  [  0] getprop 2861 ............................ <m_nesting>
+  [  3] getobjprop 156 .......................... <m_nesting.count>
+  [  6] setlocal 0 .............................. cnt = m_nesting.count
+  [  8] getlocal 0 .............................. <cnt>
+  [ 10] pushzero ................................ <0>
+  [ 11] eq ...................................... <cnt = 0>
+  [ 12] jmpifz [ 23] ............................ if cnt = 0 then
+  [ 15] pusharglist 0 ........................... <[]>
+  [ 17] pushlist ................................ <[]>
+  [ 18] pusharglistnoret 1 ...................... <[]>
+  [ 20] extcall 69 .............................. return []
+  [ 23] getprop 2861 ............................ <m_nesting>
+  [ 26] getlocal 0 .............................. <cnt>
+  [ 28] pusharglist 2 ........................... <m_nesting, cnt>
+  [ 30] objcall 119 ............................. <m_nesting[cnt]>
+  [ 33] pushint8 2 .............................. <2>
+  [ 36] pusharglist 2 ........................... <m_nesting[cnt], 2>
+  [ 38] objcall 119 ............................. <m_nesting[cnt][2]>
+  [ 41] setlocal 8 .............................. startChNr = m_nesting[cnt][2]
+  [ 43] getparam 0 .............................. <me>
+  [ 45] getprop 372 ............................. <m_str>
+  [ 48] pushsymb 138 ............................ <#char>
+  [ 51] getlocal 8 .............................. <startChNr>
+  [ 53] getprop 2869 ............................ <m_lastWordStart>
+  [ 56] pushint8 1 .............................. <1>
+  [ 59] sub ..................................... <m_lastWordStart - 1>
+  [ 60] pusharglist 4 ........................... <m_str, #char, startChNr, m_lastWordStart - 1>
+  [ 62] objcall 113 ............................. <m_str.char[startChNr..m_lastWordStart - 1]>
+  [ 65] pusharglist 2 ........................... <me, m_str.char[startChNr..m_lastWordStart - 1]>
+  [ 67] objcall 2851 ............................ <me.linesToList(m_str.char[startChNr..m_lastWordStart - 1])>
+  [ 70] pusharglistnoret 1 ...................... <me.linesToList(m_str.char[startChNr..m_lastWordStart - 1])>
+  [ 72] extcall 69 .............................. return me.linesToList(m_str.char[startChNr..m_lastWordStart - 1])
+  [ 75] ret
+end
+
+on linesToList me, argStr
+  [  0] getparam 8 .............................. <argStr>
+  [  2] getprop 2859 ............................ <m_wordSeparators>
+  [  5] pusharglist 2 ........................... <argStr, m_wordSeparators>
+  [  7] extcall 2087 ............................ <trimStringFromChars(argStr, m_wordSeparators)>
+  [ 10] setlocal 0 .............................. uncleaned = trimStringFromChars(argStr, m_wordSeparators)
+  [ 12] pusharglist 0 ........................... <[]>
+  [ 14] pushlist ................................ <[]>
+  [ 15] setlocal 8 .............................. betweenKeywords = []
+  [ 17] pushint8 1 .............................. <1>
+  [ 20] setlocal 16
+  [ 22] getlocal 16
+  [ 24] getlocal 0 .............................. <uncleaned>
+  [ 26] pushint8 4 .............................. <4>
+  [ 29] get 1 ................................... <the number of lines in uncleaned>
+  [ 31] lteq
+  [ 32] jmpifz [143] ............................ repeat with n = 1 to the number of lines in uncleaned
+  [ 35] getlocal 0 .............................. <uncleaned>
+  [ 37] pushsymb 395 ............................ <#line>
+  [ 40] getlocal 16 ............................. <n>
+  [ 42] pusharglist 3 ........................... <uncleaned, #line, n>
+  [ 44] objcall 113 ............................. <uncleaned.line[n]>
+  [ 47] getprop 2859 ............................ <m_wordSeparators>
+  [ 50] pusharglist 2 ........................... <uncleaned.line[n], m_wordSeparators>
+  [ 52] extcall 2087 ............................ <trimStringFromChars(uncleaned.line[n], m_wordSeparators)>
+  [ 55] setlocal 24 ............................. tmpCleanedLine = trimStringFromChars(uncleaned.line[n], m_wordSeparators)
+  [ 57] pushint8 1 .............................. <1>
+  [ 60] jmpifz [ 74] ............................ if 1 then
+  [ 63] getparam 0 .............................. <me>
+  [ 65] getlocal 24 ............................. <tmpCleanedLine>
+  [ 67] pusharglist 2 ........................... <me, tmpCleanedLine>
+  [ 69] objcall 2856 ............................ <me.fixQuotes(tmpCleanedLine)>
+  [ 72] setlocal 24 ............................. tmpCleanedLine = me.fixQuotes(tmpCleanedLine)
+  [ 74] getlocal 24 ............................. <tmpCleanedLine>
+  [ 76] pushsymb 138 ............................ <#char>
+  [ 79] pushint8 1 .............................. <1>
+  [ 82] pusharglist 3 ........................... <tmpCleanedLine, #char, 1>
+  [ 84] objcall 113 ............................. <tmpCleanedLine.char[1]>
+  [ 87] pushcons 264 ............................ <"[">
+  [ 90] eq ...................................... <tmpCleanedLine.char[1] = "[">
+  [ 91] jmpifz [115] ............................ if tmpCleanedLine.char[1] = "[" then
+  [ 94] getlocal 24 ............................. <tmpCleanedLine>
+  [ 96] pusharglist 1 ........................... <tmpCleanedLine>
+  [ 98] extcall 116 ............................. <value(tmpCleanedLine)>
+  [101] setlocal 24 ............................. tmpCleanedLine = value(tmpCleanedLine)
+  [103] getlocal 8 .............................. <betweenKeywords>
+  [105] getlocal 24 ............................. <tmpCleanedLine>
+  [107] pusharglistnoret 2 ...................... <betweenKeywords, tmpCleanedLine>
+  [109] objcall 229 ............................. betweenKeywords.add(tmpCleanedLine)
+  [112] jmp [132] ............................... next repeat
+  [115] getlocal 24 ............................. <tmpCleanedLine>
+  [117] getobjprop 135 .......................... <tmpCleanedLine.length>
+  [120] jmpifz [132] ............................ if tmpCleanedLine.length then
+  [123] getlocal 8 .............................. <betweenKeywords>
+  [125] getlocal 24 ............................. <tmpCleanedLine>
+  [127] pusharglistnoret 2 ...................... <betweenKeywords, tmpCleanedLine>
+  [129] objcall 229 ............................. betweenKeywords.add(tmpCleanedLine)
+  [132] pushint8 1
+  [135] getlocal 16
+  [137] add
+  [138] setlocal 16
+  [140] endrepeat [ 22]
+  [143] getlocal 8 .............................. <betweenKeywords>
+  [145] pusharglistnoret 1 ...................... <betweenKeywords>
+  [147] extcall 69 .............................. return betweenKeywords
+  [150] ret
+end
+
+on removeTheOns me, argList
+  [  0] pushint8 1 .............................. <1>
+  [  3] setlocal 0
+  [  5] getlocal 0
+  [  7] getparam 8 .............................. <argList>
+  [  9] pusharglist 1 ........................... <argList>
+  [ 11] objcall 156 ............................. <argList.count()>
+  [ 14] lteq
+  [ 15] jmpifz [ 80] ............................ repeat with n = 1 to argList.count()
+  [ 18] getparam 8 .............................. <argList>
+  [ 20] getlocal 0 .............................. <n>
+  [ 22] pusharglist 2 ........................... <argList, n>
+  [ 24] objcall 119 ............................. <argList[n]>
+  [ 27] setlocal 8 .............................. tmp = argList[n]
+  [ 29] getlocal 8 .............................. <tmp>
+  [ 31] pushint8 1 .............................. <1>
+  [ 34] pusharglist 2 ........................... <tmp, 1>
+  [ 36] objcall 119 ............................. <tmp[1]>
+  [ 39] pushsymb 2863 ........................... <#on>
+  [ 42] eq ...................................... <tmp[1] = #on>
+  [ 43] jmpifz [ 69] ............................ if tmp[1] = #on then
+  [ 46] getlocal 8 .............................. <tmp>
+  [ 48] pushint8 2 .............................. <2>
+  [ 51] pusharglist 2 ........................... <tmp, 2>
+  [ 53] objcall 119 ............................. <tmp[2]>
+  [ 56] pushint8 2 .............................. <2>
+  [ 59] pusharglist 2 ........................... <tmp[2], 2>
+  [ 61] objcall 119 ............................. <tmp[2][2]>
+  [ 64] pusharglistnoret 1 ...................... <tmp[2][2]>
+  [ 66] extcall 122 ............................. pott(tmp[2][2])
+  [ 69] pushint8 1
+  [ 72] getlocal 0
+  [ 74] add
+  [ 75] setlocal 0
+  [ 77] endrepeat [  5]
+  [ 80] ret
+end
+
+on listToCode me, argList, argStrPtr, argDepth
+  [  0] getparam 16 ............................. <argStrPtr>
+  [  2] pusharglist 1 ........................... <argStrPtr>
+  [  4] extcall 61 .............................. <voidp(argStrPtr)>
+  [  7] jmpifz [ 18] ............................ if voidp(argStrPtr) then
+  [ 10] pushcons 272 ............................ <EMPTY>
+  [ 13] pusharglist 1 ........................... <[EMPTY]>
+  [ 15] pushlist ................................ <[EMPTY]>
+  [ 16] setparam 16 ............................. argStrPtr = [EMPTY]
+  [ 18] getparam 24 ............................. <argDepth>
+  [ 20] pusharglist 1 ........................... <argDepth>
+  [ 22] extcall 61 .............................. <voidp(argDepth)>
+  [ 25] jmpifz [ 34] ............................ if voidp(argDepth) then
+  [ 28] pushint8 1 .............................. <1>
+  [ 31] inv ..................................... <-1>
+  [ 32] setparam 24 ............................. argDepth = -1
+  [ 34] getparam 24 ............................. <argDepth>
+  [ 36] pushint8 1 .............................. <1>
+  [ 39] add ..................................... <argDepth + 1>
+  [ 40] setparam 24 ............................. argDepth = argDepth + 1
+  [ 42] pushcons 280 ............................ <EMPTY>
+  [ 45] setlocal 0 .............................. spacesStr = EMPTY
+  [ 47] pushint8 1 .............................. <1>
+  [ 50] setlocal 8
+  [ 52] getlocal 8
+  [ 54] getparam 24 ............................. <argDepth>
+  [ 56] pushint8 2 .............................. <2>
+  [ 59] mul ..................................... <argDepth * 2>
+  [ 60] lteq
+  [ 61] jmpifz [ 82] ............................ repeat with n = 1 to argDepth * 2
+  [ 64] getlocal 0 .............................. <spacesStr>
+  [ 66] pushcons 288 ............................ <" ">
+  [ 69] joinstr ................................. <spacesStr & " ">
+  [ 70] setlocal 0 .............................. spacesStr = spacesStr & " "
+  [ 72] pushint8 1
+  [ 75] getlocal 8
+  [ 77] add
+  [ 78] setlocal 8
+  [ 80] endrepeat [ 52]
+  [ 82] getparam 8 .............................. <argList>
+  [ 84] pusharglist 1 ........................... <argList>
+  [ 86] extcall 115 ............................. <listp(argList)>
+  [ 89] not ..................................... <not listp(argList)>
+  [ 90] jmpifz [109] ............................ if not listp(argList) then
+  [ 93] pushcons 296 ............................ <"Error in listToCode!">
+  [ 96] pusharglistnoret 1 ...................... <"Error in listToCode!">
+  [ 98] extcall 122 ............................. pott("Error in listToCode!")
+  [101] pushcons 304 ............................ <EMPTY>
+  [104] pusharglistnoret 1 ...................... <EMPTY>
+  [106] extcall 69 .............................. return EMPTY
+  [109] getparam 16 ............................. <argStrPtr>
+  [111] pusharglist 1 ........................... <argStrPtr>
+  [113] extcall 115 ............................. <listp(argStrPtr)>
+  [116] not ..................................... <not listp(argStrPtr)>
+  [117] jmpifz [139] ............................ if not listp(argStrPtr) then / else
+  [120] pushcons 312 ............................ <"No strPtr in listToCode!">
+  [123] pusharglistnoret 1 ...................... <"No strPtr in listToCode!">
+  [125] extcall 122 ............................. pott("No strPtr in listToCode!")
+  [128] pushcons 320 ............................ <EMPTY>
+  [131] pusharglistnoret 1 ...................... <EMPTY>
+  [133] extcall 69 .............................. return EMPTY
+  [136] jmp [165]
+  [139] getparam 16 ............................. <argStrPtr>
+  [141] getobjprop 156 .......................... <argStrPtr.count>
+  [144] pushzero ................................ <0>
+  [145] eq ...................................... <argStrPtr.count = 0>
+  [146] jmpifz [165] ............................ if argStrPtr.count = 0 then
+  [149] pushcons 328 ............................ <"strPtr empty in listToCode!">
+  [152] pusharglistnoret 1 ...................... <"strPtr empty in listToCode!">
+  [154] extcall 122 ............................. pott("strPtr empty in listToCode!")
+  [157] pushcons 336 ............................ <EMPTY>
+  [160] pusharglistnoret 1 ...................... <EMPTY>
+  [162] extcall 69 .............................. return EMPTY
+  [165] pushint8 1 .............................. <1>
+  [168] setlocal 8
+  [170] getlocal 8
+  [172] getparam 8 .............................. <argList>
+  [174] getobjprop 156 .......................... <argList.count>
+  [177] lteq
+  [178] jmpifz [798] ............................ repeat with n = 1 to argList.count
+  [181] getparam 8 .............................. <argList>
+  [183] getlocal 8 .............................. <n>
+  [185] pusharglist 2 ........................... <argList, n>
+  [187] objcall 119 ............................. <argList[n]>
+  [190] setlocal 16 ............................. tmp = argList[n]
+  [192] getlocal 16 ............................. <tmp>
+  [194] pusharglist 1 ........................... <tmp>
+  [196] extcall 115 ............................. <listp(tmp)>
+  [199] jmpifz [757] ............................ if listp(tmp) then
+  [202] getlocal 16 ............................. <tmp>
+  [204] pushint8 1 .............................. <1>
+  [207] pusharglist 2 ........................... <tmp, 1>
+  [209] objcall 119 ............................. <tmp[1]>
+  [212] setlocal 24 ............................. func = tmp[1]
+  [214] getlocal 16 ............................. <tmp>
+  [216] pusharglist 1 ........................... <tmp>
+  [218] objcall 156 ............................. <tmp.count()>
+  [221] pushint8 1 .............................. <1>
+  [224] gt ...................................... <tmp.count() > 1>
+  [225] jmpifz [240] ............................ if tmp.count() > 1 then
+  [228] getlocal 16 ............................. <tmp>
+  [230] pushint8 2 .............................. <2>
+  [233] pusharglist 2 ........................... <tmp, 2>
+  [235] objcall 119 ............................. <tmp[2]>
+  [238] setlocal 32 ............................. Args = tmp[2]
+  [240] getlocal 24 ............................. <func>
+  [242] pusharglist 1 ........................... <func>
+  [244] extcall 96 .............................. <symbolp(func)>
+  [247] jmpifz [715] ............................ if symbolp(func) then / else
+  [250] getlocal 24 ............................. <func>
+  [252] pushsymb 2863 ........................... <#on>
+  [255] eq ...................................... <func = #on>
+  [256] jmpifz [365] ............................ if func = #on then / else
+  [259] getparam 16 ............................. <argStrPtr>
+  [261] pushint8 1 .............................. <1>
+  [264] getparam 16 ............................. <argStrPtr>
+  [266] pushint8 1 .............................. <1>
+  [269] pusharglist 2 ........................... <argStrPtr, 1>
+  [271] objcall 119 ............................. <argStrPtr[1]>
+  [274] pushcons 344 ............................ <"on ">
+  [277] joinstr ................................. <argStrPtr[1] & "on ">
+  [278] getlocal 32 ............................. <Args>
+  [280] pushint8 1 .............................. <1>
+  [283] pusharglist 2 ........................... <Args, 1>
+  [285] objcall 119 ............................. <Args[1]>
+  [288] joinstr ................................. <argStrPtr[1] & "on " & Args[1]>
+  [289] pushcons 352 ............................ <RETURN>
+  [292] joinstr ................................. <argStrPtr[1] & "on " & Args[1] & RETURN>
+  [293] pusharglistnoret 3 ...................... <argStrPtr, 1, argStrPtr[1] & "on " & Args[1] & RETURN>
+  [295] objcall 353 ............................. argStrPtr[1] = argStrPtr[1] & "on " & Args[1] & RETURN
+  [298] getlocal 32 ............................. <Args>
+  [300] pusharglist 1 ........................... <Args>
+  [302] objcall 287 ............................. <Args.duplicate()>
+  [305] setlocal 32 ............................. Args = Args.duplicate()
+  [307] getlocal 32 ............................. <Args>
+  [309] pushint8 1 .............................. <1>
+  [312] pusharglistnoret 2 ...................... <Args, 1>
+  [314] objcall 221 ............................. Args.deleteAt(1)
+  [317] getparam 0 .............................. <me>
+  [319] getlocal 32 ............................. <Args>
+  [321] getparam 16 ............................. <argStrPtr>
+  [323] getparam 24 ............................. <argDepth>
+  [325] pusharglistnoret 4 ...................... <me, Args, argStrPtr, argDepth>
+  [327] objcall 2853 ............................ me.listToCode(Args, argStrPtr, argDepth)
+  [330] getparam 16 ............................. <argStrPtr>
+  [332] pushint8 1 .............................. <1>
+  [335] getparam 16 ............................. <argStrPtr>
+  [337] pushint8 1 .............................. <1>
+  [340] pusharglist 2 ........................... <argStrPtr, 1>
+  [342] objcall 119 ............................. <argStrPtr[1]>
+  [345] pushcons 360 ............................ <"end">
+  [348] joinstr ................................. <argStrPtr[1] & "end">
+  [349] pushcons 368 ............................ <RETURN>
+  [352] joinstr ................................. <argStrPtr[1] & "end" & RETURN>
+  [353] pushcons 376 ............................ <RETURN>
+  [356] joinstr ................................. <argStrPtr[1] & "end" & RETURN & RETURN>
+  [357] pusharglistnoret 3 ...................... <argStrPtr, 1, argStrPtr[1] & "end" & RETURN & RETURN>
+  [359] objcall 353 ............................. argStrPtr[1] = argStrPtr[1] & "end" & RETURN & RETURN
+  [362] jmp [712]
+  [365] getlocal 24 ............................. <func>
+  [367] pushsymb 2829 ........................... <#if>
+  [370] eq ...................................... <func = #if>
+  [371] jmpifz [581] ............................ if func = #if then / else
+  [374] getlocal 32 ............................. <Args>
+  [376] getobjprop 156 .......................... <Args.count>
+  [379] pushzero ................................ <0>
+  [380] eq ...................................... <Args.count = 0>
+  [381] jmpifz [400] ............................ if Args.count = 0 then
+  [384] pushcons 384 ............................ <"Err in listToCode, if!">
+  [387] pusharglistnoret 1 ...................... <"Err in listToCode, if!">
+  [389] extcall 122 ............................. pott("Err in listToCode, if!")
+  [392] pushcons 392 ............................ <EMPTY>
+  [395] pusharglistnoret 1 ...................... <EMPTY>
+  [397] extcall 69 .............................. return EMPTY
+  [400] getparam 16 ............................. <argStrPtr>
+  [402] pushint8 1 .............................. <1>
+  [405] getparam 16 ............................. <argStrPtr>
+  [407] pushint8 1 .............................. <1>
+  [410] pusharglist 2 ........................... <argStrPtr, 1>
+  [412] objcall 119 ............................. <argStrPtr[1]>
+  [415] getlocal 0 .............................. <spacesStr>
+  [417] joinstr ................................. <argStrPtr[1] & spacesStr>
+  [418] pushcons 400 ............................ <"if (">
+  [421] joinstr ................................. <argStrPtr[1] & spacesStr & "if (">
+  [422] getlocal 32 ............................. <Args>
+  [424] pushint8 1 .............................. <1>
+  [427] pusharglist 2 ........................... <Args, 1>
+  [429] objcall 119 ............................. <Args[1]>
+  [432] joinstr ................................. <argStrPtr[1] & spacesStr & "if (" & Args[1]>
+  [433] pushcons 408 ............................ <") then">
+  [436] joinstr ................................. <argStrPtr[1] & spacesStr & "if (" & Args[1] & ") then">
+  [437] pushcons 416 ............................ <RETURN>
+  [440] joinstr ................................. <argStrPtr[1] & spacesStr & "if (" & Args[1] & ") then" & RETURN>
+  [441] pusharglistnoret 3 ...................... <argStrPtr, 1, argStrPtr[1] & spacesStr & "if (" & Args[1] & ") then" & RETURN>
+  [443] objcall 353 ............................. argStrPtr[1] = argStrPtr[1] & spacesStr & "if (" & Args[1] & ") then" & RETURN
+  [446] getlocal 32 ............................. <Args>
+  [448] pusharglist 1 ........................... <Args>
+  [450] objcall 156 ............................. <Args.count()>
+  [453] pushint8 1 .............................. <1>
+  [456] gt ...................................... <Args.count() > 1>
+  [457] jmpifz [481] ............................ if Args.count() > 1 then
+  [460] getparam 0 .............................. <me>
+  [462] getlocal 32 ............................. <Args>
+  [464] pushint8 2 .............................. <2>
+  [467] pusharglist 2 ........................... <Args, 2>
+  [469] objcall 119 ............................. <Args[2]>
+  [472] getparam 16 ............................. <argStrPtr>
+  [474] getparam 24 ............................. <argDepth>
+  [476] pusharglistnoret 4 ...................... <me, Args[2], argStrPtr, argDepth>
+  [478] objcall 2853 ............................ me.listToCode(Args[2], argStrPtr, argDepth)
+  [481] getlocal 32 ............................. <Args>
+  [483] pusharglist 1 ........................... <Args>
+  [485] objcall 156 ............................. <Args.count()>
+  [488] pushint8 2 .............................. <2>
+  [491] gt ...................................... <Args.count() > 2>
+  [492] jmpifz [547] ............................ if Args.count() > 2 then
+  [495] getparam 16 ............................. <argStrPtr>
+  [497] pushint8 1 .............................. <1>
+  [500] getparam 16 ............................. <argStrPtr>
+  [502] pushint8 1 .............................. <1>
+  [505] pusharglist 2 ........................... <argStrPtr, 1>
+  [507] objcall 119 ............................. <argStrPtr[1]>
+  [510] getlocal 0 .............................. <spacesStr>
+  [512] joinstr ................................. <argStrPtr[1] & spacesStr>
+  [513] pushcons 424 ............................ <"else">
+  [516] joinstr ................................. <argStrPtr[1] & spacesStr & "else">
+  [517] pushcons 432 ............................ <RETURN>
+  [520] joinstr ................................. <argStrPtr[1] & spacesStr & "else" & RETURN>
+  [521] pusharglistnoret 3 ...................... <argStrPtr, 1, argStrPtr[1] & spacesStr & "else" & RETURN>
+  [523] objcall 353 ............................. argStrPtr[1] = argStrPtr[1] & spacesStr & "else" & RETURN
+  [526] getparam 0 .............................. <me>
+  [528] getlocal 32 ............................. <Args>
+  [530] pushint8 3 .............................. <3>
+  [533] pusharglist 2 ........................... <Args, 3>
+  [535] objcall 119 ............................. <Args[3]>
+  [538] getparam 16 ............................. <argStrPtr>
+  [540] getparam 24 ............................. <argDepth>
+  [542] pusharglistnoret 4 ...................... <me, Args[3], argStrPtr, argDepth>
+  [544] objcall 2853 ............................ me.listToCode(Args[3], argStrPtr, argDepth)
+  [547] getparam 16 ............................. <argStrPtr>
+  [549] pushint8 1 .............................. <1>
+  [552] getparam 16 ............................. <argStrPtr>
+  [554] pushint8 1 .............................. <1>
+  [557] pusharglist 2 ........................... <argStrPtr, 1>
+  [559] objcall 119 ............................. <argStrPtr[1]>
+  [562] getlocal 0 .............................. <spacesStr>
+  [564] joinstr ................................. <argStrPtr[1] & spacesStr>
+  [565] pushcons 440 ............................ <"end if">
+  [568] joinstr ................................. <argStrPtr[1] & spacesStr & "end if">
+  [569] pushcons 448 ............................ <RETURN>
+  [572] joinstr ................................. <argStrPtr[1] & spacesStr & "end if" & RETURN>
+  [573] pusharglistnoret 3 ...................... <argStrPtr, 1, argStrPtr[1] & spacesStr & "end if" & RETURN>
+  [575] objcall 353 ............................. argStrPtr[1] = argStrPtr[1] & spacesStr & "end if" & RETURN
+  [578] jmp [712]
+  [581] getlocal 24 ............................. <func>
+  [583] pushsymb 69 ............................. <#return>
+  [586] eq ...................................... <func = #return>
+  [587] jmpifz [677] ............................ if func = #return then / else
+  [590] getlocal 32 ............................. <Args>
+  [592] getobjprop 156 .......................... <Args.count>
+  [595] jmpifz [643] ............................ if Args.count then / else
+  [598] getparam 16 ............................. <argStrPtr>
+  [600] pushint8 1 .............................. <1>
+  [603] getparam 16 ............................. <argStrPtr>
+  [605] pushint8 1 .............................. <1>
+  [608] pusharglist 2 ........................... <argStrPtr, 1>
+  [610] objcall 119 ............................. <argStrPtr[1]>
+  [613] getlocal 0 .............................. <spacesStr>
+  [615] joinstr ................................. <argStrPtr[1] & spacesStr>
+  [616] pushcons 456 ............................ <"return ">
+  [619] joinstr ................................. <argStrPtr[1] & spacesStr & "return ">
+  [620] getlocal 32 ............................. <Args>
+  [622] pushint8 1 .............................. <1>
+  [625] pusharglist 2 ........................... <Args, 1>
+  [627] objcall 119 ............................. <Args[1]>
+  [630] joinstr ................................. <argStrPtr[1] & spacesStr & "return " & Args[1]>
+  [631] pushcons 464 ............................ <RETURN>
+  [634] joinstr ................................. <argStrPtr[1] & spacesStr & "return " & Args[1] & RETURN>
+  [635] pusharglistnoret 3 ...................... <argStrPtr, 1, argStrPtr[1] & spacesStr & "return " & Args[1] & RETURN>
+  [637] objcall 353 ............................. argStrPtr[1] = argStrPtr[1] & spacesStr & "return " & Args[1] & RETURN
+  [640] jmp [674]
+  [643] getparam 16 ............................. <argStrPtr>
+  [645] pushint8 1 .............................. <1>
+  [648] getparam 16 ............................. <argStrPtr>
+  [650] pushint8 1 .............................. <1>
+  [653] pusharglist 2 ........................... <argStrPtr, 1>
+  [655] objcall 119 ............................. <argStrPtr[1]>
+  [658] getlocal 0 .............................. <spacesStr>
+  [660] joinstr ................................. <argStrPtr[1] & spacesStr>
+  [661] pushcons 472 ............................ <"return">
+  [664] joinstr ................................. <argStrPtr[1] & spacesStr & "return">
+  [665] pushcons 480 ............................ <RETURN>
+  [668] joinstr ................................. <argStrPtr[1] & spacesStr & "return" & RETURN>
+  [669] pusharglistnoret 3 ...................... <argStrPtr, 1, argStrPtr[1] & spacesStr & "return" & RETURN>
+  [671] objcall 353 ............................. argStrPtr[1] = argStrPtr[1] & spacesStr & "return" & RETURN
+  [674] jmp [712]
+  [677] getparam 16 ............................. <argStrPtr>
+  [679] pushint8 1 .............................. <1>
+  [682] getparam 16 ............................. <argStrPtr>
+  [684] pushint8 1 .............................. <1>
+  [687] pusharglist 2 ........................... <argStrPtr, 1>
+  [689] objcall 119 ............................. <argStrPtr[1]>
+  [692] getlocal 0 .............................. <spacesStr>
+  [694] joinstr ................................. <argStrPtr[1] & spacesStr>
+  [695] getlocal 16 ............................. <tmp>
+  [697] pusharglist 1 ........................... <tmp>
+  [699] extcall 114 ............................. <string(tmp)>
+  [702] joinstr ................................. <argStrPtr[1] & spacesStr & string(tmp)>
+  [703] pushcons 488 ............................ <RETURN>
+  [706] joinstr ................................. <argStrPtr[1] & spacesStr & string(tmp) & RETURN>
+  [707] pusharglistnoret 3 ...................... <argStrPtr, 1, argStrPtr[1] & spacesStr & string(tmp) & RETURN>
+  [709] objcall 353 ............................. argStrPtr[1] = argStrPtr[1] & spacesStr & string(tmp) & RETURN
+  [712] jmp [754]
+  [715] getparam 16 ............................. <argStrPtr>
+  [717] pushint8 1 .............................. <1>
+  [720] getparam 16 ............................. <argStrPtr>
+  [722] pushint8 1 .............................. <1>
+  [725] pusharglist 2 ........................... <argStrPtr, 1>
+  [727] objcall 119 ............................. <argStrPtr[1]>
+  [730] getlocal 0 .............................. <spacesStr>
+  [732] joinstr ................................. <argStrPtr[1] & spacesStr>
+  [733] getlocal 16 ............................. <tmp>
+  [735] pusharglist 1 ........................... <tmp>
+  [737] extcall 114 ............................. <string(tmp)>
+  [740] joinstr ................................. <argStrPtr[1] & spacesStr & string(tmp)>
+  [741] pushcons 496 ............................ <"  YO!">
+  [744] joinstr ................................. <argStrPtr[1] & spacesStr & string(tmp) & "  YO!">
+  [745] pushcons 504 ............................ <RETURN>
+  [748] joinstr ................................. <argStrPtr[1] & spacesStr & string(tmp) & "  YO!" & RETURN>
+  [749] pusharglistnoret 3 ...................... <argStrPtr, 1, argStrPtr[1] & spacesStr & string(tmp) & "  YO!" & RETURN>
+  [751] objcall 353 ............................. argStrPtr[1] = argStrPtr[1] & spacesStr & string(tmp) & "  YO!" & RETURN
+  [754] jmp [787] ............................... next repeat
+  [757] getparam 16 ............................. <argStrPtr>
+  [759] pushint8 1 .............................. <1>
+  [762] getparam 16 ............................. <argStrPtr>
+  [764] pushint8 1 .............................. <1>
+  [767] pusharglist 2 ........................... <argStrPtr, 1>
+  [769] objcall 119 ............................. <argStrPtr[1]>
+  [772] getlocal 0 .............................. <spacesStr>
+  [774] joinstr ................................. <argStrPtr[1] & spacesStr>
+  [775] getlocal 16 ............................. <tmp>
+  [777] joinstr ................................. <argStrPtr[1] & spacesStr & tmp>
+  [778] pushcons 512 ............................ <RETURN>
+  [781] joinstr ................................. <argStrPtr[1] & spacesStr & tmp & RETURN>
+  [782] pusharglistnoret 3 ...................... <argStrPtr, 1, argStrPtr[1] & spacesStr & tmp & RETURN>
+  [784] objcall 353 ............................. argStrPtr[1] = argStrPtr[1] & spacesStr & tmp & RETURN
+  [787] pushint8 1
+  [790] getlocal 8
+  [792] add
+  [793] setlocal 8
+  [795] endrepeat [170]
+  [798] getparam 16 ............................. <argStrPtr>
+  [800] pushint8 1 .............................. <1>
+  [803] pusharglist 2 ........................... <argStrPtr, 1>
+  [805] objcall 119 ............................. <argStrPtr[1]>
+  [808] pusharglistnoret 1 ...................... <argStrPtr[1]>
+  [810] extcall 69 .............................. return argStrPtr[1]
+  [813] ret
+end
+
+on stepInto me, argList, argDepth
+  [  0] pushint8 1 .............................. <1>
+  [  3] setlocal 0
+  [  5] getlocal 0
+  [  7] getparam 16 ............................. <argDepth>
+  [  9] lteq
+  [ 10] jmpifz [ 40] ............................ repeat with n = 1 to argDepth
+  [ 13] getparam 8 .............................. <argList>
+  [ 15] getparam 8 .............................. <argList>
+  [ 17] pusharglist 1 ........................... <argList>
+  [ 19] objcall 156 ............................. <argList.count()>
+  [ 22] pusharglist 2 ........................... <argList, argList.count()>
+  [ 24] objcall 119 ............................. <argList[argList.count()]>
+  [ 27] setparam 8 .............................. argList = argList[argList.count()]
+  [ 29] pushint8 1
+  [ 32] getlocal 0
+  [ 34] add
+  [ 35] setlocal 0
+  [ 37] endrepeat [  5]
+  [ 40] getparam 8 .............................. <argList>
+  [ 42] pusharglistnoret 1 ...................... <argList>
+  [ 44] extcall 69 .............................. return argList
+  [ 47] ret
+end
+
+on stepDown me, argList
+  [  0] getparam 8 .............................. <argList>
+  [  2] pusharglist 0 ........................... <[]>
+  [  4] pushlist ................................ <[]>
+  [  5] pusharglistnoret 2 ...................... <argList, []>
+  [  7] objcall 229 ............................. argList.add([])
+  [ 10] getparam 8 .............................. <argList>
+  [ 12] getparam 8 .............................. <argList>
+  [ 14] pusharglist 1 ........................... <argList>
+  [ 16] objcall 156 ............................. <argList.count()>
+  [ 19] pusharglist 2 ........................... <argList, argList.count()>
+  [ 21] objcall 119 ............................. <argList[argList.count()]>
+  [ 24] pusharglistnoret 1 ...................... <argList[argList.count()]>
+  [ 26] extcall 69 .............................. return argList[argList.count()]
+  [ 29] ret
+end
+
+on fixQuotes me, argStr
+  [  0] pushzero ................................ <0>
+  [  1] setlocal 0 .............................. tmpListLevel = 0
+  [  3] getparam 8 .............................. <argStr>
+  [  5] getobjprop 135 .......................... <argStr.length>
+  [  8] setlocal 8
+  [ 10] getlocal 8
+  [ 12] pushint8 1 .............................. <1>
+  [ 15] gteq
+  [ 16] jmpifz [129] ............................ repeat with n = argStr.length down to 1
+  [ 19] getparam 8 .............................. <argStr>
+  [ 21] pushsymb 138 ............................ <#char>
+  [ 24] getlocal 8 .............................. <n>
+  [ 26] pusharglist 3 ........................... <argStr, #char, n>
+  [ 28] objcall 113 ............................. <argStr.char[n]>
+  [ 31] setlocal 16 ............................. ch = argStr.char[n]
+  [ 33] getlocal 16 ............................. <ch>
+  [ 35] pushcons 520 ............................ <"]">
+  [ 38] eq ...................................... <ch = "]">
+  [ 39] jmpifz [ 53] ............................ if ch = "]" then / else
+  [ 42] getlocal 0 .............................. <tmpListLevel>
+  [ 44] pushint8 1 .............................. <1>
+  [ 47] add ..................................... <tmpListLevel + 1>
+  [ 48] setlocal 0 .............................. tmpListLevel = tmpListLevel + 1
+  [ 50] jmp [ 70]
+  [ 53] getlocal 16 ............................. <ch>
+  [ 55] pushcons 528 ............................ <"[">
+  [ 58] eq ...................................... <ch = "[">
+  [ 59] jmpifz [ 70] ............................ if ch = "[" then
+  [ 62] getlocal 0 .............................. <tmpListLevel>
+  [ 64] pushint8 1 .............................. <1>
+  [ 67] sub ..................................... <tmpListLevel - 1>
+  [ 68] setlocal 0 .............................. tmpListLevel = tmpListLevel - 1
+  [ 70] getlocal 0 .............................. <tmpListLevel>
+  [ 72] pushzero ................................ <0>
+  [ 73] eq ...................................... <tmpListLevel = 0>
+  [ 74] jmpifz [118] ............................ if tmpListLevel = 0 then
+  [ 77] getlocal 16 ............................. <ch>
+  [ 79] pushcons 536 ............................ <QUOTE>
+  [ 82] eq ...................................... <ch = QUOTE>
+  [ 83] jmpifz [118] ............................ if ch = QUOTE then
+  [ 86] pushcons 544 ............................ <QUOTE>
+  [ 89] pushcons 552 ............................ <"&QUOTE&">
+  [ 92] joinstr ................................. <QUOTE & "&QUOTE&">
+  [ 93] pushcons 560 ............................ <QUOTE>
+  [ 96] joinstr ................................. <QUOTE & "&QUOTE&" & QUOTE>
+  [ 97] pushint8 1 .............................. <1>
+  [100] pushchunkvarref 4 ....................... <me>
+  [102] pushsymb 138 ............................ <#char>
+  [105] getlocal 8 .............................. <n>
+  [107] pusharglist 3 ........................... <me, #char, n>
+  [109] objcall 416 ............................. <me.char[n]>
+  [112] swap
+  [113] pusharglistnoret 2 ...................... <me.char[n], QUOTE & "&QUOTE&" & QUOTE>
+  [115] objcall 421 ............................. put QUOTE & "&QUOTE&" & QUOTE into me.char[n]
+  [118] pushint8 -1
+  [121] getlocal 8
+  [123] add
+  [124] setlocal 8
+  [126] endrepeat [ 10]
+  [129] getparam 8 .............................. <argStr>
+  [131] pusharglistnoret 1 ...................... <argStr>
+  [133] extcall 69 .............................. return argStr
+  [136] ret
+end
+
+on convEditCodeToDBCode me, argStr
+  [  0] pushint8 10 ............................. <10>
+  [  3] pusharglist 1 ........................... <10>
+  [  5] extcall 375 ............................. <numToChar(10)>
+  [  8] pushcons 568 ............................ <EMPTY>
+  [ 11] getparam 8 .............................. <argStr>
+  [ 13] pusharglist 3 ........................... <numToChar(10), EMPTY, argStr>
+  [ 15] extcall 2732 ............................ <changeChars(numToChar(10), EMPTY, argStr)>
+  [ 18] setparam 8 .............................. argStr = changeChars(numToChar(10), EMPTY, argStr)
+  [ 20] pushint8 9 .............................. <9>
+  [ 23] pusharglist 1 ........................... <9>
+  [ 25] extcall 375 ............................. <numToChar(9)>
+  [ 28] pushcons 576 ............................ <EMPTY>
+  [ 31] getparam 8 .............................. <argStr>
+  [ 33] pusharglist 3 ........................... <numToChar(9), EMPTY, argStr>
+  [ 35] extcall 2732 ............................ <changeChars(numToChar(9), EMPTY, argStr)>
+  [ 38] setparam 8 .............................. argStr = changeChars(numToChar(9), EMPTY, argStr)
+  [ 40] pushcons 584 ............................ <"on x">
+  [ 43] pushcons 592 ............................ <RETURN>
+  [ 46] joinstr ................................. <"on x" & RETURN>
+  [ 47] getparam 8 .............................. <argStr>
+  [ 49] joinstr ................................. <"on x" & RETURN & argStr>
+  [ 50] pushcons 600 ............................ <RETURN>
+  [ 53] joinstr ................................. <"on x" & RETURN & argStr & RETURN>
+  [ 54] pushcons 608 ............................ <"end">
+  [ 57] joinstr ................................. <"on x" & RETURN & argStr & RETURN & "end">
+  [ 58] pushcons 616 ............................ <RETURN>
+  [ 61] joinstr ................................. <"on x" & RETURN & argStr & RETURN & "end" & RETURN>
+  [ 62] setlocal 0 .............................. str = "on x" & RETURN & argStr & RETURN & "end" & RETURN
+  [ 64] getparam 0 .............................. <me>
+  [ 66] getlocal 0 .............................. <str>
+  [ 68] pusharglist 2 ........................... <me, str>
+  [ 70] objcall 2847 ............................ <me.codeToList(str)>
+  [ 73] setlocal 8 .............................. lst = me.codeToList(str)
+  [ 75] getlocal 8 .............................. <lst>
+  [ 77] pusharglist 1 ........................... <lst>
+  [ 79] extcall 115 ............................. <listp(lst)>
+  [ 82] jmpifz [118] ............................ if listp(lst) then / else
+  [ 85] getlocal 8 .............................. <lst>
+  [ 87] pushint8 1 .............................. <1>
+  [ 90] pusharglist 2 ........................... <lst, 1>
+  [ 92] objcall 119 ............................. <lst[1]>
+  [ 95] pushint8 2 .............................. <2>
+  [ 98] pusharglist 2 ........................... <lst[1], 2>
+  [100] objcall 119 ............................. <lst[1][2]>
+  [103] setlocal 8 .............................. lst = lst[1][2]
+  [105] getlocal 8 .............................. <lst>
+  [107] pushint8 1 .............................. <1>
+  [110] pusharglistnoret 2 ...................... <lst, 1>
+  [112] objcall 221 ............................. lst.deleteAt(1)
+  [115] jmp [123]
+  [118] pusharglist 0 ........................... <[]>
+  [120] pushlist ................................ <[]>
+  [121] setlocal 8 .............................. lst = []
+  [123] getlocal 8 .............................. <lst>
+  [125] getobjprop 156 .......................... <lst.count>
+  [128] pushzero ................................ <0>
+  [129] gt ...................................... <lst.count > 0>
+  [130] jmpifz [145] ............................ if lst.count > 0 then
+  [133] getlocal 8 .............................. <lst>
+  [135] pusharglist 1 ........................... <lst>
+  [137] extcall 114 ............................. <string(lst)>
+  [140] pusharglistnoret 1 ...................... <string(lst)>
+  [142] extcall 69 .............................. return string(lst)
+  [145] getparam 8 .............................. <argStr>
+  [147] getobjprop 135 .......................... <argStr.length>
+  [150] pushint8 1 .............................. <1>
+  [153] gt ...................................... <argStr.length > 1>
+  [154] jmpifz [165] ............................ if argStr.length > 1 then
+  [157] pushcons 624 ............................ <"Unable to compile!">
+  [160] pusharglistnoret 1 ...................... <"Unable to compile!">
+  [162] extcall 118 ............................. alert("Unable to compile!")
+  [165] pushcons 632 ............................ <RETURN>
+  [168] pushcons 640 ............................ <"\\n">
+  [171] getparam 8 .............................. <argStr>
+  [173] pusharglist 3 ........................... <RETURN, "\\n", argStr>
+  [175] extcall 2732 ............................ <changeChars(RETURN, "\\n", argStr)>
+  [178] setparam 8 .............................. argStr = changeChars(RETURN, "\\n", argStr)
+  [180] getparam 8 .............................. <argStr>
+  [182] pusharglistnoret 1 ...................... <argStr>
+  [184] extcall 69 .............................. return argStr
+  [187] ret
+end
+
+on convDBCodeToEditCode me, argStr
+  [  0] getparam 8 .............................. <argStr>
+  [  2] pusharglist 1 ........................... <argStr>
+  [  4] extcall 116 ............................. <value(argStr)>
+  [  7] setlocal 0 .............................. lst = value(argStr)
+  [  9] getlocal 0 .............................. <lst>
+  [ 11] pusharglist 1 ........................... <lst>
+  [ 13] extcall 115 ............................. <listp(lst)>
+  [ 16] not ..................................... <not listp(lst)>
+  [ 17] jmpifz [193] ............................ if not listp(lst) then
+  [ 20] pushint8 1 .............................. <1>
+  [ 23] jmpifz [182] ............................ repeat while 1
+  [ 26] pushcons 648 ............................ <"\\n">
+  [ 29] getparam 8 .............................. <argStr>
+  [ 31] pusharglist 2 ........................... <"\\n", argStr>
+  [ 33] extcall 384 ............................. <offset("\\n", argStr)>
+  [ 36] setlocal 8 .............................. tmpOff = offset("\\n", argStr)
+  [ 38] getlocal 8 .............................. <tmpOff>
+  [ 40] jmpifz [176] ............................ if tmpOff then
+  [ 43] pushcons 656 ............................ <RETURN>
+  [ 46] pushint8 1 .............................. <1>
+  [ 49] pushchunkvarref 4 ....................... <me>
+  [ 51] pushsymb 138 ............................ <#char>
+  [ 54] getlocal 8 .............................. <tmpOff>
+  [ 56] getlocal 8 .............................. <tmpOff>
+  [ 58] pushint8 1 .............................. <1>
+  [ 61] add ..................................... <tmpOff + 1>
+  [ 62] pusharglist 4 ........................... <me, #char, tmpOff, tmpOff + 1>
+  [ 64] objcall 416 ............................. <me.char[tmpOff..tmpOff + 1]>
+  [ 67] swap
+  [ 68] pusharglistnoret 2 ...................... <me.char[tmpOff..tmpOff + 1], RETURN>
+  [ 70] objcall 421 ............................. put RETURN into me.char[tmpOff..tmpOff + 1]
+  [ 73] getlocal 8 .............................. <tmpOff>
+  [ 75] pushint8 1 .............................. <1>
+  [ 78] add ..................................... <tmpOff + 1>
+  [ 79] setlocal 16
+  [ 81] getlocal 16
+  [ 83] getparam 8 .............................. <argStr>
+  [ 85] getobjprop 135 .......................... <argStr.length>
+  [ 88] lteq
+  [ 89] jmpifz [173] ............................ repeat with n = tmpOff + 1 to argStr.length
+  [ 92] getparam 8 .............................. <argStr>
+  [ 94] pushsymb 138 ............................ <#char>
+  [ 97] getlocal 16 ............................. <n>
+  [ 99] pusharglist 3 ........................... <argStr, #char, n>
+  [101] objcall 113 ............................. <argStr.char[n]>
+  [104] pusharglist 0 ........................... <>
+  [106] extcall 2088 ............................ <SPACE>
+  [109] nteq .................................... <argStr.char[n] <> SPACE>
+  [110] jmpifz [162] ............................ if argStr.char[n] <> SPACE then
+  [113] getlocal 16 ............................. <n>
+  [115] getlocal 8 .............................. <tmpOff>
+  [117] pushint8 1 .............................. <1>
+  [120] add ..................................... <tmpOff + 1>
+  [121] gt ...................................... <n > (tmpOff + 1)>
+  [122] jmpifz [159] ............................ if n > (tmpOff + 1) then
+  [125] pushcons 664 ............................ <EMPTY>
+  [128] pushint8 1 .............................. <1>
+  [131] pushchunkvarref 4 ....................... <me>
+  [133] pushsymb 138 ............................ <#char>
+  [136] getlocal 8 .............................. <tmpOff>
+  [138] pushint8 1 .............................. <1>
+  [141] add ..................................... <tmpOff + 1>
+  [142] getlocal 16 ............................. <n>
+  [144] pushint8 1 .............................. <1>
+  [147] sub ..................................... <n - 1>
+  [148] pusharglist 4 ........................... <me, #char, tmpOff + 1, n - 1>
+  [150] objcall 416 ............................. <me.char[tmpOff + 1..n - 1]>
+  [153] swap
+  [154] pusharglistnoret 2 ...................... <me.char[tmpOff + 1..n - 1], EMPTY>
+  [156] objcall 421 ............................. put EMPTY into me.char[tmpOff + 1..n - 1]
+  [159] jmp [173] ............................... exit repeat
+  [162] pushint8 1
+  [165] getlocal 16
+  [167] add
+  [168] setlocal 16
+  [170] endrepeat [ 81]
+  [173] jmp [179] ............................... next repeat
+  [176] jmp [182] ............................... exit repeat
+  [179] endrepeat [ 20]
+  [182] getparam 0 .............................. <me>
+  [184] getparam 8 .............................. <argStr>
+  [186] pusharglist 2 ........................... <me, argStr>
+  [188] objcall 2847 ............................ <me.codeToList(argStr)>
+  [191] setlocal 0 .............................. lst = me.codeToList(argStr)
+  [193] getlocal 0 .............................. <lst>
+  [195] pusharglist 1 ........................... <lst>
+  [197] extcall 115 ............................. <listp(lst)>
+  [200] jmpifz [237] ............................ if listp(lst) then
+  [203] pushcons 672 ............................ <EMPTY>
+  [206] pusharglist 1 ........................... <[EMPTY]>
+  [208] pushlist ................................ <[EMPTY]>
+  [209] setlocal 24 ............................. strPtr = [EMPTY]
+  [211] getparam 0 .............................. <me>
+  [213] getlocal 0 .............................. <lst>
+  [215] getlocal 24 ............................. <strPtr>
+  [217] pusharglistnoret 3 ...................... <me, lst, strPtr>
+  [219] objcall 2853 ............................ me.listToCode(lst, strPtr)
+  [222] getlocal 24 ............................. <strPtr>
+  [224] pushint8 1 .............................. <1>
+  [227] pusharglist 2 ........................... <strPtr, 1>
+  [229] objcall 119 ............................. <strPtr[1]>
+  [232] pusharglistnoret 1 ...................... <strPtr[1]>
+  [234] extcall 69 .............................. return strPtr[1]
+  [237] getparam 8 .............................. <argStr>
+  [239] getobjprop 135 .......................... <argStr.length>
+  [242] pushint8 1 .............................. <1>
+  [245] gt ...................................... <argStr.length > 1>
+  [246] jmpifz [264] ............................ if argStr.length > 1 then
+  [249] getparam 8 .............................. <argStr>
+  [251] pusharglistnoret 1 ...................... <argStr>
+  [253] extcall 122 ............................. pott(argStr)
+  [256] pushcons 680 ............................ <"Unable to recreate to lingo!">
+  [259] pusharglistnoret 1 ...................... <"Unable to recreate to lingo!">
+  [261] extcall 118 ............................. alert("Unable to recreate to lingo!")
+  [264] getparam 8 .............................. <argStr>
+  [266] pusharglistnoret 1 ...................... <argStr>
+  [268] extcall 69 .............................. return argStr
+  [271] ret
+end

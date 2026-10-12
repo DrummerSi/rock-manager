@@ -1,0 +1,255 @@
+property ancestor, m_eventCard_r, m_gfxHuman_r, m_eventCardOptions, m_soundName, m_specialObj, m_cpOffsetLoc
+global gDir, gRock
+
+on new me, argOptions
+  argOptions[#DontSetTitleAndButtons] = 1
+  m_eventCard_r = argOptions[#EventCard]
+  if symbolp(m_eventCard_r) then
+    m_eventCard_r = gRock.m_classManager.getObjByIDAndClass(m_eventCard_r, #EventCard)
+  end if
+  if not objectp(m_eventCard_r) then
+    alert("EventCard not found! " & string(argOptions[#EventCard]))
+    m_eventCard_r = gRock.m_classManager.getObjsOfClass(#EventCard)
+    m_eventCard_r = m_eventCard_r[1]
+  end if
+  if m_eventCard_r.dataMemberName.length <= 1 then
+    m_eventCard_r.dataMemberName = "DlgEventCardNoPicData"
+  end if
+  if member(m_eventCard_r.dataMemberName).number < 1 then
+    alert("Wrong DataMemberName in " & string(m_eventCard_r.ID) & ": " & m_eventCard_r.dataMemberName)
+    m_eventCard_r.dataMemberName = "DlgEventCardNoPicData"
+  end if
+  eventCardProps = argOptions[#eventCardProps]
+  if listp(eventCardProps) then
+    repeat with n = 1 to eventCardProps.count
+      rsetProp(m_eventCard_r, eventCardProps.getPropAt(n), eventCardProps[n])
+    end repeat
+  end if
+  m_eventCardOptions = argOptions[#EventCardOptions]
+  if voidp(m_eventCardOptions) then
+    m_eventCardOptions = [:]
+  end if
+  gRock.m_context.setFocus(#dlg, me)
+  argOptions[#NoPreExecute] = 1
+  rExecuteActions(m_eventCard_r.PreExecuteThis, [:], m_eventCard_r)
+  dialog_r = gRock.m_classManager.getObjByIDAndClass(#DlgInfo, #Dialog)
+  dialog_r.dataMemberName = "DlgEventCardBaseData"
+  dialog_r.name = rgetProp(m_eventCard_r, #name)
+  dialog_r.loc = rgetProp(m_eventCard_r, #loc)
+  dialog_r.icon = rgetProp(m_eventCard_r, #icon)
+  argOptions[#DlgInfoObj] = dialog_r
+  ancestor = script("DlgRockAncestorScript").new(argOptions)
+  obj = ancestor.m_objDlg.getItem(#top)
+  obj.attachDlg(VOID, member(m_eventCard_r.dataMemberName).text.value)
+  tmpOff = offset("Press", m_eventCard_r.dataMemberName)
+  if tmpOff then
+    tmpOff = offset("Media", m_eventCard_r.dataMemberName)
+    MediaID = m_eventCard_r.dataMemberName.char[tmpOff..m_eventCard_r.dataMemberName.length - 4]
+    MediaID = symbol(MediaID)
+    m_specialObj = script("DlgECPressScript").new(me, MediaID, ancestor.getSPOverDlg())
+  end if
+  tmpHasSetHumanFocus = 0
+  if m_eventCardOptions[#DontResolveGraphics] = 1 then
+    useGfx = VOID
+  else
+    useGfx = me.resolveGraphics()
+    if ilk(useGfx) = #instance then
+      m_gfxHuman_r = useGfx
+      gRock.m_context.setFocus(VOID, m_gfxHuman_r)
+      tmpHasSetHumanFocus = 1
+      useGfx = VOID
+    else
+      if ilk(useGfx) = #string then
+        if useGfx.length = 0 then
+          useGfx = VOID
+        end if
+      end if
+    end if
+  end if
+  if tmpHasSetHumanFocus = 0 then
+    if symbolp(m_eventCardOptions[#HumanID]) then
+      tmpMusician_r = gRock.m_classManager.getObjByIDAndClass(m_eventCardOptions[#HumanID], #RealMusician)
+      if objectp(tmpMusician_r) then
+        gRock.m_context.setFocus(VOID, tmpMusician_r)
+      end if
+    end if
+  end if
+  if m_eventCardOptions[#DontSetAndGfx] <> 1 then
+    me.setTextsAndGfx(useGfx)
+  end if
+  return me
+end
+
+on finishUp me, argSetTitleAndButtons
+  if argSetTitleAndButtons = #TitleAndButtons then
+    rDlgSetButtons(ancestor.m_objDlg, ancestor.m_objReportTo, ancestor.m_dialogInfoObj_r)
+  end if
+  ancestor.m_objDlg.recalc(#DontPaint)
+  if ancestor.m_dialogInfoObj_r.loc = point(0, 0) then
+    size = getRectSize(ancestor.m_objDlg.surroundRect)
+    tmpTopLeftLoc = point(400, 305) - (size / 2)
+  else
+    tmpTopLeftLoc = VOID
+  end if
+  if argSetTitleAndButtons = #title then
+    rDlgSetTitle(ancestor.m_objDlg, ancestor.m_dialogInfoObj_r, VOID, tmpTopLeftLoc)
+  else
+    if argSetTitleAndButtons = #TitleAndButtons then
+      rDlgSetTitle(ancestor.m_objDlg, ancestor.m_dialogInfoObj_r, VOID, tmpTopLeftLoc)
+    end if
+  end if
+  if objectp(m_specialObj) then
+    m_specialObj.finishingUp(tmpTopLeftLoc)
+  end if
+  ancestor.m_objDlg.recalc(#DontPaint)
+  if objectp(m_gfxHuman_r) then
+    dlg = ancestor.m_objDlg.getItem(#top)
+    itemObj = dlg.dialogObj.getItem(#frame)
+    if objectp(itemObj) then
+      rct = itemObj.getOnStageRect()
+      tmpLoc = point(rct[1], rct[2]) + point(3, 3)
+      if listp(tmpTopLeftLoc) then
+        tmpLoc = tmpLoc + tmpTopLeftLoc
+      end if
+      ancestor.setFaceMode(#normal)
+      if m_gfxHuman_r.className = #RealMusician then
+        tmpGfx = m_gfxHuman_r.Gfx
+        lst = m_gfxHuman_r.calcFaceSettings()
+        tmpMood = lst[#Mood]
+        ancestor.setFaceMode(tmpMood)
+      else
+        tmpGfx = m_gfxHuman_r.BelongsToPlace
+        if (tmpGfx = #none) or voidp(tmpGfx) then
+          tmpGfx = m_gfxHuman_r.Gfx
+        end if
+      end if
+      ancestor.showFace(1, tmpGfx, tmpLoc, #LeftTop)
+    end if
+  end if
+  ancestor.render()
+  rExecuteActions(m_eventCard_r.ExecuteThis, [:], m_eventCard_r)
+  script("SoundScript").new(gRock.m_paths.getPath(#sound) & "_EventCard", [#vol: #FXVol])
+end
+
+on zzfinishUp me
+  rDlgSetTitleAndButtons(ancestor.m_objDlg, ancestor.m_objReportTo, ancestor.m_dialogInfoObj_r)
+  me.subFinishUp()
+end
+
+on zzfinishUp2 me
+  rDlgSetTitle(ancestor.m_objDlg, ancestor.m_dialogInfoObj_r)
+  me.subFinishUp()
+end
+
+on kill me
+  if objectp(m_specialObj) then
+    m_specialObj = m_specialObj.kill()
+  end if
+  m_gfxHuman_r = 0
+  dialog_r = ancestor.m_dialogInfoObj_r
+  ancestor.kill()
+  return 0
+end
+
+on Report me, argObj, argWhat
+end
+
+on mouse me, argObj, argWhat, argOption
+  if objectp(argOption) then
+    if argWhat = #click then
+      ID = argOption.getOneProp(#ID)
+      IDStr = string(ID)
+      ancestor.mouse(argObj, argWhat, argOption)
+    end if
+  end if
+end
+
+on resolveGraphics me
+  tmpGfx = rgetProp(m_eventCard_r, #Gfx)
+  obj = getECGfxHuman(m_eventCard_r, m_eventCardOptions, 1)
+  if objectp(obj) then
+    if gRock.m_classManager.hasBaseClass(obj, #Human) or (obj.className = #Human) then
+      return obj
+    else
+      if (obj.className = #album) or (obj.className = #Concert) then
+        tmpNewSize = VOID
+        if m_eventCard_r.dataMemberName = "DlgEventCardSmallPicData" then
+          tmpNewSize = point(93, 98)
+        else
+          if m_eventCard_r.dataMemberName = "DlgEventCardMedia03Data" then
+            tmpNewSize = point(93, 98)
+          else
+            if m_eventCard_r.dataMemberName = "DlgEventCardMedia04Data" then
+              tmpNewSize = point(93, 98)
+            else
+              if m_eventCard_r.dataMemberName = "DlgEventCardLargePicData" then
+                tmpNewSize = point(314, 210)
+              end if
+            end if
+          end if
+        end if
+        if obj.className = #album then
+          if obj.DesignSettings.count then
+            img = makeAlbumCover(obj.DesignSettings)
+          end if
+        else
+          if obj.className = #Concert then
+            VenueID = obj.Venue
+            venue_r = gRock.m_classManager.getObjByIDAndClass(VenueID, #Live)
+            img = makeConcertPic(venue_r, float(obj.NumAudience) / venue_r.size)
+          end if
+        end if
+        if objectp(img) then
+          if not voidp(tmpNewSize) then
+            m_cpOffsetLoc = -tmpNewSize / 2
+            img2 = image(tmpNewSize[1], tmpNewSize[2], 16)
+            img2.copyPixels(img, img2.rect, img.rect)
+            return img2
+          end if
+          m_cpOffsetLoc = -point(img.rect[3], img.rect[4]) / 2
+          return img
+        end if
+      end if
+    end if
+  end if
+  return tmpGfx
+end
+
+on setTextsAndGfx me, argGfx
+  tmpCleanName = m_eventCard_r.dataMemberName
+  delete tmpCleanName.char[1..3]
+  delete tmpCleanName.char[tmpCleanName.length - 3..tmpCleanName.length]
+  obj = ancestor.m_objDlg.getItem(#top)
+  dlg = obj.dialogObj
+  if objectp(dlg) then
+    if not voidp(argGfx) then
+      itemObj = dlg.getItem(#Pic)
+      if objectp(itemObj) then
+        itemObj.setOneProp(#Pic, argGfx)
+        if listp(m_cpOffsetLoc) then
+          tmp = itemObj.getOneProp(#inOffsetRect)
+          tmp[1] = tmp[1] + m_cpOffsetLoc[1]
+          tmp[2] = tmp[2] + m_cpOffsetLoc[2]
+          itemObj.setOneProp(#inOffsetRect, tmp)
+        end if
+      end if
+    end if
+    itemObj = dlg.getItem(#Caption)
+    if objectp(itemObj) then
+      tmpStr1 = m_eventCard_r.Caption
+      if (tmpStr1.length > 1) and (m_eventCard_r.dataMemberName <> "DlgEventCardLargePicData") then
+        itemObj.setOneProp(#Pic, rFormatText([tmpStr1], tmpCleanName & "CaptionFormatting", [#shadow: 1]))
+      else
+        itemObj.setOneProp(#Pic, "Dummy")
+      end if
+    end if
+    itemObj = dlg.getItem(#Info)
+    tmpStr1 = m_eventCard_r.Headline
+    if tmpStr1.length <= 1 then
+      tmpStr1 = m_eventCard_r.name
+    end if
+    tmpStr2 = m_eventCard_r.comment
+    tmpStr3 = rgetProp(m_eventCard_r, #question)
+    itemObj.setOneProp(#Pic, rFormatText([tmpStr1, tmpStr2, tmpStr3], tmpCleanName & "Formatting", [#shadow: 1]))
+  end if
+end

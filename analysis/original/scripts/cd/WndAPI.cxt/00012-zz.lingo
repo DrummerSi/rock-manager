@@ -1,0 +1,200 @@
+on createWnd argOptions
+  if voidp(argOptions) then
+    argOptions = [#rect: rect(0, 0, 100, 100), #depth: 16, #alpha: 0, #image: #create, #StyleList: member("RockSrnd3Style").text.value]
+  end if
+  if ilk(argOptions[#member]) = #member then
+    iDst = argOptions[#member].image
+  else
+    if ilk(argOptions[#image]) = #image then
+      iDst = argOptions[#image]
+    end if
+  end if
+  tmpDstRect = argOptions[#rect]
+  if listp(tmpDstRect) then
+    tmpSize = getRectSize(tmpDstRect)
+  else
+    tmpSize = argOptions[#size]
+    tmpDstRect = rect(point(0, 0), tmpSize)
+  end if
+  tmpDepth = argOptions[#depth]
+  if voidp(tmpSize) or voidp(tmpDepth) then
+    if not objectp(iDst) then
+      put "Not enough data"
+      exit
+    end if
+    tmpSize = point(iDst.width, iDst.height)
+    tmpDstRect = rect(point(0, 0), tmpSize)
+    tmpDepth = iDst.depth
+    if (tmpSize[1] = 0) or (tmpSize[2] = 0) or (tmpDepth = 0) then
+      put "Supplied image empty!"
+      exit
+    end if
+  end if
+  wndRect = argOptions[#wndRect]
+  if voidp(wndRect) then
+    wndRect = tmpDstRect
+  end if
+  if objectp(iDst) then
+    tmpResizing = argOptions[#ResizeToFit]
+    if voidp(tmpResizing) or (tmpResizing = #Keep) then
+      nothing()
+    else
+      if tmpResizing = #Exact then
+        if (iDst.width <> tmpSize[1]) or (iDst.height <> tmpSize[2]) or (iDst.depth <> tmpDepth) then
+          iDst = image(tmpSize[1], tmpSize[2], tmpDepth, argOptions[#alpha])
+        end if
+      else
+        if tmpResizing = #Enlarge then
+          if (iDst.width < tmpDstRect[3]) or (iDst.height < tmpDstRect[4]) or (iDst.depth < tmpDepth) then
+            iDst = image(tmpDstRect[3], tmpDstRect[4], tmpDepth, argOptions[#alpha])
+          end if
+        end if
+      end if
+    end if
+  else
+    if argOptions[#image] = #create then
+      iDst = image(tmpSize[1], tmpSize[2], tmpDepth, argOptions[#alpha])
+    end if
+  end if
+  tmpStyle = argOptions[#StyleList]
+  if not listp(tmpStyle) then
+    tmpStyle = [#Prefix: "WinDialog", #bgColor: rgb(192, 192, 192)]
+  end if
+  tmpMembPrefix = tmpStyle[#Prefix] & "Edge"
+  tmpBg = tmpStyle[#bgColor]
+  if not listp(tmpStyle[#FillRect]) then
+    tmpStyle[#FillRect] = rect(0, 0, 0, 0)
+  end if
+  tmpFillRect = wndRect + tmpStyle[#FillRect]
+  tmpFillRect = tmpDstRect.intersect(tmpFillRect)
+  tmpFillRectSize = getRectSize(tmpFillRect)
+  if tmpFillRectSize[1] <= 0 then
+    tmpFillRect[1] = 0
+    tmpFillRect[3] = 0
+  end if
+  if tmpFillRectSize[2] <= 0 then
+    tmpFillRect[2] = 0
+    tmpFillRect[4] = 0
+  end if
+  firstMember = member(tmpMembPrefix & "TL")
+  firstMemberNum = firstMember.number
+  memberOrder = ["TL", "TR", "BL", "BR", "T", "L", "B", "R"]
+  tmpLists = [["BL", point(wndRect[1], wndRect[4])], ["TL", point(wndRect[1], wndRect[2])], ["BR", point(wndRect[3], wndRect[4])], ["TR", point(wndRect[3], wndRect[2])], ["T", ["23", wndRect[2], "41", #PlusSize]], ["R", [#MinusSize, "44", wndRect[3], "32"]], ["B", ["13", #MinusSize, "31", wndRect[4]]], ["L", [wndRect[1], "24", #PlusSize, "12"]]]
+  __debug(#WndOpt, "CreateWnd calc 1")
+  repeat with tmpList in tmpLists
+    tmpWhich = tmpList[1]
+    tmpMemb = member(firstMemberNum + memberOrder.getPos(tmpWhich) - 1)
+    if tmpMemb.type <> #bitmap then
+      put "no memb", tmpMembPrefix & tmpList[1]
+      next repeat
+    end if
+    tmpList[1] = tmpMemb
+    tmpLoc = tmpList[2]
+    if ilk(tmpLoc) = #list then
+      tmpOffsets = rect(0, 0, 0, 0)
+      repeat with n = 1 to 4
+        tmpWhat = tmpLoc[n]
+        if stringp(tmpWhat) then
+          tmpOtherMemb = tmpLists[value(tmpWhat.char[1])][1]
+          tmpOtherRect = getMemberRect(tmpOtherMemb)[value(tmpWhat.char[2])]
+          tmpLoc[n] = wndRect[n] + tmpOtherRect
+          next repeat
+        end if
+        if symbolp(tmpWhat) then
+          if n > 2 then
+            tmpRefPos = n - 2
+          else
+            tmpRefPos = n + 2
+          end if
+          if tmpWhat = #PlusSize then
+            tmpLoc[n] = tmpLoc[tmpRefPos] + tmpMemb.rect[1 - (tmpRefPos mod 2) + 3]
+          else
+            tmpLoc[n] = tmpLoc[tmpRefPos] - tmpMemb.rect[1 - (tmpRefPos mod 2) + 3]
+          end if
+          next repeat
+        end if
+        if integerp(tmpWhat) then
+          tmpAxis = n
+          if n > 2 then
+            tmpAxis = n - 2
+          end if
+          if n > 2 then
+            tmpRefPos = n - 2
+          else
+            tmpRefPos = n + 2
+          end if
+          tmpOff = tmpMemb.rect[n] - tmpMemb.regPoint[tmpAxis]
+          tmpLoc[n] = tmpLoc[n] + tmpOff
+          tmpOffsets[tmpRefPos] = tmpOff
+        end if
+      end repeat
+      tmpRect = rect(tmpLoc[1], tmpLoc[2], tmpLoc[3], tmpLoc[4]) + tmpOffsets
+      tmpList[2] = tmpRect
+    end if
+  end repeat
+  __debug(#WndOpt, "CreateWnd rects calced")
+  if objectp(iDst) then
+    if (argOptions[#alpha] > 0) and iDst.useAlpha then
+      iDst.setAlpha(0)
+      tmp = iDst.extractAlpha()
+      tmp.fill(tmpFillRect, 0)
+      iDst.setAlpha(tmp)
+      iDst.useAlpha = 1
+    else
+      if iDst.useAlpha then
+        iDst.useAlpha = 0
+      end if
+    end if
+    if ilk(tmpBg) = #color then
+      iDst.fill(tmpFillRect, tmpBg)
+    else
+      if ilk(tmpBg) = #member then
+        fillWithPattern(iDst, tmpBg, tmpDstRect)
+      end if
+    end if
+    repeat with n = 1 to tmpLists.count()
+      tmpList = tmpLists[n]
+      tmpMemb = tmpList[1]
+      tmpRect = tmpList[2]
+      srcImg = tmpMemb.image
+      tmpSrcUseAlpha = srcImg.useAlpha
+      tmpStretch = 1
+      if tmpRect.count() = 2 then
+        tmpStretch = 0
+        tmpRect = getMemberRect(tmpMemb) + rect(tmpRect, tmpRect)
+      end if
+      tmpRealRect = tmpRect.intersect(tmpDstRect)
+      if (tmpRealRect[1] = 0) and (tmpRealRect[2] = 0) and (tmpRealRect[3] = 0) and (tmpRealRect[4] = 0) then
+        next repeat
+      else
+        if tmpRect = tmpRealRect then
+          tmpSrcRect = tmpMemb.rect
+        else
+          tmpOffRect = tmpRealRect - tmpRect
+          if tmpStretch then
+            if n mod 2 then
+              tmpOffRect[1] = 0
+              tmpOffRect[3] = 0
+            else
+              tmpOffRect[2] = 0
+              tmpOffRect[4] = 0
+            end if
+          end if
+          tmpSrcRect = tmpMemb.rect + tmpOffRect
+        end if
+      end if
+      iDst.copyPixels(srcImg, tmpRealRect, tmpSrcRect, [#ink: 36, #color: rgb(255, 0, 0)])
+      if tmpSrcUseAlpha then
+        srcImg.useAlpha = 1
+      end if
+    end repeat
+    __debug(#WndOpt, "CreateWnd compose done")
+    if ilk(argOptions[#member]) = #member then
+      argOptions[#member].image = iDst
+      argOptions[#member].useAlpha = iDst.useAlpha
+    end if
+    return iDst
+  else
+    return tmpLists
+  end if
+end

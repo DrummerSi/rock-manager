@@ -1,0 +1,389 @@
+property childObj, isExpanded, dialogObj, scrollThisObj, itemObj
+global gUseful
+
+on new me, argItemObj, argChildObj
+  [  0] getparam 8 .............................. <argItemObj>
+  [  2] setprop 581 ............................. itemObj = argItemObj
+  [  5] getparam 16 ............................. <argChildObj>
+  [  7] setprop 590 ............................. childObj = argChildObj
+  [ 10] getprop 590 ............................. <childObj>
+  [ 13] pusharglist 1 ........................... <childObj>
+  [ 15] extcall 41 .............................. <voidp(childObj)>
+  [ 18] jmpifz [ 26] ............................ if voidp(childObj) then
+  [ 21] getparam 0 .............................. <me>
+  [ 23] setprop 590 ............................. childObj = me
+  [ 26] getprop 581 ............................. <itemObj>
+  [ 29] getobjprop 134 .......................... <itemObj.type>
+  [ 32] pushsymb 121 ............................ <#Dialog>
+  [ 35] nteq .................................... <itemObj.type <> #Dialog>
+  [ 36] jmpifz [ 45] ............................ if itemObj.type <> #Dialog then
+  [ 39] pushzero ................................ <0>
+  [ 40] pusharglistnoret 1 ...................... <0>
+  [ 42] extcall 96 .............................. return 0
+  [ 45] getparam 0 .............................. <me>
+  [ 47] pusharglistnoret 1 ...................... <me>
+  [ 49] extcall 96 .............................. return me
+  [ 52] ret
+end
+
+on kill me
+  [  0] pushzero ................................ <0>
+  [  1] pusharglistnoret 1 ...................... <0>
+  [  3] extcall 96 .............................. return 0
+  [  6] ret
+end
+
+on render me
+  [  0] ret
+end
+
+on timeTick me
+  [  0] getparam 0 .............................. <me>
+  [  2] pushzero ................................ <0>
+  [  3] pusharglistnoret 2 ...................... <me, 0>
+  [  5] objcall 586 ............................. me.expand(0)
+  [  8] getglobal 93 ............................ <gUseful>
+  [ 11] getobjprop 94 ........................... <gUseful.frameTimer>
+  [ 14] getparam 0 .............................. <me>
+  [ 16] pusharglistnoret 2 ...................... <gUseful.frameTimer, me>
+  [ 18] objcall 108 ............................. gUseful.frameTimer.deleteObject(me)
+  [ 21] ret
+end
+
+on mouse me, argObj, argWhat
+  [  0] getparam 16 ............................. <argWhat>
+  [  2] pushsymb 379 ............................ <#DownOnOther>
+  [  5] eq ...................................... <argWhat = #DownOnOther>
+  [  6] jmpifz [ 16] ............................ if argWhat = #DownOnOther then
+  [  9] getprop 594 ............................. <isExpanded>
+  [ 12] jmpifz [ 15] ............................ if isExpanded then
+  [ 15] ret ..................................... exit
+  [ 16] getparam 16 ............................. <argWhat>
+  [ 18] pushsymb 380 ............................ <#down>
+  [ 21] eq ...................................... <argWhat = #down>
+  [ 22] jmpifz [ 35] ............................ if argWhat = #down then / else
+  [ 25] getprop 594 ............................. <isExpanded>
+  [ 28] not ..................................... <not isExpanded>
+  [ 29] jmpifz [ 32] ............................ if not isExpanded then
+  [ 32] jmp [100]
+  [ 35] getparam 16 ............................. <argWhat>
+  [ 37] pushsymb 346 ............................ <#click>
+  [ 40] eq ...................................... <argWhat = #click>
+  [ 41] jmpifz [ 79] ............................ if argWhat = #click then / else
+  [ 44] getprop 594 ............................. <isExpanded>
+  [ 47] jmpifz [ 66] ............................ if isExpanded then / else
+  [ 50] getglobal 93 ............................ <gUseful>
+  [ 53] getobjprop 94 ........................... <gUseful.frameTimer>
+  [ 56] getparam 0 .............................. <me>
+  [ 58] pusharglistnoret 2 ...................... <gUseful.frameTimer, me>
+  [ 60] objcall 95 .............................. gUseful.frameTimer.addObject(me)
+  [ 63] jmp [ 76]
+  [ 66] getparam 0 .............................. <me>
+  [ 68] pushint8 1 .............................. <1>
+  [ 71] pusharglistnoret 2 ...................... <me, 1>
+  [ 73] objcall 586 ............................. me.expand(1)
+  [ 76] jmp [100]
+  [ 79] getparam 16 ............................. <argWhat>
+  [ 81] pushsymb 381 ............................ <#enter>
+  [ 84] eq ...................................... <argWhat = #enter>
+  [ 85] jmpifz [ 91] ............................ if argWhat = #enter then / else
+  [ 88] jmp [100]
+  [ 91] getparam 16 ............................. <argWhat>
+  [ 93] pushsymb 383 ............................ <#Leave>
+  [ 96] eq ...................................... <argWhat = #Leave>
+  [ 97] jmpifz [100] ............................ if argWhat = #Leave then
+  [100] ret
+end
+
+on expand me, argIsTRUE
+  [  0] getprop 581 ............................. <itemObj>
+  [  3] getobjprop 247 .......................... <itemObj.ancestor>
+  [  6] getobjprop 248 .......................... <itemObj.ancestor.masterObj>
+  [  9] setlocal 0 .............................. tmpDlg = itemObj.ancestor.masterObj
+  [ 11] getparam 8 .............................. <argIsTRUE>
+  [ 13] jmpifz [335] ............................ if argIsTRUE then / else
+  [ 16] pushcons 0 .............................. <"DlgRockScrollSetData">
+  [ 18] setlocal 8 .............................. tmpDialogDataMemberName = "DlgRockScrollSetData"
+  [ 20] getlocal 0 .............................. <tmpDlg>
+  [ 22] pushsymb 46 ............................. <#ID>
+  [ 25] pushsymb 627 ............................ <#TmpDroppedDialog>
+  [ 28] pushsymb 134 ............................ <#type>
+  [ 31] pushsymb 121 ............................ <#Dialog>
+  [ 34] pushsymb 149 ............................ <#ch>
+  [ 37] pushint8 100 ............................ <100>
+  [ 40] pushsymb 447 ............................ <#dialogDataMemberName>
+  [ 43] getlocal 8 .............................. <tmpDialogDataMemberName>
+  [ 45] pushsymb 271 ............................ <#inOffsetRect>
+  [ 48] getprop 581 ............................. <itemObj>
+  [ 51] pushsymb 167 ............................ <#calcRect>
+  [ 54] pushint8 1 .............................. <1>
+  [ 57] pusharglist 3 ........................... <itemObj, #calcRect, 1>
+  [ 59] objcall 145 ............................. <itemObj.calcRect[1]>
+  [ 62] getprop 581 ............................. <itemObj>
+  [ 65] pushsymb 167 ............................ <#calcRect>
+  [ 68] pushint8 2 .............................. <2>
+  [ 71] pusharglist 3 ........................... <itemObj, #calcRect, 2>
+  [ 73] objcall 145 ............................. <itemObj.calcRect[2]>
+  [ 76] getprop 581 ............................. <itemObj>
+  [ 79] pushsymb 167 ............................ <#calcRect>
+  [ 82] pushint8 3 .............................. <3>
+  [ 85] pusharglist 3 ........................... <itemObj, #calcRect, 3>
+  [ 87] objcall 145 ............................. <itemObj.calcRect[3]>
+  [ 90] pushzero ................................ <0>
+  [ 91] pusharglist 4 ........................... <itemObj.calcRect[1], itemObj.calcRect[2], itemObj.calcRect[3], 0>
+  [ 93] extcall 65 .............................. <rect(itemObj.calcRect[1], itemObj.calcRect[2], itemObj.calcRect[3], 0)>
+  [ 96] pushsymb 144 ............................ <#rel>
+  [ 99] pushzero ................................ <0>
+  [100] pushzero ................................ <0>
+  [101] pushzero ................................ <0>
+  [102] pushsymb 280 ............................ <#Auto>
+  [105] pusharglist 4 ........................... <[0, 0, 0, #Auto]>
+  [107] pushlist ................................ <[0, 0, 0, #Auto]>
+  [108] pushsymb 445 ............................ <#usingTopMouse>
+  [111] pushint8 1 .............................. <1>
+  [114] pusharglist 14 .......................... <[#ID: #TmpDroppedDialog, #type: #Dialog, #ch: 100, #dialogDataMemberName: tmpDialogDataMemberName, #inOffsetRect: rect(itemObj.calcRect[1], itemObj.calcRect[2], itemObj.calcRect[3], 0), #rel: [0, 0, 0, #Auto], #usingTopMouse: 1]>
+  [116] pushproplist ............................ <[#ID: #TmpDroppedDialog, #type: #Dialog, #ch: 100, #dialogDataMemberName: tmpDialogDataMemberName, #inOffsetRect: rect(itemObj.calcRect[1], itemObj.calcRect[2], itemObj.calcRect[3], 0), #rel: [0, 0, 0, #Auto], #usingTopMouse: 1]>
+  [117] pusharglist 2 ........................... <tmpDlg, [#ID: #TmpDroppedDialog, #type: #Dialog, #ch: 100, #dialogDataMemberName: tmpDialogDataMemberName, #inOffsetRect: rect(itemObj.calcRect[1], itemObj.calcRect[2], itemObj.calcRect[3], 0), #rel: [0, 0, 0, #Auto], #usingTopMouse: 1]>
+  [119] objcall 7 ............................... <tmpDlg.addItem([#ID: #TmpDroppedDialog, #type: #Dialog, #ch: 100, #dialogDataMemberName: tmpDialogDataMemberName, #inOffsetRect: rect(itemObj.calcRect[1], itemObj.calcRect[2], itemObj.calcRect[3], 0), #rel: [0, 0, 0, #Auto], #usingTopMouse: 1])>
+  [121] setlocal 16 ............................. tmpObj = tmpDlg.addItem([#ID: #TmpDroppedDialog, #type: #Dialog, #ch: 100, #dialogDataMemberName: tmpDialogDataMemberName, #inOffsetRect: rect(itemObj.calcRect[1], itemObj.calcRect[2], itemObj.calcRect[3], 0), #rel: [0, 0, 0, #Auto], #usingTopMouse: 1])
+  [123] getlocal 16 ............................. <tmpObj>
+  [125] getobjprop 286 .......................... <tmpObj.mouseObj>
+  [128] pushzero ................................ <0>
+  [129] setobjprop 617 .......................... tmpObj.mouseObj.noPassButton = 0
+  [132] getlocal 16 ............................. <tmpObj>
+  [134] getobjprop 286 .......................... <tmpObj.mouseObj>
+  [137] pushzero ................................ <0>
+  [138] setobjprop 618 .......................... tmpObj.mouseObj.noPassRoll = 0
+  [141] getlocal 16 ............................. <tmpObj>
+  [143] getobjprop 286 .......................... <tmpObj.mouseObj>
+  [146] getobjprop 619 .......................... <tmpObj.mouseObj.overMouseObj>
+  [149] pushzero ................................ <0>
+  [150] setobjprop 617 .......................... tmpObj.mouseObj.overMouseObj.noPassButton = 0
+  [153] getlocal 16 ............................. <tmpObj>
+  [155] getobjprop 122 .......................... <tmpObj.dialogObj>
+  [158] pushsymb 177 ............................ <#ScrollThis>
+  [161] pusharglist 2 ........................... <tmpObj.dialogObj, #ScrollThis>
+  [163] objcall 28 .............................. <tmpObj.dialogObj.getItem(#ScrollThis)>
+  [165] setprop 616 ............................. scrollThisObj = tmpObj.dialogObj.getItem(#ScrollThis)
+  [168] getparam 0 .............................. <me>
+  [170] pusharglist 0 ........................... <>
+  [172] extcall 48 .............................. <VOID>
+  [175] getlocal 16 ............................. <tmpObj>
+  [177] getobjprop 247 .......................... <tmpObj.ancestor>
+  [180] getobjprop 248 .......................... <tmpObj.ancestor.masterObj>
+  [183] pusharglist 3 ........................... <me, VOID, tmpObj.ancestor.masterObj>
+  [185] objcall 626 ............................. <me.createScrollWnd(VOID, tmpObj.ancestor.masterObj)>
+  [188] setlocal 24 ............................. tmpScrollWnd = me.createScrollWnd(VOID, tmpObj.ancestor.masterObj)
+  [190] getprop 616 ............................. <scrollThisObj>
+  [193] getlocal 24 ............................. <tmpScrollWnd>
+  [195] pusharglistnoret 2 ...................... <scrollThisObj, tmpScrollWnd>
+  [197] objcall 440 ............................. scrollThisObj.attachDlg(tmpScrollWnd)
+  [200] getprop 616 ............................. <scrollThisObj>
+  [203] getobjprop 272 .......................... <scrollThisObj.scriptInstanceList>
+  [206] getparam 0 .............................. <me>
+  [208] pusharglistnoret 2 ...................... <scrollThisObj.scriptInstanceList, me>
+  [210] objcall 115 ............................. scrollThisObj.scriptInstanceList.add(me)
+  [213] getprop 616 ............................. <scrollThisObj>
+  [216] pushsymb 445 ............................ <#usingTopMouse>
+  [219] pushint8 1 .............................. <1>
+  [222] pusharglistnoret 3 ...................... <scrollThisObj, #usingTopMouse, 1>
+  [224] objcall 261 ............................. scrollThisObj.setOneProp(#usingTopMouse, 1)
+  [227] getprop 616 ............................. <scrollThisObj>
+  [230] getobjprop 286 .......................... <scrollThisObj.mouseObj>
+  [233] pushzero ................................ <0>
+  [234] setobjprop 617 .......................... scrollThisObj.mouseObj.noPassButton = 0
+  [237] getprop 616 ............................. <scrollThisObj>
+  [240] getobjprop 286 .......................... <scrollThisObj.mouseObj>
+  [243] pushzero ................................ <0>
+  [244] setobjprop 618 .......................... scrollThisObj.mouseObj.noPassRoll = 0
+  [247] getprop 616 ............................. <scrollThisObj>
+  [250] getobjprop 286 .......................... <scrollThisObj.mouseObj>
+  [253] getobjprop 619 .......................... <scrollThisObj.mouseObj.overMouseObj>
+  [256] pushzero ................................ <0>
+  [257] setobjprop 617 .......................... scrollThisObj.mouseObj.overMouseObj.noPassButton = 0
+  [260] getprop 616 ............................. <scrollThisObj>
+  [263] pushsymb 144 ............................ <#rel>
+  [266] pushzero ................................ <0>
+  [267] pushzero ................................ <0>
+  [268] pushzero ................................ <0>
+  [269] pushzero ................................ <0>
+  [270] pusharglist 4 ........................... <[0, 0, 0, 0]>
+  [272] pushlist ................................ <[0, 0, 0, 0]>
+  [273] pusharglistnoret 3 ...................... <scrollThisObj, #rel, [0, 0, 0, 0]>
+  [275] objcall 261 ............................. scrollThisObj.setOneProp(#rel, [0, 0, 0, 0])
+  [278] getprop 616 ............................. <scrollThisObj>
+  [281] pushsymb 271 ............................ <#inOffsetRect>
+  [284] pushzero ................................ <0>
+  [285] pushzero ................................ <0>
+  [286] getprop 581 ............................. <itemObj>
+  [289] pushsymb 167 ............................ <#calcRect>
+  [292] pushint8 3 .............................. <3>
+  [295] pusharglist 3 ........................... <itemObj, #calcRect, 3>
+  [297] objcall 145 ............................. <itemObj.calcRect[3]>
+  [300] getprop 581 ............................. <itemObj>
+  [303] pushsymb 167 ............................ <#calcRect>
+  [306] pushint8 1 .............................. <1>
+  [309] pusharglist 3 ........................... <itemObj, #calcRect, 1>
+  [311] objcall 145 ............................. <itemObj.calcRect[1]>
+  [314] sub ..................................... <itemObj.calcRect[3] - itemObj.calcRect[1]>
+  [315] pushint8 50 ............................. <50>
+  [318] sub ..................................... <itemObj.calcRect[3] - itemObj.calcRect[1] - 50>
+  [319] pushint8 100 ............................ <100>
+  [322] pusharglist 4 ........................... <0, 0, itemObj.calcRect[3] - itemObj.calcRect[1] - 50, 100>
+  [324] extcall 65 .............................. <rect(0, 0, itemObj.calcRect[3] - itemObj.calcRect[1] - 50, 100)>
+  [327] pusharglistnoret 3 ...................... <scrollThisObj, #inOffsetRect, rect(0, 0, itemObj.calcRect[3] - itemObj.calcRect[1] - 50, 100)>
+  [329] objcall 261 ............................. scrollThisObj.setOneProp(#inOffsetRect, rect(0, 0, itemObj.calcRect[3] - itemObj.calcRect[1] - 50, 100))
+  [332] jmp [344]
+  [335] getlocal 0 .............................. <tmpDlg>
+  [337] pushsymb 627 ............................ <#TmpDroppedDialog>
+  [340] pusharglistnoret 2 ...................... <tmpDlg, #TmpDroppedDialog>
+  [342] objcall 8 ............................... tmpDlg.deleteItem(#TmpDroppedDialog)
+  [344] getparam 8 .............................. <argIsTRUE>
+  [346] setprop 594 ............................. isExpanded = argIsTRUE
+  [349] ret
+end
+
+on createScrollWnd me, argInfoList, argTopWnd, argReportObj
+  [  0] pushsymb 628 ............................ <#icon>
+  [  3] pushcons 8 .............................. <"icon_film01">
+  [  5] pushsymb 356 ............................ <#text>
+  [  8] pushcons 16 ............................. <"icon_film01!">
+  [ 10] pusharglist 4 ........................... <[#icon: "icon_film01", #text: "icon_film01!"]>
+  [ 12] pushproplist ............................ <[#icon: "icon_film01", #text: "icon_film01!"]>
+  [ 13] pushsymb 628 ............................ <#icon>
+  [ 16] pushcons 24 ............................. <"icon_text01">
+  [ 18] pushsymb 356 ............................ <#text>
+  [ 21] pushcons 32 ............................. <"icon_text01!">
+  [ 23] pusharglist 4 ........................... <[#icon: "icon_text01", #text: "icon_text01!"]>
+  [ 25] pushproplist ............................ <[#icon: "icon_text01", #text: "icon_text01!"]>
+  [ 26] pusharglist 2 ........................... <[[#icon: "icon_film01", #text: "icon_film01!"], [#icon: "icon_text01", #text: "icon_text01!"]]>
+  [ 28] pushlist ................................ <[[#icon: "icon_film01", #text: "icon_film01!"], [#icon: "icon_text01", #text: "icon_text01!"]]>
+  [ 29] setparam 8 .............................. argInfoList = [[#icon: "icon_film01", #text: "icon_film01!"], [#icon: "icon_text01", #text: "icon_text01!"]]
+  [ 31] pushcons 40 ............................. <"Dialog">
+  [ 33] pusharglist 1 ........................... <"Dialog">
+  [ 35] extcall 74 .............................. <script("Dialog")>
+  [ 38] pushsymb 49 ............................. <#image>
+  [ 41] getparam 16 ............................. <argTopWnd>
+  [ 43] getobjprop 47 ........................... <argTopWnd.myImagePtr>
+  [ 46] pushsymb 80 ............................. <#OKtoResize>
+  [ 49] pushzero ................................ <0>
+  [ 50] pushsymb 46 ............................. <#ID>
+  [ 53] pushsymb 446 ............................ <#DlgDlg>
+  [ 56] pusharglist 6 ........................... <[#image: argTopWnd.myImagePtr, #OKtoResize: 0, #ID: #DlgDlg]>
+  [ 58] pushproplist ............................ <[#image: argTopWnd.myImagePtr, #OKtoResize: 0, #ID: #DlgDlg]>
+  [ 59] pusharglist 2 ........................... <script("Dialog"), [#image: argTopWnd.myImagePtr, #OKtoResize: 0, #ID: #DlgDlg]>
+  [ 61] objcall 0 ............................... <script("Dialog").new([#image: argTopWnd.myImagePtr, #OKtoResize: 0, #ID: #DlgDlg])>
+  [ 63] setlocal 0 .............................. scrDlgObj = script("Dialog").new([#image: argTopWnd.myImagePtr, #OKtoResize: 0, #ID: #DlgDlg])
+  [ 65] getglobal 93 ............................ <gUseful>
+  [ 68] getobjprop 94 ........................... <gUseful.frameTimer>
+  [ 71] getlocal 0 .............................. <scrDlgObj>
+  [ 73] pusharglistnoret 2 ...................... <gUseful.frameTimer, scrDlgObj>
+  [ 75] objcall 108 ............................. gUseful.frameTimer.deleteObject(scrDlgObj)
+  [ 78] pushint8 1 .............................. <1>
+  [ 81] setlocal 8
+  [ 83] getlocal 8
+  [ 85] getparam 8 .............................. <argInfoList>
+  [ 87] pusharglist 1 ........................... <argInfoList>
+  [ 89] objcall 111 ............................. <argInfoList.count()>
+  [ 92] lteq
+  [ 93] jmpifz [307] ............................ repeat with n = 1 to argInfoList.count()
+  [ 96] getparam 8 .............................. <argInfoList>
+  [ 98] getlocal 8 .............................. <n>
+  [100] pusharglist 2 ........................... <argInfoList, n>
+  [102] objcall 43 .............................. <argInfoList[n]>
+  [105] setlocal 16 ............................. itemLst = argInfoList[n]
+  [107] getlocal 16 ............................. <itemLst>
+  [109] pushsymb 46 ............................. <#ID>
+  [112] pusharglist 2 ........................... <itemLst, #ID>
+  [114] objcall 43 .............................. <itemLst[#ID]>
+  [117] setlocal 24 ............................. ID = itemLst[#ID]
+  [119] getlocal 24 ............................. <ID>
+  [121] pusharglist 1 ........................... <ID>
+  [123] extcall 41 .............................. <voidp(ID)>
+  [126] jmpifz [146] ............................ if voidp(ID) then
+  [129] pushcons 48 ............................. <"ListItem">
+  [131] getlocal 8 .............................. <n>
+  [133] pusharglist 1 ........................... <n>
+  [135] extcall 135 ............................. <string(n)>
+  [138] joinstr ................................. <"ListItem" & string(n)>
+  [139] pusharglist 1 ........................... <"ListItem" & string(n)>
+  [141] extcall 237 ............................. <symbol("ListItem" & string(n))>
+  [144] setlocal 24 ............................. ID = symbol("ListItem" & string(n))
+  [146] pushsymb 46 ............................. <#ID>
+  [149] getlocal 24 ............................. <ID>
+  [151] pushsymb 149 ............................ <#ch>
+  [154] getlocal 8 .............................. <n>
+  [156] pushsymb 134 ............................ <#type>
+  [159] pushsymb 121 ............................ <#Dialog>
+  [162] pushsymb 447 ............................ <#dialogDataMemberName>
+  [165] pushcons 56 ............................. <"DlgScrollItemData">
+  [167] pusharglist 8 ........................... <[#ID: ID, #ch: n, #type: #Dialog, #dialogDataMemberName: "DlgScrollItemData"]>
+  [169] pushproplist ............................ <[#ID: ID, #ch: n, #type: #Dialog, #dialogDataMemberName: "DlgScrollItemData"]>
+  [170] setlocal 32 ............................. tmpLst = [#ID: ID, #ch: n, #type: #Dialog, #dialogDataMemberName: "DlgScrollItemData"]
+  [172] getlocal 0 .............................. <scrDlgObj>
+  [174] getlocal 32 ............................. <tmpLst>
+  [176] pusharglistnoret 2 ...................... <scrDlgObj, tmpLst>
+  [178] objcall 7 ............................... scrDlgObj.addItem(tmpLst)
+  [180] getlocal 0 .............................. <scrDlgObj>
+  [182] getlocal 24 ............................. <ID>
+  [184] pusharglist 2 ........................... <scrDlgObj, ID>
+  [186] objcall 28 .............................. <scrDlgObj.getItem(ID)>
+  [188] setlocal 40 ............................. tmpItemObj = scrDlgObj.getItem(ID)
+  [190] getlocal 40 ............................. <tmpItemObj>
+  [192] getobjprop 122 .......................... <tmpItemObj.dialogObj>
+  [195] pushsymb 356 ............................ <#text>
+  [198] pusharglist 2 ........................... <tmpItemObj.dialogObj, #text>
+  [200] objcall 28 .............................. <tmpItemObj.dialogObj.getItem(#text)>
+  [202] setlocal 48 ............................. textObj = tmpItemObj.dialogObj.getItem(#text)
+  [204] getlocal 48 ............................. <textObj>
+  [206] pushsymb 369 ............................ <#editData>
+  [209] getlocal 16 ............................. <itemLst>
+  [211] pushsymb 356 ............................ <#text>
+  [214] pusharglist 2 ........................... <itemLst, #text>
+  [216] objcall 43 .............................. <itemLst[#text]>
+  [219] pusharglistnoret 3 ...................... <textObj, #editData, itemLst[#text]>
+  [221] objcall 261 ............................. textObj.setOneProp(#editData, itemLst[#text])
+  [224] getlocal 40 ............................. <tmpItemObj>
+  [226] pushsymb 271 ............................ <#inOffsetRect>
+  [229] pushzero ................................ <0>
+  [230] getlocal 8 .............................. <n>
+  [232] pushint8 1 .............................. <1>
+  [235] sub ..................................... <n - 1>
+  [236] pushint8 30 ............................. <30>
+  [239] mul ..................................... <(n - 1) * 30>
+  [240] pushint8 150 ............................ <150>
+  [243] pushzero ................................ <0>
+  [244] pusharglist 4 ........................... <[0, (n - 1) * 30, 150, 0]>
+  [246] pushlist ................................ <[0, (n - 1) * 30, 150, 0]>
+  [247] pusharglistnoret 3 ...................... <tmpItemObj, #inOffsetRect, [0, (n - 1) * 30, 150, 0]>
+  [249] objcall 261 ............................. tmpItemObj.setOneProp(#inOffsetRect, [0, (n - 1) * 30, 150, 0])
+  [252] getlocal 40 ............................. <tmpItemObj>
+  [254] pushsymb 144 ............................ <#rel>
+  [257] pushzero ................................ <0>
+  [258] pushzero ................................ <0>
+  [259] pushzero ................................ <0>
+  [260] pushsymb 280 ............................ <#Auto>
+  [263] pusharglist 4 ........................... <[0, 0, 0, #Auto]>
+  [265] pushlist ................................ <[0, 0, 0, #Auto]>
+  [266] pusharglistnoret 3 ...................... <tmpItemObj, #rel, [0, 0, 0, #Auto]>
+  [268] objcall 261 ............................. tmpItemObj.setOneProp(#rel, [0, 0, 0, #Auto])
+  [271] getparam 24 ............................. <argReportObj>
+  [273] pusharglist 1 ........................... <argReportObj>
+  [275] extcall 105 ............................. <objectp(argReportObj)>
+  [278] jmpifz [296] ............................ if objectp(argReportObj) then
+  [281] getlocal 40 ............................. <tmpItemObj>
+  [283] getobjprop 272 .......................... <tmpItemObj.scriptInstanceList>
+  [286] pushint8 1 .............................. <1>
+  [289] getparam 24 ............................. <argReportObj>
+  [291] pusharglistnoret 3 ...................... <tmpItemObj.scriptInstanceList, 1, argReportObj>
+  [293] objcall 246 ............................. tmpItemObj.scriptInstanceList.addAt(1, argReportObj)
+  [296] pushint8 1
+  [299] getlocal 8
+  [301] add
+  [302] setlocal 8
+  [304] endrepeat [ 83]
+  [307] getlocal 0 .............................. <scrDlgObj>
+  [309] pusharglistnoret 1 ...................... <scrDlgObj>
+  [311] extcall 96 .............................. return scrDlgObj
+  [314] ret
+end

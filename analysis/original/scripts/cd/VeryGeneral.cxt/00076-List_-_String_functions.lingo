@@ -1,0 +1,66 @@
+on convStringToList argStr, argFormatAndNameList, argDelim
+  if voidp(argDelim) then
+    argDelim = " "
+  end if
+  the itemDelimiter = argDelim
+  tmpNumLines = the number of lines in argStr
+  tmpRetList = []
+  repeat with tmpLineNr = 1 to tmpNumLines
+    tmpLine = argStr.line[tmpLineNr]
+    tmpNumItems = the number of items in tmpLine
+    tmpList = [:]
+    repeat with tmpItemNr = 1 to tmpNumItems
+      if tmpItemNr > argFormatAndNameList.count() then
+        exit repeat
+      end if
+      tmpFormat = argFormatAndNameList[tmpItemNr]
+      tmpVal = tmpLine.item[tmpItemNr]
+      if tmpFormat = #value then
+        tmpVal = value(tmpVal)
+      else
+        if tmpFormat = #string then
+          nothing()
+        else
+          if tmpFormat = #point then
+            tmpVal = value("point(" & tmpVal & ")")
+          else
+            if tmpFormat = #list then
+              tmpVal = value("[" & tmpVal & "]")
+            else
+              if tmpFormat = #symbol then
+                tmpVal = symbol(tmpVal)
+              end if
+            end if
+          end if
+        end if
+      end if
+      tmpList.addProp(argFormatAndNameList.getPropAt(tmpItemNr), tmpVal)
+    end repeat
+    tmpRetList.add(tmpList)
+  end repeat
+  return tmpRetList
+end
+
+on removeExcelQuotes argStr
+  if argStr.char[1] = QUOTE then
+    argStr = argStr.char[2..argStr.length - 1]
+    doublePos = []
+    repeat while 1
+      tmpOffToQuotes = offset(QUOTE & QUOTE, argStr)
+      if tmpOffToQuotes then
+        if argStr.char[tmpOffToQuotes + 2] = QUOTE then
+          put EMPTY into argStr.char[tmpOffToQuotes + 2]
+          put "!" into argStr.char[tmpOffToQuotes + 2]
+          doublePos.add(tmpOffToQuotes + 1)
+        end if
+        put EMPTY into argStr.char[tmpOffToQuotes]
+        next repeat
+      end if
+      exit repeat
+    end repeat
+    repeat with Pos in doublePos
+      put QUOTE into argStr.char[Pos]
+    end repeat
+  end if
+  return argStr
+end

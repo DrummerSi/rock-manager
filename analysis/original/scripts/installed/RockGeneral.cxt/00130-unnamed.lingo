@@ -1,0 +1,76 @@
+global gRock
+
+on rExecuteActions argActionList, argExtraVars, argReportObj, argSendMsg
+  if stringp(argActionList) then
+    tmpOrgStr = argActionList
+    argActionList = argActionList.value
+  end if
+  if not listp(argActionList) then
+    if stringp(tmpOrgStr) then
+      if tmpOrgStr.length > 1 then
+        pott("Err in execute!", tmpOrgStr)
+      end if
+    end if
+    return VOID
+  end if
+  return gRock.m_executor.executeActions(argActionList, argExtraVars, argReportObj)
+end
+
+on rPlayerOkayedAction argAction
+  tmp = rExecuteActions(argAction.ExecuteThis, [:], argAction)
+  gRock.m_msgManager.msg(#Action, argAction)
+  return tmp
+end
+
+on rSetParserVariable argProp, argVal, argRemove
+  if argRemove = #Remove then
+    gRock.m_executor.m_parseAndCalcObj.m_expressionCreatedVars.deleteProp(argProp)
+  else
+    gRock.m_executor.m_parseAndCalcObj.m_expressionCreatedVars.setaProp(argProp, argVal)
+  end if
+end
+
+on rParse argExpressionStr
+  return gRock.m_executor.rParse(argExpressionStr)
+end
+
+on rParseAndCalc argExpressionStr, argExtraVars, argCallingObj
+  return gRock.m_executor.rParseAndCalc(argExpressionStr, argExtraVars, argCallingObj)
+end
+
+on rCalc argParsed, argExtraVars, argCallingObj
+  return gRock.m_executor.rCalc(argParsed, argExtraVars, argCallingObj)
+end
+
+on rex argExpressionStr
+  return gRock.m_executor.rParseAndCalc(argExpressionStr)
+end
+
+on xxxNewParser
+  gRock.m_executor = script("ExecuteListsScript").new()
+end
+
+on xxxCheckParserStuff
+  rex("a = 1")
+  rex("a++")
+  pott("2", rex("a"))
+  rex("makeList(#Gangsta, #Loan)")
+  pott("[#Gangsta, #Loan]", rex("makeList(#Gangsta, #Loan)"))
+  rex("ÛCPlayer.Accounts.Gangsta.Loan = 0")
+  rex("ÛCPlayer.transactMoney(999, makeList(#Gangsta, #Loan))")
+  pott("999", rex("ÛCPlayer.Accounts.Gangsta.Loan"))
+  rex("ÛCPlayer.transactMoney(-ÛCPlayer.Accounts.Gangsta.Loan, makeList(#Gangsta, #Loan))")
+  rex("ÛCPlayer.transactMoney(111, makeList(#Gangsta, #Loan))")
+  pott("111", rex("ÛCPlayer.Accounts.Gangsta.Loan"))
+  pott("-8", rex("a = (20 + 1) - (4 + 25)"))
+  pott("42", rex("a = 20 + 1 - 4 + 25"))
+  put "TEST", "ab", VOID
+  rex("debug(" & QUOTE & "TEST" & QUOTE & ", strcat(" & QUOTE & "a" & QUOTE & ", " & QUOTE & "b" & QUOTE & "))")
+  pott("0.5", rex("ÛCRealMusician.mood = 0.5"))
+  pott("1", rex("ÛCRealMusician.mood == 0.5"))
+  pott("RMCJerka", rex("getObjByID(#RMCJerka).ID"), rex("Û#RMCJerka.ID"))
+  rex("a = makePropList(#A, " & QUOTE & "aa" & QUOTE & ")")
+  pott([#b: "bb", #c: [#a: "aa"]], rex("makePropList(#B, " & QUOTE & "bb" & QUOTE & ", #C, a)"))
+  rex("ÛCBand.getTotalHype() >= 0.4 && (1 > 0)")
+  rex("debug(#AA,makeList(#N),#VV)")
+end

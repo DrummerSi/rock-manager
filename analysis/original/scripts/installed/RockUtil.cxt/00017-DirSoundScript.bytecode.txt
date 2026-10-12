@@ -1,0 +1,913 @@
+property sndId, fileName, fullFileName, options, prio, size, interruptMode, finishedMode, interruptedAtTicks, ID, orgFreq, orgLength, volume, muted, reportObj, myMember, interrupted, Pan, useExternalFile, loop
+global gUseful
+
+on new me, argMemberOrNameOrNumber, argOptions
+  [  0] getparam 16 ............................. <argOptions>
+  [  2] setprop 532 ............................. options = argOptions
+  [  5] getprop 532 ............................. <options>
+  [  8] pusharglist 1 ........................... <options>
+  [ 10] extcall 68 .............................. <voidp(options)>
+  [ 13] jmpifz [ 22] ............................ if voidp(options) then
+  [ 16] pusharglist 0 ........................... <[:]>
+  [ 18] pushproplist ............................ <[:]>
+  [ 19] setprop 532 ............................. options = [:]
+  [ 22] getprop 532 ............................. <options>
+  [ 25] pushsymb 26 ............................. <#file>
+  [ 27] pusharglist 2 ........................... <options, #file>
+  [ 29] objcall 34 .............................. <options[#file]>
+  [ 32] pushint8 1 .............................. <1>
+  [ 35] eq ...................................... <options[#file] = 1>
+  [ 36] jmpifz [ 48] ............................ if options[#file] = 1 then / else
+  [ 39] pushint8 1 .............................. <1>
+  [ 42] setprop 659 ............................. useExternalFile = 1
+  [ 45] jmp [ 59]
+  [ 48] getglobal 23 ............................ <gUseful>
+  [ 50] getobjprop 619 .......................... <gUseful.soundObj>
+  [ 53] getobjprop 660 .......................... <gUseful.soundObj.useExternalFilesDefault>
+  [ 56] setprop 659 ............................. useExternalFile = gUseful.soundObj.useExternalFilesDefault
+  [ 59] getprop 659 ............................. <useExternalFile>
+  [ 62] pushint8 1 .............................. <1>
+  [ 65] eq ...................................... <useExternalFile = 1>
+  [ 66] jmpifz [232] ............................ if useExternalFile = 1 then / else
+  [ 69] pushint8 1 .............................. <1>
+  [ 72] setprop 659 ............................. useExternalFile = 1
+  [ 75] getparam 8 .............................. <argMemberOrNameOrNumber>
+  [ 77] setprop 91 .............................. fileName = argMemberOrNameOrNumber
+  [ 80] getprop 91 .............................. <fileName>
+  [ 83] pusharglist 1 ........................... <fileName>
+  [ 85] extcall 661 ............................. <fileGetExtension(fileName)>
+  [ 88] setlocal 0 .............................. tmpExt = fileGetExtension(fileName)
+  [ 90] getlocal 0 .............................. <tmpExt>
+  [ 92] getobjprop 151 .......................... <tmpExt.length>
+  [ 95] pushzero ................................ <0>
+  [ 96] eq ...................................... <tmpExt.length = 0>
+  [ 97] jmpifz [109] ............................ if tmpExt.length = 0 then
+  [100] getprop 91 .............................. <fileName>
+  [103] pushcons 0 .............................. <".wav">
+  [105] joinstr ................................. <fileName & ".wav">
+  [106] setprop 91 .............................. fileName = fileName & ".wav"
+  [109] getglobal 23 ............................ <gUseful>
+  [111] getobjprop 619 .......................... <gUseful.soundObj>
+  [114] getprop 91 .............................. <fileName>
+  [117] pusharglist 2 ........................... <gUseful.soundObj, fileName>
+  [119] objcall 663 ............................. <gUseful.soundObj.linkMember(fileName)>
+  [122] setprop 662 ............................. myMember = gUseful.soundObj.linkMember(fileName)
+  [125] getprop 662 ............................. <myMember>
+  [128] pusharglist 1 ........................... <myMember>
+  [130] extcall 71 .............................. <objectp(myMember)>
+  [133] not ..................................... <not objectp(myMember)>
+  [134] jmpifz [229] ............................ if not objectp(myMember) then
+  [137] getprop 532 ............................. <options>
+  [140] pushsymb 664 ............................ <#DontPlayIfNotFound>
+  [143] pusharglist 2 ........................... <options, #DontPlayIfNotFound>
+  [145] objcall 34 .............................. <options[#DontPlayIfNotFound]>
+  [148] pushint8 1 .............................. <1>
+  [151] eq ...................................... <options[#DontPlayIfNotFound] = 1>
+  [152] jmpifz [172] ............................ if options[#DontPlayIfNotFound] = 1 then / else
+  [155] pushcons 8 .............................. <"SilenceSound">
+  [157] pusharglist 1 ........................... <"SilenceSound">
+  [159] extcall 296 ............................. <member("SilenceSound")>
+  [162] setprop 662 ............................. myMember = member("SilenceSound")
+  [165] pushzero ................................ <0>
+  [166] setprop 659 ............................. useExternalFile = 0
+  [169] jmp [229]
+  [172] getprop 662 ............................. <myMember>
+  [175] pushsymb 665 ............................ <#NoFile>
+  [178] eq ...................................... <myMember = #NoFile>
+  [179] jmpifz [195] ............................ if myMember = #NoFile then / else
+  [182] pushcons 16 ............................. <"Couldn't link!">
+  [184] getprop 91 .............................. <fileName>
+  [187] pusharglistnoret 2 ...................... <"Couldn't link!", fileName>
+  [189] extcall 36 .............................. pott("Couldn't link!", fileName)
+  [192] jmp [215]
+  [195] getprop 662 ............................. <myMember>
+  [198] pushsymb 666 ............................ <#NoMember>
+  [201] eq ...................................... <myMember = #NoMember>
+  [202] jmpifz [215] ............................ if myMember = #NoMember then
+  [205] pushcons 24 ............................. <"Out of members!">
+  [207] getprop 91 .............................. <fileName>
+  [210] pusharglistnoret 2 ...................... <"Out of members!", fileName>
+  [212] extcall 36 .............................. pott("Out of members!", fileName)
+  [215] pushcons 32 ............................. <"SoundNotFound">
+  [217] pusharglist 1 ........................... <"SoundNotFound">
+  [219] extcall 296 ............................. <member("SoundNotFound")>
+  [222] setprop 662 ............................. myMember = member("SoundNotFound")
+  [225] pushzero ................................ <0>
+  [226] setprop 659 ............................. useExternalFile = 0
+  [229] jmp [282]
+  [232] getparam 8 .............................. <argMemberOrNameOrNumber>
+  [234] pusharglist 1 ........................... <argMemberOrNameOrNumber>
+  [236] extcall 398 ............................. <ilk(argMemberOrNameOrNumber)>
+  [239] pushsymb 296 ............................ <#member>
+  [242] eq ...................................... <ilk(argMemberOrNameOrNumber) = #member>
+  [243] jmpifz [254] ............................ if ilk(argMemberOrNameOrNumber) = #member then / else
+  [246] getparam 8 .............................. <argMemberOrNameOrNumber>
+  [248] setprop 662 ............................. myMember = argMemberOrNameOrNumber
+  [251] jmp [282]
+  [254] getparam 8 .............................. <argMemberOrNameOrNumber>
+  [256] pusharglist 1 ........................... <argMemberOrNameOrNumber>
+  [258] extcall 148 ............................. <stringp(argMemberOrNameOrNumber)>
+  [261] getparam 8 .............................. <argMemberOrNameOrNumber>
+  [263] pusharglist 1 ........................... <argMemberOrNameOrNumber>
+  [265] extcall 365 ............................. <integerp(argMemberOrNameOrNumber)>
+  [268] or ...................................... <stringp(argMemberOrNameOrNumber) or integerp(argMemberOrNameOrNumber)>
+  [269] jmpifz [282] ............................ if stringp(argMemberOrNameOrNumber) or integerp(argMemberOrNameOrNumber) then
+  [272] getparam 8 .............................. <argMemberOrNameOrNumber>
+  [274] pusharglist 1 ........................... <argMemberOrNameOrNumber>
+  [276] extcall 296 ............................. <member(argMemberOrNameOrNumber)>
+  [279] setprop 662 ............................. myMember = member(argMemberOrNameOrNumber)
+  [282] pushzero ................................ <0>
+  [283] setprop 567 ............................. size = 0
+  [286] pushzero ................................ <0>
+  [287] setprop 667 ............................. interruptedAtTicks = 0
+  [290] getprop 532 ............................. <options>
+  [293] pushsymb 668 ............................ <#prio>
+  [296] pusharglist 2 ........................... <options, #prio>
+  [298] objcall 34 .............................. <options[#prio]>
+  [301] setprop 668 ............................. prio = options[#prio]
+  [304] getprop 668 ............................. <prio>
+  [307] pusharglist 1 ........................... <prio>
+  [309] extcall 68 .............................. <voidp(prio)>
+  [312] jmpifz [321] ............................ if voidp(prio) then
+  [315] pushint8 3 .............................. <3>
+  [318] setprop 668 ............................. prio = 3
+  [321] getprop 532 ............................. <options>
+  [324] pushsymb 670 ............................ <#KeepTrying>
+  [327] pusharglist 2 ........................... <options, #KeepTrying>
+  [329] objcall 34 .............................. <options[#KeepTrying]>
+  [332] setprop 669 ............................. interruptMode = options[#KeepTrying]
+  [335] getprop 669 ............................. <interruptMode>
+  [338] pusharglist 1 ........................... <interruptMode>
+  [340] extcall 68 .............................. <voidp(interruptMode)>
+  [343] jmpifz [351] ............................ if voidp(interruptMode) then
+  [346] pushsymb 1 .............................. <#kill>
+  [348] setprop 669 ............................. interruptMode = #kill
+  [351] getprop 532 ............................. <options>
+  [354] pushsymb 672 ............................ <#WhenFinished>
+  [357] pusharglist 2 ........................... <options, #WhenFinished>
+  [359] objcall 34 .............................. <options[#WhenFinished]>
+  [362] setprop 671 ............................. finishedMode = options[#WhenFinished]
+  [365] getprop 671 ............................. <finishedMode>
+  [368] pusharglist 1 ........................... <finishedMode>
+  [370] extcall 68 .............................. <voidp(finishedMode)>
+  [373] jmpifz [381] ............................ if voidp(finishedMode) then
+  [376] pushsymb 1 .............................. <#kill>
+  [378] setprop 671 ............................. finishedMode = #kill
+  [381] getprop 662 ............................. <myMember>
+  [384] getobjprop 567 .......................... <myMember.size>
+  [387] setprop 567 ............................. size = myMember.size
+  [390] getprop 567 ............................. <size>
+  [393] pushzero ................................ <0>
+  [394] eq ...................................... <size = 0>
+  [395] jmpifz [418] ............................ if size = 0 then
+  [398] pushcons 40 ............................. <"Sound not found ">
+  [400] getparam 8 .............................. <argMemberOrNameOrNumber>
+  [402] pusharglist 1 ........................... <argMemberOrNameOrNumber>
+  [404] extcall 38 .............................. <string(argMemberOrNameOrNumber)>
+  [407] joinstr ................................. <"Sound not found " & string(argMemberOrNameOrNumber)>
+  [408] pusharglistnoret 1 ...................... <"Sound not found " & string(argMemberOrNameOrNumber)>
+  [410] extcall 36 .............................. pott("Sound not found " & string(argMemberOrNameOrNumber))
+  [413] pushzero ................................ <0>
+  [414] pusharglistnoret 1 ...................... <0>
+  [416] extcall 21 .............................. return 0
+  [418] getprop 532 ............................. <options>
+  [421] pushsymb 72 ............................. <#ReportTo>
+  [424] pusharglist 2 ........................... <options, #ReportTo>
+  [426] objcall 34 .............................. <options[#ReportTo]>
+  [429] setprop 538 ............................. reportObj = options[#ReportTo]
+  [432] pushzero ................................ <0>
+  [433] setprop 487 ............................. loop = 0
+  [436] getprop 532 ............................. <options>
+  [439] pushsymb 137 ............................ <#vol>
+  [442] pusharglist 2 ........................... <options, #vol>
+  [444] objcall 34 .............................. <options[#vol]>
+  [447] setlocal 8 .............................. tmpVol = options[#vol]
+  [449] getlocal 8 .............................. <tmpVol>
+  [451] pusharglist 1 ........................... <tmpVol>
+  [453] extcall 68 .............................. <voidp(tmpVol)>
+  [456] jmpifz [464] ............................ if voidp(tmpVol) then
+  [459] pushint8 100 ............................ <100>
+  [462] setlocal 8 .............................. tmpVol = 100
+  [464] getparam 0 .............................. <me>
+  [466] getlocal 8 .............................. <tmpVol>
+  [468] pusharglistnoret 2 ...................... <me, tmpVol>
+  [470] objcall 402 ............................. me.setVol(tmpVol)
+  [473] getprop 532 ............................. <options>
+  [476] pushsymb 334 ............................ <#Pan>
+  [479] pusharglist 2 ........................... <options, #Pan>
+  [481] objcall 34 .............................. <options[#Pan]>
+  [484] setlocal 16 ............................. tmpPan = options[#Pan]
+  [486] getlocal 16 ............................. <tmpPan>
+  [488] pusharglist 1 ........................... <tmpPan>
+  [490] extcall 68 .............................. <voidp(tmpPan)>
+  [493] jmpifz [499] ............................ if voidp(tmpPan) then
+  [496] pushzero ................................ <0>
+  [497] setlocal 16 ............................. tmpPan = 0
+  [499] getparam 0 .............................. <me>
+  [501] getlocal 16 ............................. <tmpPan>
+  [503] pusharglistnoret 2 ...................... <me, tmpPan>
+  [505] objcall 403 ............................. me.setPan(tmpPan)
+  [508] pushzero ................................ <0>
+  [509] setprop 673 ............................. muted = 0
+  [512] pushzero ................................ <0>
+  [513] setprop 674 ............................. interrupted = 0
+  [516] getprop 532 ............................. <options>
+  [519] pushsymb 60 ............................. <#ID>
+  [522] pusharglist 2 ........................... <options, #ID>
+  [524] objcall 34 .............................. <options[#ID]>
+  [527] setprop 60 .............................. ID = options[#ID]
+  [530] getparam 0 .............................. <me>
+  [532] pusharglistnoret 1 ...................... <me>
+  [534] objcall 429 ............................. me.preload()
+  [537] getprop 675 ............................. <sndId>
+  [540] pushzero ................................ <0>
+  [541] eq ...................................... <sndId = 0>
+  [542] getprop 669 ............................. <interruptMode>
+  [545] pushsymb 1 .............................. <#kill>
+  [547] eq ...................................... <interruptMode = #kill>
+  [548] and ..................................... <(sndId = 0) and (interruptMode = #kill)>
+  [549] jmpifz [560] ............................ if (sndId = 0) and (interruptMode = #kill) then
+  [552] pushint8 1 .............................. <1>
+  [555] inv ..................................... <-1>
+  [556] pusharglistnoret 1 ...................... <-1>
+  [558] extcall 21 .............................. return -1
+  [560] getglobal 23 ............................ <gUseful>
+  [562] getobjprop 619 .......................... <gUseful.soundObj>
+  [565] getparam 0 .............................. <me>
+  [567] pusharglistnoret 2 ...................... <gUseful.soundObj, me>
+  [569] objcall 56 .............................. gUseful.soundObj.addObject(me)
+  [572] getprop 532 ............................. <options>
+  [575] pushsymb 401 ............................ <#PlayDirect>
+  [578] pusharglist 2 ........................... <options, #PlayDirect>
+  [580] objcall 34 .............................. <options[#PlayDirect]>
+  [583] setlocal 24 ............................. tmpPlayDirect = options[#PlayDirect]
+  [585] getlocal 24 ............................. <tmpPlayDirect>
+  [587] pusharglist 1 ........................... <tmpPlayDirect>
+  [589] extcall 68 .............................. <voidp(tmpPlayDirect)>
+  [592] jmpifz [600] ............................ if voidp(tmpPlayDirect) then
+  [595] pushint8 1 .............................. <1>
+  [598] setlocal 24 ............................. tmpPlayDirect = 1
+  [600] getlocal 24 ............................. <tmpPlayDirect>
+  [602] pushzero ................................ <0>
+  [603] eq ...................................... <tmpPlayDirect = 0>
+  [604] not ..................................... <not (tmpPlayDirect = 0)>
+  [605] jmpifz [615] ............................ if not (tmpPlayDirect = 0) then
+  [608] getparam 0 .............................. <me>
+  [610] pusharglistnoret 1 ...................... <me>
+  [612] objcall 237 ............................. me.play()
+  [615] getparam 0 .............................. <me>
+  [617] pusharglistnoret 1 ...................... <me>
+  [619] extcall 21 .............................. return me
+  [621] ret
+end
+
+on kill me, argOption
+  [  0] getprop 675 ............................. <sndId>
+  [  3] jmpifz [ 30] ............................ if sndId then
+  [  6] getparam 0 .............................. <me>
+  [  8] pusharglist 1 ........................... <me>
+  [ 10] objcall 646 ............................. <me.finished()>
+  [ 13] not ..................................... <not me.finished()>
+  [ 14] jmpifz [ 30] ............................ if not me.finished() then
+  [ 17] getprop 675 ............................. <sndId>
+  [ 20] pusharglist 1 ........................... <sndId>
+  [ 22] extcall 259 ............................. <sound(sndId)>
+  [ 25] pusharglistnoret 1 ...................... <sound(sndId)>
+  [ 27] objcall 238 ............................. sound(sndId).stop()
+  [ 30] getprop 659 ............................. <useExternalFile>
+  [ 33] pushint8 1 .............................. <1>
+  [ 36] eq ...................................... <useExternalFile = 1>
+  [ 37] jmpifz [ 53] ............................ if useExternalFile = 1 then
+  [ 40] getglobal 23 ............................ <gUseful>
+  [ 42] getobjprop 619 .......................... <gUseful.soundObj>
+  [ 45] getprop 662 ............................. <myMember>
+  [ 48] pusharglistnoret 2 ...................... <gUseful.soundObj, myMember>
+  [ 50] objcall 681 ............................. gUseful.soundObj.freeMember(myMember)
+  [ 53] getglobal 23 ............................ <gUseful>
+  [ 55] getobjprop 619 .......................... <gUseful.soundObj>
+  [ 58] getparam 0 .............................. <me>
+  [ 60] pusharglistnoret 2 ...................... <gUseful.soundObj, me>
+  [ 62] objcall 25 .............................. gUseful.soundObj.deleteObject(me)
+  [ 64] getprop 675 ............................. <sndId>
+  [ 67] jmpifz [ 95] ............................ if sndId then
+  [ 70] getglobal 23 ............................ <gUseful>
+  [ 72] getobjprop 619 .......................... <gUseful.soundObj>
+  [ 75] getobjprop 682 .......................... <gUseful.soundObj.nowPlayingObjs>
+  [ 78] getparam 0 .............................. <me>
+  [ 80] pusharglistnoret 2 ...................... <gUseful.soundObj.nowPlayingObjs, me>
+  [ 82] objcall 104 ............................. gUseful.soundObj.nowPlayingObjs.deleteOne(me)
+  [ 85] getglobal 23 ............................ <gUseful>
+  [ 87] getobjprop 619 .......................... <gUseful.soundObj>
+  [ 90] pusharglistnoret 1 ...................... <gUseful.soundObj>
+  [ 92] objcall 683 ............................. gUseful.soundObj.letTheWaitingPlay()
+  [ 95] pushzero ................................ <0>
+  [ 96] setprop 675 ............................. sndId = 0
+  [ 99] pushzero ................................ <0>
+  [100] setprop 538 ............................. reportObj = 0
+  [103] pushzero ................................ <0>
+  [104] pusharglistnoret 1 ...................... <0>
+  [106] extcall 21 .............................. return 0
+  [108] ret
+end
+
+on getStatus me
+  [  0] getprop 675 ............................. <sndId>
+  [  3] jmpifz [ 21] ............................ if sndId then
+  [  6] getprop 675 ............................. <sndId>
+  [  9] pusharglist 1 ........................... <sndId>
+  [ 11] extcall 259 ............................. <sound(sndId)>
+  [ 14] getobjprop 41 ........................... <sound(sndId).status>
+  [ 17] pusharglistnoret 1 ...................... <sound(sndId).status>
+  [ 19] extcall 21 .............................. return sound(sndId).status
+  [ 21] pushzero ................................ <0>
+  [ 22] pusharglistnoret 1 ...................... <0>
+  [ 24] extcall 21 .............................. return 0
+  [ 26] ret
+end
+
+on masterSays me, argWhat, argOption
+  [  0] getparam 8 .............................. <argWhat>
+  [  2] peek 0 .................................. case argWhat of
+  [  4] pushsymb 237 ............................ <#play>
+  [  7] eq
+  [  8] jmpifz [ 73] ............................ (case) #play:
+  [ 11] getparam 16 ............................. <argOption>
+  [ 13] jmpifz [ 21] ............................ if argOption then
+  [ 16] getparam 16 ............................. <argOption>
+  [ 18] setprop 675 ............................. sndId = argOption
+  [ 21] getprop 675 ............................. <sndId>
+  [ 24] not ..................................... <not sndId>
+  [ 25] jmpifz [ 29] ............................ if not sndId then
+  [ 28] ret ..................................... exit
+  [ 29] getprop 675 ............................. <sndId>
+  [ 32] pusharglist 1 ........................... <sndId>
+  [ 34] extcall 259 ............................. <sound(sndId)>
+  [ 37] pusharglistnoret 1 ...................... <sound(sndId)>
+  [ 39] objcall 237 ............................. sound(sndId).play()
+  [ 42] pushint8 1 .............................. <1>
+  [ 45] setlocal 0 .............................. playing = 1
+  [ 47] getprop 538 ............................. <reportObj>
+  [ 50] pusharglist 1 ........................... <reportObj>
+  [ 52] extcall 71 .............................. <objectp(reportObj)>
+  [ 55] jmpifz [ 70] ............................ if objectp(reportObj) then
+  [ 58] getprop 538 ............................. <reportObj>
+  [ 61] getparam 0 .............................. <me>
+  [ 63] getparam 8 .............................. <argWhat>
+  [ 65] pusharglistnoret 3 ...................... <reportObj, me, argWhat>
+  [ 67] objcall 74 .............................. reportObj.Report(me, argWhat)
+  [ 70] jmp [459]
+  [ 73] peek 0
+  [ 75] pushsymb 238 ............................ <#stop>
+  [ 78] eq
+  [ 79] jmpifz [128] ............................ (case) #stop:
+  [ 82] getprop 675 ............................. <sndId>
+  [ 85] pusharglist 1 ........................... <sndId>
+  [ 87] extcall 259 ............................. <sound(sndId)>
+  [ 90] pusharglistnoret 1 ...................... <sound(sndId)>
+  [ 92] objcall 238 ............................. sound(sndId).stop()
+  [ 95] pushzero ................................ <0>
+  [ 96] setprop 675 ............................. sndId = 0
+  [ 99] pushzero ................................ <0>
+  [100] setlocal 0 .............................. playing = 0
+  [102] getprop 538 ............................. <reportObj>
+  [105] pusharglist 1 ........................... <reportObj>
+  [107] extcall 71 .............................. <objectp(reportObj)>
+  [110] jmpifz [125] ............................ if objectp(reportObj) then
+  [113] getprop 538 ............................. <reportObj>
+  [116] getparam 0 .............................. <me>
+  [118] getparam 8 .............................. <argWhat>
+  [120] pusharglistnoret 3 ...................... <reportObj, me, argWhat>
+  [122] objcall 74 .............................. reportObj.Report(me, argWhat)
+  [125] jmp [459]
+  [128] peek 0
+  [130] pushsymb 684 ............................ <#pause>
+  [133] eq
+  [134] jmpifz [179] ............................ (case) #pause:
+  [137] getprop 675 ............................. <sndId>
+  [140] pusharglist 1 ........................... <sndId>
+  [142] extcall 259 ............................. <sound(sndId)>
+  [145] pusharglistnoret 1 ...................... <sound(sndId)>
+  [147] objcall 684 ............................. sound(sndId).pause()
+  [150] pushzero ................................ <0>
+  [151] setlocal 0 .............................. playing = 0
+  [153] getprop 538 ............................. <reportObj>
+  [156] pusharglist 1 ........................... <reportObj>
+  [158] extcall 71 .............................. <objectp(reportObj)>
+  [161] jmpifz [176] ............................ if objectp(reportObj) then
+  [164] getprop 538 ............................. <reportObj>
+  [167] getparam 0 .............................. <me>
+  [169] getparam 8 .............................. <argWhat>
+  [171] pusharglistnoret 3 ...................... <reportObj, me, argWhat>
+  [173] objcall 74 .............................. reportObj.Report(me, argWhat)
+  [176] jmp [459]
+  [179] peek 0
+  [181] pushsymb 429 ............................ <#preload>
+  [184] eq
+  [185] jmpifz [285] ............................ (case) #preload:
+  [188] getparam 16 ............................. <argOption>
+  [190] jmpifz [275] ............................ if argOption then / else
+  [193] getparam 16 ............................. <argOption>
+  [195] setprop 675 ............................. sndId = argOption
+  [198] getprop 675 ............................. <sndId>
+  [201] pusharglist 1 ........................... <sndId>
+  [203] extcall 259 ............................. <sound(sndId)>
+  [206] pushsymb 296 ............................ <#member>
+  [209] getprop 662 ............................. <myMember>
+  [212] pusharglist 2 ........................... <[#member: myMember]>
+  [214] pushproplist ............................ <[#member: myMember]>
+  [215] pusharglist 1 ........................... <[[#member: myMember]]>
+  [217] pushlist ................................ <[[#member: myMember]]>
+  [218] pusharglistnoret 2 ...................... <sound(sndId), [[#member: myMember]]>
+  [220] objcall 685 ............................. sound(sndId).setPlayList([[#member: myMember]])
+  [223] getparam 0 .............................. <me>
+  [225] pusharglistnoret 1 ...................... <me>
+  [227] objcall 658 ............................. me.setPrefs()
+  [230] getprop 662 ............................. <myMember>
+  [233] getobjprop 687 .......................... <myMember.sampleRate>
+  [236] setprop 686 ............................. orgFreq = myMember.sampleRate
+  [239] getprop 662 ............................. <myMember>
+  [242] getobjprop 434 .......................... <myMember.duration>
+  [245] setprop 688 ............................. orgLength = myMember.duration
+  [248] getprop 538 ............................. <reportObj>
+  [251] pusharglist 1 ........................... <reportObj>
+  [253] extcall 71 .............................. <objectp(reportObj)>
+  [256] jmpifz [272] ............................ if objectp(reportObj) then
+  [259] getprop 538 ............................. <reportObj>
+  [262] getparam 0 .............................. <me>
+  [264] pushsymb 689 ............................ <#Preloaded>
+  [267] pusharglistnoret 3 ...................... <reportObj, me, #Preloaded>
+  [269] objcall 74 .............................. reportObj.Report(me, #Preloaded)
+  [272] jmp [282]
+  [275] pushcons 48 ............................. <"Not loaded...!">
+  [277] pusharglistnoret 1 ...................... <"Not loaded...!">
+  [279] extcall 36 .............................. pott("Not loaded...!")
+  [282] jmp [459]
+  [285] peek 0
+  [287] pushsymb 428 ............................ <#unload>
+  [290] eq
+  [291] jmpifz [322] ............................ (case) #unload:
+  [294] getparam 0 .............................. <me>
+  [296] pusharglist 1 ........................... <me>
+  [298] objcall 646 ............................. <me.finished()>
+  [301] not ..................................... <not me.finished()>
+  [302] jmpifz [315] ............................ if not me.finished() then
+  [305] getparam 0 .............................. <me>
+  [307] pushsymb 238 ............................ <#stop>
+  [310] pusharglistnoret 2 ...................... <me, #stop>
+  [312] objcall 644 ............................. me.masterSays(#stop)
+  [315] pushzero ................................ <0>
+  [316] setprop 675 ............................. sndId = 0
+  [319] jmp [459]
+  [322] peek 0
+  [324] pushsymb 690 ............................ <#Interrupt>
+  [327] eq
+  [328] jmpifz [412] ............................ (case) #Interrupt:
+  [331] pushint8 1 .............................. <1>
+  [334] setprop 674 ............................. interrupted = 1
+  [337] getprop 538 ............................. <reportObj>
+  [340] pusharglist 1 ........................... <reportObj>
+  [342] extcall 71 .............................. <objectp(reportObj)>
+  [345] jmpifz [360] ............................ if objectp(reportObj) then
+  [348] getprop 538 ............................. <reportObj>
+  [351] getparam 0 .............................. <me>
+  [353] getparam 8 .............................. <argWhat>
+  [355] pusharglistnoret 3 ...................... <reportObj, me, argWhat>
+  [357] objcall 74 .............................. reportObj.Report(me, argWhat)
+  [360] getprop 669 ............................. <interruptMode>
+  [363] pushsymb 1 .............................. <#kill>
+  [365] eq ...................................... <interruptMode = #kill>
+  [366] jmpifz [378] ............................ if interruptMode = #kill then / else
+  [369] getparam 0 .............................. <me>
+  [371] pusharglistnoret 1 ...................... <me>
+  [373] objcall 1 ............................... me.kill()
+  [375] jmp [409]
+  [378] getprop 669 ............................. <interruptMode>
+  [381] pushsymb 241 ............................ <#restart>
+  [384] eq ...................................... <interruptMode = #restart>
+  [385] jmpifz [391] ............................ if interruptMode = #restart then / else
+  [388] jmp [409]
+  [391] getprop 669 ............................. <interruptMode>
+  [394] pushsymb 691 ............................ <#Timed>
+  [397] eq ...................................... <interruptMode = #Timed>
+  [398] jmpifz [409] ............................ if interruptMode = #Timed then
+  [401] pusharglist 0 ........................... <>
+  [403] thebuiltin 262 .......................... <the ticks>
+  [406] setprop 667 ............................. interruptedAtTicks = the ticks
+  [409] jmp [459]
+  [412] peek 0
+  [414] pushsymb 646 ............................ <#finished>
+  [417] eq
+  [418] jmpifz [459] ............................ (case) #finished:
+  [421] getprop 538 ............................. <reportObj>
+  [424] pusharglist 1 ........................... <reportObj>
+  [426] extcall 71 .............................. <objectp(reportObj)>
+  [429] jmpifz [444] ............................ if objectp(reportObj) then
+  [432] getprop 538 ............................. <reportObj>
+  [435] getparam 0 .............................. <me>
+  [437] getparam 8 .............................. <argWhat>
+  [439] pusharglistnoret 3 ...................... <reportObj, me, argWhat>
+  [441] objcall 74 .............................. reportObj.Report(me, argWhat)
+  [444] getprop 671 ............................. <finishedMode>
+  [447] pushsymb 1 .............................. <#kill>
+  [449] eq ...................................... <finishedMode = #kill>
+  [450] jmpifz [459] ............................ if finishedMode = #kill then
+  [453] getparam 0 .............................. <me>
+  [455] pusharglistnoret 1 ...................... <me>
+  [457] objcall 1 ............................... me.kill()
+  [459] pop 1 ................................... end case
+  [461] ret
+end
+
+on preload me
+  [  0] getglobal 23 ............................ <gUseful>
+  [  2] getobjprop 619 .......................... <gUseful.soundObj>
+  [  5] getparam 0 .............................. <me>
+  [  7] pusharglistnoret 2 ...................... <gUseful.soundObj, me>
+  [  9] objcall 429 ............................. gUseful.soundObj.preload(me)
+  [ 12] ret
+end
+
+on unload me
+  [  0] getparam 0 .............................. <me>
+  [  2] pusharglist 1 ........................... <me>
+  [  4] objcall 646 ............................. <me.finished()>
+  [  7] not ..................................... <not me.finished()>
+  [  8] jmpifz [ 18] ............................ if not me.finished() then
+  [ 11] getparam 0 .............................. <me>
+  [ 13] pusharglistnoret 1 ...................... <me>
+  [ 15] objcall 238 ............................. me.stop()
+  [ 18] getprop 675 ............................. <sndId>
+  [ 21] pusharglistnoret 1 ...................... <sndId>
+  [ 23] extcall 693 ............................. dsDelSound(sndId)
+  [ 26] pushzero ................................ <0>
+  [ 27] setprop 675 ............................. sndId = 0
+  [ 30] ret
+end
+
+on play me
+  [  0] getglobal 23 ............................ <gUseful>
+  [  2] getobjprop 619 .......................... <gUseful.soundObj>
+  [  5] getparam 0 .............................. <me>
+  [  7] pusharglistnoret 2 ...................... <gUseful.soundObj, me>
+  [  9] objcall 237 ............................. gUseful.soundObj.play(me)
+  [ 12] ret
+end
+
+on stop me
+  [  0] getglobal 23 ............................ <gUseful>
+  [  2] getobjprop 619 .......................... <gUseful.soundObj>
+  [  5] getparam 0 .............................. <me>
+  [  7] pusharglistnoret 2 ...................... <gUseful.soundObj, me>
+  [  9] objcall 238 ............................. gUseful.soundObj.stop(me)
+  [ 12] ret
+end
+
+on setFreq me, argFreq
+  [  0] getparam 8 .............................. <argFreq>
+  [  2] pusharglist 1 ........................... <argFreq>
+  [  4] extcall 175 ............................. <float(argFreq)>
+  [  7] getprop 686 ............................. <orgFreq>
+  [ 10] div ..................................... <float(argFreq) / orgFreq>
+  [ 11] setlocal 0 .............................. rel = float(argFreq) / orgFreq
+  [ 13] ret
+end
+
+on setVol me, argVol, argOption
+  [  0] getparam 8 .............................. <argVol>
+  [  2] pusharglist 1 ........................... <argVol>
+  [  4] extcall 501 ............................. <symbolp(argVol)>
+  [  7] jmpifz [ 24] ............................ if symbolp(argVol) then
+  [ 10] getglobal 23 ............................ <gUseful>
+  [ 12] getobjprop 619 .......................... <gUseful.soundObj>
+  [ 15] getparam 8 .............................. <argVol>
+  [ 17] pusharglist 2 ........................... <gUseful.soundObj, argVol>
+  [ 19] objcall 696 ............................. <gUseful.soundObj.getVolSetting(argVol)>
+  [ 22] setparam 8 .............................. argVol = gUseful.soundObj.getVolSetting(argVol)
+  [ 24] getparam 8 .............................. <argVol>
+  [ 26] pushint8 255 ............................ <255>
+  [ 29] mul ..................................... <argVol * 255>
+  [ 30] pushint8 100 ............................ <100>
+  [ 33] div ..................................... <argVol * 255 / 100>
+  [ 34] setparam 8 .............................. argVol = argVol * 255 / 100
+  [ 36] getparam 16 ............................. <argOption>
+  [ 38] pushsymb 697 ............................ <#dB>
+  [ 41] eq ...................................... <argOption = #dB>
+  [ 42] jmpifz [ 45] ............................ if argOption = #dB then
+  [ 45] getprop 673 ............................. <muted>
+  [ 48] pushzero ................................ <0>
+  [ 49] eq ...................................... <muted = 0>
+  [ 50] jmpifz [ 72] ............................ if muted = 0 then
+  [ 53] getprop 675 ............................. <sndId>
+  [ 56] jmpifz [ 72] ............................ if sndId then
+  [ 59] getprop 675 ............................. <sndId>
+  [ 62] pusharglist 1 ........................... <sndId>
+  [ 64] extcall 259 ............................. <sound(sndId)>
+  [ 67] getparam 8 .............................. <argVol>
+  [ 69] setobjprop 698 .......................... sound(sndId).volume = argVol
+  [ 72] getparam 8 .............................. <argVol>
+  [ 74] setprop 698 ............................. volume = argVol
+  [ 77] ret
+end
+
+on Mute me, argIsTRUE
+  [  0] getparam 8 .............................. <argIsTRUE>
+  [  2] setprop 673 ............................. muted = argIsTRUE
+  [  5] getprop 673 ............................. <muted>
+  [  8] jmpifz [ 26] ............................ if muted then / else
+  [ 11] getprop 675 ............................. <sndId>
+  [ 14] pusharglist 1 ........................... <sndId>
+  [ 16] extcall 259 ............................. <sound(sndId)>
+  [ 19] pushzero ................................ <0>
+  [ 20] setobjprop 698 .......................... sound(sndId).volume = 0
+  [ 23] jmp [ 40]
+  [ 26] getprop 675 ............................. <sndId>
+  [ 29] pusharglist 1 ........................... <sndId>
+  [ 31] extcall 259 ............................. <sound(sndId)>
+  [ 34] getprop 698 ............................. <volume>
+  [ 37] setobjprop 698 .......................... sound(sndId).volume = volume
+  [ 40] ret
+end
+
+on setLoop me, argIsTRUE
+  [  0] getparam 8 .............................. <argIsTRUE>
+  [  2] setprop 487 ............................. loop = argIsTRUE
+  [  5] getparam 8 .............................. <argIsTRUE>
+  [  7] jmpifz [ 42] ............................ if argIsTRUE then / else
+  [ 10] getprop 675 ............................. <sndId>
+  [ 13] pusharglist 1 ........................... <sndId>
+  [ 15] extcall 259 ............................. <sound(sndId)>
+  [ 18] pushsymb 296 ............................ <#member>
+  [ 21] getprop 662 ............................. <myMember>
+  [ 24] pushsymb 699 ............................ <#loopCount>
+  [ 27] pushzero ................................ <0>
+  [ 28] pusharglist 4 ........................... <[#member: myMember, #loopCount: 0]>
+  [ 30] pushproplist ............................ <[#member: myMember, #loopCount: 0]>
+  [ 31] pusharglist 1 ........................... <[[#member: myMember, #loopCount: 0]]>
+  [ 33] pushlist ................................ <[[#member: myMember, #loopCount: 0]]>
+  [ 34] pusharglistnoret 2 ...................... <sound(sndId), [[#member: myMember, #loopCount: 0]]>
+  [ 36] objcall 685 ............................. sound(sndId).setPlayList([[#member: myMember, #loopCount: 0]])
+  [ 39] jmp [ 55]
+  [ 42] getprop 675 ............................. <sndId>
+  [ 45] pusharglist 1 ........................... <sndId>
+  [ 47] extcall 259 ............................. <sound(sndId)>
+  [ 50] pusharglistnoret 1 ...................... <sound(sndId)>
+  [ 52] objcall 700 ............................. sound(sndId).breakLoop()
+  [ 55] ret
+end
+
+on finished me
+  [  0] getprop 675 ............................. <sndId>
+  [  3] not ..................................... <not sndId>
+  [  4] jmpifz [ 14] ............................ if not sndId then
+  [  7] pushint8 1 .............................. <1>
+  [ 10] pusharglistnoret 1 ...................... <1>
+  [ 12] extcall 21 .............................. return 1
+  [ 14] getprop 675 ............................. <sndId>
+  [ 17] pusharglist 1 ........................... <sndId>
+  [ 19] extcall 259 ............................. <sound(sndId)>
+  [ 22] pusharglist 1 ........................... <sound(sndId)>
+  [ 24] objcall 701 ............................. <sound(sndId).isBusy()>
+  [ 27] not ..................................... <not sound(sndId).isBusy()>
+  [ 28] pusharglistnoret 1 ...................... <not sound(sndId).isBusy()>
+  [ 30] extcall 21 .............................. return not sound(sndId).isBusy()
+  [ 32] ret
+end
+
+on getChannel me
+  [  0] pushzero ................................ <0>
+  [  1] pusharglistnoret 1 ...................... <0>
+  [  3] extcall 21 .............................. return 0
+  [  5] ret
+end
+
+on fade me, inOut, argMSecs
+  [  0] getparam 8 .............................. <inOut>
+  [  2] pushsymb 45 ............................. <#in>
+  [  5] eq ...................................... <inOut = #in>
+  [  6] jmpifz [ 27] ............................ if inOut = #in then / else
+  [  9] getprop 675 ............................. <sndId>
+  [ 12] pusharglist 1 ........................... <sndId>
+  [ 14] extcall 259 ............................. <sound(sndId)>
+  [ 17] getparam 16 ............................. <argMSecs>
+  [ 19] pusharglistnoret 2 ...................... <sound(sndId), argMSecs>
+  [ 21] objcall 702 ............................. sound(sndId).fadeIn(argMSecs)
+  [ 24] jmp [ 51]
+  [ 27] getparam 8 .............................. <inOut>
+  [ 29] pushsymb 47 ............................. <#Out>
+  [ 32] eq ...................................... <inOut = #Out>
+  [ 33] jmpifz [ 51] ............................ if inOut = #Out then
+  [ 36] getprop 675 ............................. <sndId>
+  [ 39] pusharglist 1 ........................... <sndId>
+  [ 41] extcall 259 ............................. <sound(sndId)>
+  [ 44] getparam 16 ............................. <argMSecs>
+  [ 46] pusharglistnoret 2 ...................... <sound(sndId), argMSecs>
+  [ 48] objcall 703 ............................. sound(sndId).fadeOut(argMSecs)
+  [ 51] ret
+end
+
+on getPosition me, argAsWhat
+  [  0] getprop 675 ............................. <sndId>
+  [  3] pushzero ................................ <0>
+  [  4] eq ...................................... <sndId = 0>
+  [  5] jmpifz [ 13] ............................ if sndId = 0 then
+  [  8] pushzero ................................ <0>
+  [  9] pusharglistnoret 1 ...................... <0>
+  [ 11] extcall 21 .............................. return 0
+  [ 13] getparam 0 .............................. <me>
+  [ 15] pusharglist 1 ........................... <me>
+  [ 17] objcall 235 ............................. <me.getElapsedTime()>
+  [ 20] pushcons 56 ............................. <1000.0>
+  [ 22] div ..................................... <me.getElapsedTime() / 1000.0>
+  [ 23] setlocal 0 .............................. tmpSecs = me.getElapsedTime() / 1000.0
+  [ 25] getparam 8 .............................. <argAsWhat>
+  [ 27] pushsymb 263 ............................ <#Secs>
+  [ 30] eq ...................................... <argAsWhat = #Secs>
+  [ 31] jmpifz [ 40] ............................ if argAsWhat = #Secs then
+  [ 34] getlocal 0 .............................. <tmpSecs>
+  [ 36] pusharglistnoret 1 ...................... <tmpSecs>
+  [ 38] extcall 21 .............................. return tmpSecs
+  [ 40] getlocal 0 .............................. <tmpSecs>
+  [ 42] getprop 662 ............................. <myMember>
+  [ 45] getobjprop 687 .......................... <myMember.sampleRate>
+  [ 48] mul ..................................... <tmpSecs * myMember.sampleRate>
+  [ 49] pusharglist 1 ........................... <tmpSecs * myMember.sampleRate>
+  [ 51] extcall 54 .............................. <integer(tmpSecs * myMember.sampleRate)>
+  [ 54] pusharglistnoret 1 ...................... <integer(tmpSecs * myMember.sampleRate)>
+  [ 56] extcall 21 .............................. return integer(tmpSecs * myMember.sampleRate)
+  [ 58] ret
+end
+
+on setPosition me, argPos, argAsWhat
+  [  0] getparam 16 ............................. <argAsWhat>
+  [  2] pushsymb 263 ............................ <#Secs>
+  [  5] nteq .................................... <argAsWhat <> #Secs>
+  [  6] jmpifz [ 20] ............................ if argAsWhat <> #Secs then
+  [  9] getparam 8 .............................. <argPos>
+  [ 11] getprop 662 ............................. <myMember>
+  [ 14] getobjprop 687 .......................... <myMember.sampleRate>
+  [ 17] div ..................................... <argPos / myMember.sampleRate>
+  [ 18] setparam 8 .............................. argPos = argPos / myMember.sampleRate
+  [ 20] getprop 675 ............................. <sndId>
+  [ 23] pusharglist 1 ........................... <sndId>
+  [ 25] extcall 259 ............................. <sound(sndId)>
+  [ 28] pushsymb 296 ............................ <#member>
+  [ 31] getprop 662 ............................. <myMember>
+  [ 34] pushsymb 699 ............................ <#loopCount>
+  [ 37] getprop 487 ............................. <loop>
+  [ 40] not ..................................... <not loop>
+  [ 41] pushsymb 706 ............................ <#startTime>
+  [ 44] getparam 8 .............................. <argPos>
+  [ 46] pusharglist 6 ........................... <[#member: myMember, #loopCount: not loop, #startTime: argPos]>
+  [ 48] pushproplist ............................ <[#member: myMember, #loopCount: not loop, #startTime: argPos]>
+  [ 49] pusharglist 1 ........................... <[[#member: myMember, #loopCount: not loop, #startTime: argPos]]>
+  [ 51] pushlist ................................ <[[#member: myMember, #loopCount: not loop, #startTime: argPos]]>
+  [ 52] pusharglistnoret 2 ...................... <sound(sndId), [[#member: myMember, #loopCount: not loop, #startTime: argPos]]>
+  [ 54] objcall 685 ............................. sound(sndId).setPlayList([[#member: myMember, #loopCount: not loop, #startTime: argPos]])
+  [ 57] ret
+end
+
+on getElapsedTime me
+  [  0] getprop 675 ............................. <sndId>
+  [  3] pusharglist 1 ........................... <sndId>
+  [  5] extcall 259 ............................. <sound(sndId)>
+  [  8] getobjprop 708 .......................... <sound(sndId).elapsedTime>
+  [ 11] pusharglistnoret 1 ...................... <sound(sndId).elapsedTime>
+  [ 13] extcall 21 .............................. return sound(sndId).elapsedTime
+  [ 15] ret
+end
+
+on getLength me, argAsWhat
+  [  0] getparam 8 .............................. <argAsWhat>
+  [  2] pushsymb 263 ............................ <#Secs>
+  [  5] eq ...................................... <argAsWhat = #Secs>
+  [  6] jmpifz [ 28] ............................ if argAsWhat = #Secs then
+  [  9] getprop 662 ............................. <myMember>
+  [ 12] getobjprop 434 .......................... <myMember.duration>
+  [ 15] pusharglist 1 ........................... <myMember.duration>
+  [ 17] extcall 175 ............................. <float(myMember.duration)>
+  [ 20] pushint8 1000 ........................... <1000>
+  [ 23] div ..................................... <float(myMember.duration) / 1000>
+  [ 24] pusharglistnoret 1 ...................... <float(myMember.duration) / 1000>
+  [ 26] extcall 21 .............................. return float(myMember.duration) / 1000
+  [ 28] getprop 662 ............................. <myMember>
+  [ 31] getobjprop 434 .......................... <myMember.duration>
+  [ 34] getprop 662 ............................. <myMember>
+  [ 37] getobjprop 687 .......................... <myMember.sampleRate>
+  [ 40] mul ..................................... <myMember.duration * myMember.sampleRate>
+  [ 41] pushint8 1000 ........................... <1000>
+  [ 44] div ..................................... <myMember.duration * myMember.sampleRate / 1000>
+  [ 45] pusharglist 1 ........................... <myMember.duration * myMember.sampleRate / 1000>
+  [ 47] extcall 54 .............................. <integer(myMember.duration * myMember.sampleRate / 1000)>
+  [ 50] pusharglistnoret 1 ...................... <integer(myMember.duration * myMember.sampleRate / 1000)>
+  [ 52] extcall 21 .............................. return integer(myMember.duration * myMember.sampleRate / 1000)
+  [ 54] ret
+end
+
+on getEndTime me
+  [  0] getprop 662 ............................. <myMember>
+  [  3] getobjprop 434 .......................... <myMember.duration>
+  [  6] pusharglistnoret 1 ...................... <myMember.duration>
+  [  8] extcall 21 .............................. return myMember.duration
+  [ 10] ret
+end
+
+on getPos me
+  [  0] getparam 0 .............................. <me>
+  [  2] pusharglist 1 ........................... <me>
+  [  4] objcall 649 ............................. <me.getPosition()>
+  [  7] pusharglistnoret 1 ...................... <me.getPosition()>
+  [  9] extcall 21 .............................. return me.getPosition()
+  [ 11] ret
+end
+
+on getFreq me
+  [  0] getprop 662 ............................. <myMember>
+  [  3] getobjprop 687 .......................... <myMember.sampleRate>
+  [  6] pusharglistnoret 1 ...................... <myMember.sampleRate>
+  [  8] extcall 21 .............................. return myMember.sampleRate
+  [ 10] ret
+end
+
+on getSize me
+  [  0] getprop 567 ............................. <size>
+  [  3] pusharglistnoret 1 ...................... <size>
+  [  5] extcall 21 .............................. return size
+  [  7] ret
+end
+
+on getSampleSize me
+  [  0] getprop 662 ............................. <myMember>
+  [  3] getobjprop 709 .......................... <myMember.sampleSize>
+  [  6] pusharglistnoret 1 ...................... <myMember.sampleSize>
+  [  8] extcall 21 .............................. return myMember.sampleSize
+  [ 10] ret
+end
+
+on getSamples me
+  [  0] ret
+end
+
+on setPan me, argPan
+  [  0] getparam 8 .............................. <argPan>
+  [  2] setprop 334 ............................. Pan = argPan
+  [  5] getprop 675 ............................. <sndId>
+  [  8] jmpifz [ 25] ............................ if sndId then
+  [ 11] getprop 675 ............................. <sndId>
+  [ 14] pusharglist 1 ........................... <sndId>
+  [ 16] extcall 259 ............................. <sound(sndId)>
+  [ 19] getprop 334 ............................. <Pan>
+  [ 22] setobjprop 334 .......................... sound(sndId).Pan = Pan
+  [ 25] ret
+end
+
+on isLoaded me
+  [  0] getprop 675 ............................. <sndId>
+  [  3] pusharglistnoret 1 ...................... <sndId>
+  [  5] extcall 21 .............................. return sndId
+  [  7] ret
+end
+
+on isPlaying me
+  [  0] getprop 675 ............................. <sndId>
+  [  3] not ..................................... <not sndId>
+  [  4] jmpifz [ 12] ............................ if not sndId then
+  [  7] pushzero ................................ <0>
+  [  8] pusharglistnoret 1 ...................... <0>
+  [ 10] extcall 21 .............................. return 0
+  [ 12] getprop 675 ............................. <sndId>
+  [ 15] pusharglist 1 ........................... <sndId>
+  [ 17] extcall 259 ............................. <sound(sndId)>
+  [ 20] getobjprop 41 ........................... <sound(sndId).status>
+  [ 23] pushint8 3 .............................. <3>
+  [ 26] eq ...................................... <sound(sndId).status = 3>
+  [ 27] pusharglistnoret 1 ...................... <sound(sndId).status = 3>
+  [ 29] extcall 21 .............................. return sound(sndId).status = 3
+  [ 31] ret
+end
+
+on secsToPos me, argSecs
+  [  0] getparam 8 .............................. <argSecs>
+  [  2] getprop 686 ............................. <orgFreq>
+  [  5] pusharglist 1 ........................... <orgFreq>
+  [  7] extcall 175 ............................. <float(orgFreq)>
+  [ 10] mul ..................................... <argSecs * float(orgFreq)>
+  [ 11] pushint8 2 .............................. <2>
+  [ 14] div ..................................... <argSecs * float(orgFreq) / 2>
+  [ 15] pusharglistnoret 1 ...................... <argSecs * float(orgFreq) / 2>
+  [ 17] extcall 21 .............................. return argSecs * float(orgFreq) / 2
+  [ 19] ret
+end
+
+on setPrefs me
+  [  0] getprop 675 ............................. <sndId>
+  [  3] pusharglist 1 ........................... <sndId>
+  [  5] extcall 259 ............................. <sound(sndId)>
+  [  8] getprop 698 ............................. <volume>
+  [ 11] setobjprop 698 .......................... sound(sndId).volume = volume
+  [ 14] getprop 675 ............................. <sndId>
+  [ 17] pusharglist 1 ........................... <sndId>
+  [ 19] extcall 259 ............................. <sound(sndId)>
+  [ 22] getprop 334 ............................. <Pan>
+  [ 25] setobjprop 334 .......................... sound(sndId).Pan = Pan
+  [ 28] ret
+end

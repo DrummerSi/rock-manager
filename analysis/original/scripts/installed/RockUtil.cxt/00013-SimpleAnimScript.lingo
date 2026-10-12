@@ -1,0 +1,95 @@
+property frameList, cnt, SP, reportObj, Active, firstFrame, options, numFrames, speed
+global gUseful
+
+on new me, argReportObj, argSPNum, argFirstFrameName, argOptions
+  if voidp(argOptions) then
+    argOptions = [:]
+  end if
+  options = argOptions
+  frameList = argOptions[#frameList]
+  if voidp(frameList) then
+    if argOptions[#numFrames] > 0 then
+      numFrames = argOptions[#numFrames]
+    else
+      tmpName = argFirstFrameName & "Chart"
+      tmpNum = getMemberNum(tmpName)
+      if tmpNum > 0 then
+        argFrameList = member(tmpName).text.value
+      end if
+      if voidp(argFrameList) then
+        argFrameList = []
+      end if
+    end if
+  end if
+  if listp(argFrameList) then
+    numFrames = argFrameList.count()
+  end if
+  firstFrame = -1 + member(argFirstFrameName).number
+  speed = argOptions[#speed]
+  if voidp(speed) then
+    speed = 1.0
+  end if
+  reportObj = argReportObj
+  frameList = argFrameList
+  SP = sprite(argSPNum)
+  Active = 1
+  cnt = 0
+  me.timeTick()
+  gUseful.frameTimer.addObject(me)
+  return me
+end
+
+on kill me, argKeepMember
+  if argKeepMember <> 1 then
+    SP.member = member("Dummy")
+  end if
+  gUseful.frameTimer.deleteObject(me)
+  reportObj = 0
+  return 0
+end
+
+on getCurrentMember me, argCnt
+  if voidp(argCnt) then
+    argCnt = integer(cnt)
+  end if
+  if listp(frameList) then
+    tmpMemb = member(firstFrame + frameList[argCnt])
+  else
+    tmpMemb = member(firstFrame + argCnt)
+  end if
+  return tmpMemb
+end
+
+on timeTick me
+  if not Active then
+    exit
+  end if
+  cnt = cnt + speed
+  cntInt = integer(cnt)
+  if cntInt > numFrames then
+    if objectp(reportObj) then
+      cnt = numFrames
+      reportObj.Report(me, #done)
+      Active = 0
+      exit
+    else
+      if options[#StopWhenDone] = 1 then
+        cnt = numFrames
+        Active = 0
+        exit
+      else
+        cnt = 1
+      end if
+    end if
+  end if
+  tmpMemb = me.getCurrentMember(cntInt)
+  SP.member = tmpMemb
+  if listp(options[#rect]) then
+    SP.rect = options[#rect]
+  else
+    if listp(options[#stretch]) then
+      SP.width = tmpMemb.width * options[#stretch][1]
+      SP.height = tmpMemb.height * options[#stretch][2]
+    end if
+  end if
+end

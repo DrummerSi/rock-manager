@@ -1,0 +1,172 @@
+on correctQuotesInListString argStr, argPuutErrors
+  okCharsAfterQuoteEnd = [",", " ", "]", "&", ":"]
+  level = 1
+  insideQuotes = 0
+  quoteRange = [0, 0]
+  repeat with n = 1 to argStr.length
+    ch = argStr.char[n]
+    if quoteRange[2] then
+      if okCharsAfterQuoteEnd.getPos(ch) then
+        quoteRange[2] = 0
+      else
+        if argPuutErrors = 1 then
+          put "Quote err", argStr.char[1..n]
+        end if
+        insertStr = QUOTE & "&QUOTE&" & QUOTE
+        put insertStr into argStr.char[quoteRange[2]]
+        n = n + insertStr.length - 1
+        insideQuotes = 1
+        quoteRange[1] = quoteRange[2] + insertStr.length
+        quoteRange[2] = 0
+      end if
+    end if
+    if ch = "[" then
+      level = level + 1
+      next repeat
+    end if
+    if ch = "]" then
+      level = level - 1
+      next repeat
+    end if
+    if ch = QUOTE then
+      insideQuotes = not insideQuotes
+      if insideQuotes then
+        quoteRange[1] = n
+        next repeat
+      end if
+      quoteRange[2] = n
+    end if
+  end repeat
+  return value(argStr)
+end
+
+on checkOKLingoList X, argObj, argProp
+  val = getPropFromObjOrAncestor(argObj, argProp)
+  str = string(val)
+  if offset("m01mb", str) then
+    put argObj, str
+  end if
+  exit
+  if not listp(val) then
+    put "Err", argObj.ID, val
+  else
+    if argObj.ID = #ActCNGivePressKit then
+      put argObj.ID, val
+    end if
+  end if
+end
+
+on doToObjsWithPropOfName argPropName, argCallHandlerInfo
+  global gClassManager
+  if voidp(argPropName) then
+    argPropName = #ExecuteThis
+  end if
+  if voidp(argCallHandlerInfo) then
+    argCallHandlerInfo = [#checkOKLingoList, script(36), argPropName]
+  end if
+  Classes = getClassesWithPropOfName(argPropName)
+  repeat with className in Classes
+    tmp = [:]
+    getClassesWithPropOfType(className, tmp, 0, 1)
+    tmp.addProp(className, 0)
+    repeat with n = 1 to tmp.count
+      prop = tmp.getPropAt(n)
+      objs = gClassManager.getObjsOfClass(prop)
+      if not listp(objs) then
+        next repeat
+      end if
+      if listp(tmp[n]) then
+        recurseDoToPropsInObjs(objs, tmp[n], argCallHandlerInfo)
+        next repeat
+      end if
+      repeat with obj in objs
+        call(argCallHandlerInfo[1], argCallHandlerInfo[2], obj, argCallHandlerInfo[3])
+      end repeat
+    end repeat
+  end repeat
+end
+
+on recurseDoToPropsInObjs argObjs, argProps, argCallHandlerInfo
+  repeat with n = 1 to argProps.count
+    prop = argProps.getPropAt(n)
+    subProps = argProps[n]
+    newObjsList = []
+    repeat with obj in argObjs
+      newObjsList.add(getPropFromObjOrAncestor(obj, prop))
+    end repeat
+    if listp(subProps) then
+      if newObjsList.count then
+        recurseDoToPropsInObjs(newObjsList, subProps, argCallHandlerInfo)
+      end if
+      next repeat
+    end if
+    repeat with obj in newObjsList
+      call(argCallHandlerInfo[1], argCallHandlerInfo[2], obj, argCallHandlerInfo[3])
+    end repeat
+  end repeat
+end
+
+on getClassesWithPropOfType argType, argBaseList, argOnlyCheckTheseClassesOnLevel1, argRecurseTopReferrer, argSubList
+  global gClassManager
+  me = gClassManager
+  m_classesVars = me.m_classesVars
+  if voidp(argBaseList) then
+    return #NeedListPointer
+  end if
+  if voidp(argSubList) then
+    argSubList = 0
+  end if
+  numAddedHere = 0
+  repeat with n = 1 to m_classesVars.count
+    classList = [:]
+    className = m_classesVars.getPropAt(n)
+    if listp(argOnlyCheckTheseClassesOnLevel1) then
+      if argOnlyCheckTheseClassesOnLevel1.getPos(className) = 0 then
+        next repeat
+      end if
+    end if
+    props = me.getPropsInClassIncludingAncestors(className)
+    repeat with propNr = 1 to props.count
+      prop = props.getPropAt(propNr)
+      propInfo = props[propNr]
+      type = propInfo[1]
+      if type = argType then
+        classList.addProp(prop, argSubList)
+      end if
+    end repeat
+    if classList.count then
+      if argRecurseTopReferrer = 1 then
+        tmp = getClassesWithPropOfType(className, argBaseList, VOID, argRecurseTopReferrer, classList)
+        if tmp = 0 then
+          alreadyThere = argBaseList.getaProp(className)
+          if voidp(alreadyThere) then
+            alreadyThere = [:]
+            argBaseList.setaProp(className, alreadyThere)
+          end if
+          mergeLists(alreadyThere, classList)
+          numAddedHere = numAddedHere + 1
+        end if
+        next repeat
+      end if
+      argBaseList.setaProp(className, classList)
+    end if
+  end repeat
+  return numAddedHere
+end
+
+on getClassesWithPropOfName argNameSymbol
+  global gClassManager
+  me = gClassManager
+  m_classesVars = me.m_classesVars
+  lst = []
+  repeat with n = 1 to m_classesVars.count
+    classList = [:]
+    className = m_classesVars.getPropAt(n)
+    props = me.getPropsInClassIncludingAncestors(className)
+    Info = props.getaProp(argNameSymbol)
+    if listp(Info) then
+      lst.add(className)
+    end if
+  end repeat
+  return lst
+end

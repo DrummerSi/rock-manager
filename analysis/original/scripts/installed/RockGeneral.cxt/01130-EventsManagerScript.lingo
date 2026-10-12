@@ -1,0 +1,379 @@
+property m_events, m_startDateSortedEvents, m_durationSortedEvents, m_ongoingEvents, m_lastCheck, m_busyLooping, m_startTicker, m_endTicker
+global gRock
+
+on new me
+  me.cleanUp()
+  m_endTicker = script("AdditionalTickerScript").new(gRock.m_gameTimer, VOID, 1, [#object: me, #handler: #checkEventsEnding])
+  m_startTicker = script("AdditionalTickerScript").new(gRock.m_gameTimer, VOID, 3, [#object: me, #handler: #checkEventsStarting])
+  m_busyLooping = 0
+  return me
+end
+
+on kill me
+  me.cleanUp()
+  if objectp(m_startTicker) then
+    m_startTicker = m_startTicker.kill()
+  end if
+  if objectp(m_endTicker) then
+    m_endTicker = m_endTicker.kill()
+  end if
+  return 0
+end
+
+on cleanUp me
+  m_events = [:]
+  m_ongoingEvents = []
+  m_startDateSortedEvents = [:]
+  m_startDateSortedEvents.sort()
+  m_durationSortedEvents = [:]
+  m_durationSortedEvents.sort()
+  m_addedToday = []
+  m_lastCheck = 0
+end
+
+on getOngoingEvents me
+  return m_ongoingEvents
+end
+
+on addEvent me, argEventObj, argDontStartIt
+  if m_busyLooping then
+    pott("EVENTS WARNING, add while busy", argEventObj.ID)
+  end if
+  m_events.addProp(argEventObj.ID, argEventObj)
+  m_startDateSortedEvents.addProp(argEventObj.StartDate, argEventObj)
+  m_durationSortedEvents.addProp(argEventObj.duration, argEventObj)
+  if argDontStartIt <> 1 then
+    if (argEventObj.StartDate = gRock.m_date.getDateInt()) and (m_lastCheck = gRock.m_date.getDateInt()) then
+      me.startObject(argEventObj)
+    end if
+  end if
+end
+
+on changeEvent me, argEventObj
+  tmpHadItBefore = m_startDateSortedEvents.getPos(argEventObj)
+  tmpIsOngoing = m_ongoingEvents.getPos(argEventObj)
+  me.deleteEvent(argEventObj)
+  me.addEvent(argEventObj, tmpHadItBefore)
+  if tmpIsOngoing then
+    tmpToday = gRock.m_date.getDateInt()
+    if (argEventObj.StartDate <= tmpToday) and ((argEventObj.StartDate + argEventObj.duration) >= tmpToday) then
+      m_ongoingEvents.add(argEventObj)
+    end if
+  end if
+end
+
+on deleteEvent me, argEventObj
+  if m_busyLooping then
+    pott("EVENTS WARNING, delete while busy", argEventObj.ID)
+  end if
+  m_events.deleteOne(argEventObj)
+  m_startDateSortedEvents.deleteOne(argEventObj)
+  m_durationSortedEvents.deleteOne(argEventObj)
+  if m_ongoingEvents.getPos(argEventObj) then
+    m_ongoingEvents.deleteOne(argEventObj)
+  end if
+end
+
+on checkEventsStarting me, argDate
+  if voidp(argDate) then
+    m_lastCheck = gRock.m_date.getDateInt()
+    argDate = m_lastCheck
+  end if
+  m_startDateSortedEvents.addProp(argDate, -1)
+  tmpPos = m_startDateSortedEvents.getPos(-1)
+  m_startDateSortedEvents.deleteOne(-1)
+  objsStartingToday = []
+  repeat with n = tmpPos to m_startDateSortedEvents.count
+    if m_startDateSortedEvents.getPropAt(n) <> argDate then
+      exit repeat
+    end if
+    objsStartingToday.add(m_startDateSortedEvents[n])
+  end repeat
+  m_busyLooping = 1
+  repeat with obj in objsStartingToday
+    me.startObject(obj)
+  end repeat
+  tmpEvents = m_events.duplicate()
+  repeat with obj in tmpEvents
+    if obj.onGoing <> 1 then
+      if obj.StartDate <= argDate then
+        if (obj.StartDate + obj.duration) > argDate then
+          if rgetProp(obj, #_killed) <= 0 then
+            pott("SHOULD'VE STARTED EVENT!!", obj.ID)
+            me.startObject(obj)
+          end if
+        end if
+      end if
+    end if
+  end repeat
+  m_busyLooping = 0
+end
+
+on checkEventsEnding me, argDate
+  if voidp(argDate) then
+    m_lastCheck = gRock.m_date.getDateInt()
+    argDate = m_lastCheck
+  end if
+  objsEndingToday = []
+  repeat with obj in m_ongoingEvents
+    if (obj.StartDate + obj.duration) <= argDate then
+      objsEndingToday.add(obj)
+    end if
+  end repeat
+  m_busyLooping = 1
+  repeat with obj in objsEndingToday
+    me.stopObject(obj)
+  end repeat
+  repeat with obj in m_events
+    if obj.onGoing = 1 then
+      if (obj.StartDate + obj.duration) <= argDate then
+        pott("ALREADY STOPPED EVENT!!", obj.ID)
+        me.stopObject(obj, #Force)
+      end if
+    end if
+  end repeat
+  m_busyLooping = 0
+end
+
+on stopObject me, argObj, argForce
+  if (m_ongoingEvents.getPos(argObj) = 0) and (argForce <> #Force) then
+    exit
+  end if
+  if argObj.className = #Concert then
+    gRock.m_msgManager.msg(symbol(string(argObj.className) & "PreStop"), argObj)
+  end if
+  if rgetProp(argObj, #_killed) > 0 then
+    m_ongoingEvents.deleteOne(argObj)
+    nothing()
+  else
+    m_ongoingEvents.deleteOne(argObj)
+    argObj.eventChangeState(#stop)
+    gRock.m_msgManager.msg(#EventStop, argObj)
+    gRock.m_msgManager.msg(symbol(string(argObj.className) & "Stop"), argObj)
+  end if
+end
+
+on startObject me, argObj
+  if m_ongoingEvents.getPos(argObj) > 0 then
+    exit
+  end if
+  tmp = argObj.eventChangeState(#start)
+  if not voidp(tmp) and ((tmp = 0) or (tmp = #DontStart)) then
+    exit
+  end if
+  gRock.m_msgManager.msg(#Event, argObj)
+  gRock.m_msgManager.msg(argObj.className, argObj)
+  if rgetProp(argObj, #_killed) > 0 then
+    exit
+  end if
+  if voidp(rgetPropSimple(argObj, #StartDate)) then
+    alert("StartObject: Not an event!" && string(argObj))
+    exit
+  end if
+  m_ongoingEvents.add(argObj)
+end
+
+on closestPossibleDate me, argEventObj, argAltStartDate, argMaxNumSimultaneousVisibleEvents
+  argMaxNumSimultaneousVisibleEvents = 4
+  repeat with n = 0 to 100
+    otherEvents = me.whichOccupySameSpaceAs(argEventObj, argAltStartDate + n, argAltStartDate + argEventObj.duration + n)
+    if otherEvents.count then
+      numVisible = 0
+      repeat with tmpEvent in otherEvents
+        if tmpEvent.visible = 1 then
+          numVisible = numVisible + 1
+        end if
+      end repeat
+      if numVisible >= argMaxNumSimultaneousVisibleEvents then
+        next repeat
+      end if
+      tmpResourceConflicting = me.checkNeededResources(argEventObj.neededIDs, otherEvents)
+      if tmpResourceConflicting.count = 0 then
+        return argAltStartDate + n
+      end if
+      next repeat
+    end if
+    return argAltStartDate + n
+  end repeat
+  return -1
+  step = 10
+  OKDate = -1
+  repeat with stepNum = 1 to 100
+    otherEvents = me.whichOccupySameSpaceAs(argEventObj, argAltStartDate, argAltStartDate + argEventObj.duration + step)
+    repeat with n = 0 to step - 1
+      tmp = me.checkTheseSimultaneous(VOID, otherEvents, [n + argAltStartDate, n + argAltStartDate + argEventObj.duration])
+      tmp = me.checkNeededResources(argEventObj.neededIDs, tmp)
+      if tmp.count() = 0 then
+        OKDate = argAltStartDate + n
+        exit repeat
+      end if
+    end repeat
+    if OKDate >= 0 then
+      exit repeat
+    end if
+    argAltStartDate = argAltStartDate + step
+  end repeat
+  return OKDate
+end
+
+on findClashingEvents me, argEventObj, argAltStartDate
+  if voidp(argAltStartDate) then
+    argAltStartDate = argEventObj.StartDate
+  end if
+  occupies = me.whichOccupySameSpaceAs(argEventObj, argAltStartDate, argAltStartDate + argEventObj.duration)
+  return me.checkNeededResources(argEventObj.neededIDs, occupies)
+end
+
+on whichOccupySameSpaceAs me, argEventObj, argAltStartDate, argAltEndDate
+  if voidp(argAltStartDate) then
+    argAltStartDate = argEventObj.StartDate
+  end if
+  if voidp(argAltEndDate) then
+    argAltEndDate = argEventObj.StartDate + argEventObj.duration
+  end if
+  tmp = me.getOngoingEventsBetweenDates(argAltStartDate, argAltEndDate)
+  tmp.deleteOne(argEventObj)
+  return tmp
+  coincidingList = []
+  m_startDateSortedEvents.addProp(argAltEndDate, -1)
+  startPos = m_startDateSortedEvents.getPos(-1)
+  m_startDateSortedEvents.deleteOne(-1)
+  startPos = startPos - 1
+  if startPos = 0 then
+    return coincidingList
+  end if
+  repeat with n = startPos to m_startDateSortedEvents.count()
+    if m_startDateSortedEvents.getPropAt(n) > argAltEndDate then
+      exit repeat
+    end if
+    startPos = n
+  end repeat
+  repeat with n = startPos down to 1
+    obj = m_startDateSortedEvents[n]
+    if obj = argEventObj then
+      next repeat
+    end if
+    if obj.StartDate >= argAltStartDate then
+      if obj.StartDate < argAltEndDate then
+        coincidingList.add(obj)
+      end if
+      next repeat
+    end if
+    minDurationNeeded = argAltStartDate - obj.StartDate
+    minDurationNeeded = minDurationNeeded + 1
+    if obj.duration >= minDurationNeeded then
+      coincidingList.add(obj)
+      next repeat
+    end if
+    m_durationSortedEvents.addProp(minDurationNeeded, -1)
+    durPos = m_durationSortedEvents.getPos(-1)
+    m_durationSortedEvents.deleteOne(-1)
+    if durPos = m_durationSortedEvents.count() then
+      exit repeat
+    end if
+  end repeat
+  coincidingList.deleteOne(argEventObj)
+  return coincidingList
+end
+
+on checkTheseSimultaneous me, argEventObj, argObjList, argAltStartNEndDates
+  if listp(argAltStartNEndDates) then
+    argStartDate = argAltStartNEndDates[1]
+    argEndDate = argAltStartNEndDates[2]
+  else
+    argStartDate = argEventObj.StartDate
+    argEndDate = argEventObj.StartDate + argEventObj.duration
+  end if
+  coincidingList = []
+  repeat with obj in argObjList
+    if obj.StartDate <= argEndDate then
+      if obj.StartDate >= argStartDate then
+        coincidingList.add(obj)
+        next repeat
+      end if
+      if (obj.StartDate + obj.duration) >= argStartDate then
+        coincidingList.add(obj)
+      end if
+    end if
+  end repeat
+  return coincidingList
+end
+
+on checkNeededResources me, argNeededIDs, argObjList
+  notOK = []
+  band_r = gRock.m_context.getFocus(#Band)
+  tmpNeeded = argNeededIDs.duplicate()
+  if tmpNeeded.getPos(#Band) then
+    mergeLists(tmpNeeded, band_r.members)
+  end if
+  repeat with obj in argObjList
+    tmpNeeded2 = obj.neededIDs.duplicate()
+    if tmpNeeded2.getPos(#Band) then
+      mergeLists(tmpNeeded2, band_r.members)
+    end if
+    repeat with ID in tmpNeeded
+      if tmpNeeded2.getPos(ID) then
+        notOK.add([#Event: obj, #ID: ID])
+      end if
+    end repeat
+  end repeat
+  return notOK
+end
+
+on findFirstEventAfterDate me, argDate, argClassName
+  m_startDateSortedEvents.addProp(argDate, -1)
+  startPos = m_startDateSortedEvents.getPos(-1)
+  m_startDateSortedEvents.deleteOne(-1)
+  if startPos > m_startDateSortedEvents.count then
+    return 0
+  end if
+  if voidp(argClassName) then
+    return m_startDateSortedEvents[startPos]
+  end if
+  repeat with n = startPos to m_startDateSortedEvents.count
+    obj = m_startDateSortedEvents[n]
+    if obj.className = argClassName then
+      return obj
+    end if
+  end repeat
+  return 0
+end
+
+on getOngoingEventsBetweenDates me, argStartDate, argEndDate
+  ongoingEvents = []
+  m_startDateSortedEvents.addProp(argEndDate, -1)
+  startPos = m_startDateSortedEvents.getPos(-1)
+  m_startDateSortedEvents.deleteOne(-1)
+  startPos = startPos - 1
+  if startPos = 0 then
+    return ongoingEvents
+  end if
+  repeat with n = startPos to m_startDateSortedEvents.count
+    if m_startDateSortedEvents.getPropAt(n) > argEndDate then
+      exit repeat
+    end if
+    startPos = n
+  end repeat
+  repeat with n = startPos down to 1
+    obj = m_startDateSortedEvents[n]
+    if obj.StartDate >= argStartDate then
+      if obj.StartDate < argEndDate then
+        ongoingEvents.add(obj)
+      end if
+      next repeat
+    end if
+    minDurationNeeded = argStartDate - obj.StartDate
+    minDurationNeeded = minDurationNeeded + 1
+    if obj.duration >= minDurationNeeded then
+      ongoingEvents.add(obj)
+      next repeat
+    end if
+    m_durationSortedEvents.addProp(minDurationNeeded, -1)
+    durPos = m_durationSortedEvents.getPos(-1)
+    m_durationSortedEvents.deleteOne(-1)
+    if durPos > m_durationSortedEvents.count then
+      exit repeat
+    end if
+  end repeat
+  return ongoingEvents
+end

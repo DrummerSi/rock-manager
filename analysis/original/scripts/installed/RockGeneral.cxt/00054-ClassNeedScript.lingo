@@ -1,0 +1,147 @@
+property ancestor, child, className, belongsTo, _killed, DynamicTrigger, satisfyChanges, highNeedChanges, NegativeNeedChanges, affectLimit, ModifierIDNr, modifier
+global gRock
+
+on new me, argChild, argBelongsTo
+  if objectp(argChild) then
+    child = argChild
+  else
+    child = me
+  end if
+  belongsTo = argBelongsTo
+  className = #Need
+  DynamicTrigger = script("ClassDynamicTriggerVarScript").new(VOID, me)
+  satisfyChanges = [:]
+  highNeedChanges = [:]
+  NegativeNeedChanges = [:]
+  affectLimit = 0.0
+  ModifierIDNr = 0
+  return me
+end
+
+on kill me
+  _killed = 1
+  DynamicTrigger = DynamicTrigger.kill()
+  if objectp(modifier) then
+    modifier = modifier.kill()
+  end if
+  gRock.m_gameTimer.deleteObject(child)
+  if objectp(ancestor) then
+    ancestor = ancestor.kill()
+  end if
+  child = 0
+  belongsTo = 0
+  return 0
+end
+
+on Report me, argObj, argWhat, argOptional
+  tmpSeriousness = argObj.Current
+  if argOptional[#Change] > 0 then
+    if argWhat = 1 then
+    else
+      if argWhat = 2 then
+        eventCardID = symbol("ECOCAngry" & string(child.className))
+      else
+        if argWhat > 2 then
+        end if
+      end if
+    end if
+    if symbolp(eventCardID) then
+      tmpMusicianID = child.belongsTo.belongsTo.ID
+      gRock.m_eventCardsManager.tryNewShowEventCard(eventCardID, [#EventCardOptions: [#HumanID: tmpMusicianID]])
+    end if
+  end if
+end
+
+on calcModifier me
+  tmp = DynamicTrigger.Current
+  tmpID = child.belongsTo.belongsTo.ID
+  if tmp > affectLimit then
+    tmpList = []
+    repeat with n = 1 to highNeedChanges.count
+      tmpProp = highNeedChanges.getPropAt(n)
+      tmpVal = (tmp - affectLimit) * highNeedChanges[n]
+      tmpList.add([tmpProp, tmpVal])
+    end repeat
+    modifier.setModifyInfo(tmpList)
+  else
+    if tmp < 0 then
+      tmpList = []
+      repeat with n = 1 to NegativeNeedChanges.count
+        tmpProp = NegativeNeedChanges.getPropAt(n)
+        tmpVal = -tmp * NegativeNeedChanges[n]
+        tmpList.add([tmpProp, tmpVal])
+      end repeat
+      modifier.setModifyInfo(tmpList)
+    else
+      modifier.setModifyInfo([])
+    end if
+  end if
+end
+
+on satisfy me, argFact
+  changeStuff = [:]
+  tmpRealEffect = argFact * DynamicTrigger.LoseFact
+  DynamicTrigger.setOneProp(#Current, -tmpRealEffect)
+  tmpSatisfyChanges = argFact * satisfyChanges
+  pott("Satisfied", tmpSatisfyChanges)
+  child.calcModifier()
+  tmp = []
+  repeat with n = 1 to tmpSatisfyChanges.count
+    tmp.add([tmpSatisfyChanges.getPropAt(n), tmpSatisfyChanges[n]])
+  end repeat
+  tmpModifierID = symbol(string(child.className) & "Satisfied")
+  if tmp.count then
+    rCreateModifier(tmpModifierID, child.belongsTo.belongsTo.ID, tmp, 0, 3)
+  end if
+  return changeStuff
+end
+
+on setActiveState me, argState
+  if argState = 1 then
+    gRock.m_gameTimer.addObject(child)
+    if objectp(modifier) then
+      pott("Already got modifier obj!")
+    else
+      if ModifierIDNr > 0 then
+        modifier = gRock.m_modifiersManager.getModifierByIDNr(ModifierIDNr)
+      else
+        tmpID = child.belongsTo.belongsTo.ID
+        tmpModifierID = child.className
+        modifier = script("ModifierScript").new(tmpModifierID, tmpID, [], 0, #Constant)
+        ModifierIDNr = modifier.m_IDNr
+      end if
+    end if
+  else
+    if objectp(modifier) then
+      modifier = modifier.kill()
+    end if
+    gRock.m_gameTimer.deleteObject(child)
+  end if
+  DynamicTrigger.setActiveState(argState)
+end
+
+on suspend me, argIsTRUE
+  DynamicTrigger.suspend(argIsTRUE)
+end
+
+on timeTick me
+  child.calcModifier()
+end
+
+on setOneProp me, argProp, argVal
+  if voidp(argProp) then
+    argProp = #Current
+  end if
+  if argProp = #Current then
+    DynamicTrigger.setOneProp(argProp, argVal)
+  end if
+end
+
+on save me
+  return [#Current: DynamicTrigger.Current, #ModifierIDNr: ModifierIDNr]
+end
+
+on load me, argList
+  DynamicTrigger.Current = argList[#Current]
+  ModifierIDNr = argList[#ModifierIDNr]
+end

@@ -1,0 +1,689 @@
+property addObjectList, deleteObjectList, objects, busyRepeating, dismissingKeys, keyConvertTable, keysDown, keyProp, Active, forceKeysDown, gotXtra, additionalKeysDown
+global gUseful
+
+on new me
+  [  0] pusharglist 0 ........................... <[:]>
+  [  2] pushproplist ............................ <[:]>
+  [  3] setprop 721 ............................. addObjectList = [:]
+  [  6] pusharglist 0 ........................... <[]>
+  [  8] pushlist ................................ <[]>
+  [  9] setprop 722 ............................. deleteObjectList = []
+  [ 12] pusharglist 0 ........................... <[:]>
+  [ 14] pushproplist ............................ <[:]>
+  [ 15] setprop 723 ............................. objects = [:]
+  [ 18] getprop 723 ............................. <objects>
+  [ 21] pusharglistnoret 1 ...................... <objects>
+  [ 23] extcall 158 ............................. sort(objects)
+  [ 26] pushzero ................................ <0>
+  [ 27] setprop 724 ............................. busyRepeating = 0
+  [ 30] pushzero ................................ <0>
+  [ 31] setprop 725 ............................. dismissingKeys = 0
+  [ 34] pusharglist 0 ........................... <>
+  [ 36] thebuiltin 726 .......................... <the machineType>
+  [ 39] pushint8 256 ............................ <256>
+  [ 42] eq ...................................... <the machineType = 256>
+  [ 43] jmpifz [ 67] ............................ if the machineType = 256 then / else
+  [ 46] pushcons 0 .............................. <"PCKeyConvertTable">
+  [ 48] pusharglist 1 ........................... <"PCKeyConvertTable">
+  [ 50] extcall 54 .............................. <member("PCKeyConvertTable")>
+  [ 53] getobjprop 356 .......................... <member("PCKeyConvertTable").text>
+  [ 56] pusharglist 1 ........................... <member("PCKeyConvertTable").text>
+  [ 58] extcall 297 ............................. <value(member("PCKeyConvertTable").text)>
+  [ 61] setprop 727 ............................. keyConvertTable = value(member("PCKeyConvertTable").text)
+  [ 64] jmp [ 85]
+  [ 67] pushcons 8 .............................. <"MacKeyConvertTable">
+  [ 69] pusharglist 1 ........................... <"MacKeyConvertTable">
+  [ 71] extcall 54 .............................. <member("MacKeyConvertTable")>
+  [ 74] getobjprop 356 .......................... <member("MacKeyConvertTable").text>
+  [ 77] pusharglist 1 ........................... <member("MacKeyConvertTable").text>
+  [ 79] extcall 297 ............................. <value(member("MacKeyConvertTable").text)>
+  [ 82] setprop 727 ............................. keyConvertTable = value(member("MacKeyConvertTable").text)
+  [ 85] pusharglist 0 ........................... <[]>
+  [ 87] pushlist ................................ <[]>
+  [ 88] setprop 728 ............................. keysDown = []
+  [ 91] pushsymb 730 ............................ <#KeysItIsOKToSend>
+  [ 94] setprop 729 ............................. keyProp = #KeysItIsOKToSend
+  [ 97] pushint8 1 .............................. <1>
+  [100] setprop 731 ............................. Active = 1
+  [103] pusharglist 0 ........................... <[]>
+  [105] pushlist ................................ <[]>
+  [106] setprop 732 ............................. forceKeysDown = []
+  [109] getglobal 93 ............................ <gUseful>
+  [112] pushsymb 734 ............................ <#xtrasList>
+  [115] pushsymb 735 ............................ <#KeyPoll>
+  [118] pusharglist 3 ........................... <gUseful, #xtrasList, #KeyPoll>
+  [120] objcall 145 ............................. <gUseful.xtrasList[#KeyPoll]>
+  [123] pushzero ................................ <0>
+  [124] nteq .................................... <gUseful.xtrasList[#KeyPoll] <> 0>
+  [125] setprop 733 ............................. gotXtra = gUseful.xtrasList[#KeyPoll] <> 0
+  [128] pushzero ................................ <0>
+  [129] setprop 733 ............................. gotXtra = 0
+  [132] getprop 733 ............................. <gotXtra>
+  [135] not ..................................... <not gotXtra>
+  [136] jmpifz [139] ............................ if not gotXtra then
+  [139] pusharglist 0 ........................... <[]>
+  [141] pushlist ................................ <[]>
+  [142] setprop 736 ............................. additionalKeysDown = []
+  [145] getparam 0 .............................. <me>
+  [147] pusharglistnoret 1 ...................... <me>
+  [149] extcall 96 .............................. return me
+  [152] ret
+end
+
+on init me
+  [  0] getglobal 93 ............................ <gUseful>
+  [  3] pushsymb 734 ............................ <#xtrasList>
+  [  6] pushsymb 735 ............................ <#KeyPoll>
+  [  9] pusharglist 3 ........................... <gUseful, #xtrasList, #KeyPoll>
+  [ 11] objcall 145 ............................. <gUseful.xtrasList[#KeyPoll]>
+  [ 14] setprop 733 ............................. gotXtra = gUseful.xtrasList[#KeyPoll]
+  [ 17] ret
+end
+
+on kill me
+  [  0] pushzero ................................ <0>
+  [  1] setprop 731 ............................. Active = 0
+  [  4] pusharglist 0 ........................... <[:]>
+  [  6] pushproplist ............................ <[:]>
+  [  7] setprop 721 ............................. addObjectList = [:]
+  [ 10] pusharglist 0 ........................... <[]>
+  [ 12] pushlist ................................ <[]>
+  [ 13] setprop 722 ............................. deleteObjectList = []
+  [ 16] pusharglist 0 ........................... <[:]>
+  [ 18] pushproplist ............................ <[:]>
+  [ 19] setprop 723 ............................. objects = [:]
+  [ 22] pushzero ................................ <0>
+  [ 23] pusharglistnoret 1 ...................... <0>
+  [ 25] extcall 96 .............................. return 0
+  [ 28] ret
+end
+
+on addObject me, argObj, argPrio
+  [  0] getparam 16 ............................. <argPrio>
+  [  2] pusharglist 1 ........................... <argPrio>
+  [  4] extcall 41 .............................. <voidp(argPrio)>
+  [  7] jmpifz [ 15] ............................ if voidp(argPrio) then
+  [ 10] pushint8 50 ............................. <50>
+  [ 13] setparam 16 ............................. argPrio = 50
+  [ 15] getparam 8 .............................. <argObj>
+  [ 17] getprop 729 ............................. <keyProp>
+  [ 20] pushint8 1 .............................. <1>
+  [ 23] pusharglistnoret 3 ...................... <argObj, keyProp, 1>
+  [ 25] objcall 133 ............................. argObj.setaProp(keyProp, 1)
+  [ 28] getprop 724 ............................. <busyRepeating>
+  [ 31] jmpifz [ 49] ............................ if busyRepeating then / else
+  [ 34] getprop 721 ............................. <addObjectList>
+  [ 37] getparam 16 ............................. <argPrio>
+  [ 39] getparam 8 .............................. <argObj>
+  [ 41] pusharglistnoret 3 ...................... <addObjectList, argPrio, argObj>
+  [ 43] objcall 137 ............................. addObjectList.addProp(argPrio, argObj)
+  [ 46] jmp [ 76]
+  [ 49] getprop 723 ............................. <objects>
+  [ 52] getparam 8 .............................. <argObj>
+  [ 54] pusharglist 2 ........................... <objects, argObj>
+  [ 56] objcall 229 ............................. <objects.getPos(argObj)>
+  [ 59] pushzero ................................ <0>
+  [ 60] eq ...................................... <objects.getPos(argObj) = 0>
+  [ 61] jmpifz [ 76] ............................ if objects.getPos(argObj) = 0 then
+  [ 64] getprop 723 ............................. <objects>
+  [ 67] getparam 16 ............................. <argPrio>
+  [ 69] getparam 8 .............................. <argObj>
+  [ 71] pusharglistnoret 3 ...................... <objects, argPrio, argObj>
+  [ 73] objcall 137 ............................. objects.addProp(argPrio, argObj)
+  [ 76] ret
+end
+
+on addObjects me
+  [  0] pushint8 1 .............................. <1>
+  [  3] setlocal 0
+  [  5] getlocal 0
+  [  7] getprop 721 ............................. <addObjectList>
+  [ 10] pusharglist 1 ........................... <addObjectList>
+  [ 12] objcall 111 ............................. <addObjectList.count()>
+  [ 15] lteq
+  [ 16] jmpifz [ 77] ............................ repeat with n = 1 to addObjectList.count()
+  [ 19] getprop 721 ............................. <addObjectList>
+  [ 22] getlocal 0 .............................. <n>
+  [ 24] pusharglist 2 ........................... <addObjectList, n>
+  [ 26] objcall 43 .............................. <addObjectList[n]>
+  [ 29] setlocal 8 .............................. tmpObj = addObjectList[n]
+  [ 31] getprop 723 ............................. <objects>
+  [ 34] getlocal 8 .............................. <tmpObj>
+  [ 36] pusharglist 2 ........................... <objects, tmpObj>
+  [ 38] objcall 229 ............................. <objects.getPos(tmpObj)>
+  [ 41] pushzero ................................ <0>
+  [ 42] eq ...................................... <objects.getPos(tmpObj) = 0>
+  [ 43] jmpifz [ 66] ............................ if objects.getPos(tmpObj) = 0 then
+  [ 46] getprop 723 ............................. <objects>
+  [ 49] getprop 721 ............................. <addObjectList>
+  [ 52] getlocal 0 .............................. <n>
+  [ 54] pusharglist 2 ........................... <addObjectList, n>
+  [ 56] objcall 230 ............................. <addObjectList.getPropAt(n)>
+  [ 59] getlocal 8 .............................. <tmpObj>
+  [ 61] pusharglistnoret 3 ...................... <objects, addObjectList.getPropAt(n), tmpObj>
+  [ 63] objcall 137 ............................. objects.addProp(addObjectList.getPropAt(n), tmpObj)
+  [ 66] pushint8 1
+  [ 69] getlocal 0
+  [ 71] add
+  [ 72] setlocal 0
+  [ 74] endrepeat [  5]
+  [ 77] pusharglist 0 ........................... <[:]>
+  [ 79] pushproplist ............................ <[:]>
+  [ 80] setprop 721 ............................. addObjectList = [:]
+  [ 83] ret
+end
+
+on deleteObject me, argObj
+  [  0] getparam 8 .............................. <argObj>
+  [  2] getprop 729 ............................. <keyProp>
+  [  5] pushzero ................................ <0>
+  [  6] pusharglistnoret 3 ...................... <argObj, keyProp, 0>
+  [  8] objcall 133 ............................. argObj.setaProp(keyProp, 0)
+  [ 11] getprop 724 ............................. <busyRepeating>
+  [ 14] jmpifz [ 30] ............................ if busyRepeating then / else
+  [ 17] getprop 722 ............................. <deleteObjectList>
+  [ 20] getparam 8 .............................. <argObj>
+  [ 22] pusharglistnoret 2 ...................... <deleteObjectList, argObj>
+  [ 24] objcall 115 ............................. deleteObjectList.add(argObj)
+  [ 27] jmp [ 40]
+  [ 30] getprop 723 ............................. <objects>
+  [ 33] getparam 8 .............................. <argObj>
+  [ 35] pusharglistnoret 2 ...................... <objects, argObj>
+  [ 37] objcall 143 ............................. objects.deleteOne(argObj)
+  [ 40] ret
+end
+
+on deleteObjects me
+  [  0] getprop 722 ............................. <deleteObjectList>
+  [  3] peek 0
+  [  5] pusharglist 1
+  [  7] extcall 111
+  [ 10] pushint8 1
+  [ 12] peek 0
+  [ 14] peek 2
+  [ 16] lteq
+  [ 17] jmpifz [ 47] ............................ repeat with tmpObj in deleteObjectList
+  [ 20] peek 2
+  [ 22] peek 1
+  [ 24] pusharglist 2
+  [ 26] extcall 43
+  [ 29] setlocal 0
+  [ 31] getprop 723 ............................. <objects>
+  [ 34] getlocal 0 .............................. <tmpObj>
+  [ 36] pusharglistnoret 2 ...................... <objects, tmpObj>
+  [ 38] objcall 143 ............................. objects.deleteOne(tmpObj)
+  [ 41] pushint8 1
+  [ 43] add
+  [ 44] endrepeat [ 12]
+  [ 47] pop 3
+  [ 49] pusharglist 0 ........................... <[]>
+  [ 51] pushlist ................................ <[]>
+  [ 52] setprop 722 ............................. deleteObjectList = []
+  [ 55] ret
+end
+
+on timeTick me
+  [  0] getprop 725 ............................. <dismissingKeys>
+  [  3] jmpifz [ 16] ............................ if dismissingKeys then
+  [  6] getprop 725 ............................. <dismissingKeys>
+  [  9] pushint8 1 .............................. <1>
+  [ 12] sub ..................................... <dismissingKeys - 1>
+  [ 13] setprop 725 ............................. dismissingKeys = dismissingKeys - 1
+  [ 16] pushint8 1 .............................. <1>
+  [ 19] setprop 724 ............................. busyRepeating = 1
+  [ 22] getprop 736 ............................. <additionalKeysDown>
+  [ 25] pusharglist 1 ........................... <additionalKeysDown>
+  [ 27] objcall 168 ............................. <additionalKeysDown.duplicate()>
+  [ 30] setlocal 0 .............................. tmp = additionalKeysDown.duplicate()
+  [ 32] getprop 733 ............................. <gotXtra>
+  [ 35] jmpifz [ 52] ............................ if gotXtra then
+  [ 38] getlocal 0 .............................. <tmp>
+  [ 40] getparam 0 .............................. <me>
+  [ 42] pusharglist 1 ........................... <me>
+  [ 44] objcall 720 ............................. <me.checkPressed()>
+  [ 47] pusharglistnoret 2 ...................... <tmp, me.checkPressed()>
+  [ 49] extcall 67 .............................. mergeLists(tmp, me.checkPressed())
+  [ 52] getparam 0 .............................. <me>
+  [ 54] getlocal 0 .............................. <tmp>
+  [ 56] pusharglistnoret 2 ...................... <me, tmp>
+  [ 58] objcall 718 ............................. me.check(tmp)
+  [ 61] getparam 0 .............................. <me>
+  [ 63] pusharglistnoret 1 ...................... <me>
+  [ 65] objcall 712 ............................. me.addObjects()
+  [ 68] getparam 0 .............................. <me>
+  [ 70] pusharglistnoret 1 ...................... <me>
+  [ 72] objcall 713 ............................. me.deleteObjects()
+  [ 75] pushzero ................................ <0>
+  [ 76] setprop 724 ............................. busyRepeating = 0
+  [ 79] ret
+end
+
+on keyDown me
+  [  0] pushint8 1 .............................. <1>
+  [  3] setprop 724 ............................. busyRepeating = 1
+  [  6] getparam 0 .............................. <me>
+  [  8] pushsymb 738 ............................ <#code>
+  [ 11] pushsymb 739 ............................ <#Poll>
+  [ 14] pusharglist 0 ........................... <>
+  [ 16] thebuiltin 740 .......................... <the keyCode>
+  [ 19] pusharglist 4 ........................... <me, #code, #Poll, the keyCode>
+  [ 21] objcall 717 ............................. <me.convert(#code, #Poll, the keyCode)>
+  [ 24] setlocal 0 .............................. tmpCode = me.convert(#code, #Poll, the keyCode)
+  [ 26] getprop 736 ............................. <additionalKeysDown>
+  [ 29] getlocal 0 .............................. <tmpCode>
+  [ 31] pusharglist 2 ........................... <additionalKeysDown, tmpCode>
+  [ 33] objcall 453 ............................. <additionalKeysDown.getOne(tmpCode)>
+  [ 36] pushzero ................................ <0>
+  [ 37] eq ...................................... <additionalKeysDown.getOne(tmpCode) = 0>
+  [ 38] jmpifz [ 51] ............................ if additionalKeysDown.getOne(tmpCode) = 0 then
+  [ 41] getprop 736 ............................. <additionalKeysDown>
+  [ 44] getlocal 0 .............................. <tmpCode>
+  [ 46] pusharglistnoret 2 ...................... <additionalKeysDown, tmpCode>
+  [ 48] objcall 115 ............................. additionalKeysDown.add(tmpCode)
+  [ 51] getprop 736 ............................. <additionalKeysDown>
+  [ 54] pusharglist 1 ........................... <additionalKeysDown>
+  [ 56] objcall 168 ............................. <additionalKeysDown.duplicate()>
+  [ 59] setlocal 8 .............................. tmp = additionalKeysDown.duplicate()
+  [ 61] getparam 0 .............................. <me>
+  [ 63] getlocal 8 .............................. <tmp>
+  [ 65] pusharglistnoret 2 ...................... <me, tmp>
+  [ 67] objcall 718 ............................. me.check(tmp)
+  [ 70] getparam 0 .............................. <me>
+  [ 72] pusharglistnoret 1 ...................... <me>
+  [ 74] objcall 712 ............................. me.addObjects()
+  [ 77] getparam 0 .............................. <me>
+  [ 79] pusharglistnoret 1 ...................... <me>
+  [ 81] objcall 713 ............................. me.deleteObjects()
+  [ 84] pushzero ................................ <0>
+  [ 85] setprop 724 ............................. busyRepeating = 0
+  [ 88] ret
+end
+
+on keyUp me
+  [  0] pushint8 1 .............................. <1>
+  [  3] setprop 724 ............................. busyRepeating = 1
+  [  6] pusharglist 0 ........................... <[]>
+  [  8] pushlist ................................ <[]>
+  [  9] setprop 736 ............................. additionalKeysDown = []
+  [ 12] getparam 0 .............................. <me>
+  [ 14] getparam 0 .............................. <me>
+  [ 16] pusharglist 1 ........................... <me>
+  [ 18] objcall 720 ............................. <me.checkPressed()>
+  [ 21] pusharglistnoret 2 ...................... <me, me.checkPressed()>
+  [ 23] objcall 718 ............................. me.check(me.checkPressed())
+  [ 26] getparam 0 .............................. <me>
+  [ 28] pusharglistnoret 1 ...................... <me>
+  [ 30] objcall 712 ............................. me.addObjects()
+  [ 33] getparam 0 .............................. <me>
+  [ 35] pusharglistnoret 1 ...................... <me>
+  [ 37] objcall 713 ............................. me.deleteObjects()
+  [ 40] pushzero ................................ <0>
+  [ 41] setprop 724 ............................. busyRepeating = 0
+  [ 44] ret
+end
+
+on dismissKeys me, argIsTRUE
+  [  0] getparam 8 .............................. <argIsTRUE>
+  [  2] setprop 725 ............................. dismissingKeys = argIsTRUE
+  [  5] ret
+end
+
+on convert me, argFromType, argToType, argVal
+  [  0] getprop 727 ............................. <keyConvertTable>
+  [  3] getparam 8 .............................. <argFromType>
+  [  5] pusharglist 2 ........................... <keyConvertTable, argFromType>
+  [  7] objcall 145 ............................. <keyConvertTable.getProp(argFromType)>
+  [ 10] setlocal 0 .............................. tmpTypeList = keyConvertTable.getProp(argFromType)
+  [ 12] getlocal 0 .............................. <tmpTypeList>
+  [ 14] getparam 24 ............................. <argVal>
+  [ 16] pusharglist 2 ........................... <tmpTypeList, argVal>
+  [ 18] objcall 185 ............................. <tmpTypeList.getaProp(argVal)>
+  [ 21] setlocal 8 .............................. tmp = tmpTypeList.getaProp(argVal)
+  [ 23] getlocal 8 .............................. <tmp>
+  [ 25] pusharglist 1 ........................... <tmp>
+  [ 27] extcall 41 .............................. <voidp(tmp)>
+  [ 30] jmpifz [ 39] ............................ if voidp(tmp) then
+  [ 33] pushzero ................................ <0>
+  [ 34] pusharglistnoret 1 ...................... <0>
+  [ 36] extcall 96 .............................. return 0
+  [ 39] getparam 8 .............................. <argFromType>
+  [ 41] pushsymb 742 ............................ <#user>
+  [ 44] eq ...................................... <argFromType = #user>
+  [ 45] jmpifz [ 62] ............................ if argFromType = #user then
+  [ 48] getlocal 8 .............................. <tmp>
+  [ 50] getparam 16 ............................. <argToType>
+  [ 52] pusharglist 2 ........................... <tmp, argToType>
+  [ 54] objcall 185 ............................. <tmp.getaProp(argToType)>
+  [ 57] pusharglistnoret 1 ...................... <tmp.getaProp(argToType)>
+  [ 59] extcall 96 .............................. return tmp.getaProp(argToType)
+  [ 62] getparam 16 ............................. <argToType>
+  [ 64] pushsymb 739 ............................ <#Poll>
+  [ 67] eq ...................................... <argToType = #Poll>
+  [ 68] jmpifz [ 86] ............................ if argToType = #Poll then
+  [ 71] getlocal 8 .............................. <tmp>
+  [ 73] pushint8 2 .............................. <2>
+  [ 76] pusharglist 2 ........................... <tmp, 2>
+  [ 78] objcall 43 .............................. <tmp[2]>
+  [ 81] pusharglistnoret 1 ...................... <tmp[2]>
+  [ 83] extcall 96 .............................. return tmp[2]
+  [ 86] getparam 16 ............................. <argToType>
+  [ 88] pushsymb 389 ............................ <#key>
+  [ 91] eq ...................................... <argToType = #key>
+  [ 92] jmpifz [188] ............................ if argToType = #key then
+  [ 95] getlocal 8 .............................. <tmp>
+  [ 97] pushint8 2 .............................. <2>
+  [100] pusharglist 2 ........................... <tmp, 2>
+  [102] objcall 43 .............................. <tmp[2]>
+  [105] pushint8 36 ............................. <36>
+  [108] eq ...................................... <tmp[2] = 36>
+  [109] jmpifz [122] ............................ if tmp[2] = 36 then / else
+  [112] pushcons 16 ............................. <RETURN>
+  [114] pusharglistnoret 1 ...................... <RETURN>
+  [116] extcall 96 .............................. return RETURN
+  [119] jmp [173]
+  [122] getlocal 8 .............................. <tmp>
+  [124] pushint8 2 .............................. <2>
+  [127] pusharglist 2 ........................... <tmp, 2>
+  [129] objcall 43 .............................. <tmp[2]>
+  [132] pushint8 2 .............................. <2>
+  [135] eq ...................................... <tmp[2] = 2>
+  [136] jmpifz [149] ............................ if tmp[2] = 2 then / else
+  [139] pushcons 24 ............................. <"d">
+  [141] pusharglistnoret 1 ...................... <"d">
+  [143] extcall 96 .............................. return "d"
+  [146] jmp [173]
+  [149] getlocal 8 .............................. <tmp>
+  [151] pushint8 2 .............................. <2>
+  [154] pusharglist 2 ........................... <tmp, 2>
+  [156] objcall 43 .............................. <tmp[2]>
+  [159] pushint8 14 ............................. <14>
+  [162] eq ...................................... <tmp[2] = 14>
+  [163] jmpifz [173] ............................ if tmp[2] = 14 then
+  [166] pushcons 32 ............................. <"e">
+  [168] pusharglistnoret 1 ...................... <"e">
+  [170] extcall 96 .............................. return "e"
+  [173] getlocal 8 .............................. <tmp>
+  [175] pushint8 1 .............................. <1>
+  [178] pusharglist 2 ........................... <tmp, 1>
+  [180] objcall 43 .............................. <tmp[1]>
+  [183] pusharglistnoret 1 ...................... <tmp[1]>
+  [185] extcall 96 .............................. return tmp[1]
+  [188] getparam 16 ............................. <argToType>
+  [190] pushsymb 738 ............................ <#code>
+  [193] eq ...................................... <argToType = #code>
+  [194] jmpifz [239] ............................ if argToType = #code then
+  [197] getparam 8 .............................. <argFromType>
+  [199] pushsymb 389 ............................ <#key>
+  [202] eq ...................................... <argFromType = #key>
+  [203] jmpifz [224] ............................ if argFromType = #key then / else
+  [206] getlocal 8 .............................. <tmp>
+  [208] pushint8 1 .............................. <1>
+  [211] pusharglist 2 ........................... <tmp, 1>
+  [213] objcall 43 .............................. <tmp[1]>
+  [216] pusharglistnoret 1 ...................... <tmp[1]>
+  [218] extcall 96 .............................. return tmp[1]
+  [221] jmp [239]
+  [224] getlocal 8 .............................. <tmp>
+  [226] pushint8 2 .............................. <2>
+  [229] pusharglist 2 ........................... <tmp, 2>
+  [231] objcall 43 .............................. <tmp[2]>
+  [234] pusharglistnoret 1 ...................... <tmp[2]>
+  [236] extcall 96 .............................. return tmp[2]
+  [239] ret
+end
+
+on check me, argKeysDown
+  [  0] getprop 725 ............................. <dismissingKeys>
+  [  3] jmpifz [  7] ............................ if dismissingKeys then
+  [  6] ret ..................................... exit
+  [  7] getprop 732 ............................. <forceKeysDown>
+  [ 10] peek 0
+  [ 12] pusharglist 1
+  [ 14] extcall 111
+  [ 17] pushint8 1
+  [ 19] peek 0
+  [ 21] peek 2
+  [ 23] lteq
+  [ 24] jmpifz [ 52] ............................ repeat with tmpID in forceKeysDown
+  [ 27] peek 2
+  [ 29] peek 1
+  [ 31] pusharglist 2
+  [ 33] extcall 43
+  [ 36] setlocal 0
+  [ 38] getparam 8 .............................. <argKeysDown>
+  [ 40] getlocal 0 .............................. <tmpID>
+  [ 42] pusharglistnoret 2 ...................... <argKeysDown, tmpID>
+  [ 44] objcall 115 ............................. argKeysDown.add(tmpID)
+  [ 47] pushint8 1
+  [ 49] add
+  [ 50] endrepeat [ 19]
+  [ 52] pop 3
+  [ 54] pusharglist 0 ........................... <[]>
+  [ 56] pushlist ................................ <[]>
+  [ 57] setlocal 8 .............................. tmpPressed = []
+  [ 59] pusharglist 0 ........................... <[]>
+  [ 61] pushlist ................................ <[]>
+  [ 62] setlocal 16 ............................. tmpReleased = []
+  [ 64] getparam 8 .............................. <argKeysDown>
+  [ 66] peek 0
+  [ 68] pusharglist 1
+  [ 70] extcall 111
+  [ 73] pushint8 1
+  [ 75] peek 0
+  [ 77] peek 2
+  [ 79] lteq
+  [ 80] jmpifz [123] ............................ repeat with tmpCode in argKeysDown
+  [ 83] peek 2
+  [ 85] peek 1
+  [ 87] pusharglist 2
+  [ 89] extcall 43
+  [ 92] setlocal 24
+  [ 94] getprop 728 ............................. <keysDown>
+  [ 97] getlocal 24 ............................. <tmpCode>
+  [ 99] pusharglist 2 ........................... <keysDown, tmpCode>
+  [101] objcall 229 ............................. <keysDown.getPos(tmpCode)>
+  [104] not ..................................... <not keysDown.getPos(tmpCode)>
+  [105] jmpifz [117] ............................ if not keysDown.getPos(tmpCode) then
+  [108] getlocal 8 .............................. <tmpPressed>
+  [110] getlocal 24 ............................. <tmpCode>
+  [112] pusharglistnoret 2 ...................... <tmpPressed, tmpCode>
+  [114] objcall 115 ............................. tmpPressed.add(tmpCode)
+  [117] pushint8 1
+  [119] add
+  [120] endrepeat [ 75]
+  [123] pop 3
+  [125] getprop 728 ............................. <keysDown>
+  [128] peek 0
+  [130] pusharglist 1
+  [132] extcall 111
+  [135] pushint8 1
+  [137] peek 0
+  [139] peek 2
+  [141] lteq
+  [142] jmpifz [184] ............................ repeat with tmpCode in keysDown
+  [145] peek 2
+  [147] peek 1
+  [149] pusharglist 2
+  [151] extcall 43
+  [154] setlocal 24
+  [156] getparam 8 .............................. <argKeysDown>
+  [158] getlocal 24 ............................. <tmpCode>
+  [160] pusharglist 2 ........................... <argKeysDown, tmpCode>
+  [162] objcall 229 ............................. <argKeysDown.getPos(tmpCode)>
+  [165] not ..................................... <not argKeysDown.getPos(tmpCode)>
+  [166] jmpifz [178] ............................ if not argKeysDown.getPos(tmpCode) then
+  [169] getlocal 16 ............................. <tmpReleased>
+  [171] getlocal 24 ............................. <tmpCode>
+  [173] pusharglistnoret 2 ...................... <tmpReleased, tmpCode>
+  [175] objcall 115 ............................. tmpReleased.add(tmpCode)
+  [178] pushint8 1
+  [180] add
+  [181] endrepeat [137]
+  [184] pop 3
+  [186] getparam 8 .............................. <argKeysDown>
+  [188] setprop 728 ............................. keysDown = argKeysDown
+  [191] getlocal 8 .............................. <tmpPressed>
+  [193] peek 0
+  [195] pusharglist 1
+  [197] extcall 111
+  [200] pushint8 1
+  [202] peek 0
+  [204] peek 2
+  [206] lteq
+  [207] jmpifz [298] ............................ repeat with tmpKey in tmpPressed
+  [210] peek 2
+  [212] peek 1
+  [214] pusharglist 2
+  [216] extcall 43
+  [219] setlocal 32
+  [221] getprop 723 ............................. <objects>
+  [224] pusharglist 1 ........................... <objects>
+  [226] objcall 111 ............................. <objects.count()>
+  [229] setlocal 40
+  [231] getlocal 40
+  [233] pushint8 1 .............................. <1>
+  [236] gteq
+  [237] jmpifz [292] ............................ repeat with n = objects.count() down to 1
+  [240] getprop 723 ............................. <objects>
+  [243] getlocal 40 ............................. <n>
+  [245] pusharglist 2 ........................... <objects, n>
+  [247] objcall 43 .............................. <objects[n]>
+  [250] setlocal 48 ............................. tmpObj = objects[n]
+  [252] getlocal 48 ............................. <tmpObj>
+  [254] getprop 729 ............................. <keyProp>
+  [257] pusharglist 2 ........................... <tmpObj, keyProp>
+  [259] objcall 185 ............................. <tmpObj.getaProp(keyProp)>
+  [262] jmpifz [281] ............................ if tmpObj.getaProp(keyProp) then
+  [265] getlocal 48 ............................. <tmpObj>
+  [267] pushsymb 380 ............................ <#down>
+  [270] getlocal 32 ............................. <tmpKey>
+  [272] pusharglist 3 ........................... <tmpObj, #down, tmpKey>
+  [274] objcall 389 ............................. <tmpObj.key(#down, tmpKey)>
+  [277] jmpifz [281] ............................ if tmpObj.key(#down, tmpKey) then
+  [280] ret ..................................... exit
+  [281] pushint8 -1
+  [284] getlocal 40
+  [286] add
+  [287] setlocal 40
+  [289] endrepeat [231]
+  [292] pushint8 1
+  [294] add
+  [295] endrepeat [202]
+  [298] pop 3
+  [300] getlocal 16 ............................. <tmpReleased>
+  [302] peek 0
+  [304] pusharglist 1
+  [306] extcall 111
+  [309] pushint8 1
+  [311] peek 0
+  [313] peek 2
+  [315] lteq
+  [316] jmpifz [407] ............................ repeat with tmpKey in tmpReleased
+  [319] peek 2
+  [321] peek 1
+  [323] pusharglist 2
+  [325] extcall 43
+  [328] setlocal 32
+  [330] getprop 723 ............................. <objects>
+  [333] pusharglist 1 ........................... <objects>
+  [335] objcall 111 ............................. <objects.count()>
+  [338] setlocal 40
+  [340] getlocal 40
+  [342] pushint8 1 .............................. <1>
+  [345] gteq
+  [346] jmpifz [401] ............................ repeat with n = objects.count() down to 1
+  [349] getprop 723 ............................. <objects>
+  [352] getlocal 40 ............................. <n>
+  [354] pusharglist 2 ........................... <objects, n>
+  [356] objcall 43 .............................. <objects[n]>
+  [359] setlocal 48 ............................. tmpObj = objects[n]
+  [361] getlocal 48 ............................. <tmpObj>
+  [363] getprop 729 ............................. <keyProp>
+  [366] pusharglist 2 ........................... <tmpObj, keyProp>
+  [368] objcall 185 ............................. <tmpObj.getaProp(keyProp)>
+  [371] jmpifz [390] ............................ if tmpObj.getaProp(keyProp) then
+  [374] getlocal 48 ............................. <tmpObj>
+  [376] pushsymb 746 ............................ <#up>
+  [379] getlocal 32 ............................. <tmpKey>
+  [381] pusharglist 3 ........................... <tmpObj, #up, tmpKey>
+  [383] objcall 389 ............................. <tmpObj.key(#up, tmpKey)>
+  [386] jmpifz [390] ............................ if tmpObj.key(#up, tmpKey) then
+  [389] ret ..................................... exit
+  [390] pushint8 -1
+  [393] getlocal 40
+  [395] add
+  [396] setlocal 40
+  [398] endrepeat [340]
+  [401] pushint8 1
+  [403] add
+  [404] endrepeat [311]
+  [407] pop 3
+  [409] ret
+end
+
+on forceKeyDown me, argID, argIsTRUE
+  [  0] getparam 16 ............................. <argIsTRUE>
+  [  2] jmpifz [ 33] ............................ if argIsTRUE then / else
+  [  5] getprop 732 ............................. <forceKeysDown>
+  [  8] getparam 8 .............................. <argID>
+  [ 10] pusharglist 2 ........................... <forceKeysDown, argID>
+  [ 12] objcall 229 ............................. <forceKeysDown.getPos(argID)>
+  [ 15] pushzero ................................ <0>
+  [ 16] eq ...................................... <forceKeysDown.getPos(argID) = 0>
+  [ 17] jmpifz [ 30] ............................ if forceKeysDown.getPos(argID) = 0 then
+  [ 20] getprop 732 ............................. <forceKeysDown>
+  [ 23] getparam 8 .............................. <argID>
+  [ 25] pusharglistnoret 2 ...................... <forceKeysDown, argID>
+  [ 27] objcall 115 ............................. forceKeysDown.add(argID)
+  [ 30] jmp [ 43]
+  [ 33] getprop 732 ............................. <forceKeysDown>
+  [ 36] getparam 8 .............................. <argID>
+  [ 38] pusharglistnoret 2 ...................... <forceKeysDown, argID>
+  [ 40] objcall 143 ............................. forceKeysDown.deleteOne(argID)
+  [ 43] ret
+end
+
+on checkPressed me
+  [  0] getprop 733 ............................. <gotXtra>
+  [  3] jmpifz [ 19] ............................ if gotXtra then / else
+  [  6] pusharglist 0 ........................... <>
+  [  8] extcall 751 ............................. <bgAllKeys()>
+  [ 11] pusharglistnoret 1 ...................... <bgAllKeys()>
+  [ 13] extcall 96 .............................. return bgAllKeys()
+  [ 16] jmp [ 95]
+  [ 19] pusharglist 0 ........................... <[]>
+  [ 21] pushlist ................................ <[]>
+  [ 22] setlocal 0 .............................. tmpList = []
+  [ 24] getprop 723 ............................. <objects>
+  [ 27] peek 0
+  [ 29] pusharglist 1
+  [ 31] extcall 111
+  [ 34] pushint8 1
+  [ 36] peek 0
+  [ 38] peek 2
+  [ 40] lteq
+  [ 41] jmpifz [ 86] ............................ repeat with tmpObj in objects
+  [ 44] peek 2
+  [ 46] peek 1
+  [ 48] pusharglist 2
+  [ 50] extcall 43
+  [ 53] setlocal 8
+  [ 55] getlocal 8 .............................. <tmpObj>
+  [ 57] getobjprop 740 .......................... <tmpObj.keyCode>
+  [ 60] pusharglist 1 ........................... <tmpObj.keyCode>
+  [ 62] extcall 752 ............................. <keyPressed(tmpObj.keyCode)>
+  [ 65] jmpifz [ 80] ............................ if keyPressed(tmpObj.keyCode) then
+  [ 68] getlocal 0 .............................. <tmpList>
+  [ 70] getlocal 8 .............................. <tmpObj>
+  [ 72] getobjprop 753 .......................... <tmpObj.pollCode>
+  [ 75] pusharglistnoret 2 ...................... <tmpList, tmpObj.pollCode>
+  [ 77] objcall 115 ............................. tmpList.add(tmpObj.pollCode)
+  [ 80] pushint8 1
+  [ 82] add
+  [ 83] endrepeat [ 36]
+  [ 86] pop 3
+  [ 88] getlocal 0 .............................. <tmpList>
+  [ 90] pusharglistnoret 1 ...................... <tmpList>
+  [ 92] extcall 96 .............................. return tmpList
+  [ 95] ret
+end

@@ -1,0 +1,157 @@
+property m_context, m_keyObj, m_editor, m_currentFocus, m_compiledPropList
+global gRock
+
+on new me
+  m_context = 0
+  m_currentFocus = [:]
+  m_keyObj = script("KeyObject").new(me, "q", [#prio: 10])
+  return me
+end
+
+on kill me
+  if objectp(m_keyObj) then
+    m_keyObj = m_keyObj.kill()
+  end if
+  if objectp(m_editor) then
+    m_editor = m_editor.kill()
+  end if
+  return 0
+end
+
+on key me, argObj, argWhat, argWhich
+  if argWhat = #down then
+    if not (the shiftDown) then
+      exit
+    end if
+    if objectp(m_editor) then
+      m_editor = m_editor.kill()
+    else
+      m_editor = script("PropertyEditDlgScript").new(me, m_compiledPropList)
+    end if
+  end if
+end
+
+on Report me, argObj, argWhat
+  if m_editor = argObj then
+    if argWhat = #close then
+      if objectp(m_editor) then
+        m_editor = m_editor.kill()
+      end if
+    end if
+  end if
+end
+
+on setFocus me, argProp, argObj, argUpdateCurrentContext
+  m_currentFocus.setaProp(argProp, argObj)
+  if (argProp = #RealMusician) or (argProp = #Reporter) or (argProp = #Musician) then
+    m_currentFocus.setaProp(#Human, argObj)
+  else
+    if (argProp = #media) or (argProp = #Live) or (argProp = #Record) or (argProp = #Gangsta) then
+      m_currentFocus.setaProp(#place, argObj)
+    end if
+  end if
+  if argUpdateCurrentContext = 1 then
+    me.setContext()
+  end if
+end
+
+on getFocus me, argProp
+  return m_currentFocus.getaProp(argProp)
+end
+
+on hideEditor me
+  if objectp(m_editor) then
+    m_editor = m_editor.kill()
+  end if
+end
+
+on setContext me, argContext
+  if voidp(argContext) then
+    if not symbolp(m_context) then
+      exit
+    end if
+    argContext = m_context
+  end if
+  m_context = argContext
+  tmp = [#RealMusician, #Rehearsal01Choose, #Rehearsal01Artist]
+  if tmp.getPos(m_context) then
+    m_context = tmp[1]
+  end if
+  tmp = [#City: ["ÛCPlayer.Money.val", "Money", "ÛCBand.MusicStyle", "Music", "ÛCAlbum.sales", "Sales"], #Publish: ["ÛCAlbum.MusicStyle.pop", "Album-pop", "ÛCAlbum.MusicStyle.rock", "Album-rock", "ÛCAlbum.MusicStyle.metal", "Album-metal", "ÛCAlbum.SongType.Hit", "Album-Hit", "ÛCAlbum.SongType.Alternative", "Album-Alternative", "ÛCSong.StyleMix.pop", "Song-pop", "ÛCSong.StyleMix.rock", "Song-rock", "ÛCSong.StyleMix.metal", "Song-metal", "ÛCSong.Quality", "Song-Quality", "ÛCSong.SongType.Hit", "Song-Hit", "ÛCSong.SongType.Alternative", "Song-Alternative"], #Rehearsal01: ["ÛCBand.Members", "Band-members", "ÛCBand.ImageStyle.pop", "Image-pop", "ÛCBand.ImageStyle.rock", "Image-rock", "ÛCBand.ImageStyle.metal", "Image-metal", "ÛCBand.MusicStyle.pop", "Music-pop", "ÛCBand.MusicStyle.rock", "Music-rock", "ÛCBand.MusicStyle.metal", "Music-metal", "ÛCBand.StyleMix.pop", "Mix-pop", "ÛCBand.StyleMix.rock", "Mix-rock", "ÛCBand.StyleMix.metal", "Mix-metal"], #RealMusician: ["ÛCRealMusician.MusicStyle.pop", "Music-pop", "ÛCRealMusician.MusicStyle.rock", "Music-rock", "ÛCRealMusician.MusicStyle.metal", "Music-metal", "ÛCRealMusician.mood.current", "Mood", "ÛCRealMusician.health.current", "Health", "ÛCRealMusician.patience.current", "patience"], #Mixer: ["ÛCAlbum.MusicStyle.pop", "Album-pop", "ÛCAlbum.MusicStyle.rock", "Album-rock", "ÛCAlbum.MusicStyle.metal", "Album-metal", "ÛCAlbum.Quality", "Album-Quality", "ÛCSong.StyleMix.pop", "Song-pop", "ÛCSong.StyleMix.rock", "Song-pop", "ÛCSong.StyleMix.metal", "Song-pop", "ÛCSong.Quality", "Song-Quality", "ÛCSong.Songtype.hit", "Song-hit", "ÛCSong.Songtype.alternative", "Song-alternative"], #Live: ["ÛCPlace.PreferredPriceModel.basePrice", "BasePrice", "ÛCPlace.PreferredPriceModel.unitPrice", "unitPrice", "ÛCPlace.PreferredPriceModel.royalty", "royalty"]]
+  if not voidp(m_context) then
+    props = tmp[m_context]
+  end if
+  if voidp(props) then
+    props = ["ÛCRealMusician.mood", "Musician-mood", "ÛCPlace.name", "Place-Name"]
+  end if
+  m_compiledPropList = [:]
+  the itemDelimiter = "."
+  repeat with n = 1 to props.count
+    tmpStr = props[n]
+    obj = VOID
+    prop = VOID
+    repeat with itemNr = 1 to the number of items in tmpStr
+      tmpItem = tmpStr.item[itemNr]
+      if tmpItem.char[1] = "#" then
+        obj = gRock.m_classManager.getObjByID(value(tmpItem))
+        next repeat
+      end if
+      if tmpItem.char[1] = "Û" then
+        if tmpItem.char[2] = "C" then
+          tmp = tmpItem.char[3..tmpItem.length]
+          obj = m_currentFocus[symbol(tmp)]
+          if not objectp(obj) then
+            exit repeat
+          end if
+        end if
+        next repeat
+      end if
+      tmpItem = symbol(tmpItem)
+      if not voidp(prop) then
+        obj = gRock.m_classManager.getAncestorWithVariable(obj, prop)
+        if objectp(obj) then
+          obj = obj.getaProp(prop)
+        end if
+      end if
+      prop = tmpItem
+    end repeat
+    if objectp(obj) then
+      varInfo = gRock.m_classManager.getVarInfo(obj.className, prop)
+      obj = gRock.m_classManager.getAncestorWithVariable(obj, prop)
+      if objectp(obj) then
+        m_compiledPropList.addProp(prop, [#comment: props[n + 1], #format: varInfo[1], #default: obj.getaProp(prop), #object: obj, #propName: prop])
+      else
+        pott("no obj!")
+      end if
+    else
+    end if
+    n = n + 1
+  end repeat
+  if objectp(m_editor) then
+    m_editor = m_editor.kill()
+    m_editor = script("PropertyEditDlgScript").new(me, m_compiledPropList)
+  end if
+end
+
+on save me
+  tmpList = [:]
+  repeat with n = 1 to m_currentFocus.count()
+    obj = m_currentFocus[n]
+    if objectp(obj) then
+      if symbolp(obj.getaProp(#className)) then
+        tmpList.setaProp(m_currentFocus.getPropAt(n), obj.ID)
+      end if
+    end if
+  end repeat
+  return tmpList
+end
+
+on load me, argList
+  if not listp(argList) then
+    argList = [:]
+  end if
+  m_currentFocus = [:]
+  repeat with n = 1 to argList.count()
+    m_currentFocus.setaProp(argList.getPropAt(n), gRock.m_classManager.getObjByID(argList[n]))
+  end repeat
+end

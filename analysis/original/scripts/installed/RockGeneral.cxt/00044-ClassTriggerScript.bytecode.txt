@@ -1,0 +1,371 @@
+property ancestor, child, className, belongsTo, _killed, ID, Active, ReactToMsgStr, ExecuteThis, ReactToMsgParsed, ExecuteThisParsed, TriggerActivateDate, useTimer, initedAlready
+global gRock
+
+on new me, argChild, argBelongsTo
+  [  0] getparam 8 .............................. <argChild>
+  [  2] pusharglist 1 ........................... <argChild>
+  [  4] extcall 8 ............................... <objectp(argChild)>
+  [  6] jmpifz [ 17] ............................ if objectp(argChild) then / else
+  [  9] getparam 8 .............................. <argChild>
+  [ 11] setprop 496 ............................. child = argChild
+  [ 14] jmp [ 22]
+  [ 17] getparam 0 .............................. <me>
+  [ 19] setprop 496 ............................. child = me
+  [ 22] getparam 16 ............................. <argBelongsTo>
+  [ 24] setprop 208 ............................. belongsTo = argBelongsTo
+  [ 27] pushsymb 204 ............................ <#Trigger>
+  [ 30] setprop 224 ............................. className = #Trigger
+  [ 33] pushsymb 268 ............................ <#none>
+  [ 36] setprop 154 ............................. ID = #none
+  [ 39] pushzero ................................ <0>
+  [ 40] setprop 587 ............................. Active = 0
+  [ 43] pushcons 0 .............................. <EMPTY>
+  [ 45] setprop 1395 ............................ ReactToMsgStr = EMPTY
+  [ 48] pushcons 8 .............................. <EMPTY>
+  [ 50] setprop 565 ............................. ExecuteThis = EMPTY
+  [ 53] pusharglist 0 ........................... <[]>
+  [ 55] pushlist ................................ <[]>
+  [ 56] setprop 1396 ............................ ReactToMsgParsed = []
+  [ 59] pusharglist 0 ........................... <[]>
+  [ 61] pushlist ................................ <[]>
+  [ 62] setprop 1397 ............................ ExecuteThisParsed = []
+  [ 65] pushzero ................................ <0>
+  [ 66] setprop 1398 ............................ TriggerActivateDate = 0
+  [ 69] pushzero ................................ <0>
+  [ 70] setprop 1399 ............................ useTimer = 0
+  [ 73] pushzero ................................ <0>
+  [ 74] setprop 1400 ............................ initedAlready = 0
+  [ 77] getparam 0 .............................. <me>
+  [ 79] pusharglistnoret 1 ...................... <me>
+  [ 81] extcall 69 .............................. return me
+  [ 84] ret
+end
+
+on kill me
+  [  0] pushint8 1 .............................. <1>
+  [  3] setprop 506 ............................. _killed = 1
+  [  6] getglobal 23 ............................ <gRock>
+  [  8] pusharglist 1 ........................... <gRock>
+  [ 10] extcall 8 ............................... <objectp(gRock)>
+  [ 12] jmpifz [ 39] ............................ if objectp(gRock) then
+  [ 15] getglobal 23 ............................ <gRock>
+  [ 17] getobjprop 77 ........................... <gRock.m_msgManager>
+  [ 20] getparam 0 .............................. <me>
+  [ 22] pusharglistnoret 2 ...................... <gRock.m_msgManager, me>
+  [ 24] objcall 280 ............................. gRock.m_msgManager.deleteObject(me)
+  [ 27] getglobal 23 ............................ <gRock>
+  [ 29] getobjprop 64 ........................... <gRock.m_gameTimer>
+  [ 32] getparam 0 .............................. <me>
+  [ 34] pusharglistnoret 2 ...................... <gRock.m_gameTimer, me>
+  [ 36] objcall 280 ............................. gRock.m_gameTimer.deleteObject(me)
+  [ 39] getprop 347 ............................. <ancestor>
+  [ 42] pusharglist 1 ........................... <ancestor>
+  [ 44] extcall 8 ............................... <objectp(ancestor)>
+  [ 46] jmpifz [ 59] ............................ if objectp(ancestor) then
+  [ 49] getprop 347 ............................. <ancestor>
+  [ 52] pusharglist 1 ........................... <ancestor>
+  [ 54] objcall 31 .............................. <ancestor.kill()>
+  [ 56] setprop 347 ............................. ancestor = ancestor.kill()
+  [ 59] pushzero ................................ <0>
+  [ 60] setprop 496 ............................. child = 0
+  [ 63] pushzero ................................ <0>
+  [ 64] setprop 208 ............................. belongsTo = 0
+  [ 67] pushzero ................................ <0>
+  [ 68] pusharglistnoret 1 ...................... <0>
+  [ 70] extcall 69 .............................. return 0
+  [ 73] ret
+end
+
+on init me
+  [  0] getprop 1400 ............................ <initedAlready>
+  [  3] jmpifz [  7] ............................ if initedAlready then
+  [  6] ret ..................................... exit
+  [  7] pushint8 1 .............................. <1>
+  [ 10] setprop 1400 ............................ initedAlready = 1
+  [ 13] getprop 587 ............................. <Active>
+  [ 16] jmpifz [ 36] ............................ if Active then
+  [ 19] pushzero ................................ <0>
+  [ 20] setprop 587 ............................. Active = 0
+  [ 23] getparam 0 .............................. <me>
+  [ 25] pushint8 1 .............................. <1>
+  [ 28] pushsymb 1401 ........................... <#Loading>
+  [ 31] pusharglistnoret 3 ...................... <me, 1, #Loading>
+  [ 33] objcall 169 ............................. me.activate(1, #Loading)
+  [ 36] ret
+end
+
+on IsActiveDuringTour me
+  [  0] pushcons 16 ............................. <"ActiveDuringTour=1">
+  [  2] getprop 565 ............................. <ExecuteThis>
+  [  5] pusharglist 2 ........................... <"ActiveDuringTour=1", ExecuteThis>
+  [  7] extcall 384 ............................. <offset("ActiveDuringTour=1", ExecuteThis)>
+  [ 10] jmpifz [ 21] ............................ if offset("ActiveDuringTour=1", ExecuteThis) then
+  [ 13] pushint8 1 .............................. <1>
+  [ 16] pusharglistnoret 1 ...................... <1>
+  [ 18] extcall 69 .............................. return 1
+  [ 21] pushzero ................................ <0>
+  [ 22] pusharglistnoret 1 ...................... <0>
+  [ 24] extcall 69 .............................. return 0
+  [ 27] ret
+end
+
+on activate me, argIsTRUE, argSpecial
+  [  0] getparam 8 .............................. <argIsTRUE>
+  [  2] pushint8 1 .............................. <1>
+  [  5] eq ...................................... <argIsTRUE = 1>
+  [  6] getparam 8 .............................. <argIsTRUE>
+  [  8] pusharglist 1 ........................... <argIsTRUE>
+  [ 10] extcall 61 .............................. <voidp(argIsTRUE)>
+  [ 13] or ...................................... <(argIsTRUE = 1) or voidp(argIsTRUE)>
+  [ 14] jmpifz [337] ............................ if (argIsTRUE = 1) or voidp(argIsTRUE) then / else
+  [ 17] getprop 587 ............................. <Active>
+  [ 20] pushint8 1 .............................. <1>
+  [ 23] eq ...................................... <Active = 1>
+  [ 24] jmpifz [ 28] ............................ if Active = 1 then
+  [ 27] ret ..................................... exit
+  [ 28] getprop 1395 ............................ <ReactToMsgStr>
+  [ 31] setlocal 0 .............................. tmpStr = ReactToMsgStr
+  [ 33] pushcons 24 ............................. <"timer">
+  [ 35] getlocal 0 .............................. <tmpStr>
+  [ 37] pusharglist 2 ........................... <"timer", tmpStr>
+  [ 39] extcall 384 ............................. <offset("timer", tmpStr)>
+  [ 42] setlocal 8 .............................. tmpOff = offset("timer", tmpStr)
+  [ 44] getlocal 8 .............................. <tmpOff>
+  [ 46] jmpifz [149] ............................ if tmpOff then
+  [ 49] getlocal 8 .............................. <tmpOff>
+  [ 51] pushint8 2 .............................. <2>
+  [ 54] lteq .................................... <tmpOff <= 2>
+  [ 55] getlocal 0 .............................. <tmpStr>
+  [ 57] pushsymb 138 ............................ <#char>
+  [ 60] getlocal 8 .............................. <tmpOff>
+  [ 62] pushint8 1 .............................. <1>
+  [ 65] sub ..................................... <tmpOff - 1>
+  [ 66] pusharglist 3 ........................... <tmpStr, #char, tmpOff - 1>
+  [ 68] objcall 113 ............................. <tmpStr.char[tmpOff - 1]>
+  [ 71] pushcons 32 ............................. <"=">
+  [ 73] eq ...................................... <tmpStr.char[tmpOff - 1] = "=">
+  [ 74] or ...................................... <(tmpOff <= 2) or (tmpStr.char[tmpOff - 1] = "=")>
+  [ 75] getlocal 0 .............................. <tmpStr>
+  [ 77] pushsymb 138 ............................ <#char>
+  [ 80] getlocal 8 .............................. <tmpOff>
+  [ 82] pushint8 1 .............................. <1>
+  [ 85] sub ..................................... <tmpOff - 1>
+  [ 86] pusharglist 3 ........................... <tmpStr, #char, tmpOff - 1>
+  [ 88] objcall 113 ............................. <tmpStr.char[tmpOff - 1]>
+  [ 91] pushcons 40 ............................. <" ">
+  [ 93] eq ...................................... <tmpStr.char[tmpOff - 1] = " ">
+  [ 94] or ...................................... <(tmpOff <= 2) or (tmpStr.char[tmpOff - 1] = "=") or (tmpStr.char[tmpOff - 1] = " ")>
+  [ 95] jmpifz [149] ............................ if (tmpOff <= 2) or (tmpStr.char[tmpOff - 1] = "=") or (tmpStr.char[tmpOff - 1] = " ") then
+  [ 98] pushint8 1 .............................. <1>
+  [101] setprop 1399 ............................ useTimer = 1
+  [104] pushcons 48 ............................. <";">
+  [106] getlocal 0 .............................. <tmpStr>
+  [108] pusharglist 2 ........................... <";", tmpStr>
+  [110] extcall 384 ............................. <offset(";", tmpStr)>
+  [113] setlocal 8 .............................. tmpOff = offset(";", tmpStr)
+  [115] getlocal 8 .............................. <tmpOff>
+  [117] not ..................................... <not tmpOff>
+  [118] jmpifz [128] ............................ if not tmpOff then
+  [121] getlocal 0 .............................. <tmpStr>
+  [123] getobjprop 135 .......................... <tmpStr.length>
+  [126] setlocal 8 .............................. tmpOff = tmpStr.length
+  [128] pushzero ................................ <0>
+  [129] pushchunkvarref 5 ....................... <tmpStr>
+  [131] pushsymb 138 ............................ <#char>
+  [134] pushint8 1 .............................. <1>
+  [137] getlocal 8 .............................. <tmpOff>
+  [139] pusharglist 4 ........................... <tmpStr, #char, 1, tmpOff>
+  [141] objcall 416 ............................. <tmpStr.char[1..tmpOff]>
+  [144] pusharglistnoret 1 ...................... <tmpStr.char[1..tmpOff]>
+  [146] objcall 417 ............................. delete tmpStr.char[1..tmpOff]
+  [149] getlocal 0 .............................. <tmpStr>
+  [151] getobjprop 135 .......................... <tmpStr.length>
+  [154] pushint8 1 .............................. <1>
+  [157] gt ...................................... <tmpStr.length > 1>
+  [158] jmpifz [176] ............................ if tmpStr.length > 1 then
+  [161] getglobal 23 ............................ <gRock>
+  [163] getobjprop 75 ........................... <gRock.m_executor>
+  [166] getlocal 0 .............................. <tmpStr>
+  [168] pusharglist 2 ........................... <gRock.m_executor, tmpStr>
+  [170] objcall 1402 ............................ <gRock.m_executor.rParse(tmpStr)>
+  [173] setprop 1396 ............................ ReactToMsgParsed = gRock.m_executor.rParse(tmpStr)
+  [176] getparam 16 ............................. <argSpecial>
+  [178] pushsymb 1401 ........................... <#Loading>
+  [181] nteq .................................... <argSpecial <> #Loading>
+  [182] jmpifz [223] ............................ if argSpecial <> #Loading then
+  [185] getglobal 23 ............................ <gRock>
+  [187] getobjprop 79 ........................... <gRock.m_context>
+  [190] pushsymb 66 ............................. <#Game>
+  [193] pusharglist 2 ........................... <gRock.m_context, #Game>
+  [195] objcall 146 ............................. <gRock.m_context.getFocus(#Game)>
+  [198] setlocal 16 ............................. game_r = gRock.m_context.getFocus(#Game)
+  [200] getlocal 16 ............................. <game_r>
+  [202] getparam 0 .............................. <me>
+  [204] getobjprop 154 .......................... <me.ID>
+  [207] pusharglist 2 ........................... <game_r, me.ID>
+  [209] objcall 1403 ............................ <game_r.getIsDiscarded(me.ID)>
+  [212] jmpifz [223] ............................ if game_r.getIsDiscarded(me.ID) then
+  [215] pushcons 56 ............................. <"Can't use again!">
+  [217] pusharglistnoret 1 ...................... <"Can't use again!">
+  [219] extcall 122 ............................. pott("Can't use again!")
+  [222] ret ..................................... exit
+  [223] getprop 1400 ............................ <initedAlready>
+  [226] not ..................................... <not initedAlready>
+  [227] jmpifz [236] ............................ if not initedAlready then
+  [230] getparam 0 .............................. <me>
+  [232] pusharglistnoret 1 ...................... <me>
+  [234] objcall 19 .............................. me.init()
+  [236] pushint8 1 .............................. <1>
+  [239] setprop 587 ............................. Active = 1
+  [242] getprop 1399 ............................ <useTimer>
+  [245] jmpifz [260] ............................ if useTimer then
+  [248] getglobal 23 ............................ <gRock>
+  [250] getobjprop 64 ........................... <gRock.m_gameTimer>
+  [253] getparam 0 .............................. <me>
+  [255] pusharglistnoret 2 ...................... <gRock.m_gameTimer, me>
+  [257] objcall 282 ............................. gRock.m_gameTimer.addObject(me)
+  [260] getprop 1396 ............................ <ReactToMsgParsed>
+  [263] getobjprop 156 .......................... <ReactToMsgParsed.count>
+  [266] jmpifz [281] ............................ if ReactToMsgParsed.count then
+  [269] getglobal 23 ............................ <gRock>
+  [271] getobjprop 77 ........................... <gRock.m_msgManager>
+  [274] getparam 0 .............................. <me>
+  [276] pusharglistnoret 2 ...................... <gRock.m_msgManager, me>
+  [278] objcall 282 ............................. gRock.m_msgManager.addObject(me)
+  [281] getglobal 23 ............................ <gRock>
+  [283] getobjprop 75 ........................... <gRock.m_executor>
+  [286] getprop 565 ............................. <ExecuteThis>
+  [289] getobjprop 116 .......................... <ExecuteThis.value>
+  [292] pusharglist 2 ........................... <gRock.m_executor, ExecuteThis.value>
+  [294] objcall 1404 ............................ <gRock.m_executor.preParseActionList(ExecuteThis.value)>
+  [297] setprop 1397 ............................ ExecuteThisParsed = gRock.m_executor.preParseActionList(ExecuteThis.value)
+  [300] getparam 16 ............................. <argSpecial>
+  [302] pushsymb 1401 ........................... <#Loading>
+  [305] nteq .................................... <argSpecial <> #Loading>
+  [306] jmpifz [334] ............................ if argSpecial <> #Loading then
+  [309] getglobal 23 ............................ <gRock>
+  [311] getobjprop 76 ........................... <gRock.m_date>
+  [314] pusharglist 1 ........................... <gRock.m_date>
+  [316] objcall 220 ............................. <gRock.m_date.getDateInt()>
+  [319] setprop 1398 ............................ TriggerActivateDate = gRock.m_date.getDateInt()
+  [322] getparam 0 .............................. <me>
+  [324] pushsymb 1405 ........................... <#WasActivated>
+  [327] getparam 0 .............................. <me>
+  [329] pusharglistnoret 3 ...................... <me, #WasActivated, me>
+  [331] objcall 621 ............................. me.msg(#WasActivated, me)
+  [334] jmp [375]
+  [337] pusharglist 0 ........................... <[]>
+  [339] pushlist ................................ <[]>
+  [340] setprop 1397 ............................ ExecuteThisParsed = []
+  [343] pushzero ................................ <0>
+  [344] setprop 1398 ............................ TriggerActivateDate = 0
+  [347] pushzero ................................ <0>
+  [348] setprop 587 ............................. Active = 0
+  [351] getglobal 23 ............................ <gRock>
+  [353] getobjprop 77 ........................... <gRock.m_msgManager>
+  [356] getparam 0 .............................. <me>
+  [358] pusharglistnoret 2 ...................... <gRock.m_msgManager, me>
+  [360] objcall 280 ............................. gRock.m_msgManager.deleteObject(me)
+  [363] getglobal 23 ............................ <gRock>
+  [365] getobjprop 64 ........................... <gRock.m_gameTimer>
+  [368] getparam 0 .............................. <me>
+  [370] pusharglistnoret 2 ...................... <gRock.m_gameTimer, me>
+  [372] objcall 280 ............................. gRock.m_gameTimer.deleteObject(me)
+  [375] ret
+end
+
+on msg me, argWhat, argOptions, argOption2
+  [  0] getprop 587 ............................. <Active>
+  [  3] pushzero ................................ <0>
+  [  4] eq ...................................... <Active = 0>
+  [  5] jmpifz [  9] ............................ if Active = 0 then
+  [  8] ret ..................................... exit
+  [  9] pushint8 1 .............................. <1>
+  [ 12] setlocal 0 .............................. tmpOK = 1
+  [ 14] getprop 1396 ............................ <ReactToMsgParsed>
+  [ 17] getobjprop 156 .......................... <ReactToMsgParsed.count>
+  [ 20] pushzero ................................ <0>
+  [ 21] gt ...................................... <ReactToMsgParsed.count > 0>
+  [ 22] jmpifz [ 82] ............................ if ReactToMsgParsed.count > 0 then
+  [ 25] getprop 1396 ............................ <ReactToMsgParsed>
+  [ 28] pushsymb 1408 ........................... <#what>
+  [ 31] getparam 8 .............................. <argWhat>
+  [ 33] pushsymb 1409 ........................... <#option>
+  [ 36] getparam 16 ............................. <argOptions>
+  [ 38] pushsymb 1410 ........................... <#Option2>
+  [ 41] getparam 24 ............................. <argOption2>
+  [ 43] pusharglist 6 ........................... <[#what: argWhat, #option: argOptions, #Option2: argOption2]>
+  [ 45] pushproplist ............................ <[#what: argWhat, #option: argOptions, #Option2: argOption2]>
+  [ 46] pusharglist 2 ........................... <ReactToMsgParsed, [#what: argWhat, #option: argOptions, #Option2: argOption2]>
+  [ 48] extcall 1407 ............................ <rCalc(ReactToMsgParsed, [#what: argWhat, #option: argOptions, #Option2: argOption2])>
+  [ 51] setlocal 0 .............................. tmpOK = rCalc(ReactToMsgParsed, [#what: argWhat, #option: argOptions, #Option2: argOption2])
+  [ 53] getlocal 0 .............................. <tmpOK>
+  [ 55] pusharglist 1 ........................... <tmpOK>
+  [ 57] extcall 1044 ............................ <integerp(tmpOK)>
+  [ 60] not ..................................... <not integerp(tmpOK)>
+  [ 61] jmpifz [ 82] ............................ if not integerp(tmpOK) then
+  [ 64] pushcons 64 ............................. <"Err calc!">
+  [ 66] getprop 1395 ............................ <ReactToMsgStr>
+  [ 69] getlocal 0 .............................. <tmpOK>
+  [ 71] getprop 154 ............................. <ID>
+  [ 74] pusharglistnoret 4 ...................... <"Err calc!", ReactToMsgStr, tmpOK, ID>
+  [ 76] extcall 122 ............................. pott("Err calc!", ReactToMsgStr, tmpOK, ID)
+  [ 79] pushzero ................................ <0>
+  [ 80] setlocal 0 .............................. tmpOK = 0
+  [ 82] getlocal 0 .............................. <tmpOK>
+  [ 84] jmpifz [110] ............................ if tmpOK then / else
+  [ 87] getparam 0 .............................. <me>
+  [ 89] pushsymb 1409 ........................... <#option>
+  [ 92] getparam 16 ............................. <argOptions>
+  [ 94] pushsymb 1410 ........................... <#Option2>
+  [ 97] getparam 24 ............................. <argOption2>
+  [ 99] pusharglist 4 ........................... <[#option: argOptions, #Option2: argOption2]>
+  [101] pushproplist ............................ <[#option: argOptions, #Option2: argOption2]>
+  [102] pusharglistnoret 2 ...................... <me, [#option: argOptions, #Option2: argOption2]>
+  [104] objcall 1394 ............................ me.act([#option: argOptions, #Option2: argOption2])
+  [107] jmp [110]
+  [110] ret
+end
+
+on timeTick me
+  [  0] getprop 587 ............................. <Active>
+  [  3] pushzero ................................ <0>
+  [  4] eq ...................................... <Active = 0>
+  [  5] jmpifz [  9] ............................ if Active = 0 then
+  [  8] ret ..................................... exit
+  [  9] getparam 0 .............................. <me>
+  [ 11] pusharglistnoret 1 ...................... <me>
+  [ 13] objcall 1394 ............................ me.act()
+  [ 16] ret
+end
+
+on act me, argOptions
+  [  0] getparam 8 .............................. <argOptions>
+  [  2] pusharglist 1 ........................... <argOptions>
+  [  4] extcall 61 .............................. <voidp(argOptions)>
+  [  7] jmpifz [ 15] ............................ if voidp(argOptions) then
+  [ 10] pusharglist 0 ........................... <[:]>
+  [ 12] pushproplist ............................ <[:]>
+  [ 13] setparam 8 .............................. argOptions = [:]
+  [ 15] getglobal 23 ............................ <gRock>
+  [ 17] getobjprop 75 ........................... <gRock.m_executor>
+  [ 20] getprop 1397 ............................ <ExecuteThisParsed>
+  [ 23] pushsymb 1409 ........................... <#option>
+  [ 26] getparam 8 .............................. <argOptions>
+  [ 28] pushsymb 1409 ........................... <#option>
+  [ 31] pusharglist 2 ........................... <argOptions, #option>
+  [ 33] objcall 119 ............................. <argOptions[#option]>
+  [ 36] pushsymb 1410 ........................... <#Option2>
+  [ 39] getparam 8 .............................. <argOptions>
+  [ 41] pushsymb 1410 ........................... <#Option2>
+  [ 44] pusharglist 2 ........................... <argOptions, #Option2>
+  [ 46] objcall 119 ............................. <argOptions[#Option2]>
+  [ 49] pushsymb 1398 ........................... <#TriggerActivateDate>
+  [ 52] getprop 1398 ............................ <TriggerActivateDate>
+  [ 55] pusharglist 6 ........................... <[#option: argOptions[#option], #Option2: argOptions[#Option2], #TriggerActivateDate: TriggerActivateDate]>
+  [ 57] pushproplist ............................ <[#option: argOptions[#option], #Option2: argOptions[#Option2], #TriggerActivateDate: TriggerActivateDate]>
+  [ 58] getparam 0 .............................. <me>
+  [ 60] pusharglistnoret 4 ...................... <gRock.m_executor, ExecuteThisParsed, [#option: argOptions[#option], #Option2: argOptions[#Option2], #TriggerActivateDate: TriggerActivateDate], me>
+  [ 62] objcall 1414 ............................ gRock.m_executor.executePreParsedActionList(ExecuteThisParsed, [#option: argOptions[#option], #Option2: argOptions[#Option2], #TriggerActivateDate: TriggerActivateDate], me)
+  [ 65] ret
+end

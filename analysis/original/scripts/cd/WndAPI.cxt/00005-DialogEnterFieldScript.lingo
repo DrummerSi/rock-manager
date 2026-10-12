@@ -1,0 +1,379 @@
+property ancestor, child, type, fieldName, editData, isEditingField, editable, enterSend, fieldMember, font, fontSize, fontStyle, alignment, antialias, shrinkToFitText, keyObj, oldEditData, imageCopy, copiedImageString
+
+on new me, argMasterObj, argChild, argList
+  type = #EnterField
+  if not objectp(argChild) then
+    argChild = me
+  end if
+  child = argChild
+  ancestor = new(script("DialogAncestorScript"), argMasterObj, child, argList)
+  isEditingField = 0
+  oldEditData = VOID
+  copiedImageString = 0
+  return me
+end
+
+on init me
+  ancestor.init()
+  tmp = me.getMyProps()
+  repeat with n = 1 to tmp.count()
+    tmpProp = tmp.getPropAt(n)
+    tmpVal = ancestor.temporaryArgs.getaProp(tmpProp)
+    if not voidp(tmpVal) then
+      me.setaProp(tmpProp, ancestor.temporaryArgs.getaProp(tmpProp))
+    end if
+  end repeat
+  if voidp(ancestor.removeAlpha) then
+    ancestor.removeAlpha = 1
+  end if
+end
+
+on finalInitsBeforeCalc me
+  ancestor.finalInitsBeforeCalc()
+  ancestor.zoomFacts = [1, 1]
+  me.setOneProp(#fieldName, fieldName)
+  me.setOneProp(#editData, editData)
+  me.setOneProp(#editable, editable)
+end
+
+on kill me
+  imageCopy = 0
+  if objectp(keyObj) then
+    keyObj = keyObj.kill()
+  end if
+  ancestor = ancestor.kill()
+  child = 0
+  fieldMember = 0
+  return 0
+end
+
+on getMyProps me
+  return [#fieldName: [#comment: "Field member name", #format: #string, #default: fieldName], #editData: [#comment: "String", #format: #string, #default: editData], #editable: [#comment: "Editable", #format: #boolean, #default: editable], #enterSend: [#comment: "Enter sends data", #format: #boolean, #default: enterSend], #alignment: [#comment: "Alignment", #format: #string, #default: alignment], #font: [#comment: "Font", #format: #string, #default: font], #fontSize: [#comment: "Font size", #format: #integer, #default: fontSize], #fontStyle: [#comment: "Font style", #format: #string, #default: fontStyle], #antialias: [#comment: "Antialias", #format: #boolean, #default: antialias], #shrinkToFitText: [#comment: "Shrink member to fit", #format: #boolean, #default: shrinkToFitText]]
+end
+
+on getProps me
+  tmpList = me.getMyProps()
+  tmpList2 = ancestor.getProps()
+  repeat with n = 1 to tmpList.count()
+    tmpList2.setaProp(tmpList.getPropAt(n), tmpList[n])
+  end repeat
+  return tmpList2
+end
+
+on getEditProps me
+  tmp = [:]
+  tmp.addProp(me.type, me.getMyProps())
+  mergeLists(tmp, ancestor.getEditProps())
+  return tmp
+end
+
+on getOneProp me, argProp
+  tmpList = me.getMyProps()
+  if voidp(tmpList.getaProp(argProp)) then
+    return ancestor.getOneProp(argProp)
+  end if
+  return me.getaProp(argProp)
+end
+
+on setOneProp me, argProp, argVal
+  tmpList = me.getMyProps()
+  if voidp(tmpList.getaProp(argProp)) then
+    ancestor.setOneProp(argProp, argVal)
+  else
+    if ancestor.ImUpAndRunningAlready = 0 then
+      me.setaProp(argProp, argVal)
+      exit
+    end if
+    if argProp = #fieldName then
+      if voidp(argVal) then
+        argVal = "EnterField1"
+      end if
+      if member(argVal).number < 1 then
+        exit
+      end if
+      fieldMember = member(argVal)
+      tmpRect = fieldMember.rect
+      ancestor.setAutoSize(point(tmpRect[3], tmpRect[4]))
+    else
+      if argProp = #editData then
+        if voidp(argVal) and (ancestor.masterObj.editing = 1) then
+          argVal = "Text!"
+        end if
+        argVal = string(argVal)
+        editData = argVal
+        if editData <> copiedImageString then
+          if shrinkToFitText = 1 then
+            tmpSize = me.checkTextSize()
+            ancestor.setAutoSize(tmpSize)
+          end if
+          ancestor.masterObj.invalidateRect(ancestor.calcRect)
+          ancestor.masterObj.changed(#Rects)
+        end if
+      else
+        if argProp = #editable then
+          if voidp(argVal) then
+            argVal = 1
+          end if
+        else
+          if argProp = #fontStyle then
+            if stringp(argVal) then
+              tmpVal = value("[" & argVal & "]")
+              if not listp(tmpVal) then
+                argVal = VOID
+              else
+                argVal = tmpVal
+              end if
+            end if
+            ancestor.masterObj.invalidateRect(ancestor.calcRect)
+          else
+            if argProp = #alignment then
+              if stringp(argVal) then
+                argVal = symbol(argVal)
+                if not ((tmpVal = #left) or (tmpVal = #right) or (tmpVal = #center)) then
+                  argVal = VOID
+                end if
+              end if
+              copiedImageString = 0
+              ancestor.masterObj.invalidateRect(ancestor.calcRect)
+            else
+              copiedImageString = 0
+              ancestor.masterObj.invalidateRect(ancestor.calcRect)
+            end if
+          end if
+        end if
+      end if
+    end if
+  end if
+  me.setaProp(argProp, argVal)
+end
+
+on calcRectDone me
+  ancestor.calcRectDone()
+  if ancestor.lastCalcRect <> ancestor.calcRect then
+    ancestor.masterObj.invalidateRect(ancestor.lastCalcRect)
+    ancestor.masterObj.invalidateRect(ancestor.calcRect)
+    tmpSize = getRectSize(ancestor.calcRect)
+    ancestor.setAutoSize(tmpSize)
+  end if
+end
+
+on paint me, argDstRect
+  me.doPaste(argDstRect)
+end
+
+on setLayer me, argLayerNum, argLayerPtr
+  ancestor.setLayer(argLayerNum, argLayerPtr)
+  if ancestor.blit then
+    exit
+  end if
+  ancestor.reserveSprite()
+end
+
+on checkTextSize me
+  fieldMember.text = EMPTY
+  formatTextMember(fieldMember, [#font: font, #fontSize: fontSize, #fontStyle: fontStyle, #alignment: #left, #antialias: antialias])
+  fieldMember.width = 1000
+  fieldMember.wordWrap = 0
+  fieldMember.text = editData & " "
+  tmpSize = charPosToLoc(fieldMember, length(editData) + 1)
+  tmpSize[2] = tmpSize[2] + 1
+  fieldMember.height = tmpSize[2]
+  imageCopy = fieldMember.image.duplicate()
+  copiedImageString = editData
+  __debug(#WndOpt, "CheckTextSize")
+  return tmpSize
+end
+
+on doPaste me, argDstRect
+  if (ancestor.autoSize[1] < 1) or (ancestor.autoSize[2] < 1) then
+    exit
+  end if
+  if voidp(argDstRect) then
+    argDstRect = ancestor.calcRect
+  end if
+  tmpDstRect = ancestor.calcRect
+  tmpRects = ancestor.calcPaintRects(argDstRect, ancestor.srcCopyRect)
+  if not listp(tmpRects) then
+    exit
+  end if
+  tmpSrcRect = rect(point(0, 0), ancestor.autoSize)
+  if shrinkToFitText = 1 then
+    if copiedImageString <> editData then
+      tmpSize = me.checkTextSize()
+      fieldMember.width = tmpSize[1]
+      fieldMember.height = tmpSize[2] + 1
+      if tmpSize[2] > 400 then
+        alert("EnterField big1!")
+      end if
+      tmpSrcRect = fieldMember.rect
+      ancestor.setAutoSize(tmpSize)
+    end if
+  else
+    fieldMember.scrollTop = ancestor.scrollLocOffset[2]
+    fieldMember.text = editData
+    fieldMember.rect = tmpSrcRect
+    fieldMember.height = fieldMember.height
+    if fieldMember.height > 400 then
+      pott("EnterField big2!")
+    end if
+    formatTextMember(fieldMember, [#font: font, #fontSize: fontSize, #fontStyle: fontStyle, #alignment: alignment, #antialias: antialias])
+    imageCopy = fieldMember.image.duplicate()
+  end if
+  if not (ancestor.removeAlpha = 1) then
+    tmpSrcImg = imageCopy
+  else
+    tmpSrcImg = image(tmpSrcRect[3], tmpSrcRect[4], imageCopy.depth)
+    tmpSrcImg.copyPixels(imageCopy, tmpSrcRect, tmpSrcRect, [:])
+  end if
+  ancestor.paintThis(argDstRect, tmpSrcImg)
+end
+
+on render me, argOffsetRect
+  ancestor.render(argOffsetRect)
+  if ancestor.blit = 1 then
+    exit
+  end if
+  tmpSPNum = ancestor.getSprite()
+  if tmpSPNum then
+    sprite(tmpSPNum).member = fieldMember
+    sprite(tmpSPNum).rect = ancestor.onStageRect
+  end if
+end
+
+on getNumSprites me
+  if ancestor.blit then
+    return #Temporary
+  end if
+  return 1
+end
+
+on getEnteredData me
+  if ancestor.blit then
+    tmp = editData
+  else
+    tmp = fieldMember.text
+  end if
+  tmpFormat = ancestor.orgArgList[#format]
+  if voidp(tmpFormat) then
+    tmpFormat = #string
+  end if
+  if tmpFormat = #string then
+    return tmp
+  else
+    if tmpFormat = #symbol then
+      if tmp.char[1] = "#" then
+        return value(tmp)
+      else
+        return symbol(tmp)
+      end if
+    else
+      tmp = value(tmp)
+      tmpIlk = ilk(tmp)
+      if tmpFormat = #integer then
+        if tmpIlk <> tmpFormat then
+          return 0
+        end if
+      else
+        if tmpFormat = #float then
+          if tmpIlk = #integer then
+            return float(tmp)
+          else
+            if tmpIlk <> tmpFormat then
+              return 0.0
+            end if
+          end if
+        else
+          if tmpFormat = #list then
+            if not listp(tmp) then
+              return []
+            end if
+          end if
+        end if
+      end if
+      return tmp
+    end if
+  end if
+end
+
+on key me, argObj, argWhat, argWhich
+  if (argWhich = RETURN) and (isEditingField = 1) then
+    me.stopEditing()
+  end if
+end
+
+on stopEditing me
+  if objectp(keyObj) then
+    keyObj = keyObj.kill()
+  end if
+  if ancestor.blit = 1 then
+    if ancestor.SPid then
+      isEditingField = 0
+      fieldMember.editable = 0
+      oldEditData = editData
+      editData = fieldMember.text
+      repeat with tmpObj in ancestor.scriptInstanceList
+        if tmpObj.handler(#Report) then
+          tmpObj.Report(me, #EditField, editData)
+        end if
+      end repeat
+      ancestor.masterObj.invalidateRect(ancestor.calcRect)
+      tmpSPNum = ancestor.getSprite()
+      if tmpSPNum then
+        sprite(tmpSPNum).member = member("Dummy")
+        ancestor.returnSprite()
+      end if
+    end if
+  end if
+end
+
+on mouse me, argObj, argWhat
+  if ancestor.masterObj.editing <> 1 then
+    if editable then
+      if argWhat = #click then
+        if isEditingField = 1 then
+          exit
+        end if
+        repeat with tmpObj in ancestor.scriptInstanceList
+          if tmpObj.handler(#Report) then
+            tmpObj.Report(me, #UserStartEdit, editData)
+          end if
+        end repeat
+        isEditingField = 1
+        if not objectp(keyObj) then
+          keyObj = script("AllKeysObject").new(me, #key, [#prio: 1000])
+        end if
+        if ancestor.blit = 1 then
+          if not ancestor.SPid then
+            ancestor.reserveSprite()
+            tmpSPNum = ancestor.getSprite()
+            if tmpSPNum then
+              formatTextMember(fieldMember, [#font: font, #fontSize: fontSize, #fontStyle: fontStyle, #alignment: alignment, #antialias: antialias])
+              fieldMember.text = editData
+              sprite(tmpSPNum).member = fieldMember
+              sprite(tmpSPNum).rect = ancestor.onStageRect
+              fieldMember.editable = 1
+              fieldMember.width = ancestor.autoSize[1]
+              fieldMember.height = ancestor.autoSize[2]
+              if ancestor.autoSize[2] > 400 then
+                alert("EnterField big3!")
+              end if
+            end if
+          end if
+        end if
+      else
+        if (argWhat = #DownOnOther) and (isEditingField = 1) then
+          me.stopEditing()
+        end if
+      end if
+    else
+      if argWhat = #click then
+        tmp = the mouseLoc - point(ancestor.onStageRect[1], ancestor.onStageRect[2])
+        tmp = tmp + ancestor.scrollLocOffset
+      end if
+    end if
+  end if
+  ancestor.mouse(argObj, argWhat)
+end
+
+on scroll me
+end

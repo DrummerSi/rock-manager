@@ -1,0 +1,101 @@
+property m_delim, m_projectPath, m_exePath, m_CDPath, m_HDPath, m_foundCD, m_prefs
+
+on new me, argUniqueFilesOnCDList
+  m_delim = "\"
+  m_projectPath = the moviePath
+  m_HDPath = the moviePath
+  m_exePath = EMPTY
+  m_foundCD = 0
+  m_prefs = [:]
+  if voidp(argUniqueFilesOnCDList) then
+    argUniqueFilesOnCDList = [["Main.dir", "Main.dxr"]]
+  end if
+  if the runMode = "Author" then
+    m_CDPath = me.getCDPath(argUniqueFilesOnCDList)
+  else
+    m_projectPath = fileExtractPath(the applicationPath)
+    m_CDPath = me.getCDPath(argUniqueFilesOnCDList)
+  end if
+  return me
+end
+
+on kill me
+  return 0
+end
+
+on getCDPath me, argUniqueFilesOnCDList
+  tmp = me.findFilesInDriveRoots(argUniqueFilesOnCDList)
+  if stringp(tmp) then
+    m_foundCD = 1
+    return tmp
+  end if
+  tmp = me.findFilesOverFolder(argUniqueFilesOnCDList, the moviePath)
+  if stringp(tmp) then
+    return tmp
+  end if
+  tmp = me.findFilesInSubFolders(argUniqueFilesOnCDList, the moviePath)
+  if stringp(tmp) then
+    return tmp
+  end if
+  alert("Start file not found!")
+  return the moviePath
+end
+
+on findFilesInDriveRoots me, argFindFiles
+  repeat with n = charToNum("C") to charToNum("Z")
+    tmpCh = numToChar(n)
+    tmpDrive = tmpCh & ":\"
+    if me.checkForFilesInFolder(argFindFiles, tmpDrive) then
+      return tmpDrive
+    end if
+  end repeat
+  return 0
+end
+
+on findFilesOverFolder me, argFindFiles, argPath
+  repeat with n = argPath.length - 1 down to 3
+    tmpCh = argPath.char[n]
+    if tmpCh = m_delim then
+      tmpTestPath = argPath.char[1..n]
+      if me.checkForFilesInFolder(argFindFiles, tmpTestPath, 1) then
+        return tmpTestPath
+      end if
+    end if
+  end repeat
+  return 0
+end
+
+on findFilesInSubFolders me, argFindFiles, argPath
+  tmpFilesAndFolders = getFilesInFolder(argPath)
+  repeat with tmpFileOrFolder in tmpFilesAndFolders
+    isFolder = offset(".", tmpFileOrFolder) = 0
+    if isFolder then
+      tmpTestPath = argPath & tmpFileOrFolder & m_delim
+      if me.checkForFilesInFolder(argFindFiles, tmpTestPath) then
+        return tmpTestPath
+      end if
+    end if
+  end repeat
+  return 0
+end
+
+on checkForFilesInFolder me, argFileList, argFolder, argDebug
+  if argFolder.char[argFolder.length] <> m_delim then
+    argFolder = argFolder & m_delim
+  end if
+  repeat with sublist in argFileList
+    if listp(sublist) then
+      tmpOK = 0
+      repeat with tmpFile in sublist
+        if fileExists2(argFolder & tmpFile) then
+          tmpOK = 1
+          exit repeat
+        end if
+      end repeat
+      if tmpOK = 0 then
+        return 0
+      end if
+    end if
+  end repeat
+  return 1
+end

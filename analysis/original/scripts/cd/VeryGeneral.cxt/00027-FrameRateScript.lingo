@@ -1,0 +1,69 @@
+property ticksList, nrOfFrames, outputInterval, cnt, SP, fieldMemb, firstFrame
+
+on beginSprite me
+  if length(fieldMemb) then
+    if getMemberNum(fieldMemb) > 0 then
+      fieldMemb = member(fieldMemb)
+    end if
+  end if
+  init(me)
+end
+
+on new me, argNrOfFrames, argOutputInterval, argSP, argFieldMemb
+  outputInterval = argOutputInterval
+  cnt = 0
+  nrOfFrames = argNrOfFrames
+  SP = argSP
+  if stringp(argFieldMemb) then
+    fieldMemb = member(argFieldMemb)
+  end if
+  init(me)
+  return me
+end
+
+on init me
+  if SP then
+    firstFrame = getMemberNum("DefaultNumberPic")
+  end if
+  ticksList = []
+  tmp = the ticks
+  repeat with n = 1 to nrOfFrames
+    add(ticksList, tmp)
+  end repeat
+end
+
+on kill me
+  return 0
+end
+
+on exitFrame me
+  timeTick(me)
+end
+
+on timeTick me
+  cnt = cnt + 1
+  deleteAt(ticksList, 1)
+  tmpTicks = the ticks
+  add(ticksList, tmpTicks)
+  if cnt = outputInterval then
+    cnt = 0
+    tmpDiff = tmpTicks - getAt(ticksList, 1)
+    tmpFPS = 60 * (nrOfFrames - 1) / tmpDiff
+    if SP then
+      tmpStr = convItoS(tmpFPS, 2)
+      repeat with n = 1 to 2
+        set the member of sprite (SP + n - 1) to member(firstFrame + value(char n of tmpStr))
+      end repeat
+    else
+      if objectp(fieldMemb) then
+        fieldMemb.text = string(tmpFPS)
+      else
+        put string(tmpFPS) & " fps"
+      end if
+    end if
+  end if
+end
+
+on getPropertyDescriptionList me
+  return [#SP: [#comment: "Display with sprites: ", #format: #integer, #default: 0], #fieldMemb: [#comment: "else, use field: ", #format: #string, #default: EMPTY], #nrOfFrames: [#comment: "Frames btw samples: ", #format: #integer, #default: 10], #outputInterval: [#comment: "Update every nth frame: ", #format: #integer, #default: 5]]
+end

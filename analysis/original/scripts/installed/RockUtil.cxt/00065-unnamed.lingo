@@ -1,0 +1,110 @@
+on getCues argSoundFile
+  global gRock
+  path = gRock.m_paths.getPath(#cues)
+  cues = EMPTY
+  fileStripped = fileStripName(argSoundFile)
+  if 0 then
+    cues = readFile(path & fileStripped & ".txt")
+    if not stringp(cues) then
+      cues = EMPTY
+      pott("Txt file not found!", path & fileStripped & ".txt")
+    end if
+  else
+    Prefix = fileStripped.char[1..3]
+    tmp = "_" & Prefix & "All"
+    str = readFile(path & tmp & ".cue")
+    tmpOff = offset(fileStripped, str)
+    if tmpOff then
+      lineNr = the number of lines in str.char[1..tmpOff + 1]
+      tmpLine = str.line[lineNr]
+      tmpOff = offset("[", tmpLine)
+      cues = tmpLine.char[tmpOff..tmpLine.length]
+    end if
+  end if
+  cues = value(cues)
+  if listp(cues) then
+    return cues
+  end if
+  return []
+end
+
+on compactCueFiles argPath
+  if voidp(argPath) then
+    argPath = "D:\dok\rock\div\cues\"
+  end if
+  allFiles = getFilesInFolder(argPath)
+  allFiles = wildCardSearch("*.txt", allFiles, #Strings)
+  pott("Found files, nr: ", allFiles.count)
+  allFiles.sort()
+  file = allFiles[1]
+  lastPos = 1
+  repeat with n = 1 to 1000
+    Prefix = file.char[1..3]
+    tmp = Prefix & "zzzzzz"
+    allFiles.add(tmp)
+    Pos = allFiles.getPos(tmp)
+    allFiles.deleteAt(Pos)
+    Files = []
+    if (Pos - 1 - lastPos) > 0 then
+      repeat with m = lastPos to Pos - 1
+        Files.add(allFiles[m])
+      end repeat
+      pott("Compact " & Prefix & ". num: " & string(Pos - 1 - lastPos))
+      subCompactCueFiles(argPath, Files, "_" & Prefix & "All.cue")
+    else
+      exit repeat
+    end if
+    if Pos > allFiles.count then
+      exit repeat
+    end if
+    file = allFiles[Pos]
+    lastPos = Pos
+  end repeat
+  pott("Done")
+  tmpGreetings = ["a??aa*", "m??ma*", "g??ga*", "r??ra*"]
+  allGreetFiles = []
+  repeat with tmpGreeting in tmpGreetings
+    Files = wildCardSearch(tmpGreeting, allFiles, #Strings)
+    mergeLists(allGreetFiles, Files)
+    pott(tmpGreeting, Files.count)
+  end repeat
+  subCompactCueFiles(argPath, allGreetFiles, "_Greet.cue")
+  pott("Greetings done")
+end
+
+on subCompactCueFiles argPath, argFiles, argSaveName
+  repeat with n = 1 to argFiles.count
+    file = argFiles[n]
+    fileStripped = fileStripName(file)
+    str = readFile(argPath & file)
+    if not stringp(str) then
+      next repeat
+    end if
+    if not listp(value(str)) then
+      pott("Err in file", fileStripped, str)
+    end if
+    wholeStr = wholeStr & fileStripped & ": " & str & RETURN
+  end repeat
+  if wholeStr.length > 0 then
+    wholeStr = assertPCNewLine(wholeStr)
+    writeFile(argPath & argSaveName, wholeStr)
+  else
+    pott("None found", argSaveName)
+  end if
+end
+
+on zzcompactCueFiles
+  path = "D:\dok\rock\div\cues\"
+  allFiles = getFilesInFolder(path)
+  allFiles = wildCardSearch("*.txt", allFiles, #Strings)
+  pott("Found files, nr: ", allFiles.count)
+  actors = []
+  repeat with n = 1 to actors.count
+    Prefix = actors[n]
+    Files = wildCardSearch(Prefix & "*", allFiles, #Strings)
+    wholeStr = EMPTY
+    pott(Prefix)
+    subCompactCueFiles(path, Files, "_" & Prefix & "All.cue")
+  end repeat
+  pott("Done")
+end

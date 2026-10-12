@@ -1,0 +1,324 @@
+property ancestor, m_place_r, m_song_r, m_songNr, m_showSongIDs, m_waitingForOverDlgThenGoMixer, m_waitObj, m_animObj, m_checkingWarningNr, m_waitingToCloseDialog
+global gDir, gRock, gUseful
+
+on new me, argOptions
+  ID = argOptions[#ID]
+  m_place_r = gRock.m_classManager.getObjByIDAndClass(ID, #place)
+  argOptions.setaProp(#ReportTo, me)
+  argOptions.setaProp(#child, me)
+  dialog_r = gRock.m_classManager.getObjByIDAndClass(#DlgStudio, #Dialog)
+  dialog_r.dataMemberName = "DlgStudioData"
+  argOptions[#DlgInfoObj] = dialog_r
+  ancestor = script("DlgRockAncestorScript").new(argOptions)
+  ancestor.m_objDlg.recalc(#DontPaint)
+  me.setPlace()
+  m_showSongIDs = []
+  repeat with ID in gRock.m_player.OwnedSongs
+    m_showSongIDs.addAt(1, ID)
+  end repeat
+  band_r = gRock.m_context.getFocus(#Band)
+  repeat with n = 1 to band_r.RecordedAlbumIDs.count
+    tmpID = band_r.RecordedAlbumIDs[n]
+    album_r = gRock.m_classManager.getObjByIDAndClass(tmpID, #album)
+    if album_r.ReleaseDate > 0 then
+      if m_showSongIDs.getPos(album_r.SongID) then
+        m_showSongIDs.deleteOne(album_r.SongID)
+      end if
+    end if
+  end repeat
+  albums_r = gRock.m_classManager.getObjsOfClass(#album)
+  repeat with album_r in albums_r
+    if album_r.getAlbumIsReleased() = 1 then
+      if m_showSongIDs.getPos(album_r.SongID) then
+        m_showSongIDs.deleteOne(album_r.SongID)
+      end if
+    end if
+  end repeat
+  m_waitingForOverDlgThenGoMixer = 0
+  gRock.m_eventCardsManager.setOKToShowOnTopOfNumDialogs(1)
+  m_songNr = 0
+  if m_showSongIDs.count > 0 then
+    me.setSongNr(1)
+  end if
+  ancestor.render()
+  return me
+end
+
+on kill me
+  if gRock.m_eventCardsManager.m_OKToShowOnTopOfNumDialogs > -1 then
+    gRock.m_eventCardsManager.setOKToShowOnTopOfNumDialogs(0)
+  end if
+  gUseful.frameTimer.deleteObject(me)
+  if objectp(m_animObj) then
+    m_animObj = m_animObj.kill()
+  end if
+  if objectp(m_waitObj) then
+    m_waitObj = m_waitObj.kill()
+  end if
+  ancestor.kill()
+  return 0
+end
+
+on focusChange me, argGotFocus
+  ancestor.focusChange(argGotFocus)
+  if argGotFocus = 1 then
+    me.showAnim()
+  else
+    if objectp(m_animObj) then
+      m_animObj = m_animObj.kill()
+    end if
+  end if
+end
+
+on Report me, argObj, argWhat
+  if argWhat = #OKDiscardAlbum then
+    album_r = gRock.m_context.getFocus(#album)
+    if album_r.getAlbumIsSigned() then
+    else
+      if album_r.RecordingStartedDate > 0 then
+      end if
+    end if
+  end if
+end
+
+on mouse me, argObj, argWhat, argOption
+  if objectp(argOption) then
+    if argWhat = #click then
+      ID = argOption.getOneProp(#ID)
+      IDStr = string(ID)
+      if offset("Arrow", IDStr) then
+        obj = argOption
+        if objectp(obj) then
+          overIDs = obj.masterObj.getOverIDs()
+          cnt = overIDs.count()
+          if cnt >= 2 then
+            belongingToID = overIDs[1]
+            if m_songNr <> 0 then
+              tmpDir = (2 * (ID = #ArrowUp)) - 1
+              me.setSongNr(-tmpDir)
+            end if
+          end if
+        end if
+      else
+        if ID = #ButtonOK then
+          itsNotOKStr = 0
+          ecard_r = 0
+          player_r = gRock.m_classManager.getObjByIDAndClass(#player, #player)
+          band_r = gRock.m_context.getFocus(#Band)
+          if band_r.members.count() = 0 then
+            ecard_r = gRock.m_classManager.getObjByIDAndClass(#ECStudioNoBand, #EventCard)
+          end if
+          if ecard_r = 0 then
+            goneMusicians = []
+            repeat with musID in band_r.members
+              musician_r = gRock.m_classManager.getObjByIDAndClass(musID, #RealMusician)
+              if musician_r.getIsOccupied() then
+                goneMusicians.add(musician_r)
+              end if
+            end repeat
+            if goneMusicians.count then
+              ecard_r = gRock.m_classManager.getObjByIDAndClass(#ECOCBandIncomplete, #EventCard)
+            end if
+          end if
+          if ecard_r = 0 then
+            if player_r.hasThisMoney(m_place_r.price) = 0 then
+              rWarnMoney()
+              exit
+            end if
+          end if
+          if ecard_r = 0 then
+            if player_r.OwnedSongs.count() = 0 then
+              ecard_r = gRock.m_classManager.getObjByIDAndClass(#ECStudioNoSong, #EventCard)
+            end if
+          end if
+          if objectp(ecard_r) then
+            gRock.m_eventCardsManager.tryNewShowEventCard(ecard_r, [#prio: 0])
+            exit
+          end if
+          me.checkWarnings()
+          gUseful.frameTimer.addObject(me)
+          exit
+        else
+          if ID = #ButtonCancel then
+            ancestor.mouse(argObj, argWhat, argOption)
+          end if
+        end if
+      end if
+    end if
+  end if
+end
+
+on checkWarnings me
+  if voidp(m_checkingWarningNr) then
+    m_checkingWarningNr = 0
+  end if
+  m_checkingWarningNr = m_checkingWarningNr + 1
+  showCard = 0
+  if m_checkingWarningNr = 1 then
+    album_r = gRock.m_context.getFocus(#album)
+    if objectp(album_r) then
+      if album_r.getAlbumIsSigned() then
+        showCard = 1
+        gRock.m_eventCardsManager.tryNewShowEventCard(#ECOCAlbumDiscard)
+      else
+        if album_r.RecordingStartedDate > 0 then
+          showCard = 1
+          gRock.m_eventCardsManager.tryNewShowEventCard(#ECOCAlbumDiscardDemo)
+        end if
+      end if
+    end if
+  else
+    if m_checkingWarningNr = 2 then
+      band_r = gRock.m_context.getFocus(#Band)
+      if band_r.members.count > m_place_r.NumChannels then
+        showCard = 1
+        gRock.m_eventCardsManager.tryNewShowEventCard(#ECOCFewChannels)
+      end if
+    else
+      m_checkingWarningNr = 0
+      me.goToMixer()
+      exit
+    end if
+  end if
+  if not showCard then
+    me.checkWarnings()
+  end if
+end
+
+on goToMixer me
+  if gRock.m_eventCardsManager.m_waitingCards.count then
+  end if
+  gRock.m_eventCardsManager.postponeDates(1, 1)
+  gRock.m_msgManager.msg(#LeaveForMixer)
+  gRock.m_eventCardsManager.timeTick()
+  if me.checkAnyCardsUpOrComing() = 0 then
+    m_waitObj = script("NewWaitForIdleScript").new([#call, #finallyGoToMixer, me])
+  else
+    m_waitingForOverDlgThenGoMixer = 1
+  end if
+end
+
+on eventCardCall me, argWhat
+  if argWhat = #DontGoMixer then
+    m_checkingWarningNr = 0
+    m_waitingForOverDlgThenGoMixer = 0
+    m_waitingToCloseDialog = 1
+  end if
+end
+
+on timeTick me
+  if m_waitingToCloseDialog then
+    me.kill()
+    exit
+  end if
+  if me.checkAnyCardsUpOrComing() = 0 then
+    if m_checkingWarningNr > 0 then
+      me.checkWarnings()
+      exit
+    else
+      if m_waitingForOverDlgThenGoMixer then
+        m_waitingForOverDlgThenGoMixer = 0
+        m_waitObj = script("NewWaitForIdleScript").new([#call, #finallyGoToMixer, me])
+        exit
+      end if
+    end if
+  end if
+end
+
+on checkAnyCardsUpOrComing me
+  waitingECs = gRock.m_eventCardsManager.getWaiting()
+  overDlgs = gDir.m_objDialogsMaster.getDialogsOver(me)
+  return (overDlgs.count > 0) or (waitingECs.count > 0)
+end
+
+on finallyGoToMixer me
+  global gTmpBGImgs
+  if objectp(ancestor.m_placeBgSnd) then
+    ancestor.m_placeBgSnd = ancestor.m_placeBgSnd.kill()
+  end if
+  album_r = gRock.m_context.getFocus(#album)
+  if objectp(album_r) then
+    if album_r.getAlbumIsSigned() then
+      record_r = gRock.m_classManager.getObjByIDAndClass(album_r.SignedToRecord, #Record)
+      record_r.giveUpCurrentAlbum()
+    else
+      if album_r.RecordingStartedDate > 0 then
+        album_r.Remove()
+      end if
+    end if
+  end if
+  player_r = gRock.m_classManager.getObjByIDAndClass(#player, #player)
+  player_r.transactMoney(-m_place_r.price, [#Studio, #Rent])
+  gRock.m_context.setFocus(#Studio, m_place_r)
+  gRock.m_context.setFocus(#Song, m_song_r)
+  tmpMixerRect = rect(20, 20, 780, 580)
+  if 0 then
+    Rects = []
+    stageImg = (the stage).image
+    Rects.add(rect(stageImg.rect[1], stageImg.rect[2], stageImg.rect[3], tmpMixerRect[2]))
+    Rects.add(rect(stageImg.rect[1], tmpMixerRect[4], stageImg.rect[3], stageImg.rect[4]))
+    Rects.add(rect(stageImg.rect[1], tmpMixerRect[2], tmpMixerRect[1], tmpMixerRect[4]))
+    Rects.add(rect(tmpMixerRect[3], tmpMixerRect[2], stageImg.rect[3], tmpMixerRect[4]))
+    gTmpBGImgs = []
+    repeat with r in Rects
+      img = image(getRectSize(r)[1], getRectSize(r)[2], 16)
+      img.copyPixels(stageImg, img.rect, r)
+      gTmpBGImgs.add([img, r])
+    end repeat
+  end if
+  gRock.m_eventCardsManager.postponeDates(-1, 1)
+  gRock.m_eventCardsManager.setOKToShowOnTopOfNumDialogs(-1)
+  gDir.m_objDialogsMaster.ImNOTExitingToCity()
+  goMovie("Mixer")
+end
+
+on setSongNr me, argDir
+  m_songNr = rDlgCheckUpDownArrows(ancestor.m_objDlg, m_songNr + argDir, m_showSongIDs.count)
+  tmpID = m_showSongIDs[m_songNr]
+  m_song_r = gRock.m_classManager.getObjByIDAndClass(tmpID, #Song)
+  itemObj = ancestor.m_objDlg.getItemByPath([#ChooseSong, #Chooser, #text])
+  itemObj.setOneProp(#editData, m_song_r.name)
+end
+
+on setPlace me
+  itemObj = ancestor.m_objDlg.getItemByPath([#ChooseSong, #Head, #icon])
+  itemObj.setOneProp(#Pic, "Dummy")
+  itemObj = ancestor.m_objDlg.getItemByPath([#ChooseSong, #Head, #Info])
+  itemObj.setOneProp(#editData, gRock.m_languageManager.getStr(#szidSong, [#FirstUppercase: 1]))
+  itemObj = ancestor.m_objDlg.getItemByPath([#ChooseSong, #Chooser, #text])
+  tmpR = itemObj.getOneProp(#inOffsetRect)
+  tmpR[3] = 200
+  itemObj.setOneProp(#inOffsetRect, tmpR)
+  itemObj.setOneProp(#editData, gRock.m_languageManager.getStr(#szidNoOwnSong, [#FirstUppercase: 1]))
+  dlgObj = ancestor.m_objDlg
+  itemObj = dlgObj.getItem(#Pic)
+  membName = m_place_r.Gfx
+  if member(membName).number < 1 then
+    membName = "Studio01_environment01"
+  end if
+  itemObj.setOneProp(#Pic, membName)
+  itemObj = dlgObj.getItemByPath([#InfoDlg, #Head, #icon])
+  itemObj.setOneProp(#Pic, "icon_mixer02")
+  itemObj = dlgObj.getItemByPath([#InfoDlg, #Head, #Info])
+  itemObj.setOneProp(#editData, rGetStr(#szidStudioFrameText))
+  itemObj = dlgObj.getItemByPath([#InfoDlg, #SubDlg, #Info1, #Pic])
+  itemObj.setOneProp(#Pic, rFormatText([#szidNumChannels, string(m_place_r.NumChannels), #szidPrice, rCurrency(m_place_r.price, 0, 1)], "StudioInfo1Formatting"))
+  itemObj = dlgObj.getItemByPath([#InfoDlg, #SubDlg, #Info2, #Pic])
+  itemObj.setOneProp(#Pic, rFormatText([#szidDescription, m_place_r.comment], "StudioInfo2Formatting"))
+end
+
+on showAnim me
+  if m_place_r.Gfx.length > 2 then
+    itemObj = ancestor.m_objDlg.getItem(#Pic)
+    r = itemObj.getOnStageRect()
+    pnt = point(r[1], r[2]) + (getRectSize(r) / 2)
+    cstFile = the moviePath & m_place_r.Gfx.char[1..m_place_r.Gfx.length - 2]
+    if offset(cstFile, castLib("Actor").fileName) or fileExists(cstFile, ["cst", "cxt"]) then
+      castLib("Actor").fileName = cstFile
+      SPNum = gDir.m_spriteList[#PlaceAnim]
+      sprite(SPNum).ink = 36
+      sprite(SPNum).loc = pnt
+      m_animObj = script("SimpleAnimScript").new(0, SPNum, member(1, "Actor"), [#numFrames: -1 + the number of castMembers of castLib "Actor", #speed: 0.5])
+    end if
+  end if
+end

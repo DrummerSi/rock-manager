@@ -1,0 +1,292 @@
+property m_separators, m_preOperatorInfo, m_operatorInfo, m_allOpInfo, m_operatorThatSet, m_keyWords
+
+on new me, argExpression
+  m_separators = [" ", "(", ")", "[", "]", ","]
+  m_keyWords = ["for", "while", "goto", "if", "else", "switch", "case"]
+  m_preOperatorInfo = ["f()": [-1, "f()", #Bi, #RL], "++": [-2, "pre++", #un], "--": [-2, "pre--", #un], "!": [-2, "!", #un], "*": [-2, "ptr*", #un], "&": [-2, "ptr&", #un]]
+  m_operatorThatSet = ["++": [-2, #un, #LR], "--": [-2, #un, #LR], "=": [-14, #Bi, #RL], "+=": [-14, #Bi, #RL], "-=": [-14, #Bi, #RL], "*=": [-14, #Bi, #RL], "/=": [-14, #Bi, #RL]]
+  m_operatorInfo = ["[": [-1, #Bi, #LR], ".": [-1, #Bi, #LR], "*": [-3, #Bi, #LR], "/": [-3, #Bi, #LR], "+": [-4, #Bi, #LR], "-": [-4, #Bi, #LR], "%": [-9, #Bi, #LR], "&": [-8, #Bi, #LR], "|": [-10, #Bi, #LR], "&&": [-11, #Bi, #LR], "||": [-12, #Bi, #LR], "==": [-7, #Bi, #LR], "!=": [-7, #Bi, #LR], "!": [-88, #un], ">=": [-6, #Bi, #LR], "<=": [-6, #Bi, #LR], ">": [-6, #Bi, #LR], "<": [-6, #Bi, #LR], ":": [-100, #Bi, #LR]]
+  repeat with n = 1 to m_operatorThatSet.count
+    m_operatorInfo.addProp(m_operatorThatSet.getPropAt(n), m_operatorThatSet[n])
+  end repeat
+  m_allOpInfo = [:]
+  repeat with n = 1 to m_operatorInfo.count
+    tmp = m_operatorInfo[n]
+    op = m_operatorInfo.getPropAt(n)
+    tmp.addAt(2, op)
+    m_allOpInfo.addProp(op, tmp)
+    m_separators.add(op)
+  end repeat
+  repeat with n = 1 to m_preOperatorInfo.count
+    tmp = m_preOperatorInfo[n]
+    op = m_preOperatorInfo.getPropAt(n)
+    m_allOpInfo.addProp(tmp[2], tmp)
+    m_separators.add(op)
+  end repeat
+  return me
+end
+
+on kill me
+  return 0
+end
+
+on parseExpression me, argExpression
+  if voidp(argExpression) then
+  end if
+  argExpression = changeChars(" and ", "&&", argExpression, 0)
+  argExpression = changeChars(" or ", "||", argExpression, 0)
+  argExpression = changeChars(" not ", "!", argExpression, 0)
+  argExpression = changeChars(" mod ", "%", argExpression, 0)
+  argExpression = changeChars(" bwand ", "&", argExpression, 0)
+  argExpression = changeChars(" bwor ", "|", argExpression, 0)
+  if argExpression.char[argExpression.length] <> " " then
+    argExpression = argExpression & " "
+  end if
+  return me.parseSubExpression([argExpression])
+end
+
+on parseSubExpression me, argStrPtr, argKnownInfo
+  tmpLastStart = -1
+  operatorsInfo = [:]
+  operatorsInfo.sort()
+  terms = []
+  if argKnownInfo = #Arguments then
+    thisIsAFunctionWithSeveralArgs = 1
+  else
+    thisIsAFunctionWithSeveralArgs = 0
+  end if
+  Arguments = []
+  order = []
+  isInsideString = 0
+  argStr = argStrPtr[1]
+  charNr = 1
+  isOperator = 0
+  repeat while 1
+    tmpChar = argStr.char[charNr]
+    if tmpChar = QUOTE then
+      isInsideString = not isInsideString
+      if isInsideString then
+        tmpLastStart = 1
+        charNr = charNr + 1
+        next repeat
+      end if
+    end if
+    if isInsideString then
+      charNr = charNr + 1
+      next repeat
+    end if
+    if tmpLastStart = -1 then
+      if tmpChar = " " then
+        delete tmpLastStart.char[charNr]
+        next repeat
+      else
+        tmpLastStart = 1
+        if not voidp(m_operatorInfo.getaProp(argStr.char[1])) then
+          isOperator = 1
+          if tmpChar = "[" then
+            if order.count = 0 then
+              isOperator = 0
+            else
+              if order[order.count] = #op then
+                isOperator = 0
+              end if
+            end if
+          end if
+        end if
+      end if
+    end if
+    if isOperator then
+      if voidp(m_operatorInfo.getaProp(argStr.char[1..charNr])) then
+        op = argStr.char[1..charNr - 1]
+        tmpTwoOpsInARow = 0
+        if order.count = 0 then
+          tmpTwoOpsInARow = 1
+        else
+          if order[order.count] = #op then
+            tmpTwoOpsInARow = 1
+          end if
+        end if
+        if tmpTwoOpsInARow then
+          opInfo = m_preOperatorInfo.getaProp(op)
+          if voidp(opInfo) then
+            if op = "-" then
+              me.addTerm("0", terms, order)
+              opInfo = m_operatorInfo.getaProp(op)
+            else
+              if (op = ".") or (op = "+") then
+                isOperator = 0
+                charNr = charNr + 1
+                next repeat
+              else
+                pott("Syntax error! Two operators in a row!", op)
+              end if
+            end if
+          else
+            pott("Unknown operator...", op)
+          end if
+        else
+          opInfo = m_operatorInfo.getaProp(op)
+        end if
+        op = opInfo[2]
+        opPrec = opInfo[1]
+        order.add(#op)
+        operatorsInfo.addProp(opPrec, [op, terms.count])
+        delete tmpLastStart.char[1..charNr - 1]
+        if op = "[" then
+          argStrPtr[1] = argStr
+          subExpression = me.parseSubExpression(argStrPtr)
+          me.addTerm(subExpression, terms, order, #sublist)
+          argStr = argStrPtr[1]
+        end if
+        isOperator = 0
+        tmpLastStart = -1
+        charNr = 1
+        next repeat
+      end if
+    else
+      if m_separators.getPos(argStr.char[charNr]) or (charNr = argStr.length) then
+        lastChar = argStr.char[charNr]
+        if (lastChar = "(") or (lastChar = "[") then
+          func = 0
+          if lastChar = "(" then
+            if order.count then
+              if order[order.count] = #term then
+                func = terms[terms.count][1]
+                terms.deleteAt(terms.count)
+                order.deleteAt(order.count)
+              end if
+            end if
+            if (func = 0) and (charNr > 1) then
+              func = argStr.char[1..charNr - 1]
+              tmpIsFunc = 1
+            end if
+            if func <> 0 then
+              me.addTerm(symbol(func), terms, order, #func)
+              op = "f()"
+              opInfo = m_preOperatorInfo.getaProp(op)
+              opPrec = opInfo[1]
+              order.add(#op)
+              operatorsInfo.addProp(opPrec, [op, terms.count])
+            end if
+          end if
+          delete tmpLastStart.char[1..charNr]
+          argStrPtr[1] = argStr
+          if (op = "f()") or (lastChar = "[") then
+            subExpression = me.parseSubExpression(argStrPtr, #Arguments)
+          else
+            subExpression = me.parseSubExpression(argStrPtr)
+          end if
+          tmpWasArgumentList = 0
+          if subExpression.count > 2 then
+            if subExpression[3] = #Arguments then
+              subExpression.deleteAt(3)
+              tmpWasArgumentList = 1
+            end if
+          end if
+          argStr = argStrPtr[1]
+          if tmpWasArgumentList = 1 then
+            if op = "f()" then
+              me.addTerm(subExpression, terms, order, #Arguments)
+            else
+              me.addTerm(subExpression, terms, order, #list)
+            end if
+          else
+            me.addTerm(subExpression, terms, order, #sublist)
+          end if
+          tmpLastStart = -1
+          charNr = 1
+          next repeat
+        else
+          if (lastChar = ")") or (lastChar = "]") then
+            me.addTerm(argStr.char[tmpLastStart..charNr - 1], terms, order)
+            if thisIsAFunctionWithSeveralArgs then
+              Arguments.add([operatorsInfo, terms])
+              delete tmpLastStart.char[1..charNr]
+              argStrPtr[1] = argStr
+              return [[:], Arguments, #Arguments]
+            else
+              delete tmpLastStart.char[1..charNr]
+              argStrPtr[1] = argStr
+              return [operatorsInfo, terms]
+            end if
+          end if
+        end if
+        if tmpChar = ":" then
+          pott("PROP", tmpChar, argStr.char[1..charNr - 1])
+        end if
+        if lastChar = "." then
+          tmpAsci = charToNum(argStr.char[tmpLastStart])
+          if ((tmpAsci >= 48) and (tmpAsci <= 57)) or (tmpAsci = 43) or (tmpAsci = 45) then
+            charNr = charNr + 1
+            next repeat
+          end if
+        end if
+        me.addTerm(argStr.char[tmpLastStart..charNr - 1], terms, order)
+        delete tmpLastStart.char[1..charNr - 1]
+        charNr = 0
+        tmpLastStart = -1
+        if lastChar = "," then
+          delete tmpLastStart.char[1]
+          Arguments.add([operatorsInfo, terms])
+          operatorsInfo = [:]
+          operatorsInfo.sort()
+          order = []
+          terms = []
+          thisIsAFunctionWithSeveralArgs = 1
+        end if
+      end if
+    end if
+    if argStr.length = 0 then
+      exit repeat
+    end if
+    charNr = charNr + 1
+  end repeat
+  argStrPtr[1] = argStr
+  return [operatorsInfo, terms]
+end
+
+on zzseparateTermsSinceLastArgument me, argTerms
+  tmpTermsSinceLastArg = []
+  repeat with n = argTerms.count down to 1
+    if argTerms[n][2] = #Argument then
+      exit repeat
+    end if
+    tmpTermsSinceLastArg.addAt(1, argTerms[n])
+    argTerms.deleteAt(n)
+  end repeat
+  return tmpTermsSinceLastArg
+end
+
+on addTerm me, argTerm, argTermList, argOrderList, argType
+  if stringp(argTerm) then
+    tmpAsci = charToNum(argTerm.char[1])
+    if ((tmpAsci >= 48) and (tmpAsci <= 57)) or (tmpAsci = 46) or (tmpAsci = 43) or (tmpAsci = 45) then
+      argTerm = value(argTerm)
+      if floatp(argTerm) then
+        argType = #float
+      else
+        argType = #int
+      end if
+    else
+      if (tmpAsci = 41) or (tmpAsci = 93) then
+        exit
+      else
+        if tmpAsci = 34 then
+          argType = #string
+          argTerm = argTerm.char[2..argTerm.length - 1]
+        else
+          argType = #var
+        end if
+      end if
+    end if
+  else
+    if listp(argTerm) then
+      if voidp(argType) then
+        argType = #sublist
+      end if
+    else
+    end if
+  end if
+  argTermList.add([argTerm, argType])
+  argOrderList.add(#term)
+end

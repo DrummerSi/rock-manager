@@ -1,0 +1,706 @@
+property channels, newSnd, ticksPerSec, mode, preLoadedList, maxSounds, nrOfPlaying, typeList, soundPath
+
+on new me, argOKLastTime
+  [  0] pushsymb 47 ............................. <#xtra>
+  [  3] setprop 136 ............................. mode = #xtra
+  [  6] pusharglist 0 ........................... <>
+  [  8] extcall 1799 ............................ <dsOpen()>
+  [ 11] setlocal 0 .............................. tmpDsOpenReturn = dsOpen()
+  [ 13] getlocal 0 .............................. <tmpDsOpenReturn>
+  [ 15] pushzero ................................ <0>
+  [ 16] eq ...................................... <tmpDsOpenReturn = 0>
+  [ 17] getparam 8 .............................. <argOKLastTime>
+  [ 19] pusharglist 1 ........................... <argOKLastTime>
+  [ 21] extcall 104 ............................. <voidp(argOKLastTime)>
+  [ 24] and ..................................... <(tmpDsOpenReturn = 0) and voidp(argOKLastTime)>
+  [ 25] jmpifz [ 34] ............................ if (tmpDsOpenReturn = 0) and voidp(argOKLastTime) then
+  [ 28] pushzero ................................ <0>
+  [ 29] pusharglistnoret 1 ...................... <0>
+  [ 31] extcall 32 .............................. return 0
+  [ 34] getmovieprop 108 ........................ <the moviePath>
+  [ 37] setprop 1736 ............................ soundPath = the moviePath
+  [ 40] pusharglist 0 ........................... <>
+  [ 42] extcall 1801 ............................ <dsGetCaps()>
+  [ 45] setlocal 8 .............................. tmpInfo = dsGetCaps()
+  [ 47] getlocal 8 .............................. <tmpInfo>
+  [ 49] pusharglist 1 ........................... <tmpInfo>
+  [ 51] extcall 128 ............................. <listp(tmpInfo)>
+  [ 54] jmpifz [129] ............................ if listp(tmpInfo) then / else
+  [ 57] pushcons 0 .............................. <"SndCard mem kb:">
+  [ 59] getlocal 8 .............................. <tmpInfo>
+  [ 61] pushint8 1 .............................. <1>
+  [ 64] pusharglist 2 ........................... <tmpInfo, 1>
+  [ 66] extcall 23 .............................. <getAt(tmpInfo, 1)>
+  [ 68] pushint8 1024 ........................... <1024>
+  [ 71] div ..................................... <getAt(tmpInfo, 1) / 1024>
+  [ 72] pusharglistnoret 2 ...................... <"SndCard mem kb:", getAt(tmpInfo, 1) / 1024>
+  [ 74] extcall 142 ............................. put "SndCard mem kb:", getAt(tmpInfo, 1) / 1024
+  [ 77] pushcons 8 .............................. <"Max nr of sim. sounds:">
+  [ 79] getlocal 8 .............................. <tmpInfo>
+  [ 81] pushint8 2 .............................. <2>
+  [ 84] pusharglist 2 ........................... <tmpInfo, 2>
+  [ 86] extcall 23 .............................. <getAt(tmpInfo, 2)>
+  [ 88] pusharglistnoret 2 ...................... <"Max nr of sim. sounds:", getAt(tmpInfo, 2)>
+  [ 90] extcall 142 ............................. put "Max nr of sim. sounds:", getAt(tmpInfo, 2)
+  [ 93] getlocal 8 .............................. <tmpInfo>
+  [ 95] pushint8 3 .............................. <3>
+  [ 98] pusharglist 2 ........................... <tmpInfo, 3>
+  [100] extcall 23 .............................. <getAt(tmpInfo, 3)>
+  [102] pushzero ................................ <0>
+  [103] eq ...................................... <getAt(tmpInfo, 3) = 0>
+  [104] jmpifz [126] ............................ if getAt(tmpInfo, 3) = 0 then
+  [107] pushcons 16 ............................. <"No DirectX driver available! Emulated = slow">
+  [109] pusharglistnoret 1 ...................... <"No DirectX driver available! Emulated = slow">
+  [111] extcall 142 ............................. put "No DirectX driver available! Emulated = slow"
+  [114] getparam 0 .............................. <me>
+  [116] pusharglistnoret 1 ...................... <me>
+  [118] localcall 2 ............................. kill(me)
+  [120] pushzero ................................ <0>
+  [121] pusharglistnoret 1 ...................... <0>
+  [123] extcall 32 .............................. return 0
+  [126] jmp [142]
+  [129] pushcons 24 ............................. <"dsGetCaps() returned 0!!!">
+  [131] pusharglistnoret 1 ...................... <"dsGetCaps() returned 0!!!">
+  [133] extcall 142 ............................. put "dsGetCaps() returned 0!!!"
+  [136] pushzero ................................ <0>
+  [137] pusharglistnoret 1 ...................... <0>
+  [139] extcall 32 .............................. return 0
+  [142] pushcons 32 ............................. <"Mix CPU blocking percent:">
+  [144] getlocal 8 .............................. <tmpInfo>
+  [146] pushint8 4 .............................. <4>
+  [149] pusharglist 2 ........................... <tmpInfo, 4>
+  [151] extcall 23 .............................. <getAt(tmpInfo, 4)>
+  [153] pusharglistnoret 2 ...................... <"Mix CPU blocking percent:", getAt(tmpInfo, 4)>
+  [155] extcall 142 ............................. put "Mix CPU blocking percent:", getAt(tmpInfo, 4)
+  [158] getlocal 8 .............................. <tmpInfo>
+  [160] pushint8 2 .............................. <2>
+  [163] pusharglist 2 ........................... <tmpInfo, 2>
+  [165] extcall 23 .............................. <getAt(tmpInfo, 2)>
+  [167] setprop 1868 ............................ maxSounds = getAt(tmpInfo, 2)
+  [170] getprop 1868 ............................ <maxSounds>
+  [173] pushzero ................................ <0>
+  [174] eq ...................................... <maxSounds = 0>
+  [175] jmpifz [184] ............................ if maxSounds = 0 then
+  [178] pushint8 5 .............................. <5>
+  [181] setprop 1868 ............................ maxSounds = 5
+  [184] pushint8 1 .............................. <1>
+  [187] setprop 1843 ............................ newSnd = 1
+  [190] pusharglist 0 ........................... <>
+  [192] thebuiltin 74 ........................... <the machineType>
+  [195] pushint8 256 ............................ <256>
+  [198] eq ...................................... <the machineType = 256>
+  [199] jmpifz [211] ............................ if the machineType = 256 then / else
+  [202] pushint8 63 ............................. <63>
+  [205] setprop 1813 ............................ ticksPerSec = 63
+  [208] jmp [217]
+  [211] pushint8 60 ............................. <60>
+  [214] setprop 1813 ............................ ticksPerSec = 60
+  [217] pusharglist 0 ........................... <[:]>
+  [219] pushproplist ............................ <[:]>
+  [220] setprop 1869 ............................ preLoadedList = [:]
+  [223] getparam 0 .............................. <me>
+  [225] pusharglistnoret 1 ...................... <me>
+  [227] localcall 1 ............................. init(me)
+  [229] getparam 0 .............................. <me>
+  [231] pusharglistnoret 1 ...................... <me>
+  [233] extcall 32 .............................. return me
+  [236] ret
+end
+
+on init me
+  [  0] pushsymb 1851 ........................... <#BG>
+  [  3] pusharglist 0 ........................... <[]>
+  [  5] pushlist ................................ <[]>
+  [  6] pushsymb 327 ............................ <#EFFECT>
+  [  9] pusharglist 0 ........................... <[]>
+  [ 11] pushlist ................................ <[]>
+  [ 12] pushsymb 1853 ........................... <#OPEFFECT>
+  [ 15] pusharglist 0 ........................... <[]>
+  [ 17] pushlist ................................ <[]>
+  [ 18] pusharglist 6 ........................... <[#BG: [], #EFFECT: [], #OPEFFECT: []]>
+  [ 20] pushproplist ............................ <[#BG: [], #EFFECT: [], #OPEFFECT: []]>
+  [ 21] setprop 1841 ............................ channels = [#BG: [], #EFFECT: [], #OPEFFECT: []]
+  [ 24] pushzero ................................ <0>
+  [ 25] setprop 1871 ............................ nrOfPlaying = 0
+  [ 28] ret
+end
+
+on kill me
+  [  0] getparam 0 .............................. <me>
+  [  2] pusharglistnoret 1 ...................... <me>
+  [  4] localcall 7 ............................. unLoadAll(me)
+  [  6] pusharglistnoret 0 ...................... <>
+  [  8] extcall 1800 ............................ dsClose()
+  [ 11] pushzero ................................ <0>
+  [ 12] pusharglistnoret 1 ...................... <0>
+  [ 14] extcall 32 .............................. return 0
+  [ 17] ret
+end
+
+on getFreeChannels me
+  [  0] getprop 1868 ............................ <maxSounds>
+  [  3] getprop 1871 ............................ <nrOfPlaying>
+  [  6] sub ..................................... <maxSounds - nrOfPlaying>
+  [  7] pusharglistnoret 1 ...................... <maxSounds - nrOfPlaying>
+  [  9] extcall 32 .............................. return maxSounds - nrOfPlaying
+  [ 12] ret
+end
+
+on getNrOfChannels me
+  [  0] getprop 1868 ............................ <maxSounds>
+  [  3] pusharglistnoret 1 ...................... <maxSounds>
+  [  5] extcall 32 .............................. return maxSounds
+  [  8] ret
+end
+
+on preload me, theFileName
+  [  0] getprop 1736 ............................ <soundPath>
+  [  3] getparam 8 .............................. <theFileName>
+  [  5] joinstr ................................. <soundPath & theFileName>
+  [  6] pushcons 40 ............................. <".wav">
+  [  8] joinstr ................................. <soundPath & theFileName & ".wav">
+  [  9] pushzero ................................ <0>
+  [ 10] pusharglist 2 ........................... <soundPath & theFileName & ".wav", 0>
+  [ 12] extcall 1752 ............................ <dsNewSound(soundPath & theFileName & ".wav", 0)>
+  [ 15] setlocal 0 .............................. tmpID = dsNewSound(soundPath & theFileName & ".wav", 0)
+  [ 17] getlocal 0 .............................. <tmpID>
+  [ 19] pushzero ................................ <0>
+  [ 20] nteq .................................... <tmpID <> 0>
+  [ 21] jmpifz [ 36] ............................ if tmpID <> 0 then
+  [ 24] getprop 1869 ............................ <preLoadedList>
+  [ 27] getparam 8 .............................. <theFileName>
+  [ 29] getlocal 0 .............................. <tmpID>
+  [ 31] pusharglistnoret 3 ...................... <preLoadedList, theFileName, tmpID>
+  [ 33] extcall 45 .............................. addProp(preLoadedList, theFileName, tmpID)
+  [ 36] getlocal 0 .............................. <tmpID>
+  [ 38] pusharglistnoret 1 ...................... <tmpID>
+  [ 40] extcall 32 .............................. return tmpID
+  [ 43] ret
+end
+
+on unload me, sndId
+  [  0] getparam 0 .............................. <me>
+  [  2] getparam 8 .............................. <sndId>
+  [  4] pusharglist 2 ........................... <me, sndId>
+  [  6] localcall 12 ............................ <finished(me, sndId)>
+  [  8] not ..................................... <not finished(me, sndId)>
+  [  9] jmpifz [ 20] ............................ if not finished(me, sndId) then
+  [ 12] getparam 0 .............................. <me>
+  [ 14] getparam 8 .............................. <sndId>
+  [ 16] pusharglistnoret 2 ...................... <me, sndId>
+  [ 18] localcall 19 ............................ stop(me, sndId)
+  [ 20] getprop 1869 ............................ <preLoadedList>
+  [ 23] getparam 8 .............................. <sndId>
+  [ 25] pusharglistnoret 2 ...................... <preLoadedList, sndId>
+  [ 27] extcall 182 ............................. deleteOne(preLoadedList, sndId)
+  [ 30] getparam 8 .............................. <sndId>
+  [ 32] pusharglistnoret 1 ...................... <sndId>
+  [ 34] extcall 1748 ............................ dsDelSound(sndId)
+  [ 37] pushzero ................................ <0>
+  [ 38] pusharglistnoret 1 ...................... <0>
+  [ 40] extcall 32 .............................. return 0
+  [ 43] ret
+end
+
+on unLoadAll me
+  [  0] getparam 0 .............................. <me>
+  [  2] pusharglistnoret 1 ...................... <me>
+  [  4] localcall 8 ............................. stopAll(me)
+  [  6] pushint8 1 .............................. <1>
+  [  9] setlocal 0
+  [ 11] getlocal 0
+  [ 13] getprop 1869 ............................ <preLoadedList>
+  [ 16] pusharglist 1 ........................... <preLoadedList>
+  [ 18] extcall 175 ............................. <count(preLoadedList)>
+  [ 21] lteq
+  [ 22] jmpifz [ 50] ............................ repeat with n = 1 to count(preLoadedList)
+  [ 25] getprop 1869 ............................ <preLoadedList>
+  [ 28] getlocal 0 .............................. <n>
+  [ 30] pusharglist 2 ........................... <preLoadedList, n>
+  [ 32] extcall 23 .............................. <getAt(preLoadedList, n)>
+  [ 34] pusharglistnoret 1 ...................... <getAt(preLoadedList, n)>
+  [ 36] extcall 1748 ............................ dsDelSound(getAt(preLoadedList, n))
+  [ 39] pushint8 1
+  [ 42] getlocal 0
+  [ 44] add
+  [ 45] setlocal 0
+  [ 47] endrepeat [ 11]
+  [ 50] pusharglist 0 ........................... <[:]>
+  [ 52] pushproplist ............................ <[:]>
+  [ 53] setprop 1869 ............................ preLoadedList = [:]
+  [ 56] ret
+end
+
+on stopAll me
+  [  0] getprop 1841 ............................ <channels>
+  [  3] peek 0
+  [  5] pusharglist 1
+  [  7] extcall 175
+  [ 10] pushint8 1
+  [ 12] peek 0
+  [ 14] peek 2
+  [ 16] lteq
+  [ 17] jmpifz [ 79] ............................ repeat with aList in channels
+  [ 20] peek 2
+  [ 22] peek 1
+  [ 24] pusharglist 2
+  [ 26] extcall 23
+  [ 28] setlocal 0
+  [ 30] getlocal 0 .............................. <aList>
+  [ 32] peek 0
+  [ 34] pusharglist 1
+  [ 36] extcall 175
+  [ 39] pushint8 1
+  [ 41] peek 0
+  [ 43] peek 2
+  [ 45] lteq
+  [ 46] jmpifz [ 71] ............................ repeat with sndId in aList
+  [ 49] peek 2
+  [ 51] peek 1
+  [ 53] pusharglist 2
+  [ 55] extcall 23
+  [ 57] setlocal 8
+  [ 59] getlocal 8 .............................. <sndId>
+  [ 61] pusharglistnoret 1 ...................... <sndId>
+  [ 63] extcall 1747 ............................ dsStop(sndId)
+  [ 66] pushint8 1
+  [ 68] add
+  [ 69] endrepeat [ 41]
+  [ 71] pop 3
+  [ 73] pushint8 1
+  [ 75] add
+  [ 76] endrepeat [ 12]
+  [ 79] pop 3
+  [ 81] getparam 0 .............................. <me>
+  [ 83] pusharglistnoret 1 ...................... <me>
+  [ 85] localcall 1 ............................. init(me)
+  [ 87] ret
+end
+
+on setFreq me, sndId, theFreq
+  [  0] getparam 8 .............................. <sndId>
+  [  2] getparam 16 ............................. <theFreq>
+  [  4] pusharglistnoret 2 ...................... <sndId, theFreq>
+  [  6] extcall 1763 ............................ dsSetFreq(sndId, theFreq)
+  [  9] ret
+end
+
+on setVol me, sndId, theVol, theOption
+  [  0] getparam 24 ............................. <theOption>
+  [  2] pushsymb 1765 ........................... <#dB>
+  [  5] eq ...................................... <theOption = #dB>
+  [  6] jmpifz [ 21] ............................ if theOption = #dB then / else
+  [  9] getparam 8 .............................. <sndId>
+  [ 11] getparam 16 ............................. <theVol>
+  [ 13] pusharglistnoret 2 ...................... <sndId, theVol>
+  [ 15] extcall 1766 ............................ dsSetVolume(sndId, theVol)
+  [ 18] jmp [ 84]
+  [ 21] getparam 16 ............................. <theVol>
+  [ 23] pushzero ................................ <0>
+  [ 24] eq ...................................... <theVol = 0>
+  [ 25] jmpifz [ 37] ............................ if theVol = 0 then / else
+  [ 28] pushint8 10000 .......................... <10000>
+  [ 31] inv ..................................... <-10000>
+  [ 32] setparam 16 ............................. theVol = -10000
+  [ 34] jmp [ 75]
+  [ 37] pushint8 1 .............................. <1>
+  [ 40] getparam 16 ............................. <theVol>
+  [ 42] pushcons 48 ............................. <100.0>
+  [ 44] div ..................................... <theVol / 100.0>
+  [ 45] div ..................................... <1 / (theVol / 100.0)>
+  [ 46] setparam 16 ............................. theVol = 1 / (theVol / 100.0)
+  [ 48] pushint8 100 ............................ <100>
+  [ 51] inv ..................................... <-100>
+  [ 52] getparam 16 ............................. <theVol>
+  [ 54] pusharglist 1 ........................... <theVol>
+  [ 56] extcall 1041 ............................ <log(theVol)>
+  [ 59] mul ..................................... <-100 * log(theVol)>
+  [ 60] pushint8 144 ............................ <144>
+  [ 63] mul ..................................... <-100 * log(theVol) * 144>
+  [ 64] pushint8 10 ............................. <10>
+  [ 67] div ..................................... <-100 * log(theVol) * 144 / 10>
+  [ 68] pusharglist 1 ........................... <-100 * log(theVol) * 144 / 10>
+  [ 70] extcall 95 .............................. <integer(-100 * log(theVol) * 144 / 10)>
+  [ 73] setparam 16 ............................. theVol = integer(-100 * log(theVol) * 144 / 10)
+  [ 75] getparam 8 .............................. <sndId>
+  [ 77] getparam 16 ............................. <theVol>
+  [ 79] pusharglistnoret 2 ...................... <sndId, theVol>
+  [ 81] extcall 1766 ............................ dsSetVolume(sndId, theVol)
+  [ 84] ret
+end
+
+on setLoop me, sndId, YesNo
+  [  0] getparam 8 .............................. <sndId>
+  [  2] getparam 16 ............................. <YesNo>
+  [  4] pusharglistnoret 2 ...................... <sndId, YesNo>
+  [  6] extcall 1754 ............................ dsSetLoop(sndId, YesNo)
+  [  9] ret
+end
+
+on finished me, sndId
+  [  0] getparam 0 .............................. <me>
+  [  2] pusharglistnoret 1 ...................... <me>
+  [  4] localcall 23 ............................ purge(me)
+  [  6] getparam 8 .............................. <sndId>
+  [  8] pusharglist 1 ........................... <sndId>
+  [ 10] extcall 1768 ............................ <dsIsPlaying(sndId)>
+  [ 13] not ..................................... <not dsIsPlaying(sndId)>
+  [ 14] pusharglistnoret 1 ...................... <not dsIsPlaying(sndId)>
+  [ 16] extcall 32 .............................. return not dsIsPlaying(sndId)
+  [ 19] ret
+end
+
+on getChannel me, sndId
+  [  0] pushzero ................................ <0>
+  [  1] pusharglistnoret 1 ...................... <0>
+  [  3] extcall 32 .............................. return 0
+  [  6] ret
+end
+
+on fade me, sndId, inOut, theLength
+  [  0] ret
+end
+
+on getPosition me, argID
+  [  0] getparam 8 .............................. <argID>
+  [  2] pusharglist 1 ........................... <argID>
+  [  4] extcall 1771 ............................ <dsGetPosition(argID)>
+  [  7] pusharglistnoret 1 ...................... <dsGetPosition(argID)>
+  [  9] extcall 32 .............................. return dsGetPosition(argID)
+  [ 12] ret
+end
+
+on getFreq me, argID
+  [  0] getparam 8 .............................. <argID>
+  [  2] pusharglist 1 ........................... <argID>
+  [  4] extcall 1756 ............................ <dsGetFreq(argID)>
+  [  7] pusharglistnoret 1 ...................... <dsGetFreq(argID)>
+  [  9] extcall 32 .............................. return dsGetFreq(argID)
+  [ 12] ret
+end
+
+on getLength me, argID
+  [  0] getparam 8 .............................. <argID>
+  [  2] pusharglist 1 ........................... <argID>
+  [  4] extcall 1753 ............................ <dsGetSize(argID)>
+  [  7] pusharglistnoret 1 ...................... <dsGetSize(argID)>
+  [  9] extcall 32 .............................. return dsGetSize(argID)
+  [ 12] ret
+end
+
+on setPan me, argID, argPan
+  [  0] getparam 16 ............................. <argPan>
+  [  2] pushzero ................................ <0>
+  [  3] eq ...................................... <argPan = 0>
+  [  4] jmpifz [ 13] ............................ if argPan = 0 then / else
+  [  7] pushzero ................................ <0>
+  [  8] setparam 16 ............................. argPan = 0
+  [ 10] jmp [ 96]
+  [ 13] getparam 16 ............................. <argPan>
+  [ 15] setlocal 0 .............................. tmp = argPan
+  [ 17] pushint8 100 ............................ <100>
+  [ 20] getparam 16 ............................. <argPan>
+  [ 22] pusharglist 1 ........................... <argPan>
+  [ 24] extcall 345 ............................. <abs(argPan)>
+  [ 27] sub ..................................... <100 - abs(argPan)>
+  [ 28] setparam 16 ............................. argPan = 100 - abs(argPan)
+  [ 30] getparam 16 ............................. <argPan>
+  [ 32] pushzero ................................ <0>
+  [ 33] eq ...................................... <argPan = 0>
+  [ 34] jmpifz [ 46] ............................ if argPan = 0 then / else
+  [ 37] pushint8 10000 .......................... <10000>
+  [ 40] inv ..................................... <-10000>
+  [ 41] setparam 16 ............................. argPan = -10000
+  [ 43] jmp [ 84]
+  [ 46] pushint8 1 .............................. <1>
+  [ 49] getparam 16 ............................. <argPan>
+  [ 51] pushcons 56 ............................. <100.0>
+  [ 53] div ..................................... <argPan / 100.0>
+  [ 54] div ..................................... <1 / (argPan / 100.0)>
+  [ 55] setparam 16 ............................. argPan = 1 / (argPan / 100.0)
+  [ 57] pushint8 100 ............................ <100>
+  [ 60] inv ..................................... <-100>
+  [ 61] getparam 16 ............................. <argPan>
+  [ 63] pusharglist 1 ........................... <argPan>
+  [ 65] extcall 1041 ............................ <log(argPan)>
+  [ 68] mul ..................................... <-100 * log(argPan)>
+  [ 69] pushint8 144 ............................ <144>
+  [ 72] mul ..................................... <-100 * log(argPan) * 144>
+  [ 73] pushint8 10 ............................. <10>
+  [ 76] div ..................................... <-100 * log(argPan) * 144 / 10>
+  [ 77] pusharglist 1 ........................... <-100 * log(argPan) * 144 / 10>
+  [ 79] extcall 95 .............................. <integer(-100 * log(argPan) * 144 / 10)>
+  [ 82] setparam 16 ............................. argPan = integer(-100 * log(argPan) * 144 / 10)
+  [ 84] getlocal 0 .............................. <tmp>
+  [ 86] pushzero ................................ <0>
+  [ 87] lt ...................................... <tmp < 0>
+  [ 88] jmpifz [ 96] ............................ if tmp < 0 then
+  [ 91] getparam 16 ............................. <argPan>
+  [ 93] inv ..................................... <-argPan>
+  [ 94] setparam 16 ............................. argPan = -argPan
+  [ 96] getparam 8 .............................. <argID>
+  [ 98] getparam 16 ............................. <argPan>
+  [100] pusharglist 1 ........................... <argPan>
+  [102] extcall 95 .............................. <integer(argPan)>
+  [105] pusharglistnoret 2 ...................... <argID, integer(argPan)>
+  [107] extcall 1772 ............................ dsSetPan(argID, integer(argPan))
+  [110] ret
+end
+
+on stop me, sndId
+  [  0] pushint8 1 .............................. <1>
+  [  3] setlocal 0
+  [  5] getlocal 0
+  [  7] getprop 1841 ............................ <channels>
+  [ 10] pusharglist 1 ........................... <channels>
+  [ 12] extcall 175 ............................. <count(channels)>
+  [ 15] lteq
+  [ 16] jmpifz [ 90] ............................ repeat with n = 1 to count(channels)
+  [ 19] getprop 1841 ............................ <channels>
+  [ 22] getlocal 0 .............................. <n>
+  [ 24] pusharglist 2 ........................... <channels, n>
+  [ 26] extcall 23 .............................. <getAt(channels, n)>
+  [ 28] setlocal 8 .............................. tmpList = getAt(channels, n)
+  [ 30] getlocal 8 .............................. <tmpList>
+  [ 32] getparam 8 .............................. <sndId>
+  [ 34] pusharglist 2 ........................... <tmpList, sndId>
+  [ 36] extcall 181 ............................. <getPos(tmpList, sndId)>
+  [ 39] jmpifz [ 79] ............................ if getPos(tmpList, sndId) then
+  [ 42] getparam 8 .............................. <sndId>
+  [ 44] pusharglistnoret 1 ...................... <sndId>
+  [ 46] extcall 1747 ............................ dsStop(sndId)
+  [ 49] getparam 8 .............................. <sndId>
+  [ 51] pushzero ................................ <0>
+  [ 52] pusharglistnoret 2 ...................... <sndId, 0>
+  [ 54] extcall 1750 ............................ dsSetPosition(sndId, 0)
+  [ 57] getlocal 8 .............................. <tmpList>
+  [ 59] getparam 8 .............................. <sndId>
+  [ 61] pusharglistnoret 2 ...................... <tmpList, sndId>
+  [ 63] extcall 182 ............................. deleteOne(tmpList, sndId)
+  [ 66] getprop 1871 ............................ <nrOfPlaying>
+  [ 69] pushint8 1 .............................. <1>
+  [ 72] sub ..................................... <nrOfPlaying - 1>
+  [ 73] setprop 1871 ............................ nrOfPlaying = nrOfPlaying - 1
+  [ 76] jmp [ 90] ............................... exit repeat
+  [ 79] pushint8 1
+  [ 82] getlocal 0
+  [ 84] add
+  [ 85] setlocal 0
+  [ 87] endrepeat [  5]
+  [ 90] ret
+end
+
+on stopBG me
+  [  0] ret
+end
+
+on stopAllEffects me
+  [  0] ret
+end
+
+on play me, sndId, what, theOption
+  [  0] getparam 0 .............................. <me>
+  [  2] pusharglistnoret 1 ...................... <me>
+  [  4] localcall 23 ............................ purge(me)
+  [  6] getparam 16 ............................. <what>
+  [  8] pushsymb 1852 ........................... <#TRANS>
+  [ 11] eq ...................................... <what = #TRANS>
+  [ 12] jmpifz [ 20] ............................ if what = #TRANS then
+  [ 15] pushsymb 1851 ........................... <#BG>
+  [ 18] setparam 16 ............................. what = #BG
+  [ 20] getprop 1871 ............................ <nrOfPlaying>
+  [ 23] getprop 1868 ............................ <maxSounds>
+  [ 26] gteq .................................... <nrOfPlaying >= maxSounds>
+  [ 27] jmpifz [134] ............................ if nrOfPlaying >= maxSounds then
+  [ 30] getprop 1841 ............................ <channels>
+  [ 33] pushsymb 1853 ........................... <#OPEFFECT>
+  [ 36] pusharglist 2 ........................... <channels, #OPEFFECT>
+  [ 38] extcall 124 ............................. <getProp(channels, #OPEFFECT)>
+  [ 41] setlocal 0 .............................. tmpList = getProp(channels, #OPEFFECT)
+  [ 43] getlocal 0 .............................. <tmpList>
+  [ 45] pusharglist 1 ........................... <tmpList>
+  [ 47] extcall 175 ............................. <count(tmpList)>
+  [ 50] jmpifz [ 71] ............................ if count(tmpList) then / else
+  [ 53] getparam 0 .............................. <me>
+  [ 55] getlocal 0 .............................. <tmpList>
+  [ 57] pushint8 1 .............................. <1>
+  [ 60] pusharglist 2 ........................... <tmpList, 1>
+  [ 62] extcall 23 .............................. <getAt(tmpList, 1)>
+  [ 64] pusharglistnoret 2 ...................... <me, getAt(tmpList, 1)>
+  [ 66] localcall 19 ............................ stop(me, getAt(tmpList, 1))
+  [ 68] jmp [134]
+  [ 71] getparam 16 ............................. <what>
+  [ 73] pushsymb 1851 ........................... <#BG>
+  [ 76] eq ...................................... <what = #BG>
+  [ 77] getparam 16 ............................. <what>
+  [ 79] pushsymb 327 ............................ <#EFFECT>
+  [ 82] eq ...................................... <what = #EFFECT>
+  [ 83] or ...................................... <(what = #BG) or (what = #EFFECT)>
+  [ 84] jmpifz [128] ............................ if (what = #BG) or (what = #EFFECT) then / else
+  [ 87] getprop 1841 ............................ <channels>
+  [ 90] pushsymb 327 ............................ <#EFFECT>
+  [ 93] pusharglist 2 ........................... <channels, #EFFECT>
+  [ 95] extcall 124 ............................. <getProp(channels, #EFFECT)>
+  [ 98] setlocal 0 .............................. tmpList = getProp(channels, #EFFECT)
+  [100] getlocal 0 .............................. <tmpList>
+  [102] pusharglist 1 ........................... <tmpList>
+  [104] extcall 175 ............................. <count(tmpList)>
+  [107] jmpifz [125] ............................ if count(tmpList) then
+  [110] getparam 0 .............................. <me>
+  [112] getlocal 0 .............................. <tmpList>
+  [114] pushint8 1 .............................. <1>
+  [117] pusharglist 2 ........................... <tmpList, 1>
+  [119] extcall 23 .............................. <getAt(tmpList, 1)>
+  [121] pusharglistnoret 2 ...................... <me, getAt(tmpList, 1)>
+  [123] localcall 19 ............................ stop(me, getAt(tmpList, 1))
+  [125] jmp [134]
+  [128] pushzero ................................ <0>
+  [129] pusharglistnoret 1 ...................... <0>
+  [131] extcall 32 .............................. return 0
+  [134] getparam 8 .............................. <sndId>
+  [136] pusharglist 1 ........................... <sndId>
+  [138] extcall 416 ............................. <stringp(sndId)>
+  [141] jmpifz [193] ............................ if stringp(sndId) then
+  [144] getparam 8 .............................. <sndId>
+  [146] setlocal 8 .............................. tmpName = sndId
+  [148] getprop 1869 ............................ <preLoadedList>
+  [151] getlocal 8 .............................. <tmpName>
+  [153] pusharglist 2 ........................... <preLoadedList, tmpName>
+  [155] extcall 152 ............................. <getaProp(preLoadedList, tmpName)>
+  [158] setparam 8 .............................. sndId = getaProp(preLoadedList, tmpName)
+  [160] getparam 8 .............................. <sndId>
+  [162] pusharglist 1 ........................... <sndId>
+  [164] extcall 104 ............................. <voidp(sndId)>
+  [167] jmpifz [193] ............................ if voidp(sndId) then
+  [170] getparam 0 .............................. <me>
+  [172] getlocal 8 .............................. <tmpName>
+  [174] pusharglist 2 ........................... <me, tmpName>
+  [176] localcall 5 ............................. <preload(me, tmpName)>
+  [178] setparam 8 .............................. sndId = preload(me, tmpName)
+  [180] getparam 8 .............................. <sndId>
+  [182] pushzero ................................ <0>
+  [183] eq ...................................... <sndId = 0>
+  [184] jmpifz [193] ............................ if sndId = 0 then
+  [187] pushzero ................................ <0>
+  [188] pusharglistnoret 1 ...................... <0>
+  [190] extcall 32 .............................. return 0
+  [193] getparam 8 .............................. <sndId>
+  [195] pusharglistnoret 1 ...................... <sndId>
+  [197] extcall 1749 ............................ dsPlay(sndId)
+  [200] getprop 1841 ............................ <channels>
+  [203] getparam 16 ............................. <what>
+  [205] pusharglist 2 ........................... <channels, what>
+  [207] extcall 124 ............................. <getProp(channels, what)>
+  [210] setlocal 0 .............................. tmpList = getProp(channels, what)
+  [212] getlocal 0 .............................. <tmpList>
+  [214] getparam 8 .............................. <sndId>
+  [216] pusharglistnoret 2 ...................... <tmpList, sndId>
+  [218] extcall 183 ............................. add(tmpList, sndId)
+  [221] getprop 1871 ............................ <nrOfPlaying>
+  [224] pushint8 1 .............................. <1>
+  [227] add ..................................... <nrOfPlaying + 1>
+  [228] setprop 1871 ............................ nrOfPlaying = nrOfPlaying + 1
+  [231] getparam 8 .............................. <sndId>
+  [233] pusharglistnoret 1 ...................... <sndId>
+  [235] extcall 32 .............................. return sndId
+  [238] ret
+end
+
+on purge me
+  [  0] getprop 1841 ............................ <channels>
+  [  3] peek 0
+  [  5] pusharglist 1
+  [  7] extcall 175
+  [ 10] pushint8 1
+  [ 12] peek 0
+  [ 14] peek 2
+  [ 16] lteq
+  [ 17] jmpifz [153] ............................ repeat with aList in channels
+  [ 20] peek 2
+  [ 22] peek 1
+  [ 24] pusharglist 2
+  [ 26] extcall 23
+  [ 28] setlocal 0
+  [ 30] pusharglist 0 ........................... <[]>
+  [ 32] pushlist ................................ <[]>
+  [ 33] setlocal 8 .............................. tmpDeleteList = []
+  [ 35] getlocal 0 .............................. <aList>
+  [ 37] peek 0
+  [ 39] pusharglist 1
+  [ 41] extcall 175
+  [ 44] pushint8 1
+  [ 46] peek 0
+  [ 48] peek 2
+  [ 50] lteq
+  [ 51] jmpifz [100] ............................ repeat with sndId in aList
+  [ 54] peek 2
+  [ 56] peek 1
+  [ 58] pusharglist 2
+  [ 60] extcall 23
+  [ 62] setlocal 16
+  [ 64] getlocal 16 ............................. <sndId>
+  [ 66] pusharglist 1 ........................... <sndId>
+  [ 68] extcall 1768 ............................ <dsIsPlaying(sndId)>
+  [ 71] not ..................................... <not dsIsPlaying(sndId)>
+  [ 72] jmpifz [ 94] ............................ if not dsIsPlaying(sndId) then
+  [ 75] getlocal 8 .............................. <tmpDeleteList>
+  [ 77] getlocal 16 ............................. <sndId>
+  [ 79] pusharglistnoret 2 ...................... <tmpDeleteList, sndId>
+  [ 81] extcall 183 ............................. add(tmpDeleteList, sndId)
+  [ 84] getprop 1871 ............................ <nrOfPlaying>
+  [ 87] pushint8 1 .............................. <1>
+  [ 90] sub ..................................... <nrOfPlaying - 1>
+  [ 91] setprop 1871 ............................ nrOfPlaying = nrOfPlaying - 1
+  [ 94] pushint8 1
+  [ 96] add
+  [ 97] endrepeat [ 46]
+  [100] pop 3
+  [102] getlocal 8 .............................. <tmpDeleteList>
+  [104] peek 0
+  [106] pusharglist 1
+  [108] extcall 175
+  [111] pushint8 1
+  [113] peek 0
+  [115] peek 2
+  [117] lteq
+  [118] jmpifz [145] ............................ repeat with tmpID in tmpDeleteList
+  [121] peek 2
+  [123] peek 1
+  [125] pusharglist 2
+  [127] extcall 23
+  [129] setlocal 24
+  [131] getlocal 0 .............................. <aList>
+  [133] getlocal 24 ............................. <tmpID>
+  [135] pusharglistnoret 2 ...................... <aList, tmpID>
+  [137] extcall 182 ............................. deleteOne(aList, tmpID)
+  [140] pushint8 1
+  [142] add
+  [143] endrepeat [113]
+  [145] pop 3
+  [147] pushint8 1
+  [149] add
+  [150] endrepeat [ 12]
+  [153] pop 3
+  [155] pusharglist 0 ........................... <[]>
+  [157] pushlist ................................ <[]>
+  [158] setlocal 8 .............................. tmpDeleteList = []
+  [160] ret
+end
+
+on cuePassed me, theChannel, theNumber, theName
+  [  0] getparam 8 .............................. <theChannel>
+  [  2] pusharglist 1 ........................... <theChannel>
+  [  4] extcall 68 .............................. <string(theChannel)>
+  [  7] pushint8 12 ............................. <12>
+  [ 10] get 0 ................................... <the last char in string(theChannel)>
+  [ 12] pusharglist 1 ........................... <the last char in string(theChannel)>
+  [ 14] extcall 67 .............................. <value(the last char in string(theChannel))>
+  [ 17] setparam 8 .............................. theChannel = value(the last char in string(theChannel))
+  [ 19] pushsymb 1878 ........................... <#SpriteCuePassed>
+  [ 22] getparam 8 .............................. <theChannel>
+  [ 24] getparam 16 ............................. <theNumber>
+  [ 26] getparam 24 ............................. <theName>
+  [ 28] pusharglistnoret 4 ...................... <#SpriteCuePassed, theChannel, theNumber, theName>
+  [ 30] extcall 1877 ............................ sendAllSprites(#SpriteCuePassed, theChannel, theNumber, theName)
+  [ 33] ret
+end

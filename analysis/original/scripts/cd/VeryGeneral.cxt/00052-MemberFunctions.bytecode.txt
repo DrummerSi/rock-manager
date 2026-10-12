@@ -1,0 +1,996 @@
+global gMembers
+
+on assertCastLib argCastFileName, argCastNumOrName, argMustBeCorrectPath
+  [  0] getparam 8 .............................. <argCastNumOrName>
+  [  2] pusharglist 1 ........................... <argCastNumOrName>
+  [  4] extcall 104 ............................. <voidp(argCastNumOrName)>
+  [  7] jmpifz [ 57] ............................ if voidp(argCastNumOrName) then / else
+  [ 10] pushint8 2 .............................. <2>
+  [ 13] setlocal 0
+  [ 15] getlocal 0
+  [ 17] pushint8 4 .............................. <4>
+  [ 20] get 8 ................................... <the number of castLibs>
+  [ 22] lteq
+  [ 23] jmpifz [ 54] ............................ repeat with n = 2 to the number of castLibs
+  [ 26] pushint8 2 .............................. <2>
+  [ 29] pusharglist 1 ........................... <2>
+  [ 31] extcall 828 ............................. <castLib(2)>
+  [ 34] getobjprop 435 .......................... <castLib(2).fileName>
+  [ 37] getparam 0 .............................. <argCastFileName>
+  [ 39] eq ...................................... <castLib(2).fileName = argCastFileName>
+  [ 40] jmpifz [ 43] ............................ if castLib(2).fileName = argCastFileName then
+  [ 43] pushint8 1
+  [ 46] getlocal 0
+  [ 48] add
+  [ 49] setlocal 0
+  [ 51] endrepeat [ 15]
+  [ 54] jmp [216]
+  [ 57] getparam 8 .............................. <argCastNumOrName>
+  [ 59] pusharglist 1 ........................... <argCastNumOrName>
+  [ 61] extcall 828 ............................. <castLib(argCastNumOrName)>
+  [ 64] getobjprop 435 .......................... <castLib(argCastNumOrName).fileName>
+  [ 67] pusharglist 1 ........................... <castLib(argCastNumOrName).fileName>
+  [ 69] extcall 38 .............................. <fileStripName(castLib(argCastNumOrName).fileName)>
+  [ 72] setlocal 8 .............................. currFileName = fileStripName(castLib(argCastNumOrName).fileName)
+  [ 74] getparam 0 .............................. <argCastFileName>
+  [ 76] getlocal 8 .............................. <currFileName>
+  [ 78] eq ...................................... <argCastFileName = currFileName>
+  [ 79] jmpifz [ 90] ............................ if argCastFileName = currFileName then
+  [ 82] pushint8 1 .............................. <1>
+  [ 85] pusharglistnoret 1 ...................... <1>
+  [ 87] extcall 32 .............................. return 1
+  [ 90] pushzero ................................ <0>
+  [ 91] setlocal 16 ............................. tmpExists = 0
+  [ 93] getmovieprop 1208 ....................... <the searchPaths>
+  [ 96] peek 0
+  [ 98] pusharglist 1
+  [100] extcall 175
+  [103] pushint8 1
+  [105] peek 0
+  [107] peek 2
+  [109] lteq
+  [110] jmpifz [157] ............................ repeat with path in the searchPaths
+  [113] peek 2
+  [115] peek 1
+  [117] pusharglist 2
+  [119] extcall 23
+  [121] setlocal 24
+  [123] getlocal 24 ............................. <path>
+  [125] getparam 0 .............................. <argCastFileName>
+  [127] joinstr ................................. <path & argCastFileName>
+  [128] pushcons 0 .............................. <".cst">
+  [130] pushcons 8 .............................. <".cxt">
+  [132] pusharglist 2 ........................... <[".cst", ".cxt"]>
+  [134] pushlist ................................ <[".cst", ".cxt"]>
+  [135] pusharglist 2 ........................... <path & argCastFileName, [".cst", ".cxt"]>
+  [137] extcall 528 ............................. <fileExists2(path & argCastFileName, [".cst", ".cxt"])>
+  [140] jmpifz [151] ............................ if fileExists2(path & argCastFileName, [".cst", ".cxt"]) then
+  [143] pushint8 1 .............................. <1>
+  [146] setlocal 16 ............................. tmpExists = 1
+  [148] jmp [157] ............................... exit repeat
+  [151] pushint8 1
+  [153] add
+  [154] endrepeat [105]
+  [157] pop 3
+  [159] getlocal 16 ............................. <tmpExists>
+  [161] not ..................................... <not tmpExists>
+  [162] jmpifz [171] ............................ if not tmpExists then
+  [165] pushzero ................................ <0>
+  [166] pusharglistnoret 1 ...................... <0>
+  [168] extcall 32 .............................. return 0
+  [171] getparam 8 .............................. <argCastNumOrName>
+  [173] pusharglist 1 ........................... <argCastNumOrName>
+  [175] extcall 828 ............................. <castLib(argCastNumOrName)>
+  [178] getparam 0 .............................. <argCastFileName>
+  [180] setobjprop 435 .......................... castLib(argCastNumOrName).fileName = argCastFileName
+  [183] getparam 8 .............................. <argCastNumOrName>
+  [185] pusharglist 1 ........................... <argCastNumOrName>
+  [187] extcall 828 ............................. <castLib(argCastNumOrName)>
+  [190] getobjprop 435 .......................... <castLib(argCastNumOrName).fileName>
+  [193] pusharglist 1 ........................... <castLib(argCastNumOrName).fileName>
+  [195] extcall 38 .............................. <fileStripName(castLib(argCastNumOrName).fileName)>
+  [198] setlocal 8 .............................. currFileName = fileStripName(castLib(argCastNumOrName).fileName)
+  [200] getparam 0 .............................. <argCastFileName>
+  [202] getlocal 8 .............................. <currFileName>
+  [204] eq ...................................... <argCastFileName = currFileName>
+  [205] jmpifz [216] ............................ if argCastFileName = currFileName then
+  [208] pushint8 1 .............................. <1>
+  [211] pusharglistnoret 1 ...................... <1>
+  [213] extcall 32 .............................. return 1
+  [216] pushzero ................................ <0>
+  [217] pusharglistnoret 1 ...................... <0>
+  [219] extcall 32 .............................. return 0
+  [222] ret
+end
+
+on newMember argType, argName, argCastLibOrMember
+  [  0] getparam 16 ............................. <argCastLibOrMember>
+  [  2] pusharglist 1 ........................... <argCastLibOrMember>
+  [  4] extcall 104 ............................. <voidp(argCastLibOrMember)>
+  [  7] jmpifz [ 15] ............................ if voidp(argCastLibOrMember) then
+  [ 10] pushint8 1 .............................. <1>
+  [ 13] setparam 16 ............................. argCastLibOrMember = 1
+  [ 15] getparam 8 .............................. <argName>
+  [ 17] pusharglist 1 ........................... <argName>
+  [ 19] extcall 104 ............................. <voidp(argName)>
+  [ 22] jmpifz [ 29] ............................ if voidp(argName) then
+  [ 25] pushcons 16 ............................. <EMPTY>
+  [ 27] setparam 8 .............................. argName = EMPTY
+  [ 29] getparam 16 ............................. <argCastLibOrMember>
+  [ 31] pusharglist 1 ........................... <argCastLibOrMember>
+  [ 33] extcall 129 ............................. <ilk(argCastLibOrMember)>
+  [ 36] pushsymb 307 ............................ <#member>
+  [ 39] eq ...................................... <ilk(argCastLibOrMember) = #member>
+  [ 40] jmpifz [ 56] ............................ if ilk(argCastLibOrMember) = #member then / else
+  [ 43] getparam 0 .............................. <argType>
+  [ 45] getparam 16 ............................. <argCastLibOrMember>
+  [ 47] pusharglist 2 ........................... <argType, argCastLibOrMember>
+  [ 49] extcall 0 ............................... <new(argType, argCastLibOrMember)>
+  [ 51] setlocal 0 .............................. tmp = new(argType, argCastLibOrMember)
+  [ 53] jmp [ 71]
+  [ 56] getparam 0 .............................. <argType>
+  [ 58] getparam 16 ............................. <argCastLibOrMember>
+  [ 60] pusharglist 1 ........................... <argCastLibOrMember>
+  [ 62] extcall 828 ............................. <castLib(argCastLibOrMember)>
+  [ 65] pusharglist 2 ........................... <argType, castLib(argCastLibOrMember)>
+  [ 67] extcall 0 ............................... <new(argType, castLib(argCastLibOrMember))>
+  [ 69] setlocal 0 .............................. tmp = new(argType, castLib(argCastLibOrMember))
+  [ 71] getlocal 0 .............................. <tmp>
+  [ 73] getparam 8 .............................. <argName>
+  [ 75] setobjprop 48 ........................... tmp.name = argName
+  [ 78] getlocal 0 .............................. <tmp>
+  [ 80] pusharglistnoret 1 ...................... <tmp>
+  [ 82] extcall 32 .............................. return tmp
+  [ 85] ret
+end
+
+on assertMember argType, argName, argCastLib
+  [  0] getparam 8 .............................. <argName>
+  [  2] getparam 16 ............................. <argCastLib>
+  [  4] pushint8 10 ............................. <10>
+  [  7] get 9 ................................... <the number of member argName of castLib argCastLib>
+  [  9] setlocal 0 .............................. tmp = the number of member argName of castLib argCastLib
+  [ 11] getlocal 0 .............................. <tmp>
+  [ 13] pushzero ................................ <0>
+  [ 14] gt ...................................... <tmp > 0>
+  [ 15] jmpifz [ 50] ............................ if tmp > 0 then
+  [ 18] getlocal 0 .............................. <tmp>
+  [ 20] pusharglist 1 ........................... <tmp>
+  [ 22] extcall 307 ............................. <member(tmp)>
+  [ 25] setlocal 0 .............................. tmp = member(tmp)
+  [ 27] getlocal 0 .............................. <tmp>
+  [ 29] getobjprop 210 .......................... <tmp.type>
+  [ 32] getparam 0 .............................. <argType>
+  [ 34] eq ...................................... <tmp.type = argType>
+  [ 35] jmpifz [ 50] ............................ if tmp.type = argType then
+  [ 38] getlocal 0 .............................. <tmp>
+  [ 40] pusharglist 1 ........................... <tmp>
+  [ 42] extcall 307 ............................. <member(tmp)>
+  [ 45] pusharglistnoret 1 ...................... <member(tmp)>
+  [ 47] extcall 32 .............................. return member(tmp)
+  [ 50] getparam 0 .............................. <argType>
+  [ 52] getparam 8 .............................. <argName>
+  [ 54] getparam 16 ............................. <argCastLib>
+  [ 56] pusharglist 3 ........................... <argType, argName, argCastLib>
+  [ 58] localcall 1 ............................. <newMember(argType, argName, argCastLib)>
+  [ 60] pusharglistnoret 1 ...................... <newMember(argType, argName, argCastLib)>
+  [ 62] extcall 32 .............................. return newMember(argType, argName, argCastLib)
+  [ 65] ret
+end
+
+on tryGetMember argMemberName, argElseUseMember
+  [  0] getparam 0 .............................. <argMemberName>
+  [  2] pusharglist 1 ........................... <argMemberName>
+  [  4] extcall 307 ............................. <member(argMemberName)>
+  [  7] setlocal 0 .............................. tmp = member(argMemberName)
+  [  9] getlocal 0 .............................. <tmp>
+  [ 11] getobjprop 845 .......................... <tmp.number>
+  [ 14] pushzero ................................ <0>
+  [ 15] gt ...................................... <tmp.number > 0>
+  [ 16] jmpifz [ 26] ............................ if tmp.number > 0 then
+  [ 19] getlocal 0 .............................. <tmp>
+  [ 21] pusharglistnoret 1 ...................... <tmp>
+  [ 23] extcall 32 .............................. return tmp
+  [ 26] getparam 8 .............................. <argElseUseMember>
+  [ 28] pusharglistnoret 1 ...................... <argElseUseMember>
+  [ 30] extcall 32 .............................. return argElseUseMember
+  [ 33] ret
+end
+
+on newFieldMember argName, argMembNr, argCastLib
+  [  0] pushsymb 1217 ........................... <#field>
+  [  3] getparam 8 .............................. <argMembNr>
+  [  5] getparam 16 ............................. <argCastLib>
+  [  7] pusharglist 2 ........................... <argMembNr, argCastLib>
+  [  9] extcall 307 ............................. <member(argMembNr, argCastLib)>
+  [ 12] pusharglist 2 ........................... <#field, member(argMembNr, argCastLib)>
+  [ 14] extcall 0 ............................... <new(#field, member(argMembNr, argCastLib))>
+  [ 16] setlocal 0 .............................. tmp = new(#field, member(argMembNr, argCastLib))
+  [ 18] getlocal 0 .............................. <tmp>
+  [ 20] getparam 0 .............................. <argName>
+  [ 22] setobjprop 48 ........................... tmp.name = argName
+  [ 25] getlocal 0 .............................. <tmp>
+  [ 27] pushzero ................................ <0>
+  [ 28] setobjprop 1218 ......................... tmp.wordWrap = 0
+  [ 31] getlocal 0 .............................. <tmp>
+  [ 33] pusharglistnoret 1 ...................... <tmp>
+  [ 35] extcall 32 .............................. return tmp
+  [ 38] ret
+end
+
+on getMemberRect argMember
+  [  0] getparam 0 .............................. <argMember>
+  [  2] pusharglist 1 ........................... <argMember>
+  [  4] extcall 34 .............................. <objectp(argMember)>
+  [  7] not ..................................... <not objectp(argMember)>
+  [  8] jmpifz [ 20] ............................ if not objectp(argMember) then
+  [ 11] getparam 0 .............................. <argMember>
+  [ 13] pusharglist 1 ........................... <argMember>
+  [ 15] extcall 307 ............................. <member(argMember)>
+  [ 18] setparam 0 .............................. argMember = member(argMember)
+  [ 20] getparam 0 .............................. <argMember>
+  [ 22] pusharglist 1 ........................... <argMember>
+  [ 24] extcall 307 ............................. <member(argMember)>
+  [ 27] getobjprop 105 .......................... <member(argMember).rect>
+  [ 30] setlocal 0 .............................. tmpRect = member(argMember).rect
+  [ 32] getparam 0 .............................. <argMember>
+  [ 34] pusharglist 1 ........................... <argMember>
+  [ 36] extcall 307 ............................. <member(argMember)>
+  [ 39] getobjprop 801 .......................... <member(argMember).regPoint>
+  [ 42] setlocal 8 .............................. tmpReg = member(argMember).regPoint
+  [ 44] getlocal 8 .............................. <tmpReg>
+  [ 46] inv ..................................... <-tmpReg>
+  [ 47] getlocal 8 .............................. <tmpReg>
+  [ 49] inv ..................................... <-tmpReg>
+  [ 50] pusharglist 2 ........................... <-tmpReg, -tmpReg>
+  [ 52] extcall 105 ............................. <rect(-tmpReg, -tmpReg)>
+  [ 55] getlocal 0 .............................. <tmpRect>
+  [ 57] add ..................................... <rect(-tmpReg, -tmpReg) + tmpRect>
+  [ 58] pusharglistnoret 1 ...................... <rect(-tmpReg, -tmpReg) + tmpRect>
+  [ 60] extcall 32 .............................. return rect(-tmpReg, -tmpReg) + tmpRect
+  [ 63] ret
+end
+
+on getMemberRect2 argMember
+  [  0] getparam 0 .............................. <argMember>
+  [  2] getobjprop 105 .......................... <argMember.rect>
+  [  5] setlocal 0 .............................. tmpRect = argMember.rect
+  [  7] getparam 0 .............................. <argMember>
+  [  9] getobjprop 801 .......................... <argMember.regPoint>
+  [ 12] setlocal 8 .............................. tmpReg = argMember.regPoint
+  [ 14] getlocal 8 .............................. <tmpReg>
+  [ 16] inv ..................................... <-tmpReg>
+  [ 17] getlocal 8 .............................. <tmpReg>
+  [ 19] inv ..................................... <-tmpReg>
+  [ 20] pusharglist 2 ........................... <-tmpReg, -tmpReg>
+  [ 22] extcall 105 ............................. <rect(-tmpReg, -tmpReg)>
+  [ 25] getlocal 0 .............................. <tmpRect>
+  [ 27] add ..................................... <rect(-tmpReg, -tmpReg) + tmpRect>
+  [ 28] pusharglistnoret 1 ...................... <rect(-tmpReg, -tmpReg) + tmpRect>
+  [ 30] extcall 32 .............................. return rect(-tmpReg, -tmpReg) + tmpRect
+  [ 33] ret
+end
+
+on getMemberNum argStr, argCast
+  [  0] getparam 0 .............................. <argStr>
+  [  2] pusharglist 1 ........................... <argStr>
+  [  4] extcall 34 .............................. <objectp(argStr)>
+  [  7] jmpifz [ 23] ............................ if objectp(argStr) then / else
+  [ 10] getparam 0 .............................. <argStr>
+  [ 12] getobjprop 845 .......................... <argStr.number>
+  [ 15] pusharglistnoret 1 ...................... <argStr.number>
+  [ 17] extcall 32 .............................. return argStr.number
+  [ 20] jmp [ 97]
+  [ 23] getglobal 932 ........................... <gMembers>
+  [ 26] pusharglist 1 ........................... <gMembers>
+  [ 28] extcall 34 .............................. <objectp(gMembers)>
+  [ 31] jmpifz [ 54] ............................ if objectp(gMembers) then / else
+  [ 34] getglobal 932 ........................... <gMembers>
+  [ 37] getparam 0 .............................. <argStr>
+  [ 39] getparam 8 .............................. <argCast>
+  [ 41] pusharglist 3 ........................... <gMembers, argStr, argCast>
+  [ 43] objcall 309 ............................. <gMembers.getMemberNum(argStr, argCast)>
+  [ 46] pusharglistnoret 1 ...................... <gMembers.getMemberNum(argStr, argCast)>
+  [ 48] extcall 32 .............................. return gMembers.getMemberNum(argStr, argCast)
+  [ 51] jmp [ 97]
+  [ 54] getparam 8 .............................. <argCast>
+  [ 56] pusharglist 1 ........................... <argCast>
+  [ 58] extcall 104 ............................. <voidp(argCast)>
+  [ 61] jmpifz [ 80] ............................ if voidp(argCast) then / else
+  [ 64] getparam 0 .............................. <argStr>
+  [ 66] pushzero ................................ <0>
+  [ 67] pushint8 10 ............................. <10>
+  [ 70] get 9 ................................... <the number of member argStr>
+  [ 72] pusharglistnoret 1 ...................... <the number of member argStr>
+  [ 74] extcall 32 .............................. return the number of member argStr
+  [ 77] jmp [ 97]
+  [ 80] getparam 0 .............................. <argStr>
+  [ 82] getparam 8 .............................. <argCast>
+  [ 84] pusharglist 2 ........................... <argStr, argCast>
+  [ 86] extcall 307 ............................. <member(argStr, argCast)>
+  [ 89] getobjprop 845 .......................... <member(argStr, argCast).number>
+  [ 92] pusharglistnoret 1 ...................... <member(argStr, argCast).number>
+  [ 94] extcall 32 .............................. return member(argStr, argCast).number
+  [ 97] ret
+end
+
+on memberExists argStr
+  [  0] getparam 0 .............................. <argStr>
+  [  2] pusharglist 1 ........................... <argStr>
+  [  4] localcall 7 ............................. <getMemberNum(argStr)>
+  [  6] pushzero ................................ <0>
+  [  7] gt ...................................... <getMemberNum(argStr) > 0>
+  [  8] pusharglistnoret 1 ...................... <getMemberNum(argStr) > 0>
+  [ 10] extcall 32 .............................. return getMemberNum(argStr) > 0
+  [ 13] ret
+end
+
+on getMember argStr
+  [  0] getparam 0 .............................. <argStr>
+  [  2] pusharglist 1 ........................... <argStr>
+  [  4] extcall 104 ............................. <voidp(argStr)>
+  [  7] jmpifz [ 22] ............................ if voidp(argStr) then
+  [ 10] pushcons 24 ............................. <"Dummy">
+  [ 12] pusharglist 1 ........................... <"Dummy">
+  [ 14] extcall 307 ............................. <member("Dummy")>
+  [ 17] pusharglistnoret 1 ...................... <member("Dummy")>
+  [ 19] extcall 32 .............................. return member("Dummy")
+  [ 22] getparam 0 .............................. <argStr>
+  [ 24] pusharglist 1 ........................... <argStr>
+  [ 26] localcall 7 ............................. <getMemberNum(argStr)>
+  [ 28] setlocal 0 .............................. tmpNum = getMemberNum(argStr)
+  [ 30] getlocal 0 .............................. <tmpNum>
+  [ 32] pushzero ................................ <0>
+  [ 33] lteq .................................... <tmpNum <= 0>
+  [ 34] jmpifz [ 52] ............................ if tmpNum <= 0 then / else
+  [ 37] pushcons 32 ............................. <"Dummy">
+  [ 39] pusharglist 1 ........................... <"Dummy">
+  [ 41] extcall 307 ............................. <member("Dummy")>
+  [ 44] pusharglistnoret 1 ...................... <member("Dummy")>
+  [ 46] extcall 32 .............................. return member("Dummy")
+  [ 49] jmp [ 64]
+  [ 52] getlocal 0 .............................. <tmpNum>
+  [ 54] pusharglist 1 ........................... <tmpNum>
+  [ 56] extcall 307 ............................. <member(tmpNum)>
+  [ 59] pusharglistnoret 1 ...................... <member(tmpNum)>
+  [ 61] extcall 32 .............................. return member(tmpNum)
+  [ 64] ret
+end
+
+on getMember2 argStr, argIfNotExistsUseThis
+  [  0] getparam 0 .............................. <argStr>
+  [  2] pusharglist 1 ........................... <argStr>
+  [  4] extcall 104 ............................. <voidp(argStr)>
+  [  7] jmpifz [ 17] ............................ if voidp(argStr) then
+  [ 10] getparam 8 .............................. <argIfNotExistsUseThis>
+  [ 12] pusharglistnoret 1 ...................... <argIfNotExistsUseThis>
+  [ 14] extcall 32 .............................. return argIfNotExistsUseThis
+  [ 17] getparam 0 .............................. <argStr>
+  [ 19] pusharglist 1 ........................... <argStr>
+  [ 21] localcall 7 ............................. <getMemberNum(argStr)>
+  [ 23] setlocal 0 .............................. tmpNum = getMemberNum(argStr)
+  [ 25] getlocal 0 .............................. <tmpNum>
+  [ 27] pushzero ................................ <0>
+  [ 28] lteq .................................... <tmpNum <= 0>
+  [ 29] jmpifz [ 42] ............................ if tmpNum <= 0 then / else
+  [ 32] getparam 8 .............................. <argIfNotExistsUseThis>
+  [ 34] pusharglistnoret 1 ...................... <argIfNotExistsUseThis>
+  [ 36] extcall 32 .............................. return argIfNotExistsUseThis
+  [ 39] jmp [ 54]
+  [ 42] getlocal 0 .............................. <tmpNum>
+  [ 44] pusharglist 1 ........................... <tmpNum>
+  [ 46] extcall 307 ............................. <member(tmpNum)>
+  [ 49] pusharglistnoret 1 ...................... <member(tmpNum)>
+  [ 51] extcall 32 .............................. return member(tmpNum)
+  [ 54] ret
+end
+
+on safeUnloadMember argMemberName
+  [  0] getparam 0 .............................. <argMemberName>
+  [  2] pusharglist 1 ........................... <argMemberName>
+  [  4] extcall 416 ............................. <stringp(argMemberName)>
+  [  7] jmpifz [ 28] ............................ if stringp(argMemberName) then
+  [ 10] getparam 0 .............................. <argMemberName>
+  [ 12] pusharglist 1 ........................... <argMemberName>
+  [ 14] localcall 7 ............................. <getMemberNum(argMemberName)>
+  [ 16] pushzero ................................ <0>
+  [ 17] gt ...................................... <getMemberNum(argMemberName) > 0>
+  [ 18] jmpifz [ 28] ............................ if getMemberNum(argMemberName) > 0 then
+  [ 21] getparam 0 .............................. <argMemberName>
+  [ 23] pusharglistnoret 1 ...................... <argMemberName>
+  [ 25] extcall 1221 ............................ unloadMember(argMemberName)
+  [ 28] ret
+end
+
+on safePreloadMember argMembNameOrNr
+  [  0] getparam 0 .............................. <argMembNameOrNr>
+  [  2] pusharglist 1 ........................... <argMembNameOrNr>
+  [  4] extcall 128 ............................. <listp(argMembNameOrNr)>
+  [  7] not ..................................... <not listp(argMembNameOrNr)>
+  [  8] jmpifz [ 18] ............................ if not listp(argMembNameOrNr) then
+  [ 11] getparam 0 .............................. <argMembNameOrNr>
+  [ 13] pusharglist 1 ........................... <[argMembNameOrNr]>
+  [ 15] pushlist ................................ <[argMembNameOrNr]>
+  [ 16] setparam 0 .............................. argMembNameOrNr = [argMembNameOrNr]
+  [ 18] getparam 0 .............................. <argMembNameOrNr>
+  [ 20] peek 0
+  [ 22] pusharglist 1
+  [ 24] extcall 175
+  [ 27] pushint8 1
+  [ 29] peek 0
+  [ 31] peek 2
+  [ 33] lteq
+  [ 34] jmpifz [ 86] ............................ repeat with tmp in argMembNameOrNr
+  [ 37] peek 2
+  [ 39] peek 1
+  [ 41] pusharglist 2
+  [ 43] extcall 23
+  [ 45] setlocal 0
+  [ 47] getlocal 0 .............................. <tmp>
+  [ 49] pusharglist 1 ........................... <tmp>
+  [ 51] extcall 94 .............................. <integerp(tmp)>
+  [ 54] not ..................................... <not integerp(tmp)>
+  [ 55] jmpifz [ 66] ............................ if not integerp(tmp) then
+  [ 58] getlocal 0 .............................. <tmp>
+  [ 60] pusharglist 1 ........................... <tmp>
+  [ 62] localcall 7 ............................. <getMemberNum(tmp)>
+  [ 64] setlocal 0 .............................. tmp = getMemberNum(tmp)
+  [ 66] getlocal 0 .............................. <tmp>
+  [ 68] pushzero ................................ <0>
+  [ 69] gt ...................................... <tmp > 0>
+  [ 70] jmpifz [ 80] ............................ if tmp > 0 then
+  [ 73] getlocal 0 .............................. <tmp>
+  [ 75] pusharglistnoret 1 ...................... <tmp>
+  [ 77] extcall 1222 ............................ preloadMember(tmp)
+  [ 80] pushint8 1
+  [ 82] add
+  [ 83] endrepeat [ 29]
+  [ 86] pop 3
+  [ 88] ret ..................................... exit
+  [ 89] getparam 0 .............................. <argMembNameOrNr>
+  [ 91] pusharglist 1 ........................... <argMembNameOrNr>
+  [ 93] extcall 416 ............................. <stringp(argMembNameOrNr)>
+  [ 96] jmpifz [107] ............................ if stringp(argMembNameOrNr) then
+  [ 99] getparam 0 .............................. <argMembNameOrNr>
+  [101] pusharglist 1 ........................... <argMembNameOrNr>
+  [103] localcall 7 ............................. <getMemberNum(argMembNameOrNr)>
+  [105] setparam 0 .............................. argMembNameOrNr = getMemberNum(argMembNameOrNr)
+  [107] getparam 0 .............................. <argMembNameOrNr>
+  [109] pushzero ................................ <0>
+  [110] gt ...................................... <argMembNameOrNr > 0>
+  [111] jmpifz [121] ............................ if argMembNameOrNr > 0 then
+  [114] getparam 0 .............................. <argMembNameOrNr>
+  [116] pusharglistnoret 1 ...................... <argMembNameOrNr>
+  [118] extcall 1222 ............................ preloadMember(argMembNameOrNr)
+  [121] ret
+end
+
+on findMembers argWildCardStr, argCriteria, argReturnAs
+  [  0] getparam 8 .............................. <argCriteria>
+  [  2] pusharglist 1 ........................... <argCriteria>
+  [  4] extcall 104 ............................. <voidp(argCriteria)>
+  [  7] jmpifz [ 15] ............................ if voidp(argCriteria) then
+  [ 10] pusharglist 0 ........................... <[:]>
+  [ 12] pushproplist ............................ <[:]>
+  [ 13] setparam 8 .............................. argCriteria = [:]
+  [ 15] getparam 8 .............................. <argCriteria>
+  [ 17] pushsymb 1224 ........................... <#castLibs>
+  [ 20] pusharglist 2 ........................... <argCriteria, #castLibs>
+  [ 22] objcall 23 .............................. <argCriteria[#castLibs]>
+  [ 24] setlocal 0 .............................. tmpCasts = argCriteria[#castLibs]
+  [ 26] getlocal 0 .............................. <tmpCasts>
+  [ 28] pusharglist 1 ........................... <tmpCasts>
+  [ 30] extcall 104 ............................. <voidp(tmpCasts)>
+  [ 33] jmpifz [ 47] ............................ if voidp(tmpCasts) then
+  [ 36] getparam 8 .............................. <argCriteria>
+  [ 38] pushsymb 863 ............................ <#Casts>
+  [ 41] pusharglist 2 ........................... <argCriteria, #Casts>
+  [ 43] objcall 23 .............................. <argCriteria[#Casts]>
+  [ 45] setlocal 0 .............................. tmpCasts = argCriteria[#Casts]
+  [ 47] getlocal 0 .............................. <tmpCasts>
+  [ 49] pusharglist 1 ........................... <tmpCasts>
+  [ 51] extcall 104 ............................. <voidp(tmpCasts)>
+  [ 54] jmpifz [100] ............................ if voidp(tmpCasts) then / else
+  [ 57] pusharglist 0 ........................... <[]>
+  [ 59] pushlist ................................ <[]>
+  [ 60] setlocal 0 .............................. tmpCasts = []
+  [ 62] pushint8 1 .............................. <1>
+  [ 65] setlocal 8
+  [ 67] getlocal 8
+  [ 69] pushint8 4 .............................. <4>
+  [ 72] get 8 ................................... <the number of castLibs>
+  [ 74] lteq
+  [ 75] jmpifz [ 97] ............................ repeat with n = 1 to the number of castLibs
+  [ 78] getlocal 0 .............................. <tmpCasts>
+  [ 80] getlocal 8 .............................. <n>
+  [ 82] pusharglistnoret 2 ...................... <tmpCasts, n>
+  [ 84] objcall 183 ............................. tmpCasts.add(n)
+  [ 87] pushint8 1
+  [ 90] getlocal 8
+  [ 92] add
+  [ 93] setlocal 8
+  [ 95] endrepeat [ 67]
+  [ 97] jmp [118]
+  [100] getlocal 0 .............................. <tmpCasts>
+  [102] pusharglist 1 ........................... <tmpCasts>
+  [104] extcall 128 ............................. <listp(tmpCasts)>
+  [107] not ..................................... <not listp(tmpCasts)>
+  [108] jmpifz [118] ............................ if not listp(tmpCasts) then
+  [111] getlocal 0 .............................. <tmpCasts>
+  [113] pusharglist 1 ........................... <[tmpCasts]>
+  [115] pushlist ................................ <[tmpCasts]>
+  [116] setlocal 0 .............................. tmpCasts = [tmpCasts]
+  [118] getparam 8 .............................. <argCriteria>
+  [120] pushsymb 863 ............................ <#Casts>
+  [123] pusharglistnoret 2 ...................... <argCriteria, #Casts>
+  [125] objcall 445 ............................. argCriteria.deleteProp(#Casts)
+  [128] getparam 8 .............................. <argCriteria>
+  [130] pushsymb 1225 ........................... <#Types>
+  [133] pusharglist 2 ........................... <argCriteria, #Types>
+  [135] objcall 23 .............................. <argCriteria[#Types]>
+  [137] setlocal 16 ............................. tmpTypes = argCriteria[#Types]
+  [139] getlocal 16 ............................. <tmpTypes>
+  [141] pusharglist 1 ........................... <tmpTypes>
+  [143] extcall 104 ............................. <voidp(tmpTypes)>
+  [146] jmpifz [160] ............................ if voidp(tmpTypes) then / else
+  [149] pushsymb 774 ............................ <#All>
+  [152] pusharglist 1 ........................... <[#All]>
+  [154] pushlist ................................ <[#All]>
+  [155] setlocal 16 ............................. tmpTypes = [#All]
+  [157] jmp [178]
+  [160] getlocal 16 ............................. <tmpTypes>
+  [162] pusharglist 1 ........................... <tmpTypes>
+  [164] extcall 128 ............................. <listp(tmpTypes)>
+  [167] not ..................................... <not listp(tmpTypes)>
+  [168] jmpifz [178] ............................ if not listp(tmpTypes) then
+  [171] getlocal 16 ............................. <tmpTypes>
+  [173] pusharglist 1 ........................... <[tmpTypes]>
+  [175] pushlist ................................ <[tmpTypes]>
+  [176] setlocal 16 ............................. tmpTypes = [tmpTypes]
+  [178] getparam 8 .............................. <argCriteria>
+  [180] pushsymb 1225 ........................... <#Types>
+  [183] getlocal 16 ............................. <tmpTypes>
+  [185] pusharglistnoret 3 ...................... <argCriteria, #Types, tmpTypes>
+  [187] objcall 180 ............................. argCriteria.setaProp(#Types, tmpTypes)
+  [190] getparam 8 .............................. <argCriteria>
+  [192] pushsymb 1226 ........................... <#modifiedDate>
+  [195] pusharglist 2 ........................... <argCriteria, #modifiedDate>
+  [197] objcall 23 .............................. <argCriteria[#modifiedDate]>
+  [199] setlocal 24 ............................. tmp = argCriteria[#modifiedDate]
+  [201] getlocal 24 ............................. <tmp>
+  [203] pusharglist 1 ........................... <tmp>
+  [205] extcall 128 ............................. <listp(tmp)>
+  [208] jmpifz [243] ............................ if listp(tmp) then
+  [211] getlocal 24 ............................. <tmp>
+  [213] pushsymb 1227 ........................... <#end>
+  [216] pusharglist 2 ........................... <tmp, #end>
+  [218] objcall 23 .............................. <tmp[#end]>
+  [220] pusharglist 1 ........................... <tmp[#end]>
+  [222] extcall 104 ............................. <voidp(tmp[#end])>
+  [225] jmpifz [243] ............................ if voidp(tmp[#end]) then
+  [228] getlocal 24 ............................. <tmp>
+  [230] pushsymb 1227 ........................... <#end>
+  [233] pusharglist 0 ........................... <>
+  [235] thebuiltin 1228 ......................... <the systemDate>
+  [238] pusharglistnoret 3 ...................... <tmp, #end, the systemDate>
+  [240] objcall 77 .............................. tmp[#end] = the systemDate
+  [243] getparam 8 .............................. <argCriteria>
+  [245] pushsymb 1229 ........................... <#palette>
+  [248] pusharglist 2 ........................... <argCriteria, #palette>
+  [250] objcall 23 .............................. <argCriteria[#palette]>
+  [252] setlocal 24 ............................. tmp = argCriteria[#palette]
+  [254] getlocal 24 ............................. <tmp>
+  [256] pusharglist 1 ........................... <tmp>
+  [258] extcall 104 ............................. <voidp(tmp)>
+  [261] not ..................................... <not voidp(tmp)>
+  [262] jmpifz [273] ............................ if not voidp(tmp) then
+  [265] pushsymb 1230 ........................... <#bitmap>
+  [268] pusharglist 1 ........................... <[#bitmap]>
+  [270] pushlist ................................ <[#bitmap]>
+  [271] setlocal 16 ............................. tmpTypes = [#bitmap]
+  [273] pusharglist 0 ........................... <[]>
+  [275] pushlist ................................ <[]>
+  [276] setlocal 32 ............................. tmpNames = []
+  [278] pusharglist 0 ........................... <[]>
+  [280] pushlist ................................ <[]>
+  [281] setlocal 40 ............................. tmpMembers = []
+  [283] getlocal 0 .............................. <tmpCasts>
+  [285] peek 0
+  [287] pusharglist 1
+  [289] extcall 175
+  [292] pushint8 1
+  [294] peek 0
+  [296] peek 2
+  [298] lteq
+  [299] jmpifz [714] ............................ repeat with tmpCast in tmpCasts
+  [302] peek 2
+  [304] peek 1
+  [306] pusharglist 2
+  [308] extcall 23
+  [310] setlocal 48
+  [312] pushint8 1 .............................. <1>
+  [315] setlocal 8
+  [317] getlocal 8
+  [319] getlocal 48 ............................. <tmpCast>
+  [321] pushint8 2 .............................. <2>
+  [324] get 8 ................................... <the number of castMembers of castLib tmpCast>
+  [326] lteq
+  [327] jmpifz [708] ............................ repeat with n = 1 to the number of castMembers of castLib tmpCast
+  [330] getlocal 8 .............................. <n>
+  [332] getlocal 48 ............................. <tmpCast>
+  [334] pusharglist 2 ........................... <n, tmpCast>
+  [336] extcall 307 ............................. <member(n, tmpCast)>
+  [339] setlocal 56 ............................. tmpMemb = member(n, tmpCast)
+  [341] getlocal 56 ............................. <tmpMemb>
+  [343] getobjprop 210 .......................... <tmpMemb.type>
+  [346] setlocal 64 ............................. tmpType = tmpMemb.type
+  [348] getlocal 16 ............................. <tmpTypes>
+  [350] pushint8 1 .............................. <1>
+  [353] pusharglist 2 ........................... <tmpTypes, 1>
+  [355] objcall 23 .............................. <tmpTypes[1]>
+  [357] pushsymb 774 ............................ <#All>
+  [360] eq ...................................... <tmpTypes[1] = #All>
+  [361] getlocal 16 ............................. <tmpTypes>
+  [363] getlocal 64 ............................. <tmpType>
+  [365] pusharglist 2 ........................... <tmpTypes, tmpType>
+  [367] objcall 181 ............................. <tmpTypes.getPos(tmpType)>
+  [370] or ...................................... <(tmpTypes[1] = #All) or tmpTypes.getPos(tmpType)>
+  [371] getlocal 64 ............................. <tmpType>
+  [373] pushsymb 895 ............................ <#empty>
+  [376] nteq .................................... <tmpType <> #empty>
+  [377] and ..................................... <((tmpTypes[1] = #All) or tmpTypes.getPos(tmpType)) and (tmpType <> #empty)>
+  [378] jmpifz [697] ............................ if ((tmpTypes[1] = #All) or tmpTypes.getPos(tmpType)) and (tmpType <> #empty) then
+  [381] pushint8 1 .............................. <1>
+  [384] setlocal 72 ............................. tmpOK = 1
+  [386] pushint8 1 .............................. <1>
+  [389] setlocal 80
+  [391] getlocal 80
+  [393] getparam 8 .............................. <argCriteria>
+  [395] pusharglist 1 ........................... <argCriteria>
+  [397] objcall 175 ............................. <argCriteria.count()>
+  [400] lteq
+  [401] jmpifz [671] ............................ repeat with tmpCritNr = 1 to argCriteria.count()
+  [404] getparam 8 .............................. <argCriteria>
+  [406] getlocal 80 ............................. <tmpCritNr>
+  [408] pusharglist 2 ........................... <argCriteria, tmpCritNr>
+  [410] objcall 207 ............................. <argCriteria.getPropAt(tmpCritNr)>
+  [413] setlocal 88 ............................. tmpCrit = argCriteria.getPropAt(tmpCritNr)
+  [415] getparam 8 .............................. <argCriteria>
+  [417] getlocal 80 ............................. <tmpCritNr>
+  [419] pusharglist 2 ........................... <argCriteria, tmpCritNr>
+  [421] objcall 23 .............................. <argCriteria[tmpCritNr]>
+  [423] setlocal 96 ............................. tmpVal = argCriteria[tmpCritNr]
+  [425] getlocal 88 ............................. <tmpCrit>
+  [427] pushsymb 210 ............................ <#type>
+  [430] eq ...................................... <tmpCrit = #type>
+  [431] jmpifz [471] ............................ if tmpCrit = #type then
+  [434] getlocal 96 ............................. <tmpVal>
+  [436] getlocal 64 ............................. <tmpType>
+  [438] pusharglist 2 ........................... <tmpVal, tmpType>
+  [440] objcall 181 ............................. <tmpVal.getPos(tmpType)>
+  [443] pushzero ................................ <0>
+  [444] eq ...................................... <tmpVal.getPos(tmpType) = 0>
+  [445] getlocal 96 ............................. <tmpVal>
+  [447] pushint8 1 .............................. <1>
+  [450] pusharglist 2 ........................... <tmpVal, 1>
+  [452] objcall 23 .............................. <tmpVal[1]>
+  [454] pushsymb 774 ............................ <#All>
+  [457] nteq .................................... <tmpVal[1] <> #All>
+  [458] or ...................................... <(tmpVal.getPos(tmpType) = 0) or (tmpVal[1] <> #All)>
+  [459] jmpifz [468] ............................ if (tmpVal.getPos(tmpType) = 0) or (tmpVal[1] <> #All) then
+  [462] pushzero ................................ <0>
+  [463] setlocal 72 ............................. tmpOK = 0
+  [465] jmp [671] ............................... exit repeat
+  [468] jmp [660] ............................... next repeat
+  [471] getlocal 88 ............................. <tmpCrit>
+  [473] pushsymb 440 ............................ <#size>
+  [476] eq ...................................... <tmpCrit = #size>
+  [477] jmpifz [536] ............................ if tmpCrit = #size then
+  [480] getlocal 56 ............................. <tmpMemb>
+  [482] getobjprop 440 .......................... <tmpMemb.size>
+  [485] setlocal 104 ............................ tmpSize = tmpMemb.size
+  [487] getlocal 104 ............................ <tmpSize>
+  [489] getlocal 96 ............................. <tmpVal>
+  [491] pushsymb 594 ............................ <#min>
+  [494] pusharglist 2 ........................... <tmpVal, #min>
+  [496] objcall 23 .............................. <tmpVal[#min]>
+  [498] lt ...................................... <tmpSize < tmpVal[#min]>
+  [499] getlocal 104 ............................ <tmpSize>
+  [501] getlocal 96 ............................. <tmpVal>
+  [503] pushsymb 1231 ........................... <#max>
+  [506] pusharglist 2 ........................... <tmpVal, #max>
+  [508] objcall 23 .............................. <tmpVal[#max]>
+  [510] gt ...................................... <tmpSize > tmpVal[#max]>
+  [511] getlocal 96 ............................. <tmpVal>
+  [513] pushsymb 1231 ........................... <#max>
+  [516] pusharglist 2 ........................... <tmpVal, #max>
+  [518] objcall 23 .............................. <tmpVal[#max]>
+  [520] pushzero ................................ <0>
+  [521] gteq .................................... <tmpVal[#max] >= 0>
+  [522] and ..................................... <(tmpSize > tmpVal[#max]) and (tmpVal[#max] >= 0)>
+  [523] or ...................................... <(tmpSize < tmpVal[#min]) or ((tmpSize > tmpVal[#max]) and (tmpVal[#max] >= 0))>
+  [524] jmpifz [533] ............................ if (tmpSize < tmpVal[#min]) or ((tmpSize > tmpVal[#max]) and (tmpVal[#max] >= 0)) then
+  [527] pushzero ................................ <0>
+  [528] setlocal 72 ............................. tmpOK = 0
+  [530] jmp [671] ............................... exit repeat
+  [533] jmp [660] ............................... next repeat
+  [536] getlocal 88 ............................. <tmpCrit>
+  [538] pushsymb 1226 ........................... <#modifiedDate>
+  [541] eq ...................................... <tmpCrit = #modifiedDate>
+  [542] jmpifz [589] ............................ if tmpCrit = #modifiedDate then
+  [545] getlocal 56 ............................. <tmpMemb>
+  [547] getobjprop 1226 ......................... <tmpMemb.modifiedDate>
+  [550] setlocal 112 ............................ tmpDate = tmpMemb.modifiedDate
+  [552] getlocal 112 ............................ <tmpDate>
+  [554] getlocal 96 ............................. <tmpVal>
+  [556] pushsymb 1232 ........................... <#start>
+  [559] pusharglist 2 ........................... <tmpVal, #start>
+  [561] objcall 23 .............................. <tmpVal[#start]>
+  [563] lt ...................................... <tmpDate < tmpVal[#start]>
+  [564] getlocal 112 ............................ <tmpDate>
+  [566] getlocal 96 ............................. <tmpVal>
+  [568] pushsymb 1227 ........................... <#end>
+  [571] pusharglist 2 ........................... <tmpVal, #end>
+  [573] objcall 23 .............................. <tmpVal[#end]>
+  [575] gt ...................................... <tmpDate > tmpVal[#end]>
+  [576] or ...................................... <(tmpDate < tmpVal[#start]) or (tmpDate > tmpVal[#end])>
+  [577] jmpifz [586] ............................ if (tmpDate < tmpVal[#start]) or (tmpDate > tmpVal[#end]) then
+  [580] pushzero ................................ <0>
+  [581] setlocal 72 ............................. tmpOK = 0
+  [583] jmp [671] ............................... exit repeat
+  [586] jmp [660] ............................... next repeat
+  [589] getlocal 88 ............................. <tmpCrit>
+  [591] pushsymb 1233 ........................... <#creationDate>
+  [594] eq ...................................... <tmpCrit = #creationDate>
+  [595] jmpifz [601] ............................ if tmpCrit = #creationDate then
+  [598] jmp [660] ............................... next repeat
+  [601] getlocal 88 ............................. <tmpCrit>
+  [603] pushsymb 1229 ........................... <#palette>
+  [606] eq ...................................... <tmpCrit = #palette>
+  [607] jmpifz [660] ............................ if tmpCrit = #palette then
+  [610] getlocal 64 ............................. <tmpType>
+  [612] pushsymb 1230 ........................... <#bitmap>
+  [615] eq ...................................... <tmpType = #bitmap>
+  [616] jmpifz [660] ............................ if tmpType = #bitmap then
+  [619] getlocal 96 ............................. <tmpVal>
+  [621] pusharglist 1 ........................... <tmpVal>
+  [623] extcall 94 .............................. <integerp(tmpVal)>
+  [626] jmpifz [646] ............................ if integerp(tmpVal) then
+  [629] getlocal 56 ............................. <tmpMemb>
+  [631] getobjprop 1229 ......................... <tmpMemb.palette>
+  [634] getlocal 96 ............................. <tmpVal>
+  [636] nteq .................................... <tmpMemb.palette <> tmpVal>
+  [637] jmpifz [643] ............................ if tmpMemb.palette <> tmpVal then
+  [640] pushzero ................................ <0>
+  [641] setlocal 72 ............................. tmpOK = 0
+  [643] jmp [660] ............................... next repeat
+  [646] getlocal 56 ............................. <tmpMemb>
+  [648] getobjprop 1234 ......................... <tmpMemb.paletteRef>
+  [651] getlocal 96 ............................. <tmpVal>
+  [653] nteq .................................... <tmpMemb.paletteRef <> tmpVal>
+  [654] jmpifz [660] ............................ if tmpMemb.paletteRef <> tmpVal then
+  [657] pushzero ................................ <0>
+  [658] setlocal 72 ............................. tmpOK = 0
+  [660] pushint8 1
+  [663] getlocal 80
+  [665] add
+  [666] setlocal 80
+  [668] endrepeat [391]
+  [671] getlocal 72 ............................. <tmpOK>
+  [673] jmpifz [697] ............................ if tmpOK then
+  [676] getlocal 32 ............................. <tmpNames>
+  [678] getlocal 56 ............................. <tmpMemb>
+  [680] getobjprop 48 ........................... <tmpMemb.name>
+  [683] pusharglistnoret 2 ...................... <tmpNames, tmpMemb.name>
+  [685] objcall 183 ............................. tmpNames.add(tmpMemb.name)
+  [688] getlocal 40 ............................. <tmpMembers>
+  [690] getlocal 56 ............................. <tmpMemb>
+  [692] pusharglistnoret 2 ...................... <tmpMembers, tmpMemb>
+  [694] objcall 183 ............................. tmpMembers.add(tmpMemb)
+  [697] pushint8 1
+  [700] getlocal 8
+  [702] add
+  [703] setlocal 8
+  [705] endrepeat [317]
+  [708] pushint8 1
+  [710] add
+  [711] endrepeat [294]
+  [714] pop 3
+  [716] getparam 16 ............................. <argReturnAs>
+  [718] pushsymb 1235 ........................... <#Names>
+  [721] eq ...................................... <argReturnAs = #Names>
+  [722] getparam 16 ............................. <argReturnAs>
+  [724] pusharglist 1 ........................... <argReturnAs>
+  [726] extcall 104 ............................. <voidp(argReturnAs)>
+  [729] or ...................................... <(argReturnAs = #Names) or voidp(argReturnAs)>
+  [730] jmpifz [750] ............................ if (argReturnAs = #Names) or voidp(argReturnAs) then / else
+  [733] getparam 0 .............................. <argWildCardStr>
+  [735] getlocal 32 ............................. <tmpNames>
+  [737] pushsymb 1130 ........................... <#Strings>
+  [740] pusharglist 3 ........................... <argWildCardStr, tmpNames, #Strings>
+  [742] extcall 1092 ............................ <wildCardSearch(argWildCardStr, tmpNames, #Strings)>
+  [745] setlocal 120 ............................ tmpRetList = wildCardSearch(argWildCardStr, tmpNames, #Strings)
+  [747] jmp [924]
+  [750] getparam 16 ............................. <argReturnAs>
+  [752] pushsymb 1236 ........................... <#NumbersNames>
+  [755] eq ...................................... <argReturnAs = #NumbersNames>
+  [756] jmpifz [844] ............................ if argReturnAs = #NumbersNames then / else
+  [759] pusharglist 0 ........................... <[:]>
+  [761] pushproplist ............................ <[:]>
+  [762] setlocal 120 ............................ tmpRetList = [:]
+  [764] getparam 0 .............................. <argWildCardStr>
+  [766] getlocal 32 ............................. <tmpNames>
+  [768] pushsymb 1133 ........................... <#Positions>
+  [771] pusharglist 3 ........................... <argWildCardStr, tmpNames, #Positions>
+  [773] extcall 1092 ............................ <wildCardSearch(argWildCardStr, tmpNames, #Positions)>
+  [776] setlocal 128 ............................ tmpList = wildCardSearch(argWildCardStr, tmpNames, #Positions)
+  [778] getlocal 128 ............................ <tmpList>
+  [780] peek 0
+  [782] pusharglist 1
+  [784] extcall 175
+  [787] pushint8 1
+  [789] peek 0
+  [791] peek 2
+  [793] lteq
+  [794] jmpifz [839] ............................ repeat with tmpPos in tmpList
+  [797] peek 2
+  [799] peek 1
+  [801] pusharglist 2
+  [803] extcall 23
+  [805] setlocal 136
+  [807] getlocal 120 ............................ <tmpRetList>
+  [809] getlocal 40 ............................. <tmpMembers>
+  [811] getlocal 136 ............................ <tmpPos>
+  [813] pusharglist 2 ........................... <tmpMembers, tmpPos>
+  [815] objcall 23 .............................. <tmpMembers[tmpPos]>
+  [817] getobjprop 842 .......................... <tmpMembers[tmpPos].memberNum>
+  [820] getlocal 32 ............................. <tmpNames>
+  [822] getlocal 136 ............................ <tmpPos>
+  [824] pusharglist 2 ........................... <tmpNames, tmpPos>
+  [826] objcall 23 .............................. <tmpNames[tmpPos]>
+  [828] pusharglistnoret 3 ...................... <tmpRetList, tmpMembers[tmpPos].memberNum, tmpNames[tmpPos]>
+  [830] objcall 45 .............................. tmpRetList.addProp(tmpMembers[tmpPos].memberNum, tmpNames[tmpPos])
+  [833] pushint8 1
+  [835] add
+  [836] endrepeat [789]
+  [839] pop 3
+  [841] jmp [924]
+  [844] getparam 16 ............................. <argReturnAs>
+  [846] pushsymb 1237 ........................... <#members>
+  [849] eq ...................................... <argReturnAs = #members>
+  [850] jmpifz [924] ............................ if argReturnAs = #members then
+  [853] pusharglist 0 ........................... <[]>
+  [855] pushlist ................................ <[]>
+  [856] setlocal 120 ............................ tmpRetList = []
+  [858] getparam 0 .............................. <argWildCardStr>
+  [860] getlocal 32 ............................. <tmpNames>
+  [862] pushsymb 1133 ........................... <#Positions>
+  [865] pusharglist 3 ........................... <argWildCardStr, tmpNames, #Positions>
+  [867] extcall 1092 ............................ <wildCardSearch(argWildCardStr, tmpNames, #Positions)>
+  [870] setlocal 128 ............................ tmpList = wildCardSearch(argWildCardStr, tmpNames, #Positions)
+  [872] getlocal 128 ............................ <tmpList>
+  [874] peek 0
+  [876] pusharglist 1
+  [878] extcall 175
+  [881] pushint8 1
+  [883] peek 0
+  [885] peek 2
+  [887] lteq
+  [888] jmpifz [922] ............................ repeat with tmpPos in tmpList
+  [891] peek 2
+  [893] peek 1
+  [895] pusharglist 2
+  [897] extcall 23
+  [899] setlocal 136
+  [901] getlocal 120 ............................ <tmpRetList>
+  [903] getlocal 40 ............................. <tmpMembers>
+  [905] getlocal 136 ............................ <tmpPos>
+  [907] pusharglist 2 ........................... <tmpMembers, tmpPos>
+  [909] objcall 23 .............................. <tmpMembers[tmpPos]>
+  [911] pusharglistnoret 2 ...................... <tmpRetList, tmpMembers[tmpPos]>
+  [913] objcall 183 ............................. tmpRetList.add(tmpMembers[tmpPos])
+  [916] pushint8 1
+  [918] add
+  [919] endrepeat [883]
+  [922] pop 3
+  [924] getlocal 120 ............................ <tmpRetList>
+  [926] pusharglistnoret 1 ...................... <tmpRetList>
+  [928] extcall 32 .............................. return tmpRetList
+  [931] ret
+end
+
+on xxxRecompileScripts argCastList
+  [  0] getparam 0 .............................. <argCastList>
+  [  2] pusharglist 1 ........................... <argCastList>
+  [  4] extcall 104 ............................. <voidp(argCastList)>
+  [  7] jmpifz [ 53] ............................ if voidp(argCastList) then / else
+  [ 10] pusharglist 0 ........................... <[]>
+  [ 12] pushlist ................................ <[]>
+  [ 13] setparam 0 .............................. argCastList = []
+  [ 15] pushint8 1 .............................. <1>
+  [ 18] setlocal 0
+  [ 20] getlocal 0
+  [ 22] pushint8 4 .............................. <4>
+  [ 25] get 8 ................................... <the number of castLibs>
+  [ 27] lteq
+  [ 28] jmpifz [ 50] ............................ repeat with n = 1 to the number of castLibs
+  [ 31] getparam 0 .............................. <argCastList>
+  [ 33] getlocal 0 .............................. <n>
+  [ 35] pusharglistnoret 2 ...................... <argCastList, n>
+  [ 37] objcall 183 ............................. argCastList.add(n)
+  [ 40] pushint8 1
+  [ 43] getlocal 0
+  [ 45] add
+  [ 46] setlocal 0
+  [ 48] endrepeat [ 20]
+  [ 50] jmp [ 78]
+  [ 53] getparam 0 .............................. <argCastList>
+  [ 55] pusharglist 1 ........................... <argCastList>
+  [ 57] extcall 94 .............................. <integerp(argCastList)>
+  [ 60] getparam 0 .............................. <argCastList>
+  [ 62] pusharglist 1 ........................... <argCastList>
+  [ 64] extcall 416 ............................. <stringp(argCastList)>
+  [ 67] or ...................................... <integerp(argCastList) or stringp(argCastList)>
+  [ 68] jmpifz [ 78] ............................ if integerp(argCastList) or stringp(argCastList) then
+  [ 71] getparam 0 .............................. <argCastList>
+  [ 73] pusharglist 1 ........................... <[argCastList]>
+  [ 75] pushlist ................................ <[argCastList]>
+  [ 76] setparam 0 .............................. argCastList = [argCastList]
+  [ 78] pushzero ................................ <0>
+  [ 79] setlocal 8 .............................. numScripts = 0
+  [ 81] getparam 0 .............................. <argCastList>
+  [ 83] peek 0
+  [ 85] pusharglist 1
+  [ 87] extcall 175
+  [ 90] pushint8 1
+  [ 92] peek 0
+  [ 94] peek 2
+  [ 96] lteq
+  [ 97] jmpifz [189] ............................ repeat with tmpCast in argCastList
+  [100] peek 2
+  [102] peek 1
+  [104] pusharglist 2
+  [106] extcall 23
+  [108] setlocal 16
+  [110] pushint8 1 .............................. <1>
+  [113] setlocal 24
+  [115] getlocal 24
+  [117] pushzero ................................ <0>
+  [118] pushint8 2 .............................. <2>
+  [121] get 8 ................................... <the number of castMembers>
+  [123] lteq
+  [124] jmpifz [183] ............................ repeat with memberNr = 1 to the number of castMembers
+  [127] getlocal 24 ............................. <memberNr>
+  [129] getlocal 16 ............................. <tmpCast>
+  [131] pusharglist 1 ........................... <tmpCast>
+  [133] extcall 828 ............................. <castLib(tmpCast)>
+  [136] pusharglist 2 ........................... <memberNr, castLib(tmpCast)>
+  [138] extcall 307 ............................. <member(memberNr, castLib(tmpCast))>
+  [141] setlocal 32 ............................. tmpMemb = member(memberNr, castLib(tmpCast))
+  [143] getlocal 32 ............................. <tmpMemb>
+  [145] getobjprop 210 .......................... <tmpMemb.type>
+  [148] pushsymb 11 ............................. <#script>
+  [150] eq ...................................... <tmpMemb.type = #script>
+  [151] jmpifz [172] ............................ if tmpMemb.type = #script then
+  [154] getlocal 8 .............................. <numScripts>
+  [156] pushint8 1 .............................. <1>
+  [159] add ..................................... <numScripts + 1>
+  [160] setlocal 8 .............................. numScripts = numScripts + 1
+  [162] getlocal 32 ............................. <tmpMemb>
+  [164] getlocal 32 ............................. <tmpMemb>
+  [166] getobjprop 1249 ......................... <tmpMemb.scriptText>
+  [169] setobjprop 1249 ......................... tmpMemb.scriptText = tmpMemb.scriptText
+  [172] pushint8 1
+  [175] getlocal 24
+  [177] add
+  [178] setlocal 24
+  [180] endrepeat [115]
+  [183] pushint8 1
+  [185] add
+  [186] endrepeat [ 92]
+  [189] pop 3
+  [191] getlocal 8 .............................. <numScripts>
+  [193] pusharglistnoret 1 ...................... <numScripts>
+  [195] extcall 64 .............................. pott(numScripts)
+  [198] ret
+end

@@ -1,0 +1,117 @@
+property ancestor, child, className, belongsTo, _killed, Age, Gender, MusicStyle, MusicStyleTolerance, Musicality, Patience, Attitudes, Economy, RefNr, SoundPrefix, BelongsToPlace, modifiedVals, changedVars, firstName
+global gRock
+
+on new me, argChild, argBelongsTo
+  if objectp(argChild) then
+    child = argChild
+  else
+    child = me
+  end if
+  belongsTo = argBelongsTo
+  ancestor = script("ClassConcreteScript").new(child)
+  className = #Human
+  Age = 0
+  Gender = #none
+  MusicStyle = script("ClassStyleMixScript").new(VOID, me)
+  MusicStyleTolerance = script("ClassStyleMixScript").new(VOID, me)
+  Musicality = script("ClassDynamicVarScript").new(VOID, me)
+  Patience = script("ClassDynamicTriggerVarScript").new(VOID, me)
+  Attitudes = script("ClassAttitudesScript").new(VOID, me)
+  Economy = 0.0
+  RefNr = 0
+  SoundPrefix = EMPTY
+  BelongsToPlace = #none
+  Patience.LoseFact = 0.01
+  Patience.normal = 1
+  Patience.Current = 0.10009999999999999
+  Patience.mode = #AutoLose
+  Patience.ValTriggers = [0.10000000000000001: #OutOfPatience, 1.10000000000000009: 1]
+  changedVars = [:]
+  modifiedVals = [:]
+  firstName = EMPTY
+  return me
+end
+
+on kill me
+  _killed = 1
+  if objectp(MusicStyle) then
+    MusicStyle = MusicStyle.kill()
+  end if
+  if objectp(MusicStyleTolerance) then
+    MusicStyleTolerance = MusicStyleTolerance.kill()
+  end if
+  if objectp(Attitudes) then
+    Attitudes = Attitudes.kill()
+  end if
+  if objectp(Musicality) then
+    Musicality = Musicality.kill()
+  end if
+  if objectp(Patience) then
+    Patience = Patience.kill()
+  end if
+  if objectp(ancestor) then
+    ancestor = ancestor.kill()
+  end if
+  child = 0
+  belongsTo = 0
+  return 0
+end
+
+on Report me, argObj, argWhat, argOptional
+  if argObj = Patience then
+    if argWhat = #OutOfPatience then
+      if argOptional[#Change] < 0 then
+      end if
+    end if
+  end if
+end
+
+on PreInit me
+  firstName = ancestor.name.word[1]
+end
+
+on getBelongsToPlace me
+  return gRock.m_classManager.getObjByIDAndClass(BelongsToPlace, #place)
+end
+
+on getSoundFilePrefix me
+  if BelongsToPlace <> #none then
+    str = string(BelongsToPlace)
+  else
+    str = string(ancestor.ID)
+  end if
+  Prefix = str.char[1] & str.char[str.length - 1..str.length]
+  return Prefix
+end
+
+on likesBand me
+  alert("Don't use Human.likesBand!")
+  return makeRandomBetween(0.0, 1.0)
+end
+
+on zzlikesBand me, argBand_r
+  if voidp(argBand_r) then
+    argBand_r = gRock.m_context.getFocus(#Band)
+  end if
+  if voidp(argBand_r) then
+    return #NoBand
+  end if
+  tmpAtt = Attitudes.getAttitude([argBand_r.ID, #Likes])
+  pott("likesBand", tmpAtt)
+  place_r = gRock.m_classManager.getObjByIDAndClass(BelongsToPlace, #place)
+  if objectp(place_r) then
+    tmpLike = [:]
+    tmpLikeStyle = checkWithinTolerance(place_r.StyleMix, place_r.StyleMixTolerance, argBand_r.MusicStyle)
+    tmpLike.addProp(1.0, tmpLikeStyle)
+    tmpLikeType = checkWithinTolerance(place_r.SongType, place_r.SongTypeTolerance, argBand_r.SongType)
+    if tmpLikeType <> #ignore then
+      tmpLike.addProp(1.0, tmpLikeType)
+    end if
+    tmpLike = tmpLike + tmpAtt
+    tmpAtt = Attitudes.Attitudes[argBand_r.ID]
+    pott("likesBand2", tmpLike, tmpAtt)
+    return tmpLike
+  else
+    return tmpAtt
+  end if
+end

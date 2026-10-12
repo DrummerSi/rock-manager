@@ -1,0 +1,372 @@
+property ancestor, m_globeObj, m_chosenCity_r, m_tourCities_r, m_startCityID, m_tourInfo, m_bandTour_r
+global gDir, gRock
+
+on new me, argOptions
+  ID = argOptions[#ID]
+  argOptions.setaProp(#ReportTo, me)
+  argOptions.setaProp(#child, me)
+  dialog_r = gRock.m_classManager.getObjByIDAndClass(#DlgTour, #Dialog)
+  dialog_r.dataMemberName = "DlgTourData"
+  argOptions[#DlgInfoObj] = dialog_r
+  ancestor = script("DlgRockAncestorScript").new(argOptions)
+  ancestor.m_objDlg.recalc(#DontPaint)
+  itemObj = ancestor.m_objDlg.getItemByPath([#Button4, #icon])
+  itemObj.setOneProp(#Pic, "icon_ice bucket01")
+  itemObj = ancestor.m_objDlg.getItemByPath([#Button4, #text])
+  itemObj.setOneProp(#editData, rGetStr(#szidTourExpenses))
+  itemObj = ancestor.m_objDlg.getItem(#Globe)
+  tmpR = itemObj.getOnStageRect()
+  tmpP = point(tmpR[1], tmpR[2])
+  tmpSPNum = ancestor.getSPOverDlg()
+  sprite(tmpSPNum).ink = 36
+  tmp = prepareTourGlobe(me, tmpSPNum, tmpP, #CreateNewIfOkayed)
+  m_globeObj = tmp[#Globe]
+  m_tourCities_r = tmp[#TourCities]
+  m_startCityID = tmp[#startCityID]
+  m_bandTour_r = tmp[#BandTour]
+  gRock.m_context.setFocus(#BandTour, m_bandTour_r)
+  m_tourInfo = 0
+  me.updateTable()
+  itemObj = ancestor.m_objDlg.getItemByPath([#InfoCities, #Head, #icon])
+  itemObj.setOneProp(#Pic, "icon_globe02")
+  itemObj = ancestor.m_objDlg.getItemByPath([#InfoCities, #Head, #Info])
+  itemObj.setOneProp(#editData, gRock.m_languageManager.getStr(#szidTourHeadRoute))
+  itemObj = ancestor.m_objDlg.getItemByPath([#InfoTotal, #Head, #icon])
+  itemObj.setOneProp(#Pic, "icon_money02")
+  itemObj = ancestor.m_objDlg.getItemByPath([#InfoTotal, #Head, #Info])
+  itemObj.setOneProp(#editData, gRock.m_languageManager.getStr(#szidTourHeadTotal))
+  ancestor.render()
+  return me
+end
+
+on kill me
+  ancestor.kill()
+  m_globeObj = m_globeObj.kill()
+  m_bandTour_r = 0
+  return 0
+end
+
+on GetSPNeed me
+  return ancestor.GetSPNeed() + 1
+end
+
+on focusChange me, argGotFocus
+  if argGotFocus then
+    if objectp(m_globeObj) then
+      m_globeObj.activate(argGotFocus)
+    end if
+  else
+    m_globeObj.activate(argGotFocus)
+  end if
+  ancestor.focusChange(argGotFocus)
+end
+
+on createEmptyTour me
+  m_bandTour_r = gRock.m_classManager.createObj(#BandTour)
+  newID = gRock.m_classManager.genUniqueID(m_bandTour_r)
+  if voidp(newID) then
+  end if
+  rsetProp(m_bandTour_r, #ID, newID)
+  lst = rgetProp(m_bandTour_r, #neededIDs)
+  lst.add(#Band)
+  lst.add(#NotOnTour)
+  m_bandTour_r.visible = 0
+end
+
+on Report me, argObj, argWhat, argOptions
+  if argObj = m_globeObj then
+    if argWhat = #SelectCity then
+      tmpID = argOptions.m_ID
+      if tmpID = m_startCityID then
+        exit
+      end if
+      m_chosenCity_r = gRock.m_classManager.getObjByIDAndClass(tmpID, #TourCity)
+      if not objectp(m_chosenCity_r) then
+        pott("No such!", argOptions.m_ID)
+        exit
+      end if
+      if m_globeObj.getIsPlaceConnected(argOptions) = 1 then
+        gDir.m_objDialogsMaster.openDialog(#TourCity, [#ID: #TourCity, #TourCity: m_chosenCity_r, #TourDoWhat: #RemoveCity])
+        exit
+      end if
+      if m_tourCities_r.count = 8 then
+        exit
+      end if
+      tmpDist = m_globeObj.getDistanceToNextPlace(argOptions)
+      tmpCostPerKm = 10
+      tmpTravelCost = tmpCostPerKm * tmpDist * 40000 / (2 * PI)
+      tmpTravelCost = integer(tmpTravelCost / 500) * 500
+      m_chosenCity_r.travelTime = integer(tmpDist * 4 / (2 * PI))
+      m_chosenCity_r.totalCost = tmpTravelCost + m_chosenCity_r.PreferredPriceModel.BasePrice
+      gDir.m_objDialogsMaster.openDialog(#TourCity, [#ID: #TourCity, #TourCity: m_chosenCity_r, #TourDoWhat: #AddCity])
+    end if
+  else
+    if argWhat = #AddCity then
+      if objectp(m_chosenCity_r) then
+        mapObj = m_globeObj.getObjByID(m_chosenCity_r.ID)
+        m_globeObj.addConnection(VOID, mapObj)
+        m_bandTour_r.Cities.add(m_chosenCity_r.ID)
+        m_tourCities_r.add(m_chosenCity_r)
+        me.updateTable()
+      end if
+    else
+      if argWhat = #RemoveCity then
+        tmpPos = m_tourCities_r.getPos(m_chosenCity_r)
+        if tmpPos then
+          mapObj = m_globeObj.getObjByID(m_chosenCity_r.ID)
+          tmpNextObj = 0
+          tmpPrecObj = 0
+          tmpPointLists = m_globeObj.m_linePointLists
+          repeat with n = tmpPointLists.count down to 1
+            tmpList = tmpPointLists[n]
+            if tmpList[1] = mapObj then
+              tmpNextObj = tmpList[tmpList.count]
+              tmpInsertAtPos = n - 1
+              tmpPointLists.deleteAt(n)
+              next repeat
+            end if
+            if tmpList[tmpList.count] = mapObj then
+              tmpPrecObj = tmpList[1]
+              tmpPointLists.deleteAt(n)
+            end if
+          end repeat
+          if objectp(tmpNextObj) and objectp(tmpPrecObj) then
+            m_globeObj.addConnection(tmpPrecObj, tmpNextObj, tmpInsertAtPos)
+          end if
+          m_bandTour_r.Cities.deleteOne(m_chosenCity_r.ID)
+          m_tourCities_r.deleteAt(tmpPos)
+          if tmpPointLists.count = 0 then
+            mapObj = m_globeObj.getObjByID(m_startCityID)
+            m_globeObj.addConnection(VOID, mapObj)
+          end if
+          me.updateTable()
+        end if
+      else
+        if argWhat = #OkayedStage then
+          me.updateTable()
+        else
+          if argWhat = #BookedOK then
+            gRock.m_msgManager.msg(#BookTour)
+            player_r = gRock.m_classManager.getObjByIDAndClass(#player, #player)
+            tmp = player_r.transactMoney(-m_tourInfo[#Cost], [#Tour])
+            me.kill()
+          else
+            if argWhat = #BookedCancel then
+              m_bandTour_r.visible = 0
+              m_bandTour_r.setDates(gRock.m_date.getDateInt() - 5, 1)
+            else
+              if argWhat = #DoAction then
+                argObj.kill()
+                emptyList(m_bandTour_r.Expenses)
+                m_bandTour_r.Expenses.add(argOptions.ID)
+                me.updateTable()
+              end if
+            end if
+          end if
+        end if
+      end if
+    end if
+  end if
+end
+
+on mouse me, argObj, argWhat, argOption
+  if objectp(argOption) then
+    ID = argOption.getOneProp(#ID)
+    if argWhat = #click then
+      IDStr = string(ID)
+      if ID = #Button3 then
+        gDir.m_objDialogsMaster.openDialog(#TourStage, [#ID: #TourStage, #BandTour: m_bandTour_r])
+      else
+        if ID = #Button4 then
+          tmpExpenses_r = gRock.m_classManager.getObjsOfClass(#TourExpense)
+          tmpExpenseIDs = []
+          repeat with tmpExp_r in tmpExpenses_r
+            tmpExpenseIDs.add(tmpExp_r.ID)
+          end repeat
+          gDir.m_objDialogsMaster.openDialog(#ActionChoose, [#ActionIDs: tmpExpenseIDs, #ItemClass: #TourExpense, #icon: "icon_ice bucket01", #name: rGetStr(#szidTourExpenses), #WarnAboutMoney: 0])
+          exit
+        else
+          if ID = #ButtonOK then
+            player_r = gRock.m_classManager.getObjByIDAndClass(#player, #player)
+            album_r = gRock.m_context.getFocus(#album)
+            ecardID = 0
+            if not objectp(album_r) then
+              ecardID = #ECOCTourNoAlbum
+            end if
+            if ecardID = 0 then
+              if album_r.getAlbumIsSigned() = 0 then
+                ecardID = #ECOCTourNoAlbum
+              end if
+            end if
+            if symbolp(ecardID) then
+              gRock.m_eventCardsManager.tryNewShowEventCard(ecardID, [#prio: 0])
+              exit
+            end if
+            if m_tourInfo[#time] = 0 then
+              alert(gRock.m_languageManager.getStr(#szidTourNoCities))
+            else
+              if not player_r.hasThisMoney(m_tourInfo[#Cost]) then
+                rWarnMoney()
+                exit
+              end if
+              lst = rgetProp(m_bandTour_r, #neededIDs)
+              if lst.getPos(#Band) = 0 then
+                lst.add(#Band)
+              end if
+              if lst.getPos(#NotOnTour) = 0 then
+                lst.add(#NotOnTour)
+              end if
+              m_bandTour_r.price = m_tourInfo[#Cost]
+              m_bandTour_r.setDates(3 + gRock.m_date.getDateInt(), m_tourInfo[#time])
+              infoImg = rFormatText([#szidTourBook], "LiveBookFormatting", [#shadow: 1])
+              dlg = gDir.m_objDialogsMaster.openDialog(#Book, [#UseDlgID: #DlgTourBook, #bookOptions: [#EventToBook: m_bandTour_r, #RemoveWhenCancel: 0, #InfoImage: infoImg, #PicImage: "image_training vacation01_small01"]])
+              dlg.m_objReportTo = me
+            end if
+          else
+            if ID = #ButtonTurnLeft then
+            else
+              if ID = #ButtonTurnRight then
+              else
+                ancestor.mouse(argObj, argWhat, argOption)
+              end if
+            end if
+          end if
+        end if
+      end if
+    end if
+    if ID = #ButtonTurnLeft then
+      if argWhat = #stillDown then
+        m_globeObj.rotate(1)
+      end if
+    else
+      if ID = #ButtonTurnRight then
+        if argWhat = #stillDown then
+          m_globeObj.rotate(-1)
+        end if
+      end if
+    end if
+  end if
+end
+
+on calcTimeAndCost me, argFromCity_r, argToCity_r
+  mapFrom = m_globeObj.getObjByID(argFromCity_r.ID)
+  mapTo = m_globeObj.getObjByID(argToCity_r.ID)
+  tmpStartCost = 4000
+  tmpDist = m_globeObj.getDistanceBetween(mapFrom, mapTo)
+  tmpCostPerKm = 0.5
+  tmpCost = tmpCostPerKm * tmpDist * 40000 / (2 * PI)
+  tmpCost = tmpStartCost + (integer(tmpCost / 500) * 500)
+  tmpTime = tmpDist * 6 / (2 * PI)
+  tmpTime = integer(tmpTime)
+  if tmpTime = 0 then
+    tmpTime = 1
+  end if
+  tmpTime = 1
+  return [#Cost: tmpCost, #time: tmpTime]
+end
+
+on calcTourStuff me
+  totCost = 0
+  totTime = 0
+  emptyList(m_bandTour_r.ConcertDates)
+  fromCity_r = gRock.m_classManager.getObjByIDAndClass(m_startCityID, #TourCity)
+  repeat with n = 1 to m_tourCities_r.count
+    toCity_r = m_tourCities_r[n]
+    tmp = me.calcTimeAndCost(fromCity_r, toCity_r)
+    toCity_r.totalCost = tmp[#Cost] + toCity_r.PreferredPriceModel.BasePrice
+    toCity_r.travelTime = tmp[#time]
+    totCost = totCost + toCity_r.totalCost
+    totTime = totTime + toCity_r.travelTime + 1
+    fromCity_r = m_tourCities_r[n]
+    m_bandTour_r.ConcertDates.add(totTime)
+  end repeat
+  toCity_r = gRock.m_classManager.getObjByIDAndClass(m_startCityID, #TourCity)
+  tmp = me.calcTimeAndCost(fromCity_r, toCity_r)
+  ReturnHomeCost = tmp[#Cost]
+  totCost = totCost + ReturnHomeCost
+  totTime = totTime + tmp[#time]
+  m_globeObj.getDistanceToNextPlace(m_globeObj.getObjByID(m_startCityID))
+  return [#Cost: totCost, #time: totTime, #ReturnHomeCost: ReturnHomeCost]
+end
+
+on updateTable me
+  m_tourInfo = me.calcTourStuff()
+  str1 = EMPTY
+  str2 = EMPTY
+  repeat with n = 1 to m_tourCities_r.count
+    str1 = str1 & m_tourCities_r[n].name & RETURN
+    str2 = str2 & rCurrency(m_tourCities_r[n].totalCost, 0, 1) & RETURN
+  end repeat
+  if m_tourCities_r.count then
+    str1 = str1 & "(" & gRock.m_languageManager.getStr(#szidTourReturnHome) & ")" & RETURN
+    str2 = str2 & rCurrency(m_tourInfo[#ReturnHomeCost], 0, 1)
+  else
+    str1 = gRock.m_languageManager.getStr(#szidTourNoCities)
+  end if
+  img = me.createImage(str1, str2)
+  itemObj = ancestor.m_objDlg.getItemByPath([#InfoCities, #dlg, #Pic])
+  itemObj.setOneProp(#Pic, img)
+  itemObj.setOneProp(#ink, 36)
+  str1 = EMPTY
+  str2 = EMPTY
+  if m_tourCities_r.count then
+    str1 = str1 & rGetStr(#szidTourCostTravel) & RETURN
+    str2 = str2 & rCurrency(m_tourInfo[#Cost], 0, 1) & RETURN
+  end if
+  stageCost = 0
+  tmpStageList = m_bandTour_r.StageDesign
+  if not listp(tmpStageList) then
+    tmpStageList = []
+  end if
+  if tmpStageList.count then
+    repeat with n = 1 to tmpStageList.count
+      elementID = tmpStageList[n]
+      element_r = gRock.m_classManager.getObjByIDAndClass(elementID, #DesignElement)
+      stageCost = stageCost + element_r.price
+    end repeat
+    str1 = str1 & rGetStr(#szidTourCostStage) & RETURN
+    str2 = str2 & rCurrency(stageCost, 0, 1) & RETURN
+  else
+    str1 = str1 & gRock.m_languageManager.getStr(#szidTourNoStage) & RETURN
+    str2 = str2 & RETURN
+  end if
+  m_tourInfo[#Cost] = m_tourInfo[#Cost] + stageCost
+  if m_bandTour_r.Expenses.count then
+    obj_r = gRock.m_classManager.getObjByIDAndClass(m_bandTour_r.Expenses[1], #TourExpense)
+    str1 = str1 & rGetStr(#szidTourExpenses) & RETURN
+    str2 = str2 & rCurrency(obj_r.price, 0, 1) & RETURN
+    m_tourInfo[#Cost] = m_tourInfo[#Cost] + obj_r.price
+  else
+    str1 = str1 & rGetStr(#szidTourChooseExpenses) & RETURN
+    str2 = str2 & RETURN
+  end if
+  str1 = str1 & rGetStr(#szidTotal)
+  str2 = str2 & rCurrency(m_tourInfo[#Cost], 0, 1)
+  img = me.createImage(str1, str2)
+  itemObj = ancestor.m_objDlg.getItemByPath([#InfoTotal, #dlg, #Pic])
+  itemObj.setOneProp(#Pic, img)
+  itemObj.setOneProp(#ink, 36)
+  itemObj = ancestor.m_objDlg.getItem(#ButtonOK)
+  if objectp(itemObj) then
+    if (m_tourCities_r.count > 0) and (tmpStageList.count > 0) and (m_bandTour_r.Expenses.count > 0) then
+      itemObj.send(#dimButton, 0)
+    else
+      itemObj.send(#dimButton, 1)
+    end if
+  end if
+end
+
+on createImage me, argLeftText, argRightText
+  tmpMemb = rFormatText([argLeftText], "TourTableFormatting", [#return: #member])
+  tmpImg = tmpMemb.image
+  tmpLineSpace = tmpMemb.FixedLinespace
+  img = image(180, tmpImg.rect[4], 8)
+  img.copyPixels(tmpImg, tmpImg.rect, tmpImg.rect)
+  tmpMemb.text = EMPTY
+  formatTextMember(tmpMemb, [#alignment: #right, #width: 80])
+  tmpMemb.FixedLinespace = tmpLineSpace
+  tmpMemb.text = argRightText
+  tmpImg = tmpMemb.image
+  img.copyPixels(tmpImg, tmpImg.rect + rect(100, 0, 100, 0), tmpImg.rect)
+  return img
+end

@@ -1,0 +1,56 @@
+property ancestor, child, className, belongsTo, _killed, Country, StyleMix, size, PopulationFactor, PreferredPriceModel, totalCost, Coordinates, travelTime, MediaTargets, ReachesGroups, Available
+global gRock
+
+on new me, argChild, argBelongsTo
+  if objectp(argChild) then
+    child = argChild
+  else
+    child = me
+  end if
+  belongsTo = argBelongsTo
+  ancestor = script("ClassConcreteScript").new(child)
+  className = #TourCity
+  Country = #none
+  StyleMix = script("ClassStyleMixScript").new(VOID, me)
+  size = 0
+  PopulationFactor = 0.0
+  PreferredPriceModel = script("ClassPriceModelScript").new(VOID, me)
+  totalCost = 0
+  Coordinates = []
+  travelTime = 0
+  MediaTargets = []
+  ReachesGroups = [:]
+  Available = 0
+  return me
+end
+
+on kill me
+  _killed = 1
+  if objectp(StyleMix) then
+    StyleMix = StyleMix.kill()
+  end if
+  if objectp(PreferredPriceModel) then
+    PreferredPriceModel = PreferredPriceModel.kill()
+  end if
+  if objectp(ancestor) then
+    ancestor = ancestor.kill()
+  end if
+  child = 0
+  belongsTo = 0
+  return 0
+end
+
+on calcReach me
+  ReachesGroups = [:]
+  repeat with n = 1 to MediaTargets.count
+    target_r = gRock.m_classManager.getObjByIDAndClass(MediaTargets[n], #MediaTarget)
+    tmpReachesGroups = target_r.calcReach()
+    repeat with m = 1 to tmpReachesGroups.count
+      tmpGrpID = tmpReachesGroups.getPropAt(m)
+      if tmpReachesGroups[m] > ReachesGroups.getaProp(tmpGrpID) then
+        ReachesGroups[tmpGrpID] = tmpReachesGroups[m]
+      end if
+    end repeat
+  end repeat
+  return ReachesGroups
+end

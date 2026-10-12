@@ -1,0 +1,401 @@
+property ancestor, m_tour_r, m_currentCityID, m_travelObj, m_startCityID, m_goingBackHome, m_isTravelling, m_currTourConcert_r, m_moodModifiers, m_luxuryMakeAngry, m_lastMoods, m_deactivatedTriggers, m_tourCompleted, m_isQuitting, m_numDoneCities
+global gDir, gRock
+
+on new me, argOptions
+  ID = argOptions[#ID]
+  argOptions.setaProp(#ReportTo, me)
+  argOptions.setaProp(#child, me)
+  ancestor = script("DlgRockAncestorScript").new(argOptions)
+  rSetParserVariable(#TmpTourDlg, me)
+  m_tour_r = gRock.m_context.getFocus(#BandTour)
+  gotTour = objectp(m_tour_r)
+  if gotTour then
+    gotTour = m_tour_r.ConcertDates.count > 0
+  end if
+  m_moodModifiers = []
+  m_tourCompleted = 0
+  m_isQuitting = 0
+  m_deactivatedTriggers = []
+  itemObj = ancestor.m_objDlg.getItemByPath([#InfoFrame, #Head, #icon])
+  itemObj.setOneProp(#Pic, "icon_spotlight02")
+  itemObj = ancestor.m_objDlg.getItemByPath([#InfoFrame, #Head, #Info])
+  itemObj.setOneProp(#editData, rGetStr(#szidTourHeadTotalResults))
+  m_numDoneCities = 0
+  if gotTour then
+    gRock.m_msgManager.addObject(me)
+    me.handleDatesPostponing(#start)
+    band_r = gRock.m_context.getFocus(#Band)
+    musicians_r = band_r.getMusicianObjs()
+    if voidp(m_lastMoods) then
+      m_lastMoods = [:]
+      repeat with mus_r in musicians_r
+        tmpMood = rgetProp(mus_r, #Mood)
+        m_lastMoods.addProp(mus_r, tmpMood)
+      end repeat
+    end if
+    m_luxuryMakeAngry = 0.0
+    repeat with tmpExpenseID in m_tour_r.Expenses
+      expense_r = gRock.m_classManager.getObjByIDAndClass(tmpExpenseID, #TourExpense)
+      m_luxuryMakeAngry = m_luxuryMakeAngry + expense_r.LuxuryFactor
+    end repeat
+    m_luxuryMakeAngry = -0.10000000000000001 * (1.0 - m_luxuryMakeAngry)
+    m_moodModifiers = []
+    band_r = gRock.m_context.getFocus(#Band)
+    musicians_r = band_r.getMusicianObjs()
+    repeat with mus_r in musicians_r
+      modifier = rCreateModifier(#Travel, mus_r.ID, #Mood, 0.0, 0, #Constant)
+      m_moodModifiers.add(modifier)
+    end repeat
+    ancestor.m_objDlg.recalc(#DontPaint)
+    itemObj = ancestor.m_objDlg.getItem(#Globe)
+    tmpR = itemObj.getOnStageRect()
+    tmpP = point(tmpR[1], tmpR[2])
+    m_goingBackHome = 0
+    m_isTravelling = 0
+    gRock.m_gameTimer.addObject(me, 99, 1)
+    gRock.m_gameTimer.speedFactor = 3
+    tmp = prepareTourGlobe(0, ancestor.getSPOverDlg(), tmpP, VOID, #NoMouse)
+    m_startCityID = tmp[#startCityID]
+    m_currentCityID = m_startCityID
+    globeObj = tmp[#Globe]
+    m_travelObj = script("TourTravelScript").new(me, globeObj, ancestor.getSPOverDlg() + 1)
+    me.updateTable()
+    me.leaveForNextCity()
+  end if
+  ancestor.render()
+  return me
+end
+
+on handleDatesPostponing me, argStartOrEndTour
+  mission_r = gRock.m_context.getFocus(#Mission)
+  if argStartOrEndTour = #start then
+    mission_r.postponeDates(m_tour_r.duration)
+    triggers_r = gRock.m_classManager.getObjsOfClass(#Trigger)
+    repeat with trigger_r in triggers_r
+      if trigger_r.Active = 1 then
+        if trigger_r.IsActiveDuringTour() = 0 then
+          trigger_r.Active = 0
+          trigger_r.TriggerActivateDate = trigger_r.TriggerActivateDate + m_tour_r.duration
+          m_deactivatedTriggers.add(trigger_r)
+        end if
+      end if
+    end repeat
+    gRock.m_eventCardsManager.postponeDates(m_tour_r.duration)
+    gRock.m_eventCardsManager.setOKToShowOnTopOfNumDialogs(1)
+  else
+    endedDaysEarly = 0
+    if m_tourCompleted = 0 then
+      if objectp(m_tour_r) then
+        expectedEndDate = m_tour_r.StartDate + m_tour_r.duration
+        endedDaysEarly = expectedEndDate - gRock.m_date.getDateInt()
+      end if
+    end if
+    mission_r.postponeDates(-endedDaysEarly)
+    repeat with trigger_r in m_deactivatedTriggers
+      trigger_r.Active = 1
+      trigger_r.TriggerActivateDate = trigger_r.TriggerActivateDate - endedDaysEarly
+    end repeat
+    if not objectp(m_tour_r) then
+      exit
+    end if
+    m_tour_r.setDates(VOID, m_tour_r.duration - endedDaysEarly)
+    gRock.m_eventCardsManager.setOKToShowOnTopOfNumDialogs(0)
+    gRock.m_eventCardsManager.postponeDates(-endedDaysEarly)
+  end if
+end
+
+on kill me
+  gRock.m_gameTimer.speedFactor = 1
+  gRock.m_msgManager.deleteObject(me)
+  me.handleDatesPostponing(#stop)
+  m_lastMoods = [:]
+  repeat with modifier in m_moodModifiers
+    modifier.kill()
+  end repeat
+  m_moodModifiers = []
+  m_currTourConcert_r = 0
+  if objectp(m_travelObj) then
+    m_travelObj = m_travelObj.kill()
+  end if
+  ancestor.kill()
+  gRock.m_gameTimer.deleteObject(me)
+  if m_tourCompleted <> 0 then
+    gRock.m_eventCardsManager.tryNewShowEventCard(#ECOCTourComplete)
+    gRock.m_msgManager.msg(#BandTourComplete, m_numDoneCities)
+  end if
+  rSetParserVariable(#TmpTourDlg, VOID, #Remove)
+  return 0
+end
+
+on GetSPNeed me
+  return ancestor.GetSPNeed() + 2
+end
+
+on timeTick me
+  if m_isTravelling = 0 then
+    if objectp(m_currTourConcert_r) then
+      gRock.m_eventsManager.stopObject(m_currTourConcert_r)
+    end if
+  end if
+  if m_isQuitting then
+    me.kill()
+  end if
+end
+
+on cancelTour me
+  m_isQuitting = 1
+end
+
+on msg me, argWhat, argOption
+  if argWhat = #EnterDialog then
+    if m_isTravelling then
+      if rgetProp(argOption, #m_ID) = rgetProp(me, #m_ID) then
+        exit
+      end if
+      m_travelObj.pause(1)
+      pott("Must stop plane in midair and wait until dialog's closed!")
+    end if
+  else
+    if argWhat = #ExitDialog then
+      if rgetProp(argOption, #m_ID) = rgetProp(me, #m_ID) then
+        exit
+      end if
+      if m_isQuitting = 1 then
+        me.kill()
+        exit
+      end if
+      gRock.m_gameTimer.activate(1)
+      if m_isTravelling then
+        m_travelObj.pause(0)
+      end if
+    end if
+  end if
+end
+
+on focusChange me, argGotFocus
+  ancestor.focusChange(argGotFocus)
+end
+
+on Report me, argObj, argWhat, argOption
+  if argObj = m_travelObj then
+    if argWhat = #done then
+      pott("Landed!")
+      m_isTravelling = 0
+      if m_goingBackHome = 1 then
+        m_tourCompleted = 1
+        me.kill()
+        exit
+      else
+        me.checkMusiciansMoods()
+        if m_isQuitting then
+          gRock.m_eventCardsManager.m_OKToShow = 1
+          gRock.m_eventCardsManager.openWaitingCard()
+          exit
+        end if
+        m_currTourConcert_r = gRock.m_classManager.createObj(#TourConcert)
+        m_currTourConcert_r.ID = gRock.m_classManager.genUniqueID(m_currTourConcert_r)
+        m_currTourConcert_r.City = m_currentCityID
+        m_currTourConcert_r.Tour = m_tour_r.ID
+        m_tour_r.ConcertIDs.add(m_currTourConcert_r.ID)
+        m_currTourConcert_r.setDates(#Now, 1)
+      end if
+    end if
+  else
+    if argWhat = #Closed then
+      if rgetProp(argObj, #m_ID) <> #DlgTourConcertResult then
+        exit
+      end if
+      m_numDoneCities = m_numDoneCities + 1
+      if m_currTourConcert_r.quality < 0 then
+        m_currTourConcert_r.quality = 0
+      end if
+      tmpMoodChange = 0.10000000000000001 * (m_currTourConcert_r.quality - 0.69999999999999996)
+      band_r = gRock.m_context.getFocus(#Band)
+      musicians_r = band_r.getMusicianObjs()
+      repeat with mus_r in musicians_r
+        rCreateModifier(#Concert, mus_r.ID, #Mood, tmpMoodChange, 4)
+      end repeat
+      me.checkMusiciansMoods()
+      if m_isQuitting = 0 then
+        me.updateTable()
+        me.leaveForNextCity()
+      end if
+      m_currTourConcert_r = 0
+    else
+      if argWhat = #DlgConfirm then
+        if argOption = #ButtonOK then
+          argObj.kill()
+          me.kill()
+        end if
+      end if
+    end if
+  end if
+end
+
+on checkMusiciansMoods me
+  global gDir
+  band_r = gRock.m_context.getFocus(#Band)
+  musicians_r = band_r.getMusicianObjs()
+  tmpEventCards = [:]
+  tmpWhat = #none
+  ECID = "ECOCTourAngry"
+  repeat with mus_r in musicians_r
+    mus_r.calcFaceSettings()
+    tmpMood = rgetProp(mus_r, #Mood)
+    pott("TourMood", mus_r.name, tmpMood)
+    if tmpMood < 0.14999999999999999 then
+      tmpReason = me.getReasonAngry(mus_r)
+      tmpEventCards = [:]
+      tmpEventCards.addProp(mus_r, symbol(ECID & string(tmpReason) & "Quit"))
+      m_isQuitting = 1
+      exit repeat
+    else
+      if tmpMood < 0.25 then
+        if m_lastMoods.getaProp(mus_r) > 0.25 then
+          tmpReason = me.getReasonAngry(mus_r)
+          tmpEventCards.addProp(mus_r, symbol(ECID & string(tmpReason) & "Warning"))
+        end if
+      end if
+    end if
+    m_lastMoods.setaProp(mus_r, tmpMood)
+  end repeat
+  if objectp(gDir) then
+    if objectp(gDir[#m_interfaceBar]) then
+      gDir.m_interfaceBar.redrawBand()
+    end if
+  end if
+  repeat with n = 1 to tmpEventCards.count
+    mus_r = tmpEventCards.getPropAt(n)
+    gRock.m_eventCardsManager.tryNewShowEventCard(tmpEventCards[n], [#EventCardOptions: [#HumanID: mus_r.ID]])
+  end repeat
+end
+
+on getReasonAngry me, argMusician_r
+  sortedTotalMods = [:]
+  sortedTotalMods.sort()
+  tmpInterestedIn = [#Concert, #Travel]
+  repeat with tmpModID in tmpInterestedIn
+    mods = gRock.m_modifiersManager.findModifiers([#ModifiedID: argMusician_r.ID, #ModifierID: tmpModID])
+    tot = 0
+    repeat with n = 1 to mods.count
+      tmpModified = mods[n].getModifiedValsAndProps()
+      tot = tot + tmpModified.getPropAt(1)
+    end repeat
+    sortedTotalMods.addProp(tot, tmpModID)
+  end repeat
+  if sortedTotalMods.count then
+    return sortedTotalMods[1]
+  end if
+  return #none
+end
+
+on mouse me, argObj, argWhat, argOption
+  if objectp(argOption) then
+    if argWhat = #click then
+      ID = argOption.getOneProp(#ID)
+      if ID = #ButtonCancel then
+        gRock.m_eventCardsManager.tryNewShowEventCard(#ECOCBandTourCancel, [#prio: 0])
+        exit
+      end if
+      ancestor.mouse(argObj, argWhat, argOption)
+    end if
+  end if
+end
+
+on updateTable me
+  Pos = m_tour_r.Cities.getPos(m_currentCityID)
+  str1 = EMPTY
+  str2 = EMPTY
+  Total = 0
+  if Pos > 0 then
+    repeat with n = 1 to Pos
+      tmpID = m_tour_r.Cities[n]
+      city_r = gRock.m_classManager.getObjByIDAndClass(tmpID, #TourCity)
+      tmpConcertID = m_tour_r.ConcertIDs[n]
+      concert_r = gRock.m_classManager.getObjByIDAndClass(tmpConcertID, #TourConcert)
+      str1 = str1 & city_r.name & RETURN
+      tmpRevenue = concert_r.VenueIncome
+      Total = Total + tmpRevenue
+      str2 = str2 & rCurrency(tmpRevenue, 0, 1) & RETURN
+      grade = convValToRange(concert_r.quality, [0.0, 1.0], [0, 10], 0, #limit)
+      stars = member("meter_stars" & convItoS(grade, 2))
+      tmpID = symbol("Stars" & string(n))
+      if not objectp(ancestor.m_objDlg.getItem(tmpID)) then
+        tmpList = [#ID: tmpID, #type: #Pic, #Pic: "meter_stars" & convItoS(grade, 2), #inOffsetRect: rect(90, 38 + ((n - 1) * 16), 0, 0), #rel: [[#InfoFrame, 1], [#InfoFrame, 2], #Auto, #Auto], #ch: 10, #topLeftMeansWhat: [0, 0], #zoomFacts: [2, 2], #blit: 1, #ink: 0]
+        itemObj = ancestor.m_objDlg.addItem(tmpList)
+      end if
+    end repeat
+    str1 = str1 & RETURN
+    str2 = str2 & RETURN
+  end if
+  str1 = str1 & rGetStr(#szidTourTotalRevenue) & RETURN
+  str2 = str2 & rCurrency(Total, 0, 1) & RETURN
+  tmpPrepaid = m_tour_r.price
+  str1 = str1 & rGetStr(#szidTourPrepaid) & RETURN
+  str2 = str2 & rCurrency(tmpPrepaid, 0, 1) & RETURN
+  str1 = str1 & "______________________________________" & RETURN
+  str2 = str2 & RETURN
+  Total = Total - tmpPrepaid
+  str1 = str1 & rGetStr(#szidTotal) & RETURN
+  str2 = str2 & rCurrency(Total, 0, 1) & RETURN
+  img = me.createImage(str1, str2)
+  itemObj = ancestor.m_objDlg.getItemByPath([#InfoFrame, #dlg, #Pic])
+  itemObj.setOneProp(#ink, 36)
+  itemObj.setOneProp(#Pic, img)
+  ancestor.m_objDlg.incorporateNewItems()
+end
+
+on createImage me, argLeftText, argRightText, argFormatting
+  tmpMemb = rFormatText([argLeftText], "TourTableFormatting", [#return: #member])
+  tmpMemb.width = 230
+  tmpMemb.FixedLinespace = 15
+  tmpImg = tmpMemb.image
+  img = image(tmpImg.rect[3], tmpImg.rect[4], 8)
+  img.copyPixels(tmpImg, tmpImg.rect, tmpImg.rect)
+  tmpMemb.text = EMPTY
+  formatTextMember(tmpMemb, [#alignment: #right])
+  tmpMemb.FixedLinespace = 15
+  tmpMemb.text = argRightText
+  tmpImg = tmpMemb.image
+  img.copyPixels(tmpImg, tmpImg.rect, tmpImg.rect)
+  return img
+end
+
+on leaveForNextCity me
+  gRock.m_gameTimer.activate(1)
+  m_isTravelling = 1
+  m_luxuryMakeAngry = m_luxuryMakeAngry - 0.02
+  pott("m_luxuryMakeAngry", m_luxuryMakeAngry)
+  band_r = gRock.m_context.getFocus(#Band)
+  musicians_r = band_r.getMusicianObjs()
+  repeat with mus_r in musicians_r
+    modifier = gRock.m_modifiersManager.findModifiers([#ModifierID: #Travel, #ModifiedID: mus_r.ID])
+    if modifier.count = 0 then
+      pott("Travel Mod not found!", mus_r.ID)
+      next repeat
+    end if
+    modifier = modifier[1]
+    modifier.setModifyInfo([[[#Mood], m_luxuryMakeAngry]])
+  end repeat
+  Pos = m_tour_r.Cities.getPos(m_currentCityID)
+  nextCityID = 0
+  if Pos = m_tour_r.Cities.count then
+    m_goingBackHome = 1
+    nextCityID = m_startCityID
+    timeToNextCity = 1
+  else
+    if Pos = 0 then
+      timeToNextCity = m_tour_r.ConcertDates[Pos + 1]
+    else
+      timeToNextCity = m_tour_r.ConcertDates[Pos + 1] - m_tour_r.ConcertDates[Pos]
+    end if
+  end if
+  if timeToNextCity > 1 then
+    timeToNextCity = timeToNextCity - 1
+  end if
+  if not symbolp(nextCityID) then
+    nextCityID = m_tour_r.Cities[Pos + 1]
+  end if
+  m_travelObj.startTravel(m_currentCityID, nextCityID, timeToNextCity)
+  m_currentCityID = nextCityID
+end

@@ -1,0 +1,45 @@
+property ancestor, child, className, belongsTo, _killed, album, video
+global gRock
+
+on new me, argChild, argBelongsTo
+  if objectp(argChild) then
+    child = argChild
+  else
+    child = me
+  end if
+  belongsTo = argBelongsTo
+  ancestor = script("ClassEventScript").new(child)
+  className = #VideoProduction
+  album = #none
+  video = #none
+  return me
+end
+
+on kill me
+  _killed = 1
+  if objectp(ancestor) then
+    ancestor = ancestor.kill()
+  end if
+  child = 0
+  belongsTo = 0
+  return 0
+end
+
+on eventChangeState me, argAction, argOption
+  if argAction = #start then
+    if ancestor.neededIDs.getPos(#Band) then
+      band_r = gRock.m_context.getFocus(#Band)
+      mergeLists(ancestor.neededIDs, band_r.members, #Replace)
+    end if
+  else
+    if argAction = #stop then
+      album_r = gRock.m_classManager.getObjByIDAndClass(album, #album)
+      if objectp(album_r) then
+        album_r.video = video
+      end if
+      gRock.m_eventCardsManager.tryNewShowEventCard(#ECOCVideoDone)
+    end if
+  end if
+  tmp = ancestor.eventChangeState(argAction, argOption)
+  return tmp
+end

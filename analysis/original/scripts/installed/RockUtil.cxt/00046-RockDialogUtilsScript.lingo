@@ -1,0 +1,205 @@
+global gRock
+
+on rDlgSetTitleAndButtons argDlgObj, argReportTo, argDialogInfoObj_r, argDefaultTitle, argTopLeftLoc
+  objsBtn = argDlgObj.getItemsByType(#button)
+  repeat with obj in objsBtn
+    obj.scriptInstanceList.addAt(1, argReportTo)
+  end repeat
+  objsBtn = argDlgObj.getItemsByType(#Dialog)
+  repeat with obj in objsBtn
+    if offset("Button2", obj.getOneProp(#dialogDataMemberName)) then
+      tmpDialogsInfoAboutThisButton = argDialogInfoObj_r.getaProp(obj.ID)
+      rDlgPrepareButton(obj, argReportTo, rgetProp(tmpDialogsInfoAboutThisButton, #Gfx), rgetProp(tmpDialogsInfoAboutThisButton, #name))
+    end if
+  end repeat
+  rDlgSetTitle(argDlgObj, argDialogInfoObj_r, argDefaultTitle, argTopLeftLoc)
+end
+
+on rDlgSetButtons argDlgObj, argReportTo, argDialogInfoObj_r
+  objsBtn = argDlgObj.getItemsByType(#button)
+  repeat with obj in objsBtn
+    obj.scriptInstanceList.addAt(1, argReportTo)
+  end repeat
+  objsBtn = argDlgObj.getItemsByType(#Dialog)
+  repeat with obj in objsBtn
+    if offset("Button2", obj.getOneProp(#dialogDataMemberName)) then
+      tmpDialogsInfoAboutThisButton = argDialogInfoObj_r.getaProp(obj.ID)
+      rDlgPrepareButton(obj, argReportTo, rgetProp(tmpDialogsInfoAboutThisButton, #Gfx), rgetProp(tmpDialogsInfoAboutThisButton, #name))
+    end if
+  end repeat
+end
+
+on rDlgPrepareButton argButtonDlgObj, argReportTo, argIconStr, argText
+  if voidp(argIconStr) then
+    argIconStr = "icon_accept01"
+  end if
+  if argIconStr.length = 0 then
+    argIconStr = "icon_accept01"
+  end if
+  if voidp(argText) then
+    argText = "OK!!!"
+  end if
+  if argButtonDlgObj.type = #Dialog then
+    objIcon = argButtonDlgObj.dialogObj.getItem(#icon)
+    if objectp(objIcon) then
+      objIcon.setOneProp(#Pic, argIconStr)
+    end if
+    objText = argButtonDlgObj.dialogObj.getItem(#text)
+    if objectp(objText) then
+      objText.setOneProp(#editData, rGetStr(argText))
+    end if
+  end if
+  if objectp(argReportTo) then
+    if argButtonDlgObj.scriptInstanceList.getPos(argReportTo) = 0 then
+      argButtonDlgObj.scriptInstanceList.addAt(1, argReportTo)
+    end if
+  end if
+  if argButtonDlgObj.scriptInstanceList.count() = 1 then
+    argButtonDlgObj.scriptInstanceList.addAt(1, script("DialogRollOverButton2BH").new(argButtonDlgObj))
+  end if
+end
+
+on rDlgSetTitle argTopDlgObj, argInfoListOrInfoObj, argDefaultTitle, argTopLeftLoc
+  fondObj = argTopDlgObj.getItem(#Fond)
+  if objectp(fondObj) then
+    fondObj = fondObj.dialogObj
+  else
+    fondObj = argTopDlgObj
+  end if
+  obj = fondObj.getItem(#title)
+  if objectp(obj) then
+    str = getPropFromObjOrAncestor(argInfoListOrInfoObj, #name)
+    if voidp(str) or (str = EMPTY) then
+      if stringp(argDefaultTitle) then
+        str = argDefaultTitle
+      else
+        str = "Undefined"
+      end if
+    end if
+    obj.setOneProp(#editData, str)
+  end if
+  Pic = getPropFromObjOrAncestor(argInfoListOrInfoObj, #icon)
+  if voidp(Pic) then
+    Pic = "icon_clock01"
+  end if
+  obj = fondObj.getItem(#icon)
+  tmpSP = argTopDlgObj.spriteObj.startSPNum
+  if tmpSP > 0 then
+    tmpMemb = member(Pic)
+    if tmpMemb.number > 0 then
+      tmpSP = sprite(tmpSP + 1)
+      tmpSP.member = tmpMemb
+      tmpSP.ink = 0
+      tmpReg = tmpSP.member.regPoint
+      if listp(argTopLeftLoc) then
+        tmpSP.loc = argTopLeftLoc + point(tmpReg[1] + 8, 13)
+      else
+        tmpSP.loc = argInfoListOrInfoObj.loc + point(tmpReg[1] + 8, 13)
+      end if
+    end if
+  end if
+  if objectp(obj) then
+    obj.setOneProp(#Pic, Pic)
+  end if
+  obj = fondObj.getItem(#bgColor)
+  if objectp(obj) then
+    obj.setOneProp(#FgColorStr, "#505050")
+  else
+    obj = fondObj.getItem(#BG)
+    if objectp(obj) then
+      obj.setOneProp(#FgColorStr, "#505050")
+    end if
+  end if
+end
+
+on rDlgCreateScrollWnd argInfoList, argTopWnd, argReportObj, argSize
+  global gUseful
+  if voidp(argSize) then
+    argSize = point(275, 180)
+  end if
+  scrSetObj = script("Dialog").new([#image: argTopWnd.myImagePtr, #OKtoResize: 0, #ID: #DlgDlg])
+  gUseful.frameTimer.deleteObject(scrSetObj)
+  scrSetObj.rawCreate(member("DlgRockScrollSetData").text.value)
+  itemObj = scrSetObj.getItem(#ScrollThis)
+  if objectp(itemObj) then
+    itemObj.setOneProp(#inOffsetRect, [0, 0, argSize[1], argSize[2]])
+  end if
+  scrDlgObj = script("Dialog").new([#image: argTopWnd.myImagePtr, #OKtoResize: 0, #ID: #DlgDlg])
+  gUseful.frameTimer.deleteObject(scrDlgObj)
+  hiliteObj = script("DialogHiliteItemScript").new(itemObj)
+  repeat with n = 1 to argInfoList.count()
+    itemLst = argInfoList[n]
+    ID = itemLst[#ID]
+    if voidp(ID) then
+      ID = symbol("ListItem" & string(n))
+    end if
+    tmpLst = [#ID: ID, #ch: n, #type: #Dialog, #dialogDataMemberName: "DlgScrollItemData"]
+    scrDlgObj.addItem(tmpLst)
+    itemObj = scrDlgObj.getItem(ID)
+    iconObj = itemObj.dialogObj.getItem(#icon)
+    iconObj.setOneProp(#Pic, itemLst[#icon])
+    textObj = itemObj.dialogObj.getItem(#text)
+    textObj.setOneProp(#editData, itemLst[#text])
+    itemObj.setOneProp(#inOffsetRect, [0, (n - 1) * 30, 0, 0])
+    if objectp(argReportObj) then
+      itemObj.scriptInstanceList.addAt(1, argReportObj)
+    end if
+    itemObj.scriptInstanceList.add(hiliteObj)
+  end repeat
+  itemObj = scrSetObj.getItem(#ScrollThis)
+  itemObj.attachDlg(scrDlgObj)
+  return scrSetObj
+end
+
+on rDlgCheckUpDownArrows argDlgObj, argPos, argMaxNum
+  if 1 then
+    if argPos > argMaxNum then
+      return 1
+    end if
+    if argPos < 1 then
+      return argMaxNum
+    end if
+    return argPos
+  end if
+end
+
+on rDlgCheckDimArrows argDlgObj, argPos, argMaxNum
+  if 1 then
+    if argPos > argMaxNum then
+      return 1
+    end if
+    if argPos < 1 then
+      return argMaxNum
+    end if
+    return argPos
+  end if
+  if argPos >= argMaxNum then
+    if argPos > argMaxNum then
+      return argMaxNum
+    end if
+    itemObj = argDlgObj.getItem(#ArrowRight)
+    if objectp(itemObj) then
+      itemObj.dim(1)
+    end if
+  else
+    itemObj = argDlgObj.getItem(#ArrowRight)
+    if objectp(itemObj) then
+      itemObj.dim(0)
+    end if
+  end if
+  if argPos <= 1 then
+    if argPos < 1 then
+      return 1
+    end if
+    itemObj = argDlgObj.getItem(#ArrowLeft)
+    if objectp(itemObj) then
+      itemObj.dim(1)
+    end if
+  else
+    itemObj = argDlgObj.getItem(#ArrowLeft)
+    if objectp(itemObj) then
+      itemObj.dim(0)
+    end if
+  end if
+  return argPos
+end

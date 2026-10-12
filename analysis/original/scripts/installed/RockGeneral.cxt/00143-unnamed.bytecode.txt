@@ -1,0 +1,117 @@
+on calcGoodStep argStepFloat, argAllowDecimalSteps
+  [  0] getparam 8 .............................. <argAllowDecimalSteps>
+  [  2] pusharglist 1 ........................... <argAllowDecimalSteps>
+  [  4] extcall 61 .............................. <voidp(argAllowDecimalSteps)>
+  [  7] jmpifz [ 15] ............................ if voidp(argAllowDecimalSteps) then
+  [ 10] pushint8 1 .............................. <1>
+  [ 13] setparam 8 .............................. argAllowDecimalSteps = 1
+  [ 15] getparam 0 .............................. <argStepFloat>
+  [ 17] pusharglist 1 ........................... <argStepFloat>
+  [ 19] extcall 61 .............................. <voidp(argStepFloat)>
+  [ 22] jmpifz [ 32] ............................ if voidp(argStepFloat) then
+  [ 25] pushcons 0 .............................. <1.0>
+  [ 27] pushcons 8 .............................. <0.40000000000000002>
+  [ 29] div ..................................... <1.0 / 0.40000000000000002>
+  [ 30] setparam 0 .............................. argStepFloat = 1.0 / 0.40000000000000002
+  [ 32] getparam 0 .............................. <argStepFloat>
+  [ 34] pusharglist 1 ........................... <argStepFloat>
+  [ 36] extcall 3134 ............................ <log(argStepFloat)>
+  [ 39] pushint8 10 ............................. <10>
+  [ 42] pusharglist 1 ........................... <10>
+  [ 44] extcall 3134 ............................ <log(10)>
+  [ 47] div ..................................... <log(argStepFloat) / log(10)>
+  [ 48] setlocal 0 .............................. magnitude = log(argStepFloat) / log(10)
+  [ 50] getparam 8 .............................. <argAllowDecimalSteps>
+  [ 52] pushzero ................................ <0>
+  [ 53] eq ...................................... <argAllowDecimalSteps = 0>
+  [ 54] getlocal 0 .............................. <magnitude>
+  [ 56] pushzero ................................ <0>
+  [ 57] lt ...................................... <magnitude < 0>
+  [ 58] and ..................................... <(argAllowDecimalSteps = 0) and (magnitude < 0)>
+  [ 59] jmpifz [ 70] ............................ if (argAllowDecimalSteps = 0) and (magnitude < 0) then
+  [ 62] pushint8 1 .............................. <1>
+  [ 65] pusharglistnoret 1 ...................... <1>
+  [ 67] extcall 69 .............................. return 1
+  [ 70] getlocal 0 .............................. <magnitude>
+  [ 72] pusharglist 1 ........................... <magnitude>
+  [ 74] extcall 3135 ............................ <realInteger(magnitude)>
+  [ 77] setlocal 0 .............................. magnitude = realInteger(magnitude)
+  [ 79] getlocal 0 .............................. <magnitude>
+  [ 81] pushint8 1 .............................. <1>
+  [ 84] lt ...................................... <magnitude < 1>
+  [ 85] getparam 8 .............................. <argAllowDecimalSteps>
+  [ 87] pushzero ................................ <0>
+  [ 88] eq ...................................... <argAllowDecimalSteps = 0>
+  [ 89] and ..................................... <(magnitude < 1) and (argAllowDecimalSteps = 0)>
+  [ 90] jmpifz [116] ............................ if (magnitude < 1) and (argAllowDecimalSteps = 0) then / else
+  [ 93] pushint8 1 .............................. <1>
+  [ 96] pushint8 2 .............................. <2>
+  [ 99] pushint8 3 .............................. <3>
+  [102] pushint8 5 .............................. <5>
+  [105] pushint8 10 ............................. <10>
+  [108] pusharglist 5 ........................... <[1, 2, 3, 5, 10]>
+  [110] pushlist ................................ <[1, 2, 3, 5, 10]>
+  [111] setlocal 8 .............................. okSteps = [1, 2, 3, 5, 10]
+  [113] jmp [138]
+  [116] pushint8 1 .............................. <1>
+  [119] pushint8 2 .............................. <2>
+  [122] pushcons 16 ............................. <2.5>
+  [124] pushint8 3 .............................. <3>
+  [127] pushint8 5 .............................. <5>
+  [130] pushint8 10 ............................. <10>
+  [133] pusharglist 6 ........................... <[1, 2, 2.5, 3, 5, 10]>
+  [135] pushlist ................................ <[1, 2, 2.5, 3, 5, 10]>
+  [136] setlocal 8 .............................. okSteps = [1, 2, 2.5, 3, 5, 10]
+  [138] getparam 0 .............................. <argStepFloat>
+  [140] pushint8 10 ............................. <10>
+  [143] getlocal 0 .............................. <magnitude>
+  [145] pusharglist 2 ........................... <10, magnitude>
+  [147] extcall 3136 ............................ <power(10, magnitude)>
+  [150] div ..................................... <argStepFloat / power(10, magnitude)>
+  [151] setlocal 16 ............................. wantedStep = argStepFloat / power(10, magnitude)
+  [153] pushint8 1 .............................. <1>
+  [156] setlocal 24
+  [158] getlocal 24
+  [160] getlocal 8 .............................. <okSteps>
+  [162] pusharglist 1 ........................... <okSteps>
+  [164] objcall 156 ............................. <okSteps.count()>
+  [167] lteq
+  [168] jmpifz [211] ............................ repeat with n = 1 to okSteps.count()
+  [171] getlocal 16 ............................. <wantedStep>
+  [173] getlocal 8 .............................. <okSteps>
+  [175] getlocal 24 ............................. <n>
+  [177] pusharglist 2 ........................... <okSteps, n>
+  [179] objcall 119 ............................. <okSteps[n]>
+  [182] lteq .................................... <wantedStep <= okSteps[n]>
+  [183] jmpifz [200] ............................ if wantedStep <= okSteps[n] then
+  [186] getlocal 8 .............................. <okSteps>
+  [188] getlocal 24 ............................. <n>
+  [190] pusharglist 2 ........................... <okSteps, n>
+  [192] objcall 119 ............................. <okSteps[n]>
+  [195] setlocal 32 ............................. step = okSteps[n]
+  [197] jmp [211] ............................... exit repeat
+  [200] pushint8 1
+  [203] getlocal 24
+  [205] add
+  [206] setlocal 24
+  [208] endrepeat [158]
+  [211] getlocal 32 ............................. <step>
+  [213] pushint8 10 ............................. <10>
+  [216] getlocal 0 .............................. <magnitude>
+  [218] pusharglist 2 ........................... <10, magnitude>
+  [220] extcall 3136 ............................ <power(10, magnitude)>
+  [223] mul ..................................... <step * power(10, magnitude)>
+  [224] setlocal 32 ............................. step = step * power(10, magnitude)
+  [226] getparam 8 .............................. <argAllowDecimalSteps>
+  [228] pushzero ................................ <0>
+  [229] eq ...................................... <argAllowDecimalSteps = 0>
+  [230] jmpifz [242] ............................ if argAllowDecimalSteps = 0 then
+  [233] getlocal 32 ............................. <step>
+  [235] pusharglist 1 ........................... <step>
+  [237] extcall 3135 ............................ <realInteger(step)>
+  [240] setlocal 32 ............................. step = realInteger(step)
+  [242] getlocal 32 ............................. <step>
+  [244] pusharglistnoret 1 ...................... <step>
+  [246] extcall 69 .............................. return step
+  [249] ret
+end

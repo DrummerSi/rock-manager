@@ -1,0 +1,266 @@
+property m_orgStr, m_currPropPath, m_currDepth, m_warningsList
+
+on new me
+  if 0 then
+    a = script("PropListManualParseScript").new()
+    a.parse(readFile(the moviePath & "Auto.sav"))
+    vList = xtra("vList").new("D:\dok\rock\movies\_DavidAuto.sav")
+    lst = vList.read()
+    put listp(lst)
+    str = string(lst)
+    lst2 = value(str)
+    put listp(lst2)
+    writeFile("D:\dok\rock\movies\__AA.txt", str)
+    a = script("PropListManualParseScript").new()
+    a.parse(str)
+  end if
+  return me
+end
+
+on zzManualPropListToTable me, argStr
+  m_orgStr = argStr
+  wholeStr = EMPTY
+  depth = 0
+  indents = EMPTY
+  delim = numToChar(9)
+  listInfo = []
+  currListInfo = [#IsPropList: 0]
+  insideString = 0
+  insidePropList = 0
+  lastListStart = 0
+  lastPropStart = 0
+  lastValStart = 0
+  lastListWasPropList = 0
+  waitingForPropListToWriteNL = 0
+  repeat with charNr = 1 to m_orgStr.length
+    ch = m_orgStr.char[charNr]
+    if insideString then
+      if ch = QUOTE then
+        insideString = not insideString
+      end if
+      next repeat
+    end if
+    if ch = "[" then
+      if currListInfo[#IsPropList] then
+        waitingForPropListToWriteNL = 1
+      end if
+      indents = indents & delim
+      depth = depth + 1
+      pott("Depth", depth)
+      currListInfo = [#IsPropList: 0, #JustStarted: 1, #start: charNr + 1, #lastValStart: charNr + 1, #lastPropStart: charNr + 1]
+      listInfo[depth] = currListInfo
+      next repeat
+    end if
+    if ch = "]" then
+      indents = indents.char[1..indents.length - 1]
+      val = m_orgStr.char[currListInfo[#lastValStart]..charNr - 1]
+      val = trimStringFromChars(val, [SPACE])
+      if currListInfo[#IsPropList] then
+        wholeStr = wholeStr & indents & val & RETURN
+        lastListWasPropList = 1
+      else
+        lastListWasPropList = 0
+      end if
+      pott("Val", val)
+      depth = depth - 1
+      if depth = 0 then
+        pott("Err brackets!")
+        currListInfo = [#IsPropList: 0, #start: charNr + 1, #lastValStart: charNr + 1]
+      else
+        currListInfo = listInfo[depth]
+      end if
+      next repeat
+    end if
+    if ch = QUOTE then
+      insideString = not insideString
+      next repeat
+    end if
+    if ch = ":" then
+      if waitingForPropListToWriteNL then
+        wholeStr = wholeStr & RETURN
+        waitingForPropListToWriteNL = 0
+      end if
+      currListInfo[#IsPropList] = 1
+      prop = m_orgStr.char[currListInfo[#lastPropStart]..charNr - 1]
+      prop = trimStringFromChars(prop, [SPACE])
+      wholeStr = wholeStr & indents & prop
+      pott("Prop", prop)
+      currListInfo[#lastValStart] = charNr + 1
+      next repeat
+    end if
+    if ch = "," then
+      val = m_orgStr.char[currListInfo[#lastValStart]..charNr - 1]
+      val = trimStringFromChars(val, [SPACE])
+      if currListInfo[#IsPropList] = 1 then
+        currListInfo[#lastPropStart] = charNr + 1
+        wholeStr = wholeStr & delim & val & RETURN
+      else
+        currListInfo[#lastValStart] = charNr + 1
+      end if
+      pott("Val", val)
+    end if
+  end repeat
+  pott(wholeStr)
+end
+
+on parse me, argStr, argErrStrPtr
+  m_orgStr = argStr
+  m_currDepth = 0
+  m_currPropPath = []
+  m_warningsList = []
+  returnList = me.parseSubList([1])
+  errStr = EMPTY
+  repeat with n = 1 to m_warningsList.count
+    Warning = m_warningsList[n]
+    warningType = Warning[#type]
+    if warningType[1] = #LingoValueFunction then
+      if warningType[2] = #prop then
+        errStr = errStr & "Lingo value function doesn't allow props as " & warningType[3]
+      else
+        if warningType[2] = #val then
+          errStr = errStr & "Lingo value function doesn't allow vals as " & warningType[3]
+        end if
+      end if
+      errStr = errStr && string(Warning[#val])
+    else
+      if warningType[1] = #Brackets then
+        if warningType[2] = #Few then
+          errStr = errStr & "Too few brackets! Missing: " & string(Warning[#NumMissing])
+        else
+          if warningType[2] = #Many then
+            errStr = errStr & "Too many brackets!"
+          end if
+        end if
+      end if
+    end if
+    errStr = errStr && string(Warning[#path]) & RETURN
+  end repeat
+  pott(errStr)
+  if listp(argErrStrPtr) then
+    argErrStrPtr[1] = errStr
+  end if
+  return returnList
+end
+
+on parseSubList me, argChNrPtr
+  values = []
+  props = []
+  IsPropList = 0
+  startChNr = argChNrPtr[1]
+  justGotList = 0
+  lastStart = argChNrPtr[1]
+  insideString = 0
+  repeat with chNr = argChNrPtr[1] to m_orgStr.length
+    ch = m_orgStr.char[chNr]
+    if insideString then
+      if ch = QUOTE then
+        insideString = not insideString
+      end if
+      next repeat
+    end if
+    if ch = QUOTE then
+      insideString = not insideString
+      next repeat
+    end if
+    if ch = "[" then
+      m_currDepth = m_currDepth + 1
+      argChNrPtr[1] = chNr + 1
+      m_currPropPath[m_currDepth] = #_Linear
+      val = me.parseSubList(argChNrPtr)
+      chNr = argChNrPtr[1]
+      justGotList = 1
+      next repeat
+    end if
+    if ch = "]" then
+      m_currDepth = m_currDepth - 1
+      if m_currDepth < 0 then
+        m_warningsList.add([#type: [#Brackets, #Many], #path: m_currPropPath.duplicate()])
+        m_currDepth = 1
+      else
+        if (m_currPropPath.count >= m_currDepth) and (m_currDepth >= 0) then
+          repeat with n = m_currPropPath.count down to m_currDepth + 1
+            m_currPropPath.deleteAt(m_currDepth + 1)
+          end repeat
+        else
+        end if
+      end if
+      argChNrPtr[1] = chNr
+      if not justGotList then
+        if lastStart >= (chNr - 1) then
+          if IsPropList then
+            return [:]
+          end if
+          return []
+        else
+          val = me.fixVal(m_orgStr.char[lastStart..chNr - 1])
+        end if
+      end if
+      values.add(val)
+      if IsPropList then
+        tmp = [:]
+        repeat with n = 1 to props.count
+          tmp.addProp(props[n], values[n])
+        end repeat
+        return tmp
+      end if
+      return values
+      next repeat
+    end if
+    if ch = "," then
+      if not justGotList then
+        val = me.fixVal(m_orgStr.char[lastStart..chNr - 1])
+      end if
+      values.add(val)
+      justGotList = 0
+      lastStart = chNr + 1
+      next repeat
+    end if
+    if ch = ":" then
+      IsPropList = 1
+      if not justGotList then
+        if lastStart >= chNr then
+          lastStart = chNr + 1
+          next repeat
+        else
+          val = me.fixVal(m_orgStr.char[lastStart..chNr - 1], 1)
+        end if
+      else
+        m_warningsList.add([#type: [#LingoValueFunction, #prop, #list], #val: val, #path: m_currPropPath.duplicate()])
+      end if
+      props.add(val)
+      m_currPropPath[m_currDepth] = val
+      justGotList = 0
+      lastStart = chNr + 1
+    end if
+  end repeat
+  if m_currDepth > 0 then
+    m_warningsList.add([#type: [#Brackets, #Few], #NumMissing: m_currDepth, #path: m_currPropPath.duplicate()])
+  end if
+  return val
+end
+
+on fixVal me, argVal, argIsProp
+  argVal = trimStringFromChars(argVal, [SPACE])
+  if argVal.char[1] = QUOTE then
+    argVal = trimStringFromChars(argVal, [QUOTE])
+    return argVal
+  end if
+  tmpVal = value(argVal)
+  if voidp(tmpVal) then
+    m_warningsList.add([#type: [#LingoValueFunction, #val, #void], #val: argVal, #path: m_currPropPath.duplicate()])
+    if argVal.char[1] = "<" then
+    end if
+  end if
+  if argIsProp = 1 then
+    if integerp(tmpVal) or floatp(tmpVal) then
+      if tmpVal < 0 then
+        m_warningsList.add([#type: [#LingoValueFunction, #prop, #Negative], #val: tmpVal, #path: m_currPropPath.duplicate()])
+      end if
+    else
+      if voidp(tmpVal) then
+        m_warningsList.add([#type: [#LingoValueFunction, #prop, #void], #val: argVal, #path: m_currPropPath.duplicate()])
+      end if
+    end if
+  end if
+  return tmpVal
+end

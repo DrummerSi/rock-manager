@@ -1,0 +1,41 @@
+property ancestor, textMember
+
+on new me, argItemObj
+  ancestor = script("DialogScrollMainBH").new(argItemObj, me)
+  textMember = member("TestScrollText")
+  if textMember.type = #field then
+    ancestor.defaultItemSize = point(textMember.width, textMember.lineHeight)
+  else
+    if textMember.text.length > 0 then
+      tmpHeight = textMember.linePosToLocV(1)
+    else
+      tmpHeight = 14
+    end if
+    ancestor.defaultItemSize = point(textMember.width, tmpHeight)
+  end if
+  ancestor.displaySize = point(textMember.width, 40)
+  return me
+end
+
+on kill me
+  ancestor = ancestor.kill()
+  return 0
+end
+
+on getItemSize me, argItemCoord
+  return ancestor.defaultItemSize
+end
+
+on scrollPaint me
+  tmpStr = EMPTY
+  repeat with n = 1 to ancestor.itemObjs.count
+    tmpStr = tmpStr & ancestor.itemObjs[n] & RETURN
+  end repeat
+  delete tmpStr.char[tmpStr.length]
+  textMember.text = tmpStr
+end
+
+on scrollRender me
+  textMember.scrollTop = ancestor.scrollTLPixels[2]
+  updateStage()
+end

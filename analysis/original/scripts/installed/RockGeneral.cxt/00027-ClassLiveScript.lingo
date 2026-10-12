@@ -1,0 +1,107 @@
+property ancestor, child, className, belongsTo, _killed, Owner, StyleMix, StyleMixTolerance, SongType, SongTypeTolerance, MinQuality, MediaTargets, size, PreferredPriceModel, PriceModels, MinAge, Regulars, MinDaysBetweenConcerts
+global gRock
+
+on new me, argChild, argBelongsTo
+  if objectp(argChild) then
+    child = argChild
+  else
+    child = me
+  end if
+  belongsTo = argBelongsTo
+  ancestor = script("ClassPlaceScript").new(child)
+  className = #Live
+  Owner = #none
+  StyleMix = script("ClassStyleMixScript").new(VOID, me)
+  StyleMixTolerance = script("ClassStyleMixScript").new(VOID, me)
+  SongType = 0.0
+  SongTypeTolerance = 0.0
+  MinQuality = 0.0
+  MediaTargets = []
+  size = 0
+  PreferredPriceModel = script("ClassPriceModelScript").new(VOID, me)
+  PriceModels = []
+  MinAge = 0
+  Regulars = 0.0
+  MinDaysBetweenConcerts = 0
+  return me
+end
+
+on kill me
+  _killed = 1
+  if objectp(StyleMix) then
+    StyleMix = StyleMix.kill()
+  end if
+  if objectp(StyleMixTolerance) then
+    StyleMixTolerance = StyleMixTolerance.kill()
+  end if
+  if objectp(PreferredPriceModel) then
+    PreferredPriceModel = PreferredPriceModel.kill()
+  end if
+  if objectp(ancestor) then
+    ancestor = ancestor.kill()
+  end if
+  child = 0
+  belongsTo = 0
+  return 0
+end
+
+on calcReach me
+  ReachesGroups = [:]
+  repeat with n = 1 to MediaTargets.count
+    target_r = gRock.m_classManager.getObjByIDAndClass(MediaTargets[n], #MediaTarget)
+    tmpReachesGroups = target_r.calcReach()
+    repeat with m = 1 to tmpReachesGroups.count
+      tmpGrpID = tmpReachesGroups.getPropAt(m)
+      if tmpReachesGroups[m] > ReachesGroups.getaProp(tmpGrpID) then
+        ReachesGroups[tmpGrpID] = tmpReachesGroups[m]
+      end if
+    end repeat
+  end repeat
+  return ReachesGroups
+end
+
+on zzwillLetBandPlay me
+  tmpLikesAlbumInfo = rDefLikesAlbum(me, VOID, [#music: 1, #image: 1, #SongType: 1, #quality: 1, #Freshness: 0.29999999999999999], #ExtraInfo)
+  pott("Live likes album", tmpLikesAlbumInfo)
+  tmpLike = tmpLikesAlbumInfo[#Like]
+  if tmpLikesAlbumInfo[#LikeSorted].getPropAt(1) < 0 then
+  end if
+  band_r = gRock.m_context.getFocus(#Band)
+  tmpLike = tmpLike + (0.20000000000000001 * band_r.LiveReputation)
+  pott("/w LiveReputation", tmpLike)
+  tmpLike = tmpLike + (0.01 * band_r.getTotalHype())
+  pott("/w band.hype", tmpLike)
+  return tmpLike > 0
+end
+
+on willLetBandPlay me
+  argAlbum_r = gRock.m_context.getFocus(#album)
+  argBand_r = gRock.m_context.getFocus(#Band)
+  tmpLikesAlbumInfo = rDefLikesAlbum(me, VOID, [#music: 1, #image: 0.0, #SongType: 1, #quality: 1, #Freshness: 0.29999999999999999], #ExtraInfo)
+  tmpLike = tmpLikesAlbumInfo[#Like]
+  feedBackObj = script("DemoFeedbackScript").new()
+  feedBackComment = feedBackObj.getFeedback(me, tmpLikesAlbumInfo)
+  tuneDebug(tmpLikesAlbumInfo)
+  if objectp(tmpLikesAlbumInfo[#target]) then
+    tuneDebug("Used target", tmpLikesAlbumInfo[#target].ID)
+  end if
+  totalSubZero = tmpLikesAlbumInfo[#totalSubZero]
+  if objectp(argAlbum_r) then
+    StyleObj = gRock.m_classManager.createUnregObj(#StyleMix)
+    rCalcObjsAverage(StyleObj, [1.0: argAlbum_r.MusicStyle, 1.0: argAlbum_r.ImageStyle])
+    tuneDebugObject(StyleObj, "AvgStyle")
+    gRock.m_classManager.removeObj(StyleObj, #kill)
+  end if
+  addThis = (0.20000000000000001 * argBand_r.LiveReputation) + (0.01 * argBand_r.getTotalHype())
+  tmp = totalSubZero + addThis
+  tuneDebug("Add LiveReputation", 0.20000000000000001 * argBand_r.LiveReputation, "Add hype", 0.01 * argBand_r.getTotalHype(), addThis, "Total", tmp)
+  if tmp >= 0 then
+    if tmpLike < 0 then
+      pott("Really like", tmpLike)
+      return 0.01
+    else
+      return tmpLike
+    end if
+  end if
+  return feedBackComment
+end

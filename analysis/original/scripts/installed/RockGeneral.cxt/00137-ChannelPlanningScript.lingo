@@ -1,0 +1,166 @@
+property ancestor, m_events, m_numSubChannels, m_subChannelHeight, m_type, m_reportToAboutItems
+
+on new me, argMasterObj, argChildObj, argInfo
+  m_type = #Planning
+  argInfo[#ClrDepth] = 16
+  ancestor = script("ChannelAncestorScript").new(argMasterObj, me, argInfo)
+  ancestor.m_type = #Planning
+  m_numSubChannels = 4
+  m_subChannelHeight = 24
+  ancestor.m_height = m_numSubChannels * m_subChannelHeight
+  noTouchLastDate = argMasterObj.m_todayDate
+  m_reportToAboutItems = argInfo[#ReportToAboutItems]
+  if not voidp(argInfo[#events]) then
+    tmp = argInfo[#events]
+    cantMoveAny = argInfo[#Moveable] = 0
+    m_events = [:]
+    repeat with obj in tmp
+      tmpFreeChannels = me.checkFreeDates(obj.StartDate, obj.duration)
+      if tmpFreeChannels.count = 0 then
+        tmpFreeChannels = [1]
+      end if
+      tmpMoveable = obj.Moveable
+      if tmpMoveable = 1 then
+        if obj.StartDate <= noTouchLastDate then
+          tmpMoveable = 0
+        else
+          tmpMoveable = not cantMoveAny
+        end if
+      end if
+      tmpExtraInfo = [#channel: tmpFreeChannels[1]]
+      tmpFormat_r = me.getPlannedItemFormat(obj)
+      plannedObj = script("OnePlannedItemScript").new(me, obj, tmpExtraInfo, tmpMoveable, tmpFormat_r)
+      m_events.addProp(obj.ID, plannedObj)
+    end repeat
+  end if
+  return me
+end
+
+on kill me
+  repeat with obj in m_events
+    obj.kill()
+  end repeat
+  m_events = [:]
+  if objectp(m_reportToAboutItems) then
+    m_reportToAboutItems = m_reportToAboutItems.kill()
+  end if
+  ancestor = ancestor.kill()
+  return 0
+end
+
+on getPlannedItemFormat me, argObj
+  global gRock
+  formatID = rgetProp(argObj, #AgendaFormat)
+  if not symbolp(formatID) then
+    formatID = symbol("AgFm" & string(rgetProp(argObj, #type)))
+  end if
+  if symbolp(formatID) then
+    format_r = gRock.m_classManager.getObjByIDAndClass(formatID, #AgendaEventFormat)
+    if objectp(format_r) then
+      return format_r
+    end if
+  end if
+  objs_r = gRock.m_classManager.getObjsOfClass(#AgendaEventFormat)
+  className = argObj.className
+  repeat with obj_r in objs_r
+    if obj_r.UsedByClass = className then
+      return obj_r
+    end if
+  end repeat
+  return gRock.m_classManager.getObjByIDAndClass(#AgFmUnknown, #AgendaEventFormat)
+end
+
+on display me, argIsTRUE
+  ancestor.display(argIsTRUE)
+  repeat with obj in m_events
+    obj.display(argIsTRUE)
+  end repeat
+end
+
+on addItem me, argObj, argOption
+  tmpID = argObj[#m_ID]
+  if voidp(tmpID) then
+    tmpID = symbol(string(random(1000)))
+  end if
+  m_events.addProp(tmpID, argObj)
+  if argOption = #draw then
+    invalidatedRect = argObj.calcVisibleRect()
+    ancestor.m_agenda.draw(invalidatedRect)
+  end if
+end
+
+on deleteItem me, argObj, argOption, argInvalidatedRect
+  m_events.deleteOne(argObj)
+  if argOption = #draw then
+    ancestor.m_agenda.draw(argInvalidatedRect)
+  end if
+end
+
+on scroll me, argPoint
+  ancestor.scroll(argPoint)
+end
+
+on draw me, argStartAndEndDates, argInvalidatedRect
+  if ancestor.m_isExpanded = 0 then
+    ancestor.draw(argStartAndEndDates)
+    exit
+  end if
+  realStartAndEndDates = argStartAndEndDates.duplicate()
+  img = ancestor.m_image
+  if voidp(argInvalidatedRect) then
+    argInvalidatedRect = img.rect
+  end if
+  img.fill(argInvalidatedRect, rgb(255, 255, 255))
+  blitOffset = ancestor.m_blitOffset
+  repeat with n = 1 to m_events.count
+    obj = m_events[n]
+    obj.draw(argStartAndEndDates, img, point(0, 0), argInvalidatedRect)
+  end repeat
+  ancestor.m_agenda.m_imagePtr[1].copyPixels(img, img.rect + rect(blitOffset, blitOffset), img.rect, [#ink: 36])
+  ancestor.draw(argStartAndEndDates)
+end
+
+on locVToSubChannel me, argLocV
+  argLocV = argLocV - ancestor.m_blitOffset[2]
+  tmp = 1 + (argLocV / m_subChannelHeight)
+  if tmp < 1 then
+    return 1
+  end if
+  if tmp > m_numSubChannels then
+    return m_numSubChannels
+  end if
+  return tmp
+end
+
+on checkFreeDates me, argStartDate, argNumDays, argIgnoreThisPlannedItem
+  tmpEndDate = argStartDate + argNumDays
+  startDateSorted = [:]
+  startDateSorted.sort()
+  endDateSorted = [:]
+  endDateSorted.sort()
+  repeat with n = 1 to m_events.count
+    obj = m_events[n]
+    startDateSorted.addProp(obj.m_startDate, obj)
+    endDateSorted.addProp(obj.m_endDate, obj)
+  end repeat
+  freeSubChannels = []
+  repeat with n = 1 to m_numSubChannels
+    freeSubChannels.add(n)
+  end repeat
+  eventsDuringThisRange = []
+  startDateSorted.addProp(tmpEndDate, -1)
+  Pos = startDateSorted.getPos(-1)
+  repeat with n = Pos - 1 down to 1
+    obj = startDateSorted[n]
+    if (obj.m_endDate - 1) >= argStartDate then
+      if obj <> argIgnoreThisPlannedItem then
+        eventsDuringThisRange.add(obj)
+        freeSubChannels.deleteOne(obj.m_subChannel)
+        if eventsDuringThisRange.count >= m_numSubChannels then
+          return freeSubChannels
+        end if
+      end if
+    end if
+  end repeat
+  return freeSubChannels
+end

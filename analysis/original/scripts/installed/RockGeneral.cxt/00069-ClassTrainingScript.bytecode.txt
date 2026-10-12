@@ -1,0 +1,375 @@
+property ancestor, child, className, belongsTo, _killed, type, AutoEventCard
+global gRock
+
+on new me, argChild, argBelongsTo
+  [  0] getparam 8 .............................. <argChild>
+  [  2] pusharglist 1 ........................... <argChild>
+  [  4] extcall 8 ............................... <objectp(argChild)>
+  [  6] jmpifz [ 17] ............................ if objectp(argChild) then / else
+  [  9] getparam 8 .............................. <argChild>
+  [ 11] setprop 496 ............................. child = argChild
+  [ 14] jmp [ 22]
+  [ 17] getparam 0 .............................. <me>
+  [ 19] setprop 496 ............................. child = me
+  [ 22] getparam 16 ............................. <argBelongsTo>
+  [ 24] setprop 208 ............................. belongsTo = argBelongsTo
+  [ 27] pushcons 0 .............................. <"ClassEventScript">
+  [ 29] pusharglist 1 ........................... <"ClassEventScript">
+  [ 31] extcall 10 .............................. <script("ClassEventScript")>
+  [ 33] getprop 496 ............................. <child>
+  [ 36] pusharglist 2 ........................... <script("ClassEventScript"), child>
+  [ 38] objcall 11 .............................. <script("ClassEventScript").new(child)>
+  [ 40] setprop 347 ............................. ancestor = script("ClassEventScript").new(child)
+  [ 43] pushsymb 1024 ........................... <#Training>
+  [ 46] setprop 224 ............................. className = #Training
+  [ 49] pushsymb 268 ............................ <#none>
+  [ 52] setprop 359 ............................. type = #none
+  [ 55] pushzero ................................ <0>
+  [ 56] setprop 1027 ............................ AutoEventCard = 0
+  [ 59] getprop 347 ............................. <ancestor>
+  [ 62] pushint8 1 .............................. <1>
+  [ 65] setobjprop 1026 ......................... ancestor.visible = 1
+  [ 68] getparam 0 .............................. <me>
+  [ 70] pusharglistnoret 1 ...................... <me>
+  [ 72] extcall 69 .............................. return me
+  [ 75] ret
+end
+
+on kill me
+  [  0] pushint8 1 .............................. <1>
+  [  3] setprop 506 ............................. _killed = 1
+  [  6] getprop 347 ............................. <ancestor>
+  [  9] pusharglist 1 ........................... <ancestor>
+  [ 11] extcall 8 ............................... <objectp(ancestor)>
+  [ 13] jmpifz [ 26] ............................ if objectp(ancestor) then
+  [ 16] getprop 347 ............................. <ancestor>
+  [ 19] pusharglist 1 ........................... <ancestor>
+  [ 21] objcall 31 .............................. <ancestor.kill()>
+  [ 23] setprop 347 ............................. ancestor = ancestor.kill()
+  [ 26] pushzero ................................ <0>
+  [ 27] setprop 496 ............................. child = 0
+  [ 30] pushzero ................................ <0>
+  [ 31] setprop 208 ............................. belongsTo = 0
+  [ 34] pushzero ................................ <0>
+  [ 35] pusharglistnoret 1 ...................... <0>
+  [ 37] extcall 69 .............................. return 0
+  [ 40] ret
+end
+
+on eventChangeState me, argAction, argOption
+  [  0] getparam 8 .............................. <argAction>
+  [  2] pushsymb 43 ............................. <#start>
+  [  5] eq ...................................... <argAction = #start>
+  [  6] jmpifz [ 12] ............................ if argAction = #start then / else
+  [  9] jmp [162]
+  [ 12] getparam 8 .............................. <argAction>
+  [ 14] pushsymb 663 ............................ <#stop>
+  [ 17] eq ...................................... <argAction = #stop>
+  [ 18] jmpifz [162] ............................ if argAction = #stop then
+  [ 21] getparam 0 .............................. <me>
+  [ 23] pusharglistnoret 1 ...................... <me>
+  [ 25] objcall 1581 ............................ me.affectMusician()
+  [ 28] getprop 1027 ............................ <AutoEventCard>
+  [ 31] pushint8 1 .............................. <1>
+  [ 34] eq ...................................... <AutoEventCard = 1>
+  [ 35] jmpifz [106] ............................ if AutoEventCard = 1 then / else
+  [ 38] pushcons 8 .............................. <"ECOCTraining">
+  [ 40] getprop 359 ............................. <type>
+  [ 43] pusharglist 1 ........................... <type>
+  [ 45] extcall 114 ............................. <string(type)>
+  [ 48] joinstr ................................. <"ECOCTraining" & string(type)>
+  [ 49] pushcons 16 ............................. <"Done">
+  [ 51] joinstr ................................. <"ECOCTraining" & string(type) & "Done">
+  [ 52] pusharglist 1 ........................... <"ECOCTraining" & string(type) & "Done">
+  [ 54] extcall 267 ............................. <symbol("ECOCTraining" & string(type) & "Done")>
+  [ 57] setlocal 0 .............................. tmpECID = symbol("ECOCTraining" & string(type) & "Done")
+  [ 59] getglobal 23 ............................ <gRock>
+  [ 61] getobjprop 80 ........................... <gRock.m_eventCardsManager>
+  [ 64] getlocal 0 .............................. <tmpECID>
+  [ 66] pushsymb 1303 ........................... <#prio>
+  [ 69] pushint8 3 .............................. <3>
+  [ 72] pushsymb 847 ............................ <#EventCardOptions>
+  [ 75] pushsymb 848 ............................ <#HumanID>
+  [ 78] getprop 347 ............................. <ancestor>
+  [ 81] pushsymb 1016 ........................... <#neededIDs>
+  [ 84] pushint8 1 .............................. <1>
+  [ 87] pusharglist 3 ........................... <ancestor, #neededIDs, 1>
+  [ 89] objcall 113 ............................. <ancestor.neededIDs[1]>
+  [ 92] pusharglist 2 ........................... <[#HumanID: ancestor.neededIDs[1]]>
+  [ 94] pushproplist ............................ <[#HumanID: ancestor.neededIDs[1]]>
+  [ 95] pusharglist 4 ........................... <[#prio: 3, #EventCardOptions: [#HumanID: ancestor.neededIDs[1]]]>
+  [ 97] pushproplist ............................ <[#prio: 3, #EventCardOptions: [#HumanID: ancestor.neededIDs[1]]]>
+  [ 98] pusharglistnoret 3 ...................... <gRock.m_eventCardsManager, tmpECID, [#prio: 3, #EventCardOptions: [#HumanID: ancestor.neededIDs[1]]]>
+  [100] objcall 856 ............................. gRock.m_eventCardsManager.tryNewShowEventCard(tmpECID, [#prio: 3, #EventCardOptions: [#HumanID: ancestor.neededIDs[1]]])
+  [103] jmp [162]
+  [106] getprop 1027 ............................ <AutoEventCard>
+  [109] pusharglist 1 ........................... <AutoEventCard>
+  [111] extcall 96 .............................. <symbolp(AutoEventCard)>
+  [114] jmpifz [162] ............................ if symbolp(AutoEventCard) then
+  [117] getglobal 23 ............................ <gRock>
+  [119] getobjprop 80 ........................... <gRock.m_eventCardsManager>
+  [122] getprop 1027 ............................ <AutoEventCard>
+  [125] pushsymb 1303 ........................... <#prio>
+  [128] pushint8 3 .............................. <3>
+  [131] pushsymb 847 ............................ <#EventCardOptions>
+  [134] pushsymb 848 ............................ <#HumanID>
+  [137] getprop 347 ............................. <ancestor>
+  [140] pushsymb 1016 ........................... <#neededIDs>
+  [143] pushint8 1 .............................. <1>
+  [146] pusharglist 3 ........................... <ancestor, #neededIDs, 1>
+  [148] objcall 113 ............................. <ancestor.neededIDs[1]>
+  [151] pusharglist 2 ........................... <[#HumanID: ancestor.neededIDs[1]]>
+  [153] pushproplist ............................ <[#HumanID: ancestor.neededIDs[1]]>
+  [154] pusharglist 4 ........................... <[#prio: 3, #EventCardOptions: [#HumanID: ancestor.neededIDs[1]]]>
+  [156] pushproplist ............................ <[#prio: 3, #EventCardOptions: [#HumanID: ancestor.neededIDs[1]]]>
+  [157] pusharglistnoret 3 ...................... <gRock.m_eventCardsManager, AutoEventCard, [#prio: 3, #EventCardOptions: [#HumanID: ancestor.neededIDs[1]]]>
+  [159] objcall 856 ............................. gRock.m_eventCardsManager.tryNewShowEventCard(AutoEventCard, [#prio: 3, #EventCardOptions: [#HumanID: ancestor.neededIDs[1]]])
+  [162] getprop 347 ............................. <ancestor>
+  [165] getparam 8 .............................. <argAction>
+  [167] getparam 16 ............................. <argOption>
+  [169] pusharglist 3 ........................... <ancestor, argAction, argOption>
+  [171] objcall 660 ............................. <ancestor.eventChangeState(argAction, argOption)>
+  [174] pusharglistnoret 1 ...................... <ancestor.eventChangeState(argAction, argOption)>
+  [176] extcall 69 .............................. return ancestor.eventChangeState(argAction, argOption)
+  [179] ret
+end
+
+on timeTick me
+  [  0] ret
+end
+
+on affectMusician me
+  [  0] getprop 347 ............................. <ancestor>
+  [  3] pushsymb 1016 ........................... <#neededIDs>
+  [  6] pushint8 1 .............................. <1>
+  [  9] pusharglist 3 ........................... <ancestor, #neededIDs, 1>
+  [ 11] objcall 113 ............................. <ancestor.neededIDs[1]>
+  [ 14] setlocal 0 .............................. musID = ancestor.neededIDs[1]
+  [ 16] getglobal 23 ............................ <gRock>
+  [ 18] getobjprop 82 ........................... <gRock.m_classManager>
+  [ 21] getlocal 0 .............................. <musID>
+  [ 23] pushsymb 636 ............................ <#RealMusician>
+  [ 26] pusharglist 3 ........................... <gRock.m_classManager, musID, #RealMusician>
+  [ 28] objcall 149 ............................. <gRock.m_classManager.getObjByIDAndClass(musID, #RealMusician)>
+  [ 31] setlocal 8 .............................. musician_r = gRock.m_classManager.getObjByIDAndClass(musID, #RealMusician)
+  [ 33] getlocal 8 .............................. <musician_r>
+  [ 35] pusharglist 1 ........................... <musician_r>
+  [ 37] extcall 8 ............................... <objectp(musician_r)>
+  [ 39] not ..................................... <not objectp(musician_r)>
+  [ 40] jmpifz [ 44] ............................ if not objectp(musician_r) then
+  [ 43] ret ..................................... exit
+  [ 44] getprop 359 ............................. <type>
+  [ 47] pushsymb 651 ............................ <#Musicality>
+  [ 50] eq ...................................... <type = #Musicality>
+  [ 51] jmpifz [ 97] ............................ if type = #Musicality then / else
+  [ 54] getparam 0 .............................. <me>
+  [ 56] getlocal 8 .............................. <musician_r>
+  [ 58] pushsymb 651 ............................ <#Musicality>
+  [ 61] pushcons 24 ............................. <0.20000000000000001>
+  [ 63] pushint8 1 .............................. <1>
+  [ 66] pusharglist 5 ........................... <me, musician_r, #Musicality, 0.20000000000000001, 1>
+  [ 68] objcall 1582 ............................ <me.calcRealChange(musician_r, #Musicality, 0.20000000000000001, 1)>
+  [ 71] setlocal 16 ............................. tmpChange = me.calcRealChange(musician_r, #Musicality, 0.20000000000000001, 1)
+  [ 73] pushsymb 1584 ........................... <#TrainMusicality>
+  [ 76] getlocal 0 .............................. <musID>
+  [ 78] pushsymb 651 ............................ <#Musicality>
+  [ 81] pusharglist 1 ........................... <[#Musicality]>
+  [ 83] pushlist ................................ <[#Musicality]>
+  [ 84] getlocal 16 ............................. <tmpChange>
+  [ 86] pushint8 90 ............................. <90>
+  [ 89] pusharglistnoret 5 ...................... <#TrainMusicality, musID, [#Musicality], tmpChange, 90>
+  [ 91] extcall 597 ............................. rCreateModifier(#TrainMusicality, musID, [#Musicality], tmpChange, 90)
+  [ 94] jmp [429]
+  [ 97] getprop 359 ............................. <type>
+  [100] pushsymb 1585 ........................... <#Physics>
+  [103] eq ...................................... <type = #Physics>
+  [104] jmpifz [190] ............................ if type = #Physics then / else
+  [107] getparam 0 .............................. <me>
+  [109] getlocal 8 .............................. <musician_r>
+  [111] pushsymb 884 ............................ <#Health>
+  [114] pushcons 32 ............................. <0.20000000000000001>
+  [116] pushint8 1 .............................. <1>
+  [119] pusharglist 5 ........................... <me, musician_r, #Health, 0.20000000000000001, 1>
+  [121] objcall 1582 ............................ <me.calcRealChange(musician_r, #Health, 0.20000000000000001, 1)>
+  [124] setlocal 16 ............................. tmpChange = me.calcRealChange(musician_r, #Health, 0.20000000000000001, 1)
+  [126] pushsymb 1586 ........................... <#TrainPhysics>
+  [129] getlocal 0 .............................. <musID>
+  [131] pushsymb 884 ............................ <#Health>
+  [134] pusharglist 1 ........................... <[#Health]>
+  [136] pushlist ................................ <[#Health]>
+  [137] getlocal 16 ............................. <tmpChange>
+  [139] pushint8 30 ............................. <30>
+  [142] pusharglistnoret 5 ...................... <#TrainPhysics, musID, [#Health], tmpChange, 30>
+  [144] extcall 597 ............................. rCreateModifier(#TrainPhysics, musID, [#Health], tmpChange, 30)
+  [147] getparam 0 .............................. <me>
+  [149] getlocal 8 .............................. <musician_r>
+  [151] pushsymb 652 ............................ <#Charisma>
+  [154] pushcons 40 ............................. <0.10000000000000001>
+  [156] pushint8 1 .............................. <1>
+  [159] pusharglist 5 ........................... <me, musician_r, #Charisma, 0.10000000000000001, 1>
+  [161] objcall 1582 ............................ <me.calcRealChange(musician_r, #Charisma, 0.10000000000000001, 1)>
+  [164] setlocal 16 ............................. tmpChange = me.calcRealChange(musician_r, #Charisma, 0.10000000000000001, 1)
+  [166] pushsymb 1586 ........................... <#TrainPhysics>
+  [169] getlocal 0 .............................. <musID>
+  [171] pushsymb 652 ............................ <#Charisma>
+  [174] pusharglist 1 ........................... <[#Charisma]>
+  [176] pushlist ................................ <[#Charisma]>
+  [177] getlocal 16 ............................. <tmpChange>
+  [179] pushint8 30 ............................. <30>
+  [182] pusharglistnoret 5 ...................... <#TrainPhysics, musID, [#Charisma], tmpChange, 30>
+  [184] extcall 597 ............................. rCreateModifier(#TrainPhysics, musID, [#Charisma], tmpChange, 30)
+  [187] jmp [429]
+  [190] getprop 359 ............................. <type>
+  [193] pushsymb 1587 ........................... <#Vacation>
+  [196] eq ...................................... <type = #Vacation>
+  [197] jmpifz [218] ............................ if type = #Vacation then / else
+  [200] getlocal 8 .............................. <musician_r>
+  [202] getobjprop 939 .......................... <musician_r.Needs>
+  [205] pushsymb 1499 ........................... <#NeedVacation>
+  [208] pushcons 48 ............................. <0.5>
+  [210] pusharglistnoret 3 ...................... <musician_r.Needs, #NeedVacation, 0.5>
+  [212] objcall 1509 ............................ musician_r.Needs.satisfy(#NeedVacation, 0.5)
+  [215] jmp [429]
+  [218] getprop 359 ............................. <type>
+  [221] pushsymb 1588 ........................... <#Detox>
+  [224] eq ...................................... <type = #Detox>
+  [225] jmpifz [379] ............................ if type = #Detox then / else
+  [228] getlocal 8 .............................. <musician_r>
+  [230] getobjprop 939 .......................... <musician_r.Needs>
+  [233] pushsymb 1499 ........................... <#NeedVacation>
+  [236] pushcons 56 ............................. <0.10000000000000001>
+  [238] pusharglistnoret 3 ...................... <musician_r.Needs, #NeedVacation, 0.10000000000000001>
+  [240] objcall 1509 ............................ musician_r.Needs.satisfy(#NeedVacation, 0.10000000000000001)
+  [243] getparam 0 .............................. <me>
+  [245] getlocal 8 .............................. <musician_r>
+  [247] pushsymb 884 ............................ <#Health>
+  [250] pushcons 64 ............................. <0.20000000000000001>
+  [252] pushint8 1 .............................. <1>
+  [255] pusharglist 5 ........................... <me, musician_r, #Health, 0.20000000000000001, 1>
+  [257] objcall 1582 ............................ <me.calcRealChange(musician_r, #Health, 0.20000000000000001, 1)>
+  [260] setlocal 16 ............................. tmpChange = me.calcRealChange(musician_r, #Health, 0.20000000000000001, 1)
+  [262] pushsymb 1589 ........................... <#TrainDetox>
+  [265] getlocal 0 .............................. <musID>
+  [267] pushsymb 884 ............................ <#Health>
+  [270] pusharglist 1 ........................... <[#Health]>
+  [272] pushlist ................................ <[#Health]>
+  [273] getlocal 16 ............................. <tmpChange>
+  [275] pushint8 90 ............................. <90>
+  [278] pusharglistnoret 5 ...................... <#TrainDetox, musID, [#Health], tmpChange, 90>
+  [280] extcall 597 ............................. rCreateModifier(#TrainDetox, musID, [#Health], tmpChange, 90)
+  [283] getlocal 8 .............................. <musician_r>
+  [285] pushsymb 939 ............................ <#Needs>
+  [288] pushsymb 1522 ........................... <#NeedObjs>
+  [291] pushsymb 1506 ........................... <#NeedParty>
+  [294] pushsymb 1500 ........................... <#DynamicTrigger>
+  [297] pusharglist 4 ........................... <[#Needs, #NeedObjs, #NeedParty, #DynamicTrigger]>
+  [299] pushlist ................................ <[#Needs, #NeedObjs, #NeedParty, #DynamicTrigger]>
+  [300] pusharglist 2 ........................... <musician_r, [#Needs, #NeedObjs, #NeedParty, #DynamicTrigger]>
+  [302] extcall 1045 ............................ <rgetPropSimple(musician_r, [#Needs, #NeedObjs, #NeedParty, #DynamicTrigger])>
+  [305] setlocal 24 ............................. tmpNeedPartyObj = rgetPropSimple(musician_r, [#Needs, #NeedObjs, #NeedParty, #DynamicTrigger])
+  [307] getlocal 24 ............................. <tmpNeedPartyObj>
+  [309] pusharglist 1 ........................... <tmpNeedPartyObj>
+  [311] extcall 8 ............................... <objectp(tmpNeedPartyObj)>
+  [313] jmpifz [323] ............................ if objectp(tmpNeedPartyObj) then
+  [316] getlocal 24 ............................. <tmpNeedPartyObj>
+  [318] pushcons 72 ............................. <0.0>
+  [320] setobjprop 499 .......................... tmpNeedPartyObj.Current = 0.0
+  [323] getlocal 8 .............................. <musician_r>
+  [325] pushsymb 939 ............................ <#Needs>
+  [328] pushsymb 1522 ........................... <#NeedObjs>
+  [331] pushsymb 1505 ........................... <#NeedDrugs>
+  [334] pushsymb 1500 ........................... <#DynamicTrigger>
+  [337] pusharglist 4 ........................... <[#Needs, #NeedObjs, #NeedDrugs, #DynamicTrigger]>
+  [339] pushlist ................................ <[#Needs, #NeedObjs, #NeedDrugs, #DynamicTrigger]>
+  [340] pusharglist 2 ........................... <musician_r, [#Needs, #NeedObjs, #NeedDrugs, #DynamicTrigger]>
+  [342] extcall 1045 ............................ <rgetPropSimple(musician_r, [#Needs, #NeedObjs, #NeedDrugs, #DynamicTrigger])>
+  [345] setlocal 32 ............................. tmpNeedDrugObj = rgetPropSimple(musician_r, [#Needs, #NeedObjs, #NeedDrugs, #DynamicTrigger])
+  [347] getlocal 32 ............................. <tmpNeedDrugObj>
+  [349] pusharglist 1 ........................... <tmpNeedDrugObj>
+  [351] extcall 8 ............................... <objectp(tmpNeedDrugObj)>
+  [353] jmpifz [376] ............................ if objectp(tmpNeedDrugObj) then
+  [356] getlocal 32 ............................. <tmpNeedDrugObj>
+  [358] pushcons 80 ............................. <0.0>
+  [360] setobjprop 499 .......................... tmpNeedDrugObj.Current = 0.0
+  [363] getlocal 32 ............................. <tmpNeedDrugObj>
+  [365] getlocal 32 ............................. <tmpNeedDrugObj>
+  [367] getobjprop 502 .......................... <tmpNeedDrugObj.GainFact>
+  [370] pushcons 88 ............................. <2.0>
+  [372] div ..................................... <tmpNeedDrugObj.GainFact / 2.0>
+  [373] setobjprop 502 .......................... tmpNeedDrugObj.GainFact = tmpNeedDrugObj.GainFact / 2.0
+  [376] jmp [429]
+  [379] getprop 359 ............................. <type>
+  [382] pushsymb 815 ............................ <#media>
+  [385] eq ...................................... <type = #media>
+  [386] jmpifz [429] ............................ if type = #media then
+  [389] getparam 0 .............................. <me>
+  [391] getlocal 8 .............................. <musician_r>
+  [393] pushsymb 652 ............................ <#Charisma>
+  [396] pushcons 96 ............................. <0.20000000000000001>
+  [398] pushint8 1 .............................. <1>
+  [401] pusharglist 5 ........................... <me, musician_r, #Charisma, 0.20000000000000001, 1>
+  [403] objcall 1582 ............................ <me.calcRealChange(musician_r, #Charisma, 0.20000000000000001, 1)>
+  [406] setlocal 16 ............................. tmpChange = me.calcRealChange(musician_r, #Charisma, 0.20000000000000001, 1)
+  [408] pushsymb 1590 ........................... <#TrainMedia>
+  [411] getlocal 0 .............................. <musID>
+  [413] pushsymb 652 ............................ <#Charisma>
+  [416] pusharglist 1 ........................... <[#Charisma]>
+  [418] pushlist ................................ <[#Charisma]>
+  [419] getlocal 16 ............................. <tmpChange>
+  [421] pushint8 90 ............................. <90>
+  [424] pusharglistnoret 5 ...................... <#TrainMedia, musID, [#Charisma], tmpChange, 90>
+  [426] extcall 597 ............................. rCreateModifier(#TrainMedia, musID, [#Charisma], tmpChange, 90)
+  [429] ret
+end
+
+on calcRealChange me, argMusician, argPropPath, argOrgChange, argMoodAffects
+  [  0] getparam 32 ............................. <argMoodAffects>
+  [  2] pushint8 1 .............................. <1>
+  [  5] eq ...................................... <argMoodAffects = 1>
+  [  6] jmpifz [ 37] ............................ if argMoodAffects = 1 then / else
+  [  9] getparam 8 .............................. <argMusician>
+  [ 11] pushsymb 596 ............................ <#Mood>
+  [ 14] pusharglist 2 ........................... <argMusician, #Mood>
+  [ 16] extcall 162 ............................. <rgetProp(argMusician, #Mood)>
+  [ 19] setlocal 0 .............................. tmpMood = rgetProp(argMusician, #Mood)
+  [ 21] pushcons 104 ............................ <0.10000000000000001>
+  [ 23] pushcons 112 ............................ <2.0>
+  [ 25] mul ..................................... <0.10000000000000001 * 2.0>
+  [ 26] getlocal 0 .............................. <tmpMood>
+  [ 28] pushcons 120 ............................ <0.5>
+  [ 30] sub ..................................... <tmpMood - 0.5>
+  [ 31] mul ..................................... <0.10000000000000001 * 2.0 * (tmpMood - 0.5)>
+  [ 32] setlocal 8 .............................. tmpFactor = 0.10000000000000001 * 2.0 * (tmpMood - 0.5)
+  [ 34] jmp [ 40]
+  [ 37] pushzero ................................ <0>
+  [ 38] setlocal 8 .............................. tmpFactor = 0
+  [ 40] getparam 24 ............................. <argOrgChange>
+  [ 42] pushcons 128 ............................ <1.0>
+  [ 44] getlocal 8 .............................. <tmpFactor>
+  [ 46] add ..................................... <1.0 + tmpFactor>
+  [ 47] mul ..................................... <argOrgChange * (1.0 + tmpFactor)>
+  [ 48] setparam 24 ............................. argOrgChange = argOrgChange * (1.0 + tmpFactor)
+  [ 50] getparam 8 .............................. <argMusician>
+  [ 52] getparam 16 ............................. <argPropPath>
+  [ 54] pusharglist 2 ........................... <argMusician, argPropPath>
+  [ 56] extcall 162 ............................. <rgetProp(argMusician, argPropPath)>
+  [ 59] setlocal 16 ............................. tmpVal = rgetProp(argMusician, argPropPath)
+  [ 61] getlocal 16 ............................. <tmpVal>
+  [ 63] getparam 24 ............................. <argOrgChange>
+  [ 65] add ..................................... <tmpVal + argOrgChange>
+  [ 66] setlocal 24 ............................. tmpNew = tmpVal + argOrgChange
+  [ 68] getlocal 24 ............................. <tmpNew>
+  [ 70] pushcons 136 ............................ <1.0>
+  [ 72] gt ...................................... <tmpNew > 1.0>
+  [ 73] jmpifz [ 80] ............................ if tmpNew > 1.0 then
+  [ 76] pushcons 144 ............................ <1.0>
+  [ 78] setlocal 24 ............................. tmpNew = 1.0
+  [ 80] getlocal 24 ............................. <tmpNew>
+  [ 82] getlocal 16 ............................. <tmpVal>
+  [ 84] sub ..................................... <tmpNew - tmpVal>
+  [ 85] setlocal 32 ............................. tmpDiff = tmpNew - tmpVal
+  [ 87] getlocal 32 ............................. <tmpDiff>
+  [ 89] pusharglistnoret 1 ...................... <tmpDiff>
+  [ 91] extcall 69 .............................. return tmpDiff
+  [ 94] ret
+end

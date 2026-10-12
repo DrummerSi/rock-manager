@@ -1,0 +1,63 @@
+property itemObj, membersPrefix
+
+on new me, argItemObj, argMembersPrefix
+  itemObj = argItemObj
+  membersPrefix = argMembersPrefix
+  if voidp(membersPrefix) then
+    membersPrefix = "meter01_"
+  end if
+  return me
+end
+
+on Died me, argObj
+  if argObj = itemObj then
+    me.kill()
+  end if
+end
+
+on kill me
+  itemObj = 0
+  return 0
+end
+
+on setMeter me, argFraction
+  bgMemb = member(membersPrefix & "background01")
+  itemsList = []
+  OffsetLoc = bgMemb.regPoint
+  barTotWidth = 0
+  barMembers = ["Left", "Mid", "Right"]
+  repeat with n = 1 to barMembers.count
+    memb = member(membersPrefix & "line01" & barMembers[n])
+    barMembers[n] = memb
+    barTotWidth = barTotWidth + memb.width
+  end repeat
+  if argFraction > 1.0 then
+    argFraction = 1.0
+  end if
+  tmpWidth = integer(argFraction * barTotWidth)
+  barSidesWidth = barTotWidth - barMembers[2].width
+  midWidth = tmpWidth - barSidesWidth
+  tmpDlg = itemObj.dialogObj
+  tmpItemObj = tmpDlg.getItem(#left)
+  tmpItemObj.setOneProp(#Pic, barMembers[1].image)
+  tmpRegDiffLoc = bgMemb.regPoint - barMembers[1].regPoint
+  tmpLeftsRightSide = tmpRegDiffLoc[1]
+  tmpItemObj.setOneProp(#inOffsetRect, rect(tmpRegDiffLoc[1], tmpRegDiffLoc[2], 0, 0))
+  tmpItemObj = tmpDlg.getItem(#Mid)
+  tmpItemObj.setOneProp(#Pic, barMembers[2].image)
+  if midWidth > 0 then
+    tmpRegDiffLoc = bgMemb.regPoint - barMembers[2].regPoint
+    tmpRegDiffLoc = point(barMembers[1].rect[3] + tmpLeftsRightSide, tmpRegDiffLoc[2])
+    tmpItemObj.setOneProp(#inOffsetRect, rect(tmpRegDiffLoc[1], tmpRegDiffLoc[2], tmpRegDiffLoc[1] + midWidth, 0))
+  else
+    tmpItemObj.setOneProp(#inOffsetRect, rect(0, 0, 0, 0))
+  end if
+  tmpItemObj = tmpDlg.getItem(#right)
+  tmpItemObj.setOneProp(#Pic, barMembers[3].image)
+  if midWidth < 0 then
+    midWidth = 0
+  end if
+  tmpRegDiffLoc = bgMemb.regPoint - barMembers[3].regPoint
+  tmpRegDiffLoc = point(barMembers[1].rect[3] + midWidth + tmpLeftsRightSide, tmpRegDiffLoc[2])
+  tmpItemObj.setOneProp(#inOffsetRect, rect(tmpRegDiffLoc[1], tmpRegDiffLoc[2], 0, 0))
+end

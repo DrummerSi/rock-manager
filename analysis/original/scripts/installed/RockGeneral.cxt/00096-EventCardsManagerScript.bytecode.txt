@@ -1,0 +1,1010 @@
+property m_OKToShow, m_waitingCards, m_cardsInfo, m_dateSortedCards, m_IDcnt, m_OKToShowOnTopOfNumDialogs, m_allowSpecial, m_deleteIDs, m_prioCodes
+global gUseful, gDir, gRock
+
+on new me
+  [  0] pushint8 1 .............................. <1>
+  [  3] setprop 1976 ............................ m_OKToShow = 1
+  [  6] pushzero ................................ <0>
+  [  7] setprop 1977 ............................ m_OKToShowOnTopOfNumDialogs = 0
+  [ 10] getglobal 12 ............................ <gUseful>
+  [ 12] getobjprop 65 ........................... <gUseful.frameTimer>
+  [ 15] getparam 0 .............................. <me>
+  [ 17] pusharglistnoret 2 ...................... <gUseful.frameTimer, me>
+  [ 19] objcall 282 ............................. gUseful.frameTimer.addObject(me)
+  [ 22] getglobal 23 ............................ <gRock>
+  [ 24] getobjprop 77 ........................... <gRock.m_msgManager>
+  [ 27] getparam 0 .............................. <me>
+  [ 29] pusharglistnoret 2 ...................... <gRock.m_msgManager, me>
+  [ 31] objcall 282 ............................. gRock.m_msgManager.addObject(me)
+  [ 34] getglobal 23 ............................ <gRock>
+  [ 36] getobjprop 64 ........................... <gRock.m_gameTimer>
+  [ 39] getparam 0 .............................. <me>
+  [ 41] pusharglistnoret 2 ...................... <gRock.m_gameTimer, me>
+  [ 43] objcall 282 ............................. gRock.m_gameTimer.addObject(me)
+  [ 46] getparam 0 .............................. <me>
+  [ 48] pusharglistnoret 1 ...................... <me>
+  [ 50] objcall 202 ............................. me.cleanUp()
+  [ 53] pushsymb 1979 ........................... <#PrioBeforeConcert>
+  [ 56] pushint8 2 .............................. <2>
+  [ 59] pushsymb 1477 ........................... <#PrioConcertResult>
+  [ 62] pushint8 3 .............................. <3>
+  [ 65] pushsymb 1980 ........................... <#PrioAfterConcert>
+  [ 68] pushint8 4 .............................. <4>
+  [ 71] pusharglist 6 ........................... <[#PrioBeforeConcert: 2, #PrioConcertResult: 3, #PrioAfterConcert: 4]>
+  [ 73] pushproplist ............................ <[#PrioBeforeConcert: 2, #PrioConcertResult: 3, #PrioAfterConcert: 4]>
+  [ 74] setprop 1978 ............................ m_prioCodes = [#PrioBeforeConcert: 2, #PrioConcertResult: 3, #PrioAfterConcert: 4]
+  [ 77] getparam 0 .............................. <me>
+  [ 79] pusharglistnoret 1 ...................... <me>
+  [ 81] extcall 69 .............................. return me
+  [ 84] ret
+end
+
+on kill me
+  [  0] getglobal 12 ............................ <gUseful>
+  [  2] getobjprop 65 ........................... <gUseful.frameTimer>
+  [  5] getparam 0 .............................. <me>
+  [  7] pusharglistnoret 2 ...................... <gUseful.frameTimer, me>
+  [  9] objcall 280 ............................. gUseful.frameTimer.deleteObject(me)
+  [ 12] getglobal 23 ............................ <gRock>
+  [ 14] getobjprop 77 ........................... <gRock.m_msgManager>
+  [ 17] getparam 0 .............................. <me>
+  [ 19] pusharglistnoret 2 ...................... <gRock.m_msgManager, me>
+  [ 21] objcall 280 ............................. gRock.m_msgManager.deleteObject(me)
+  [ 24] getglobal 23 ............................ <gRock>
+  [ 26] getobjprop 64 ........................... <gRock.m_gameTimer>
+  [ 29] getparam 0 .............................. <me>
+  [ 31] pusharglistnoret 2 ...................... <gRock.m_gameTimer, me>
+  [ 33] objcall 280 ............................. gRock.m_gameTimer.deleteObject(me)
+  [ 36] pushzero ................................ <0>
+  [ 37] pusharglistnoret 1 ...................... <0>
+  [ 39] extcall 69 .............................. return 0
+  [ 42] ret
+end
+
+on cleanUp me
+  [  0] pusharglist 0 ........................... <[:]>
+  [  2] pushproplist ............................ <[:]>
+  [  3] setprop 1981 ............................ m_allowSpecial = [:]
+  [  6] pusharglist 0 ........................... <[:]>
+  [  8] pushproplist ............................ <[:]>
+  [  9] setprop 1982 ............................ m_waitingCards = [:]
+  [ 12] getprop 1982 ............................ <m_waitingCards>
+  [ 15] pusharglistnoret 1 ...................... <m_waitingCards>
+  [ 17] objcall 609 ............................. m_waitingCards.sort()
+  [ 20] pusharglist 0 ........................... <[:]>
+  [ 22] pushproplist ............................ <[:]>
+  [ 23] setprop 1983 ............................ m_cardsInfo = [:]
+  [ 26] pusharglist 0 ........................... <[:]>
+  [ 28] pushproplist ............................ <[:]>
+  [ 29] setprop 1984 ............................ m_dateSortedCards = [:]
+  [ 32] getprop 1984 ............................ <m_dateSortedCards>
+  [ 35] pusharglistnoret 1 ...................... <m_dateSortedCards>
+  [ 37] objcall 609 ............................. m_dateSortedCards.sort()
+  [ 40] pusharglist 0 ........................... <[]>
+  [ 42] pushlist ................................ <[]>
+  [ 43] setprop 1985 ............................ m_deleteIDs = []
+  [ 46] pushzero ................................ <0>
+  [ 47] setprop 1986 ............................ m_IDcnt = 0
+  [ 50] ret
+end
+
+on reinit me
+  [  0] getglobal 23 ............................ <gRock>
+  [  2] getobjprop 77 ........................... <gRock.m_msgManager>
+  [  5] getparam 0 .............................. <me>
+  [  7] pusharglistnoret 2 ...................... <gRock.m_msgManager, me>
+  [  9] objcall 280 ............................. gRock.m_msgManager.deleteObject(me)
+  [ 12] getglobal 23 ............................ <gRock>
+  [ 14] getobjprop 77 ........................... <gRock.m_msgManager>
+  [ 17] getparam 0 .............................. <me>
+  [ 19] pusharglistnoret 2 ...................... <gRock.m_msgManager, me>
+  [ 21] objcall 282 ............................. gRock.m_msgManager.addObject(me)
+  [ 24] ret
+end
+
+on load me, argList
+  [  0] getparam 8 .............................. <argList>
+  [  2] pushsymb 1987 ........................... <#IDCnt>
+  [  5] pusharglist 2 ........................... <argList, #IDCnt>
+  [  7] objcall 119 ............................. <argList[#IDCnt]>
+  [ 10] setprop 1986 ............................ m_IDcnt = argList[#IDCnt]
+  [ 13] ret
+end
+
+on save me
+  [  0] pushsymb 1987 ........................... <#IDCnt>
+  [  3] getprop 1986 ............................ <m_IDcnt>
+  [  6] pusharglist 2 ........................... <[#IDCnt: m_IDcnt]>
+  [  8] pushproplist ............................ <[#IDCnt: m_IDcnt]>
+  [  9] pusharglistnoret 1 ...................... <[#IDCnt: m_IDcnt]>
+  [ 11] extcall 69 .............................. return [#IDCnt: m_IDcnt]
+  [ 14] ret
+end
+
+on allowEventCardsWithProp me, argProp, argOnTopOfNumDialogs, argIsTRUE
+  [  0] getparam 24 ............................. <argIsTRUE>
+  [  2] jmpifz [ 20] ............................ if argIsTRUE then / else
+  [  5] getprop 1981 ............................ <m_allowSpecial>
+  [  8] getparam 8 .............................. <argProp>
+  [ 10] getparam 16 ............................. <argOnTopOfNumDialogs>
+  [ 12] pusharglistnoret 3 ...................... <m_allowSpecial, argProp, argOnTopOfNumDialogs>
+  [ 14] objcall 296 ............................. m_allowSpecial.setaProp(argProp, argOnTopOfNumDialogs)
+  [ 17] jmp [ 30]
+  [ 20] getprop 1981 ............................ <m_allowSpecial>
+  [ 23] getparam 8 .............................. <argProp>
+  [ 25] pusharglistnoret 2 ...................... <m_allowSpecial, argProp>
+  [ 27] objcall 624 ............................. m_allowSpecial.deleteProp(argProp)
+  [ 30] ret
+end
+
+on setOKToShowOnTopOfNumDialogs me, argNum
+  [  0] getparam 8 .............................. <argNum>
+  [  2] setprop 1977 ............................ m_OKToShowOnTopOfNumDialogs = argNum
+  [  5] getglobal 24 ............................ <gDir>
+  [  7] getobjprop 1018 ......................... <gDir.m_objDialogsMaster>
+  [ 10] pusharglist 1 ........................... <gDir.m_objDialogsMaster>
+  [ 12] objcall 1989 ............................ <gDir.m_objDialogsMaster.getNumOpen()>
+  [ 15] setlocal 0 .............................. numOpenDialogs = gDir.m_objDialogsMaster.getNumOpen()
+  [ 17] getlocal 0 .............................. <numOpenDialogs>
+  [ 19] getprop 1977 ............................ <m_OKToShowOnTopOfNumDialogs>
+  [ 22] lteq .................................... <numOpenDialogs <= m_OKToShowOnTopOfNumDialogs>
+  [ 23] jmpifz [ 32] ............................ if numOpenDialogs <= m_OKToShowOnTopOfNumDialogs then
+  [ 26] pushint8 1 .............................. <1>
+  [ 29] setprop 1976 ............................ m_OKToShow = 1
+  [ 32] ret
+end
+
+on tryNewShowEventCard me, argECObjOrID, argOptions
+  [  0] getparam 16 ............................. <argOptions>
+  [  2] pusharglist 1 ........................... <argOptions>
+  [  4] extcall 61 .............................. <voidp(argOptions)>
+  [  7] jmpifz [ 15] ............................ if voidp(argOptions) then
+  [ 10] pusharglist 0 ........................... <[:]>
+  [ 12] pushproplist ............................ <[:]>
+  [ 13] setparam 16 ............................. argOptions = [:]
+  [ 15] getparam 16 ............................. <argOptions>
+  [ 17] pushsymb 1303 ........................... <#prio>
+  [ 20] pusharglist 2 ........................... <argOptions, #prio>
+  [ 22] objcall 119 ............................. <argOptions[#prio]>
+  [ 25] pusharglist 1 ........................... <argOptions[#prio]>
+  [ 27] extcall 96 .............................. <symbolp(argOptions[#prio])>
+  [ 30] jmpifz [ 61] ............................ if symbolp(argOptions[#prio]) then
+  [ 33] getparam 16 ............................. <argOptions>
+  [ 35] pushsymb 1303 ........................... <#prio>
+  [ 38] getprop 1978 ............................ <m_prioCodes>
+  [ 41] getparam 16 ............................. <argOptions>
+  [ 43] pushsymb 1303 ........................... <#prio>
+  [ 46] pusharglist 2 ........................... <argOptions, #prio>
+  [ 48] objcall 119 ............................. <argOptions[#prio]>
+  [ 51] pusharglist 2 ........................... <m_prioCodes, argOptions[#prio]>
+  [ 53] objcall 183 ............................. <m_prioCodes.getaProp(argOptions[#prio])>
+  [ 56] pusharglistnoret 3 ...................... <argOptions, #prio, m_prioCodes.getaProp(argOptions[#prio])>
+  [ 58] objcall 353 ............................. argOptions[#prio] = m_prioCodes.getaProp(argOptions[#prio])
+  [ 61] getparam 16 ............................. <argOptions>
+  [ 63] pushsymb 1303 ........................... <#prio>
+  [ 66] pusharglist 2 ........................... <argOptions, #prio>
+  [ 68] objcall 119 ............................. <argOptions[#prio]>
+  [ 71] pusharglist 1 ........................... <argOptions[#prio]>
+  [ 73] extcall 61 .............................. <voidp(argOptions[#prio])>
+  [ 76] jmpifz [ 92] ............................ if voidp(argOptions[#prio]) then
+  [ 79] getparam 16 ............................. <argOptions>
+  [ 81] pushsymb 1303 ........................... <#prio>
+  [ 84] pushint8 5 .............................. <5>
+  [ 87] pusharglistnoret 3 ...................... <argOptions, #prio, 5>
+  [ 89] objcall 353 ............................. argOptions[#prio] = 5
+  [ 92] getparam 16 ............................. <argOptions>
+  [ 94] pushsymb 1992 ........................... <#WaitNumDays>
+  [ 97] pusharglist 2 ........................... <argOptions, #WaitNumDays>
+  [ 99] objcall 119 ............................. <argOptions[#WaitNumDays]>
+  [102] pusharglist 1 ........................... <argOptions[#WaitNumDays]>
+  [104] extcall 61 .............................. <voidp(argOptions[#WaitNumDays])>
+  [107] jmpifz [121] ............................ if voidp(argOptions[#WaitNumDays]) then
+  [110] getparam 16 ............................. <argOptions>
+  [112] pushsymb 1992 ........................... <#WaitNumDays>
+  [115] pushzero ................................ <0>
+  [116] pusharglistnoret 3 ...................... <argOptions, #WaitNumDays, 0>
+  [118] objcall 353 ............................. argOptions[#WaitNumDays] = 0
+  [121] getparam 8 .............................. <argECObjOrID>
+  [123] pusharglist 1 ........................... <argECObjOrID>
+  [125] extcall 8 ............................... <objectp(argECObjOrID)>
+  [127] jmpifz [140] ............................ if objectp(argECObjOrID) then / else
+  [130] getparam 8 .............................. <argECObjOrID>
+  [132] getobjprop 154 .......................... <argECObjOrID.ID>
+  [135] setlocal 0 .............................. ECID = argECObjOrID.ID
+  [137] jmp [144]
+  [140] getparam 8 .............................. <argECObjOrID>
+  [142] setlocal 0 .............................. ECID = argECObjOrID
+  [144] getglobal 23 ............................ <gRock>
+  [146] getobjprop 82 ........................... <gRock.m_classManager>
+  [149] getlocal 0 .............................. <ECID>
+  [151] pushsymb 1532 ........................... <#EventCard>
+  [154] pusharglist 3 ........................... <gRock.m_classManager, ECID, #EventCard>
+  [156] objcall 149 ............................. <gRock.m_classManager.getObjByIDAndClass(ECID, #EventCard)>
+  [159] setlocal 8 .............................. ecard_r = gRock.m_classManager.getObjByIDAndClass(ECID, #EventCard)
+  [161] getlocal 8 .............................. <ecard_r>
+  [163] pusharglist 1 ........................... <ecard_r>
+  [165] extcall 8 ............................... <objectp(ecard_r)>
+  [167] not ..................................... <not objectp(ecard_r)>
+  [168] getparam 16 ............................. <argOptions>
+  [170] pushsymb 1444 ........................... <#DlgScript>
+  [173] pusharglist 2 ........................... <argOptions, #DlgScript>
+  [175] objcall 119 ............................. <argOptions[#DlgScript]>
+  [178] pusharglist 1 ........................... <argOptions[#DlgScript]>
+  [180] extcall 61 .............................. <voidp(argOptions[#DlgScript])>
+  [183] and ..................................... <not objectp(ecard_r) and voidp(argOptions[#DlgScript])>
+  [184] jmpifz [203] ............................ if not objectp(ecard_r) and voidp(argOptions[#DlgScript]) then
+  [187] pushcons 0 .............................. <"Err find EC: ">
+  [189] getparam 8 .............................. <argECObjOrID>
+  [191] pusharglist 1 ........................... <argECObjOrID>
+  [193] extcall 114 ............................. <string(argECObjOrID)>
+  [196] joinstr ................................. <"Err find EC: " & string(argECObjOrID)>
+  [197] pusharglistnoret 1 ...................... <"Err find EC: " & string(argECObjOrID)>
+  [199] extcall 118 ............................. alert("Err find EC: " & string(argECObjOrID))
+  [202] ret ..................................... exit
+  [203] getparam 16 ............................. <argOptions>
+  [205] pushsymb 1444 ........................... <#DlgScript>
+  [208] pusharglist 2 ........................... <argOptions, #DlgScript>
+  [210] objcall 119 ............................. <argOptions[#DlgScript]>
+  [213] pusharglist 1 ........................... <argOptions[#DlgScript]>
+  [215] extcall 61 .............................. <voidp(argOptions[#DlgScript])>
+  [218] jmpifz [236] ............................ if voidp(argOptions[#DlgScript]) then
+  [221] getparam 16 ............................. <argOptions>
+  [223] pushsymb 1444 ........................... <#DlgScript>
+  [226] getlocal 8 .............................. <ecard_r>
+  [228] getobjprop 224 .......................... <ecard_r.className>
+  [231] pusharglistnoret 3 ...................... <argOptions, #DlgScript, ecard_r.className>
+  [233] objcall 353 ............................. argOptions[#DlgScript] = ecard_r.className
+  [236] getparam 16 ............................. <argOptions>
+  [238] pushsymb 1532 ........................... <#EventCard>
+  [241] getlocal 0 .............................. <ECID>
+  [243] pusharglistnoret 3 ...................... <argOptions, #EventCard, ECID>
+  [245] objcall 353 ............................. argOptions[#EventCard] = ECID
+  [248] getparam 16 ............................. <argOptions>
+  [250] pushsymb 1303 ........................... <#prio>
+  [253] pusharglist 2 ........................... <argOptions, #prio>
+  [255] objcall 119 ............................. <argOptions[#prio]>
+  [258] pushzero ................................ <0>
+  [259] eq ...................................... <argOptions[#prio] = 0>
+  [260] getparam 16 ............................. <argOptions>
+  [262] pushsymb 1992 ........................... <#WaitNumDays>
+  [265] pusharglist 2 ........................... <argOptions, #WaitNumDays>
+  [267] objcall 119 ............................. <argOptions[#WaitNumDays]>
+  [270] pushzero ................................ <0>
+  [271] eq ...................................... <argOptions[#WaitNumDays] = 0>
+  [272] and ..................................... <(argOptions[#prio] = 0) and (argOptions[#WaitNumDays] = 0)>
+  [273] jmpifz [288] ............................ if (argOptions[#prio] = 0) and (argOptions[#WaitNumDays] = 0) then / else
+  [276] getparam 0 .............................. <me>
+  [278] getparam 16 ............................. <argOptions>
+  [280] pusharglistnoret 2 ...................... <me, argOptions>
+  [282] objcall 1834 ............................ me.openDialog(argOptions)
+  [285] jmp [382]
+  [288] getprop 1986 ............................ <m_IDcnt>
+  [291] pushint8 1 .............................. <1>
+  [294] add ..................................... <m_IDcnt + 1>
+  [295] setprop 1986 ............................ m_IDcnt = m_IDcnt + 1
+  [298] getprop 1983 ............................ <m_cardsInfo>
+  [301] getprop 1986 ............................ <m_IDcnt>
+  [304] getparam 16 ............................. <argOptions>
+  [306] pusharglistnoret 3 ...................... <m_cardsInfo, m_IDcnt, argOptions>
+  [308] objcall 309 ............................. m_cardsInfo.addProp(m_IDcnt, argOptions)
+  [311] getparam 16 ............................. <argOptions>
+  [313] pushsymb 1992 ........................... <#WaitNumDays>
+  [316] pusharglist 2 ........................... <argOptions, #WaitNumDays>
+  [318] objcall 119 ............................. <argOptions[#WaitNumDays]>
+  [321] pushzero ................................ <0>
+  [322] eq ...................................... <argOptions[#WaitNumDays] = 0>
+  [323] jmpifz [350] ............................ if argOptions[#WaitNumDays] = 0 then / else
+  [326] getprop 1982 ............................ <m_waitingCards>
+  [329] getparam 16 ............................. <argOptions>
+  [331] pushsymb 1303 ........................... <#prio>
+  [334] pusharglist 2 ........................... <argOptions, #prio>
+  [336] objcall 119 ............................. <argOptions[#prio]>
+  [339] getprop 1986 ............................ <m_IDcnt>
+  [342] pusharglistnoret 3 ...................... <m_waitingCards, argOptions[#prio], m_IDcnt>
+  [344] extcall 1993 ............................ addPropAfter(m_waitingCards, argOptions[#prio], m_IDcnt)
+  [347] jmp [382]
+  [350] getprop 1984 ............................ <m_dateSortedCards>
+  [353] getglobal 23 ............................ <gRock>
+  [355] getobjprop 76 ........................... <gRock.m_date>
+  [358] pusharglist 1 ........................... <gRock.m_date>
+  [360] objcall 220 ............................. <gRock.m_date.getDateInt()>
+  [363] getparam 16 ............................. <argOptions>
+  [365] pushsymb 1992 ........................... <#WaitNumDays>
+  [368] pusharglist 2 ........................... <argOptions, #WaitNumDays>
+  [370] objcall 119 ............................. <argOptions[#WaitNumDays]>
+  [373] add ..................................... <gRock.m_date.getDateInt() + argOptions[#WaitNumDays]>
+  [374] getprop 1986 ............................ <m_IDcnt>
+  [377] pusharglistnoret 3 ...................... <m_dateSortedCards, gRock.m_date.getDateInt() + argOptions[#WaitNumDays], m_IDcnt>
+  [379] objcall 309 ............................. m_dateSortedCards.addProp(gRock.m_date.getDateInt() + argOptions[#WaitNumDays], m_IDcnt)
+  [382] ret
+end
+
+on deleteEventCard me, argItsIDCounter
+  [  0] getprop 1982 ............................ <m_waitingCards>
+  [  3] getparam 8 .............................. <argItsIDCounter>
+  [  5] pusharglistnoret 2 ...................... <m_waitingCards, argItsIDCounter>
+  [  7] objcall 335 ............................. m_waitingCards.deleteOne(argItsIDCounter)
+  [ 10] getprop 1983 ............................ <m_cardsInfo>
+  [ 13] getparam 8 .............................. <argItsIDCounter>
+  [ 15] pusharglistnoret 2 ...................... <m_cardsInfo, argItsIDCounter>
+  [ 17] objcall 624 ............................. m_cardsInfo.deleteProp(argItsIDCounter)
+  [ 20] getprop 1984 ............................ <m_dateSortedCards>
+  [ 23] getparam 8 .............................. <argItsIDCounter>
+  [ 25] pusharglistnoret 2 ...................... <m_dateSortedCards, argItsIDCounter>
+  [ 27] objcall 624 ............................. m_dateSortedCards.deleteProp(argItsIDCounter)
+  [ 30] ret
+end
+
+on deleteWaiting me
+  [  0] getprop 1985 ............................ <m_deleteIDs>
+  [  3] peek 0
+  [  5] pusharglist 1
+  [  7] extcall 156
+  [ 10] pushint8 1
+  [ 12] peek 0
+  [ 14] peek 2
+  [ 16] lteq
+  [ 17] jmpifz [ 45] ............................ repeat with IDCnt in m_deleteIDs
+  [ 20] peek 2
+  [ 22] peek 1
+  [ 24] pusharglist 2
+  [ 26] extcall 119
+  [ 29] setlocal 0
+  [ 31] getparam 0 .............................. <me>
+  [ 33] getlocal 0 .............................. <IDCnt>
+  [ 35] pusharglistnoret 2 ...................... <me, IDCnt>
+  [ 37] objcall 1971 ............................ me.deleteEventCard(IDCnt)
+  [ 40] pushint8 1
+  [ 42] add
+  [ 43] endrepeat [ 12]
+  [ 45] pop 3
+  [ 47] pusharglist 0 ........................... <[]>
+  [ 49] pushlist ................................ <[]>
+  [ 50] setprop 1985 ............................ m_deleteIDs = []
+  [ 53] ret
+end
+
+on msg me, argWhat, argOptions, argOption2
+  [  0] getparam 8 .............................. <argWhat>
+  [  2] pushsymb 1997 ........................... <#ExitDialog>
+  [  5] eq ...................................... <argWhat = #ExitDialog>
+  [  6] jmpifz [ 58] ............................ if argWhat = #ExitDialog then / else
+  [  9] getglobal 24 ............................ <gDir>
+  [ 11] getobjprop 1018 ......................... <gDir.m_objDialogsMaster>
+  [ 14] pusharglist 1 ........................... <gDir.m_objDialogsMaster>
+  [ 16] objcall 1989 ............................ <gDir.m_objDialogsMaster.getNumOpen()>
+  [ 19] setlocal 0 .............................. numOpenDialogs = gDir.m_objDialogsMaster.getNumOpen()
+  [ 21] getlocal 0 .............................. <numOpenDialogs>
+  [ 23] getprop 1977 ............................ <m_OKToShowOnTopOfNumDialogs>
+  [ 26] lteq .................................... <numOpenDialogs <= m_OKToShowOnTopOfNumDialogs>
+  [ 27] jmpifz [ 55] ............................ if numOpenDialogs <= m_OKToShowOnTopOfNumDialogs then
+  [ 30] pushint8 1 .............................. <1>
+  [ 33] setprop 1976 ............................ m_OKToShow = 1
+  [ 36] getlocal 0 .............................. <numOpenDialogs>
+  [ 38] pushzero ................................ <0>
+  [ 39] eq ...................................... <numOpenDialogs = 0>
+  [ 40] jmpifz [ 55] ............................ if numOpenDialogs = 0 then
+  [ 43] pusharglistnoret 0 ...................... <>
+  [ 45] extcall 1998 ............................ updateStage()
+  [ 48] getparam 0 .............................. <me>
+  [ 50] pusharglistnoret 1 ...................... <me>
+  [ 52] objcall 1973 ............................ me.openWaitingCard()
+  [ 55] jmp [106]
+  [ 58] getparam 8 .............................. <argWhat>
+  [ 60] pushsymb 1999 ........................... <#EnterDialog>
+  [ 63] eq ...................................... <argWhat = #EnterDialog>
+  [ 64] getparam 8 .............................. <argWhat>
+  [ 66] pushsymb 2000 ........................... <#EnterPlace>
+  [ 69] eq ...................................... <argWhat = #EnterPlace>
+  [ 70] or ...................................... <(argWhat = #EnterDialog) or (argWhat = #EnterPlace)>
+  [ 71] getparam 8 .............................. <argWhat>
+  [ 73] pushsymb 2001 ........................... <#EnterMixer>
+  [ 76] eq ...................................... <argWhat = #EnterMixer>
+  [ 77] or ...................................... <(argWhat = #EnterDialog) or (argWhat = #EnterPlace) or (argWhat = #EnterMixer)>
+  [ 78] jmpifz [106] ............................ if (argWhat = #EnterDialog) or (argWhat = #EnterPlace) or (argWhat = #EnterMixer) then
+  [ 81] getglobal 24 ............................ <gDir>
+  [ 83] getobjprop 1018 ......................... <gDir.m_objDialogsMaster>
+  [ 86] pusharglist 1 ........................... <gDir.m_objDialogsMaster>
+  [ 88] objcall 1989 ............................ <gDir.m_objDialogsMaster.getNumOpen()>
+  [ 91] setlocal 0 .............................. numOpenDialogs = gDir.m_objDialogsMaster.getNumOpen()
+  [ 93] getlocal 0 .............................. <numOpenDialogs>
+  [ 95] getprop 1977 ............................ <m_OKToShowOnTopOfNumDialogs>
+  [ 98] gt ...................................... <numOpenDialogs > m_OKToShowOnTopOfNumDialogs>
+  [ 99] jmpifz [106] ............................ if numOpenDialogs > m_OKToShowOnTopOfNumDialogs then
+  [102] pushzero ................................ <0>
+  [103] setprop 1976 ............................ m_OKToShow = 0
+  [106] ret ..................................... exit
+  [107] getparam 8 .............................. <argWhat>
+  [109] pushsymb 2002 ........................... <#ExitToCity>
+  [112] eq ...................................... <argWhat = #ExitToCity>
+  [113] jmpifz [125] ............................ if argWhat = #ExitToCity then / else
+  [116] pushint8 1 .............................. <1>
+  [119] setprop 1976 ............................ m_OKToShow = 1
+  [122] jmp [152]
+  [125] getparam 8 .............................. <argWhat>
+  [127] pushsymb 1999 ........................... <#EnterDialog>
+  [130] eq ...................................... <argWhat = #EnterDialog>
+  [131] getparam 8 .............................. <argWhat>
+  [133] pushsymb 2000 ........................... <#EnterPlace>
+  [136] eq ...................................... <argWhat = #EnterPlace>
+  [137] or ...................................... <(argWhat = #EnterDialog) or (argWhat = #EnterPlace)>
+  [138] getparam 8 .............................. <argWhat>
+  [140] pushsymb 2001 ........................... <#EnterMixer>
+  [143] eq ...................................... <argWhat = #EnterMixer>
+  [144] or ...................................... <(argWhat = #EnterDialog) or (argWhat = #EnterPlace) or (argWhat = #EnterMixer)>
+  [145] jmpifz [152] ............................ if (argWhat = #EnterDialog) or (argWhat = #EnterPlace) or (argWhat = #EnterMixer) then
+  [148] pushzero ................................ <0>
+  [149] setprop 1976 ............................ m_OKToShow = 0
+  [152] ret
+end
+
+on openDialog me, argInfo
+  [  0] getparam 8 .............................. <argInfo>
+  [  2] pushsymb 2003 ........................... <#DlgSendData>
+  [  5] pusharglist 2 ........................... <argInfo, #DlgSendData>
+  [  7] objcall 119 ............................. <argInfo[#DlgSendData]>
+  [ 10] pusharglist 1 ........................... <argInfo[#DlgSendData]>
+  [ 12] extcall 115 ............................. <listp(argInfo[#DlgSendData])>
+  [ 15] jmpifz [ 69] ............................ if listp(argInfo[#DlgSendData]) then / else
+  [ 18] getparam 8 .............................. <argInfo>
+  [ 20] pushsymb 2003 ........................... <#DlgSendData>
+  [ 23] pusharglist 2 ........................... <argInfo, #DlgSendData>
+  [ 25] objcall 119 ............................. <argInfo[#DlgSendData]>
+  [ 28] pushsymb 1532 ........................... <#EventCard>
+  [ 31] pusharglist 2 ........................... <argInfo[#DlgSendData], #EventCard>
+  [ 33] objcall 119 ............................. <argInfo[#DlgSendData][#EventCard]>
+  [ 36] setlocal 0 .............................. eventCardID = argInfo[#DlgSendData][#EventCard]
+  [ 38] getlocal 0 .............................. <eventCardID>
+  [ 40] pusharglist 1 ........................... <eventCardID>
+  [ 42] extcall 8 ............................... <objectp(eventCardID)>
+  [ 44] jmpifz [ 54] ............................ if objectp(eventCardID) then
+  [ 47] getlocal 0 .............................. <eventCardID>
+  [ 49] getobjprop 154 .......................... <eventCardID.ID>
+  [ 52] setlocal 0 .............................. eventCardID = eventCardID.ID
+  [ 54] getparam 8 .............................. <argInfo>
+  [ 56] pushsymb 2003 ........................... <#DlgSendData>
+  [ 59] pusharglist 2 ........................... <argInfo, #DlgSendData>
+  [ 61] objcall 119 ............................. <argInfo[#DlgSendData]>
+  [ 64] setlocal 8 .............................. sendData = argInfo[#DlgSendData]
+  [ 66] jmp [110]
+  [ 69] getparam 8 .............................. <argInfo>
+  [ 71] pushsymb 1532 ........................... <#EventCard>
+  [ 74] pusharglist 2 ........................... <argInfo, #EventCard>
+  [ 76] objcall 119 ............................. <argInfo[#EventCard]>
+  [ 79] pusharglist 1 ........................... <argInfo[#EventCard]>
+  [ 81] extcall 96 .............................. <symbolp(argInfo[#EventCard])>
+  [ 84] jmpifz [106] ............................ if symbolp(argInfo[#EventCard]) then / else
+  [ 87] getparam 8 .............................. <argInfo>
+  [ 89] pushsymb 1532 ........................... <#EventCard>
+  [ 92] pusharglist 2 ........................... <argInfo, #EventCard>
+  [ 94] objcall 119 ............................. <argInfo[#EventCard]>
+  [ 97] setlocal 0 .............................. eventCardID = argInfo[#EventCard]
+  [ 99] getparam 8 .............................. <argInfo>
+  [101] setlocal 8 .............................. sendData = argInfo
+  [103] jmp [110]
+  [106] getparam 8 .............................. <argInfo>
+  [108] setlocal 8 .............................. sendData = argInfo
+  [110] getlocal 0 .............................. <eventCardID>
+  [112] pusharglist 1 ........................... <eventCardID>
+  [114] extcall 96 .............................. <symbolp(eventCardID)>
+  [117] jmpifz [176] ............................ if symbolp(eventCardID) then
+  [120] getglobal 23 ............................ <gRock>
+  [122] getobjprop 79 ........................... <gRock.m_context>
+  [125] pushsymb 66 ............................. <#Game>
+  [128] pusharglist 2 ........................... <gRock.m_context, #Game>
+  [130] objcall 146 ............................. <gRock.m_context.getFocus(#Game)>
+  [133] setlocal 16 ............................. game_r = gRock.m_context.getFocus(#Game)
+  [135] getlocal 16 ............................. <game_r>
+  [137] getlocal 0 .............................. <eventCardID>
+  [139] pusharglist 2 ........................... <game_r, eventCardID>
+  [141] objcall 1403 ............................ <game_r.getIsDiscarded(eventCardID)>
+  [144] jmpifz [148] ............................ if game_r.getIsDiscarded(eventCardID) then
+  [147] ret ..................................... exit
+  [148] getglobal 23 ............................ <gRock>
+  [150] getobjprop 79 ........................... <gRock.m_context>
+  [153] pushsymb 133 ............................ <#Mission>
+  [156] pusharglist 2 ........................... <gRock.m_context, #Mission>
+  [158] objcall 146 ............................. <gRock.m_context.getFocus(#Mission)>
+  [161] setlocal 24 ............................. mission_r = gRock.m_context.getFocus(#Mission)
+  [163] getlocal 24 ............................. <mission_r>
+  [165] getlocal 0 .............................. <eventCardID>
+  [167] pusharglist 2 ........................... <mission_r, eventCardID>
+  [169] objcall 1403 ............................ <mission_r.getIsDiscarded(eventCardID)>
+  [172] jmpifz [176] ............................ if mission_r.getIsDiscarded(eventCardID) then
+  [175] ret ..................................... exit
+  [176] pushcons 8 .............................. <"EC:">
+  [178] getlocal 0 .............................. <eventCardID>
+  [180] pusharglistnoret 2 ...................... <"EC:", eventCardID>
+  [182] extcall 122 ............................. pott("EC:", eventCardID)
+  [185] getglobal 24 ............................ <gDir>
+  [187] getobjprop 1018 ......................... <gDir.m_objDialogsMaster>
+  [190] getparam 8 .............................. <argInfo>
+  [192] pushsymb 1444 ........................... <#DlgScript>
+  [195] pusharglist 2 ........................... <argInfo, #DlgScript>
+  [197] objcall 119 ............................. <argInfo[#DlgScript]>
+  [200] getlocal 8 .............................. <sendData>
+  [202] pusharglist 3 ........................... <gDir.m_objDialogsMaster, argInfo[#DlgScript], sendData>
+  [204] objcall 1834 ............................ <gDir.m_objDialogsMaster.openDialog(argInfo[#DlgScript], sendData)>
+  [207] setlocal 32 ............................. obj = gDir.m_objDialogsMaster.openDialog(argInfo[#DlgScript], sendData)
+  [209] ret
+end
+
+on openWaitingCard me
+  [  0] getparam 0 .............................. <me>
+  [  2] pushint8 1 .............................. <1>
+  [  5] pushint8 1 .............................. <1>
+  [  8] pusharglist 3 ........................... <me, 1, 1>
+  [ 10] objcall 1974 ............................ <me.getWaiting(1, 1)>
+  [ 13] setlocal 0 .............................. cardStuff = me.getWaiting(1, 1)
+  [ 15] getlocal 0 .............................. <cardStuff>
+  [ 17] pusharglist 1 ........................... <cardStuff>
+  [ 19] extcall 115 ............................. <listp(cardStuff)>
+  [ 22] not ..................................... <not listp(cardStuff)>
+  [ 23] jmpifz [ 27] ............................ if not listp(cardStuff) then
+  [ 26] ret ..................................... exit
+  [ 27] getparam 0 .............................. <me>
+  [ 29] getlocal 0 .............................. <cardStuff>
+  [ 31] pushsymb 358 ............................ <#Info>
+  [ 34] pusharglist 2 ........................... <cardStuff, #Info>
+  [ 36] objcall 119 ............................. <cardStuff[#Info]>
+  [ 39] pusharglistnoret 2 ...................... <me, cardStuff[#Info]>
+  [ 41] objcall 1834 ............................ me.openDialog(cardStuff[#Info])
+  [ 44] getparam 0 .............................. <me>
+  [ 46] getlocal 0 .............................. <cardStuff>
+  [ 48] pushsymb 2005 ........................... <#IDCounter>
+  [ 51] pusharglist 2 ........................... <cardStuff, #IDCounter>
+  [ 53] objcall 119 ............................. <cardStuff[#IDCounter]>
+  [ 56] pusharglistnoret 2 ...................... <me, cardStuff[#IDCounter]>
+  [ 58] objcall 1971 ............................ me.deleteEventCard(cardStuff[#IDCounter])
+  [ 61] getparam 0 .............................. <me>
+  [ 63] pusharglistnoret 1 ...................... <me>
+  [ 65] objcall 1972 ............................ me.deleteWaiting()
+  [ 68] pushzero ................................ <0>
+  [ 69] setprop 1976 ............................ m_OKToShow = 0
+  [ 72] ret
+end
+
+on timeTick me, argTimerObj
+  [  0] getparam 8 .............................. <argTimerObj>
+  [  2] getglobal 12 ............................ <gUseful>
+  [  4] getobjprop 65 ........................... <gUseful.frameTimer>
+  [  7] eq ...................................... <argTimerObj = gUseful.frameTimer>
+  [  8] jmpifz [ 21] ............................ if argTimerObj = gUseful.frameTimer then / else
+  [ 11] getparam 0 .............................. <me>
+  [ 13] pusharglistnoret 1 ...................... <me>
+  [ 15] objcall 1973 ............................ me.openWaitingCard()
+  [ 18] jmp [207]
+  [ 21] getglobal 23 ............................ <gRock>
+  [ 23] getobjprop 76 ........................... <gRock.m_date>
+  [ 26] pusharglist 1 ........................... <gRock.m_date>
+  [ 28] objcall 220 ............................. <gRock.m_date.getDateInt()>
+  [ 31] setlocal 0 .............................. tmpDate = gRock.m_date.getDateInt()
+  [ 33] getprop 1984 ............................ <m_dateSortedCards>
+  [ 36] getlocal 0 .............................. <tmpDate>
+  [ 38] pushint8 1 .............................. <1>
+  [ 41] inv ..................................... <-1>
+  [ 42] pusharglistnoret 3 ...................... <m_dateSortedCards, tmpDate, -1>
+  [ 44] objcall 309 ............................. m_dateSortedCards.addProp(tmpDate, -1)
+  [ 47] getprop 1984 ............................ <m_dateSortedCards>
+  [ 50] pushint8 1 .............................. <1>
+  [ 53] inv ..................................... <-1>
+  [ 54] pusharglist 2 ........................... <m_dateSortedCards, -1>
+  [ 56] objcall 337 ............................. <m_dateSortedCards.getPos(-1)>
+  [ 59] setlocal 8 .............................. tmpPos = m_dateSortedCards.getPos(-1)
+  [ 61] getprop 1984 ............................ <m_dateSortedCards>
+  [ 64] getlocal 8 .............................. <tmpPos>
+  [ 66] pusharglistnoret 2 ...................... <m_dateSortedCards, tmpPos>
+  [ 68] objcall 221 ............................. m_dateSortedCards.deleteAt(tmpPos)
+  [ 71] getlocal 8 .............................. <tmpPos>
+  [ 73] getprop 1984 ............................ <m_dateSortedCards>
+  [ 76] getobjprop 156 .......................... <m_dateSortedCards.count>
+  [ 79] gt ...................................... <tmpPos > m_dateSortedCards.count>
+  [ 80] jmpifz [ 84] ............................ if tmpPos > m_dateSortedCards.count then
+  [ 83] ret ..................................... exit
+  [ 84] getprop 1984 ............................ <m_dateSortedCards>
+  [ 87] getlocal 0 .............................. <tmpDate>
+  [ 89] pushint8 1 .............................. <1>
+  [ 92] add ..................................... <tmpDate + 1>
+  [ 93] pushint8 1 .............................. <1>
+  [ 96] inv ..................................... <-1>
+  [ 97] pusharglistnoret 3 ...................... <m_dateSortedCards, tmpDate + 1, -1>
+  [ 99] objcall 309 ............................. m_dateSortedCards.addProp(tmpDate + 1, -1)
+  [102] getprop 1984 ............................ <m_dateSortedCards>
+  [105] pushint8 1 .............................. <1>
+  [108] inv ..................................... <-1>
+  [109] pusharglist 2 ........................... <m_dateSortedCards, -1>
+  [111] objcall 337 ............................. <m_dateSortedCards.getPos(-1)>
+  [114] setlocal 16 ............................. tmpEndPos = m_dateSortedCards.getPos(-1)
+  [116] getprop 1984 ............................ <m_dateSortedCards>
+  [119] getlocal 16 ............................. <tmpEndPos>
+  [121] pusharglistnoret 2 ...................... <m_dateSortedCards, tmpEndPos>
+  [123] objcall 221 ............................. m_dateSortedCards.deleteAt(tmpEndPos)
+  [126] getlocal 8 .............................. <tmpPos>
+  [128] setlocal 24
+  [130] getlocal 24
+  [132] getlocal 16 ............................. <tmpEndPos>
+  [134] pushint8 1 .............................. <1>
+  [137] sub ..................................... <tmpEndPos - 1>
+  [138] lteq
+  [139] jmpifz [207] ............................ repeat with n = tmpPos to tmpEndPos - 1
+  [142] getprop 1984 ............................ <m_dateSortedCards>
+  [145] getlocal 8 .............................. <tmpPos>
+  [147] pusharglist 2 ........................... <m_dateSortedCards, tmpPos>
+  [149] objcall 119 ............................. <m_dateSortedCards[tmpPos]>
+  [152] setlocal 32 ............................. ItsIDCounter = m_dateSortedCards[tmpPos]
+  [154] getprop 1983 ............................ <m_cardsInfo>
+  [157] getlocal 32 ............................. <ItsIDCounter>
+  [159] pusharglist 2 ........................... <m_cardsInfo, ItsIDCounter>
+  [161] objcall 183 ............................. <m_cardsInfo.getaProp(ItsIDCounter)>
+  [164] setlocal 40 ............................. Info = m_cardsInfo.getaProp(ItsIDCounter)
+  [166] getprop 1982 ............................ <m_waitingCards>
+  [169] getlocal 40 ............................. <Info>
+  [171] pushsymb 1303 ........................... <#prio>
+  [174] pusharglist 2 ........................... <Info, #prio>
+  [176] objcall 119 ............................. <Info[#prio]>
+  [179] getlocal 32 ............................. <ItsIDCounter>
+  [181] pusharglistnoret 3 ...................... <m_waitingCards, Info[#prio], ItsIDCounter>
+  [183] objcall 309 ............................. m_waitingCards.addProp(Info[#prio], ItsIDCounter)
+  [186] getprop 1984 ............................ <m_dateSortedCards>
+  [189] getlocal 8 .............................. <tmpPos>
+  [191] pusharglistnoret 2 ...................... <m_dateSortedCards, tmpPos>
+  [193] objcall 221 ............................. m_dateSortedCards.deleteAt(tmpPos)
+  [196] pushint8 1
+  [199] getlocal 24
+  [201] add
+  [202] setlocal 24
+  [204] endrepeat [130]
+  [207] ret
+end
+
+on postponeDates me, argNumDays, argMakeCardsThatComeBeforeTodayComeToday
+  [  0] pusharglist 0 ........................... <[:]>
+  [  2] pushproplist ............................ <[:]>
+  [  3] setlocal 0 .............................. tmpNew = [:]
+  [  5] getlocal 0 .............................. <tmpNew>
+  [  7] pusharglistnoret 1 ...................... <tmpNew>
+  [  9] objcall 609 ............................. tmpNew.sort()
+  [ 12] getglobal 23 ............................ <gRock>
+  [ 14] getobjprop 76 ........................... <gRock.m_date>
+  [ 17] pusharglist 1 ........................... <gRock.m_date>
+  [ 19] objcall 220 ............................. <gRock.m_date.getDateInt()>
+  [ 22] setlocal 8 .............................. tmpTodayDate = gRock.m_date.getDateInt()
+  [ 24] pushint8 1 .............................. <1>
+  [ 27] setlocal 16
+  [ 29] getlocal 16
+  [ 31] getprop 1984 ............................ <m_dateSortedCards>
+  [ 34] getobjprop 156 .......................... <m_dateSortedCards.count>
+  [ 37] lteq
+  [ 38] jmpifz [129] ............................ repeat with n = 1 to m_dateSortedCards.count
+  [ 41] getprop 1984 ............................ <m_dateSortedCards>
+  [ 44] getlocal 16 ............................. <n>
+  [ 46] pusharglist 2 ........................... <m_dateSortedCards, n>
+  [ 48] objcall 295 ............................. <m_dateSortedCards.getPropAt(n)>
+  [ 51] getparam 8 .............................. <argNumDays>
+  [ 53] add ..................................... <m_dateSortedCards.getPropAt(n) + argNumDays>
+  [ 54] setlocal 24 ............................. tmpDate = m_dateSortedCards.getPropAt(n) + argNumDays
+  [ 56] getparam 16 ............................. <argMakeCardsThatComeBeforeTodayComeToday>
+  [ 58] pushint8 1 .............................. <1>
+  [ 61] eq ...................................... <argMakeCardsThatComeBeforeTodayComeToday = 1>
+  [ 62] jmpifz [ 99] ............................ if argMakeCardsThatComeBeforeTodayComeToday = 1 then
+  [ 65] getlocal 24 ............................. <tmpDate>
+  [ 67] getlocal 8 .............................. <tmpTodayDate>
+  [ 69] lt ...................................... <tmpDate < tmpTodayDate>
+  [ 70] jmpifz [ 77] ............................ if tmpDate < tmpTodayDate then
+  [ 73] getlocal 8 .............................. <tmpTodayDate>
+  [ 75] setlocal 24 ............................. tmpDate = tmpTodayDate
+  [ 77] getlocal 0 .............................. <tmpNew>
+  [ 79] getlocal 24 ............................. <tmpDate>
+  [ 81] getprop 1984 ............................ <m_dateSortedCards>
+  [ 84] getlocal 16 ............................. <n>
+  [ 86] pusharglist 2 ........................... <m_dateSortedCards, n>
+  [ 88] objcall 119 ............................. <m_dateSortedCards[n]>
+  [ 91] pusharglistnoret 3 ...................... <tmpNew, tmpDate, m_dateSortedCards[n]>
+  [ 93] objcall 309 ............................. tmpNew.addProp(tmpDate, m_dateSortedCards[n])
+  [ 96] jmp [118] ............................... next repeat
+  [ 99] getlocal 0 .............................. <tmpNew>
+  [101] getlocal 24 ............................. <tmpDate>
+  [103] getprop 1984 ............................ <m_dateSortedCards>
+  [106] getlocal 16 ............................. <n>
+  [108] pusharglist 2 ........................... <m_dateSortedCards, n>
+  [110] objcall 119 ............................. <m_dateSortedCards[n]>
+  [113] pusharglistnoret 3 ...................... <tmpNew, tmpDate, m_dateSortedCards[n]>
+  [115] objcall 309 ............................. tmpNew.addProp(tmpDate, m_dateSortedCards[n])
+  [118] pushint8 1
+  [121] getlocal 16
+  [123] add
+  [124] setlocal 16
+  [126] endrepeat [ 29]
+  [129] getlocal 0 .............................. <tmpNew>
+  [131] setprop 1984 ............................ m_dateSortedCards = tmpNew
+  [134] ret
+end
+
+on getWaiting me, argCareAboutOKToShow, argGetFirstCard
+  [  0] pusharglist 0 ........................... <[:]>
+  [  2] pushproplist ............................ <[:]>
+  [  3] setlocal 0 .............................. lst = [:]
+  [  5] pushzero ................................ <0>
+  [  6] setlocal 8 .............................. tmpAllowSpecialOnly = 0
+  [  8] getparam 8 .............................. <argCareAboutOKToShow>
+  [ 10] pushint8 1 .............................. <1>
+  [ 13] eq ...................................... <argCareAboutOKToShow = 1>
+  [ 14] jmpifz [ 80] ............................ if argCareAboutOKToShow = 1 then
+  [ 17] getprop 1976 ............................ <m_OKToShow>
+  [ 20] pushzero ................................ <0>
+  [ 21] eq ...................................... <m_OKToShow = 0>
+  [ 22] jmpifz [ 80] ............................ if m_OKToShow = 0 then
+  [ 25] getprop 1981 ............................ <m_allowSpecial>
+  [ 28] getobjprop 156 .......................... <m_allowSpecial.count>
+  [ 31] jmpifz [ 54] ............................ if m_allowSpecial.count then / else
+  [ 34] pushint8 1 .............................. <1>
+  [ 37] setlocal 8 .............................. tmpAllowSpecialOnly = 1
+  [ 39] getglobal 24 ............................ <gDir>
+  [ 41] getobjprop 1018 ......................... <gDir.m_objDialogsMaster>
+  [ 44] pusharglist 1 ........................... <gDir.m_objDialogsMaster>
+  [ 46] objcall 1989 ............................ <gDir.m_objDialogsMaster.getNumOpen()>
+  [ 49] setlocal 16 ............................. numOpenDialogs = gDir.m_objDialogsMaster.getNumOpen()
+  [ 51] jmp [ 80]
+  [ 54] getparam 16 ............................. <argGetFirstCard>
+  [ 56] pushint8 1 .............................. <1>
+  [ 59] eq ...................................... <argGetFirstCard = 1>
+  [ 60] jmpifz [ 73] ............................ if argGetFirstCard = 1 then
+  [ 63] pusharglist 0 ........................... <>
+  [ 65] extcall 151 ............................. <VOID>
+  [ 68] pusharglistnoret 1 ...................... <VOID>
+  [ 70] extcall 69 .............................. return VOID
+  [ 73] getlocal 0 .............................. <lst>
+  [ 75] pusharglistnoret 1 ...................... <lst>
+  [ 77] extcall 69 .............................. return lst
+  [ 80] getprop 1982 ............................ <m_waitingCards>
+  [ 83] getobjprop 156 .......................... <m_waitingCards.count>
+  [ 86] setlocal 24 ............................. cnt = m_waitingCards.count
+  [ 88] pushint8 1 .............................. <1>
+  [ 91] setlocal 32
+  [ 93] getlocal 32
+  [ 95] getprop 1982 ............................ <m_waitingCards>
+  [ 98] getobjprop 156 .......................... <m_waitingCards.count>
+  [101] lteq
+  [102] jmpifz [468] ............................ repeat with n = 1 to m_waitingCards.count
+  [105] getprop 1982 ............................ <m_waitingCards>
+  [108] getlocal 32 ............................. <n>
+  [110] pusharglist 2 ........................... <m_waitingCards, n>
+  [112] objcall 119 ............................. <m_waitingCards[n]>
+  [115] setlocal 40 ............................. ItsIDCounter = m_waitingCards[n]
+  [117] getprop 1983 ............................ <m_cardsInfo>
+  [120] getlocal 40 ............................. <ItsIDCounter>
+  [122] pusharglist 2 ........................... <m_cardsInfo, ItsIDCounter>
+  [124] objcall 183 ............................. <m_cardsInfo.getaProp(ItsIDCounter)>
+  [127] setlocal 48 ............................. Info = m_cardsInfo.getaProp(ItsIDCounter)
+  [129] pushint8 1 .............................. <1>
+  [132] setlocal 56 ............................. displayOK = 1
+  [134] getlocal 8 .............................. <tmpAllowSpecialOnly>
+  [136] jmpifz [231] ............................ if tmpAllowSpecialOnly then
+  [139] pushzero ................................ <0>
+  [140] setlocal 56 ............................. displayOK = 0
+  [142] pushint8 1 .............................. <1>
+  [145] setlocal 64
+  [147] getlocal 64
+  [149] getprop 1981 ............................ <m_allowSpecial>
+  [152] getobjprop 156 .......................... <m_allowSpecial.count>
+  [155] lteq
+  [156] jmpifz [231] ............................ repeat with tmpAllowCnt = 1 to m_allowSpecial.count
+  [159] getprop 1981 ............................ <m_allowSpecial>
+  [162] getlocal 64 ............................. <tmpAllowCnt>
+  [164] pusharglist 2 ........................... <m_allowSpecial, tmpAllowCnt>
+  [166] objcall 119 ............................. <m_allowSpecial[tmpAllowCnt]>
+  [169] setlocal 72 ............................. tmpMaxNumOpenDialogs = m_allowSpecial[tmpAllowCnt]
+  [171] getlocal 16 ............................. <numOpenDialogs>
+  [173] getlocal 72 ............................. <tmpMaxNumOpenDialogs>
+  [175] gt ...................................... <numOpenDialogs > tmpMaxNumOpenDialogs>
+  [176] jmpifz [182] ............................ if numOpenDialogs > tmpMaxNumOpenDialogs then
+  [179] jmp [220] ............................... next repeat
+  [182] getprop 1981 ............................ <m_allowSpecial>
+  [185] getlocal 64 ............................. <tmpAllowCnt>
+  [187] pusharglist 2 ........................... <m_allowSpecial, tmpAllowCnt>
+  [189] objcall 295 ............................. <m_allowSpecial.getPropAt(tmpAllowCnt)>
+  [192] setlocal 80 ............................. tmpAllowThisProp = m_allowSpecial.getPropAt(tmpAllowCnt)
+  [194] getlocal 48 ............................. <Info>
+  [196] getlocal 80 ............................. <tmpAllowThisProp>
+  [198] pusharglist 2 ........................... <Info, tmpAllowThisProp>
+  [200] objcall 183 ............................. <Info.getaProp(tmpAllowThisProp)>
+  [203] pusharglist 1 ........................... <Info.getaProp(tmpAllowThisProp)>
+  [205] extcall 61 .............................. <voidp(Info.getaProp(tmpAllowThisProp))>
+  [208] not ..................................... <not voidp(Info.getaProp(tmpAllowThisProp))>
+  [209] jmpifz [220] ............................ if not voidp(Info.getaProp(tmpAllowThisProp)) then
+  [212] pushint8 1 .............................. <1>
+  [215] setlocal 56 ............................. displayOK = 1
+  [217] jmp [231] ............................... exit repeat
+  [220] pushint8 1
+  [223] getlocal 64
+  [225] add
+  [226] setlocal 64
+  [228] endrepeat [147]
+  [231] getlocal 56 ............................. <displayOK>
+  [233] jmpifz [278] ............................ if displayOK then
+  [236] getparam 0 .............................. <me>
+  [238] getlocal 48 ............................. <Info>
+  [240] pusharglist 2 ........................... <me, Info>
+  [242] objcall 1975 ............................ <me.checkGotNeededToShow(Info)>
+  [245] setlocal 88 ............................. tmp = me.checkGotNeededToShow(Info)
+  [247] getlocal 88 ............................. <tmp>
+  [249] pushint8 1 .............................. <1>
+  [252] nteq .................................... <tmp <> 1>
+  [253] jmpifz [278] ............................ if tmp <> 1 then
+  [256] pushzero ................................ <0>
+  [257] setlocal 56 ............................. displayOK = 0
+  [259] getlocal 88 ............................. <tmp>
+  [261] pushsymb 520 ............................ <#Remove>
+  [264] eq ...................................... <tmp = #Remove>
+  [265] jmpifz [278] ............................ if tmp = #Remove then
+  [268] getprop 1985 ............................ <m_deleteIDs>
+  [271] getlocal 40 ............................. <ItsIDCounter>
+  [273] pusharglistnoret 2 ...................... <m_deleteIDs, ItsIDCounter>
+  [275] objcall 229 ............................. m_deleteIDs.add(ItsIDCounter)
+  [278] getlocal 56 ............................. <displayOK>
+  [280] jmpifz [414] ............................ if displayOK then
+  [283] getlocal 48 ............................. <Info>
+  [285] pushsymb 1532 ........................... <#EventCard>
+  [288] pusharglist 2 ........................... <Info, #EventCard>
+  [290] objcall 119 ............................. <Info[#EventCard]>
+  [293] pusharglist 1 ........................... <Info[#EventCard]>
+  [295] extcall 96 .............................. <symbolp(Info[#EventCard])>
+  [298] jmpifz [414] ............................ if symbolp(Info[#EventCard]) then
+  [301] getglobal 23 ............................ <gRock>
+  [303] getobjprop 82 ........................... <gRock.m_classManager>
+  [306] getlocal 48 ............................. <Info>
+  [308] pushsymb 1532 ........................... <#EventCard>
+  [311] pusharglist 2 ........................... <Info, #EventCard>
+  [313] objcall 119 ............................. <Info[#EventCard]>
+  [316] pushsymb 1532 ........................... <#EventCard>
+  [319] pusharglist 3 ........................... <gRock.m_classManager, Info[#EventCard], #EventCard>
+  [321] objcall 149 ............................. <gRock.m_classManager.getObjByIDAndClass(Info[#EventCard], #EventCard)>
+  [324] setlocal 96 ............................. ecard_r = gRock.m_classManager.getObjByIDAndClass(Info[#EventCard], #EventCard)
+  [326] getlocal 96 ............................. <ecard_r>
+  [328] getlocal 48 ............................. <Info>
+  [330] pushsymb 847 ............................ <#EventCardOptions>
+  [333] pusharglist 2 ........................... <Info, #EventCardOptions>
+  [335] objcall 119 ............................. <Info[#EventCardOptions]>
+  [338] pusharglist 0 ........................... <>
+  [340] extcall 151 ............................. <VOID>
+  [343] pushsymb 2013 ........................... <#NotIfForced>
+  [346] pusharglist 4 ........................... <ecard_r, Info[#EventCardOptions], VOID, #NotIfForced>
+  [348] extcall 2012 ............................ <getECGfxHuman(ecard_r, Info[#EventCardOptions], VOID, #NotIfForced)>
+  [351] setlocal 104 ............................ obj = getECGfxHuman(ecard_r, Info[#EventCardOptions], VOID, #NotIfForced)
+  [353] getlocal 104 ............................ <obj>
+  [355] pusharglist 1 ........................... <obj>
+  [357] extcall 8 ............................... <objectp(obj)>
+  [359] jmpifz [414] ............................ if objectp(obj) then
+  [362] getlocal 104 ............................ <obj>
+  [364] getobjprop 224 .......................... <obj.className>
+  [367] pushsymb 636 ............................ <#RealMusician>
+  [370] eq ...................................... <obj.className = #RealMusician>
+  [371] jmpifz [414] ............................ if obj.className = #RealMusician then
+  [374] getlocal 104 ............................ <obj>
+  [376] pusharglist 1 ........................... <obj>
+  [378] objcall 924 ............................. <obj.getIsOKToShowEventcard()>
+  [381] setlocal 88 ............................. tmp = obj.getIsOKToShowEventcard()
+  [383] getlocal 88 ............................. <tmp>
+  [385] pushint8 1 .............................. <1>
+  [388] nteq .................................... <tmp <> 1>
+  [389] jmpifz [414] ............................ if tmp <> 1 then
+  [392] pushzero ................................ <0>
+  [393] setlocal 56 ............................. displayOK = 0
+  [395] getlocal 88 ............................. <tmp>
+  [397] pushsymb 520 ............................ <#Remove>
+  [400] eq ...................................... <tmp = #Remove>
+  [401] jmpifz [414] ............................ if tmp = #Remove then
+  [404] getprop 1985 ............................ <m_deleteIDs>
+  [407] getlocal 40 ............................. <ItsIDCounter>
+  [409] pusharglistnoret 2 ...................... <m_deleteIDs, ItsIDCounter>
+  [411] objcall 229 ............................. m_deleteIDs.add(ItsIDCounter)
+  [414] getlocal 56 ............................. <displayOK>
+  [416] jmpifz [457] ............................ if displayOK then
+  [419] getparam 16 ............................. <argGetFirstCard>
+  [421] pushint8 1 .............................. <1>
+  [424] eq ...................................... <argGetFirstCard = 1>
+  [425] jmpifz [446] ............................ if argGetFirstCard = 1 then
+  [428] pushsymb 2005 ........................... <#IDCounter>
+  [431] getlocal 40 ............................. <ItsIDCounter>
+  [433] pushsymb 358 ............................ <#Info>
+  [436] getlocal 48 ............................. <Info>
+  [438] pusharglist 4 ........................... <[#IDCounter: ItsIDCounter, #Info: Info]>
+  [440] pushproplist ............................ <[#IDCounter: ItsIDCounter, #Info: Info]>
+  [441] pusharglistnoret 1 ...................... <[#IDCounter: ItsIDCounter, #Info: Info]>
+  [443] extcall 69 .............................. return [#IDCounter: ItsIDCounter, #Info: Info]
+  [446] getlocal 0 .............................. <lst>
+  [448] getlocal 40 ............................. <ItsIDCounter>
+  [450] getlocal 48 ............................. <Info>
+  [452] pusharglistnoret 3 ...................... <lst, ItsIDCounter, Info>
+  [454] objcall 309 ............................. lst.addProp(ItsIDCounter, Info)
+  [457] pushint8 1
+  [460] getlocal 32
+  [462] add
+  [463] setlocal 32
+  [465] endrepeat [ 93]
+  [468] getparam 0 .............................. <me>
+  [470] pusharglistnoret 1 ...................... <me>
+  [472] objcall 1972 ............................ me.deleteWaiting()
+  [475] getparam 16 ............................. <argGetFirstCard>
+  [477] pushint8 1 .............................. <1>
+  [480] eq ...................................... <argGetFirstCard = 1>
+  [481] jmpifz [494] ............................ if argGetFirstCard = 1 then
+  [484] pusharglist 0 ........................... <>
+  [486] extcall 151 ............................. <VOID>
+  [489] pusharglistnoret 1 ...................... <VOID>
+  [491] extcall 69 .............................. return VOID
+  [494] getlocal 0 .............................. <lst>
+  [496] pusharglistnoret 1 ...................... <lst>
+  [498] extcall 69 .............................. return lst
+  [501] ret
+end
+
+on checkGotNeededToShow me, argInfo
+  [  0] getparam 8 .............................. <argInfo>
+  [  2] pushsymb 1006 ........................... <#NeededToShow>
+  [  5] pusharglist 2 ........................... <argInfo, #NeededToShow>
+  [  7] objcall 119 ............................. <argInfo[#NeededToShow]>
+  [ 10] setlocal 0 .............................. needed = argInfo[#NeededToShow]
+  [ 12] getlocal 0 .............................. <needed>
+  [ 14] pusharglist 1 ........................... <needed>
+  [ 16] extcall 61 .............................. <voidp(needed)>
+  [ 19] jmpifz [ 30] ............................ if voidp(needed) then
+  [ 22] pushint8 1 .............................. <1>
+  [ 25] pusharglistnoret 1 ...................... <1>
+  [ 27] extcall 69 .............................. return 1
+  [ 30] getlocal 0 .............................. <needed>
+  [ 32] pusharglist 1 ........................... <needed>
+  [ 34] extcall 13 .............................. <stringp(needed)>
+  [ 36] jmpifz [ 51] ............................ if stringp(needed) then
+  [ 39] getlocal 0 .............................. <needed>
+  [ 41] pusharglist 1 ........................... <needed>
+  [ 43] extcall 1774 ............................ <rex(needed)>
+  [ 46] pusharglistnoret 1 ...................... <rex(needed)>
+  [ 48] extcall 69 .............................. return rex(needed)
+  [ 51] getlocal 0 .............................. <needed>
+  [ 53] pusharglist 1 ........................... <needed>
+  [ 55] extcall 267 ............................. <symbol(needed)>
+  [ 58] jmpifz [ 68] ............................ if symbol(needed) then
+  [ 61] getlocal 0 .............................. <needed>
+  [ 63] pusharglist 1 ........................... <[needed]>
+  [ 65] pushlist ................................ <[needed]>
+  [ 66] setlocal 0 .............................. needed = [needed]
+  [ 68] getlocal 0 .............................. <needed>
+  [ 70] pusharglist 1 ........................... <needed>
+  [ 72] extcall 115 ............................. <listp(needed)>
+  [ 75] jmpifz [153] ............................ if listp(needed) then
+  [ 78] getlocal 0 .............................. <needed>
+  [ 80] peek 0
+  [ 82] pusharglist 1
+  [ 84] extcall 156
+  [ 87] pushint8 1
+  [ 89] peek 0
+  [ 91] peek 2
+  [ 93] lteq
+  [ 94] jmpifz [151] ............................ repeat with oneNeed in needed
+  [ 97] peek 2
+  [ 99] peek 1
+  [101] pusharglist 2
+  [103] extcall 119
+  [106] setlocal 8
+  [108] getlocal 8 .............................. <oneNeed>
+  [110] pusharglist 1 ........................... <oneNeed>
+  [112] extcall 96 .............................. <symbolp(oneNeed)>
+  [115] jmpifz [135] ............................ if symbolp(oneNeed) then
+  [118] getglobal 23 ............................ <gRock>
+  [120] getobjprop 82 ........................... <gRock.m_classManager>
+  [123] getlocal 8 .............................. <oneNeed>
+  [125] pusharglist 2 ........................... <gRock.m_classManager, oneNeed>
+  [127] objcall 238 ............................. <gRock.m_classManager.getObjByID(oneNeed)>
+  [130] setlocal 16 ............................. obj = gRock.m_classManager.getObjByID(oneNeed)
+  [132] jmp [145] ............................... next repeat
+  [135] getlocal 8 .............................. <oneNeed>
+  [137] pusharglist 1 ........................... <oneNeed>
+  [139] extcall 115 ............................. <listp(oneNeed)>
+  [142] jmpifz [145] ............................ if listp(oneNeed) then
+  [145] pushint8 1
+  [147] add
+  [148] endrepeat [ 89]
+  [151] pop 3
+  [153] ret
+end

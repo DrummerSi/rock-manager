@@ -1,0 +1,71 @@
+property m_objScrollingCity, m_spriteList, m_objDialogsMaster, m_interfaceBar
+global gRock
+
+on new me
+  global gUseful
+  set the exitLock to 1
+  set the mouseUpScript to "VirtualMouseUp"
+  set the mouseDownScript to "VirtualMouseDown"
+  set the keyUpScript to "VirtualKeyUp"
+  set the keyDownScript to "VirtualKeyDown"
+  m_spriteList = member("SpriteList").text.value
+  if not listp(m_spriteList) then
+    m_spriteList = [#ScrollBG: 2, #Buildings: 5, #InterfaceBarSpriteList: [#BG: 55, #BandMemberIcons: 56, #Rehearsal: 61, #RehearsalText: 62, #MoneyText: 63, #MoneyVal: 64, #DateText: 65, #DateVal: 66, #zzCredMeter: 67, #MainMenu: 67, #MainMenuText: 68], #Dialogs: 70, #FaceAnim: 120, #PlaceAnim: 120, #Watcher: 126, #Console: 128, #Diagram: 130, #Repainter: 150, #Drag: 150, #rollover: 150]
+  end if
+  gRock.m_context.setContext(#City)
+  gUseful.soundObj.soundPath = gRock.m_paths.getPath(#sound)
+  polandPott("Dir new end")
+  return me
+end
+
+on init me
+  polandPott("Dir init start")
+  m_interfaceBar = script("InterfaceBarScript").new()
+  m_interfaceBar.init()
+  m_objDialogsMaster = script("DialogsMasterScript").new(m_spriteList[#Dialogs])
+  me.redrawAfterLoad()
+  gRock.m_gameTimer.activate(1)
+  gRock.m_eventCardsManager.setOKToShowOnTopOfNumDialogs(0)
+  gRock.m_msgManager.msg(#ExitToCity)
+  polandPott("Dir init end")
+end
+
+on startMovie me
+  polandPott("Dir startMovie start")
+  if (gRock.m_justStartedGame = 1) or (gRock.m_noMissionActive = 1) then
+    m_objDialogsMaster.openDialog(#MainMenu)
+    gRock.m_justStartedGame = 0
+  end if
+end
+
+on kill me
+  m_objDialogsMaster = m_objDialogsMaster.kill()
+  m_objScrollingCity = m_objScrollingCity.kill()
+  m_interfaceBar = m_interfaceBar.kill()
+  return 0
+end
+
+on redrawAfterLoad me
+  if objectp(m_objScrollingCity) then
+    m_objScrollingCity = m_objScrollingCity.kill()
+  end if
+  m_objScrollingCity = script("ScrollingCityScript").new()
+  m_interfaceBar.redrawAfterLoad()
+  polandPott("Dir redrawAfterLoad")
+end
+
+on redraw me
+  SP = sprite(m_spriteList[#Repainter])
+  SP.member = member("Dummy")
+  SP.rect = rect(0, 0, 800, 600)
+  updateStage()
+  SP.rect = rect(0, 0, 0, 0)
+  SP.stretch = 0
+  m_objScrollingCity.redraw()
+  m_interfaceBar.redraw()
+  updateStage()
+end
+
+on pause me, argIsTRUE
+  m_objScrollingCity.pause(argIsTRUE)
+end

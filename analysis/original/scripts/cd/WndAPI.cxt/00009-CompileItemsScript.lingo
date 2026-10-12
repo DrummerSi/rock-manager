@@ -1,0 +1,136 @@
+property itemList, linkToList, itemLevels, itemChainToRoots, itemObjs, currentAxis
+
+on new me
+  return me
+end
+
+on kill me
+  return 0
+end
+
+on calcRelations me, argList
+  itemList = argList
+  tmpRetOrder = []
+  itemObjs = [:]
+  repeat with tmpItemNr = 1 to itemList.count()
+    tmpRelList = itemList[tmpItemNr][#rel]
+    tmpID = itemList[tmpItemNr][#ID]
+    itemObjs.addProp(tmpID, new(script("OneItemScript"), tmpID, tmpRelList))
+  end repeat
+  repeat with currentAxis = 1 to 2
+    repeat with n = 0 to 1
+      repeat with tmpObj in itemObjs
+        if tmpObj.ID = #Item1 then
+        end if
+        tmpLinkList = []
+        tmpLevel = me.recursiveFindItemLevel(tmpObj, tmpLinkList, currentAxis + (n * 2))
+        if tmpLevel = -1 then
+          put "Circular definition", tmpLinkList
+        end if
+      end repeat
+    end repeat
+    tmpOrderedByChain = [:]
+    tmpOrderedByChain.sort()
+    repeat with tmpObj in itemObjs
+      tmpItemID = tmpObj.ID
+      repeat with n = 0 to 1
+        tmpChain = tmpObj.getChain(currentAxis + (n * 2))
+        tmpRoot = tmpChain[1]
+        tmpRootList = tmpOrderedByChain.getaProp(tmpRoot)
+        if voidp(tmpRootList) then
+          tmpRootList = [:]
+          tmpRootList.sort()
+          tmpOrderedByChain.addProp(tmpRoot, tmpRootList)
+        end if
+        tmpLvl = tmpObj.levels[currentAxis + (n * 2)]
+        if tmpLvl > -2 then
+          tmpRootList.addProp(tmpLvl, [tmpItemID, n])
+        end if
+      end repeat
+    end repeat
+    tmpFinalOrder = []
+    repeat with n = 1 to tmpOrderedByChain.count()
+      tmpChainList = tmpOrderedByChain[n]
+      repeat with m = 1 to tmpChainList.count()
+        tmpFinalOrder.add(tmpChainList[m])
+      end repeat
+    end repeat
+    tmpRetOrder.add(tmpFinalOrder)
+  end repeat
+  return tmpRetOrder
+end
+
+on recursiveFindItemLevel me, argItemObj, argLinkList, argWhich
+  tmpItemID = argItemObj.ID
+  tmpChain = argItemObj.getChain(argWhich)
+  if listp(tmpChain) then
+    tmpPos = tmpChain.getPos(tmpItemID)
+    repeat with n = tmpPos down to 1
+      argLinkList.addAt(1, tmpChain[n])
+    end repeat
+    return tmpPos
+  end if
+  if argLinkList.getPos(tmpItemID) then
+    argLinkList.addAt(1, tmpItemID)
+    return -1
+  end if
+  tmpLinkToInfo = argItemObj.rel[argWhich]
+  if tmpLinkToInfo = #Auto then
+    return -2
+    tmpLinkToInfo = argItemObj.rel[argItemObj.getOther(argWhich)]
+  end if
+  tmpLinkToID = 0
+  if listp(tmpLinkToInfo) then
+    if tmpLinkToInfo.count() then
+      tmpLinkToID = tmpLinkToInfo[1]
+    end if
+  else
+    tmpLinkToID = tmpLinkToInfo
+  end if
+  tmpIsLevel1 = 0
+  if symbolp(tmpLinkToID) then
+    tmpStr = string(tmpLinkToID)
+    if tmpStr.char[1..3] = "ZYX" then
+      tmpIsLevel1 = 1
+    end if
+  else
+    if tmpLinkToID = 0 then
+      tmpIsLevel1 = 1
+    end if
+  end if
+  if tmpIsLevel1 then
+    argLinkList.addAt(1, tmpItemID)
+    argLinkList.addAt(1, tmpLinkToID)
+    argItemObj.setChain(argWhich, argLinkList)
+    return 1
+  end if
+  argLinkList.addAt(1, tmpItemID)
+  tmpLinkToNr = tmpLinkToInfo[1]
+  if tmpLinkToInfo[2] = #Mid then
+    tmpLinkList2 = argLinkList.duplicate()
+    tmpLevel = me.recursiveFindItemLevel(itemObjs.getProp(tmpLinkToID), argLinkList, 1)
+    if tmpLevel = -1 then
+      return -1
+    end if
+    tmpLevel2 = me.recursiveFindItemLevel(itemObjs.getProp(tmpLinkToID), tmpLinkList2, 2)
+    if tmpLevel2 > tmpLevel then
+      tmpLevel = tmpLevel2
+      argLinkList = tmpLinkList2
+    end if
+  else
+    if tmpLinkToInfo[2] = #Reg then
+      tmp = argWhich
+      if tmp > 2 then
+        tmp = tmp - 2
+      end if
+      tmpLevel = me.recursiveFindItemLevel(itemObjs.getProp(tmpLinkToID), argLinkList, tmp)
+    else
+      tmpLevel = me.recursiveFindItemLevel(itemObjs.getProp(tmpLinkToID), argLinkList, tmpLinkToInfo[2])
+    end if
+  end if
+  if tmpLevel = -1 then
+    return -1
+  end if
+  argItemObj.setChain(argWhich, argLinkList)
+  return argItemObj.levels[argWhich]
+end

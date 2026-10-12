@@ -1,0 +1,55 @@
+property ancestor
+global gDir, gRock
+
+on new me, argOptions
+  ID = argOptions[#ID]
+  argOptions.setaProp(#ReportTo, me)
+  argOptions.setaProp(#child, me)
+  dialog_r = gRock.m_classManager.getObjByIDAndClass(#DlgConfirm, #Dialog)
+  dialog_r.dataMemberName = "DlgConfirmData"
+  dialog_r.name = "MEDIA PROPOSAL TEST"
+  argOptions[#DlgInfoObj] = dialog_r
+  ancestor = script("DlgRockAncestorScript").new(argOptions)
+  me.setPlace()
+  ancestor.render()
+  return me
+end
+
+on kill me
+  ancestor.kill()
+  return 0
+end
+
+on Report me, argObj, argWhat, argOption
+  if argWhat = #BookedOK then
+    me.kill()
+  end if
+end
+
+on mouse me, argObj, argWhat, argOption
+  if objectp(argOption) then
+    if argWhat = #click then
+      ID = argOption.getOneProp(#ID)
+      if ID = #ButtonOK then
+        m_eventToBook_r = gRock.m_classManager.createObj(#ExpoInterview)
+        newID = gRock.m_classManager.genUniqueID(m_eventToBook_r)
+        m_eventToBook_r.ID = newID
+        lst = rgetProp(m_eventToBook_r, #neededIDs)
+        lst.add(#Band)
+        lst.add(#NotOnTour)
+        m_eventToBook_r.setDates(5 + gRock.m_date.getDateInt(), 1)
+        dlg = gDir.m_objDialogsMaster.openDialog(#Book, [#UseDlgID: #DlgLiveBook, #bookOptions: [#EventToBook: m_eventToBook_r]])
+        dlg.m_objReportTo = me
+        exit
+      else
+        if ID = #ButtonCancel then
+        end if
+      end if
+      ancestor.mouse(argObj, argWhat, argOption)
+    end if
+  end if
+end
+
+on setPlace me
+  dlgObj = ancestor.m_objDlg
+end

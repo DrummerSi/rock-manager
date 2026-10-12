@@ -1,0 +1,384 @@
+property framesLeft, maxVal, sndObj, nextFirst, usingFirst, states, nextBlink, numEyes, SPNum, moving, mouthSP, eyesSP, bodySP, bgSP, frameList, posBaseFrame, mouthBaseFrame, eyesBaseFrame, mouthOffsetFrame, nextPos, currentPos, bodyMoves, animChart, Waiting, currentFrames, mouthSize, posProbList, timeToNextMove, firstMemberNum, reportObj, Active
+global gUseful
+
+on new me, argSPNum, argCastLib
+  global gRock
+  if objectp(gRock) then
+    gRock.m_context.setFocus(#Speaker, me)
+  end if
+  framesLeft = 0
+  animChart = value(member("GubbeAnimChart").text)
+  SPNum = argSPNum
+  if voidp(SPNum) then
+    SPNum = 0
+  end if
+  if SPNum then
+    bgSP = sprite(SPNum + 0)
+    bodySP = sprite(SPNum + 1)
+    eyesSP = sprite(SPNum + 2)
+    mouthSP = sprite(SPNum + 3)
+  end if
+  if voidp(argCastLib) then
+    argCastLib = "Actor"
+  end if
+  memb = member("background01", argCastLib)
+  currentFrames = [#BG: memb.number, #Mouth: 0, #Eyes: 0]
+  if SPNum then
+    if memb.number > 0 then
+      bgSP.member = memb
+    end if
+  end if
+  maxVal = 0
+  nextFirst = 0
+  usingFirst = 0
+  numEyes = 5
+  states = [:]
+  nextBlink = random(70)
+  dontMakeDoubleMoves = [:]
+  preferredPos = [:]
+  dontMakeSingleMoves = [1: [2], 2: [1], 3: [4], 4: [3]]
+  moodLists = []
+  bodyMoves = [1: [2: 1, 3: 1, 5: 1, 4: -1, 6: -1], 2: [3: 1, 4: 1, 1: -1, 5: -1, 6: -1], 3: [4: 1, 5: 1, 1: -1, 2: -1, 6: -1], 4: [1: 1, 5: 1, 6: 1, 2: -1, 3: -1], 5: [2: 1, 6: 1, 1: -1, 3: -1, 4: -1], 6: [1: 1, 2: 1, 3: 1, 4: -1, 5: -1]]
+  timeToNextMove = -1
+  timeToNextMove = random(30) + 10
+  moving = 0
+  Waiting = 1
+  Active = 1
+  firstMemberNum = getMemberNum("moves01_0001", argCastLib)
+  if firstMemberNum < 1 then
+    firstMemberNum = getMemberNum("moves_0001", argCastLib)
+  end if
+  me.setPos(1)
+  me.setMood(#Happy)
+  if SPNum then
+    gUseful.frameTimer.addObject(me)
+  end if
+  return me
+end
+
+on setMood me, argMood
+  tmp = [#Furious: [#Eyes: 0, #Mouth: 3, #Agitation: 50, #PosWeights: [1: 10, 2: 10, 3: 40, 4: 35, 5: 5, 6: 0]], #Angry: [#Eyes: 0, #Mouth: 3, #Agitation: 50, #PosWeights: [1: 10, 2: 10, 3: 40, 4: 35, 5: 5, 6: 0]], #Annoyed: [#Eyes: 0, #Mouth: 2, #Agitation: 50, #PosWeights: [1: 10, 2: 10, 3: 40, 4: 35, 5: 5, 6: 0]], #normal: [#Eyes: 2, #Mouth: 2, #Agitation: 120, #PosWeights: [1: 25, 2: 20, 3: 10, 4: 5, 5: 25, 6: 5]], #Satisfied: [#Eyes: 2, #Mouth: 1, #Agitation: 90, #PosWeights: [1: 20, 2: 20, 3: 0, 4: 15, 5: 40, 6: 5]], #Happy: [#Eyes: 2, #Mouth: 0, #Agitation: 90, #PosWeights: [1: 20, 2: 20, 3: 0, 4: 15, 5: 40, 6: 5]], #Sad: [#Eyes: 4, #Mouth: 3, #Agitation: 100, #PosWeights: [1: 35, 2: 20, 3: 0, 4: 0, 5: 10, 6: 15]], #Cool: [#Eyes: 0, #Mouth: 2, #Agitation: 100, #PosWeights: [1: 25, 2: 20, 3: 30, 4: 15, 5: 5, 6: 5]], #Superior: [#Eyes: 3, #Mouth: 1, #Agitation: 100, #PosWeights: [1: 25, 2: 15, 3: 35, 4: 15, 5: 5, 6: 5]], #Bored: [#Eyes: 2, #Mouth: 3, #Agitation: 100, #PosWeights: [1: 30, 2: 35, 3: 25, 4: 0, 5: 0, 6: 10]], #Apologetic: [#Eyes: 3, #Mouth: 1, #Agitation: 40, #PosWeights: [1: 25, 2: 25, 3: 0, 4: 0, 5: 35, 6: 15]], #Malicious: [#Eyes: 0, #Mouth: 0, #Agitation: 80, #PosWeights: [1: 15, 2: 15, 3: 40, 4: 20, 5: 10, 6: 0]]]
+  tmpList = tmp[argMood]
+  if voidp(tmpList) then
+    exit
+  end if
+  states = tmpList
+  posProbList = calcProbList(states[#PosWeights])
+  tmp = states[#PosWeights].getaProp(currentPos)
+  if (tmp = 0) or voidp(tmp) then
+    if moving then
+    else
+      if SPNum then
+        me.animate()
+      end if
+    end if
+  end if
+  if not moving then
+    me.setPos(currentPos, 1)
+    if SPNum then
+      mouthSP.member = member(currentFrames[#Mouth])
+    end if
+  end if
+end
+
+on setPos me, argNum, argShow
+  if voidp(argShow) then
+    argShow = 1
+  end if
+  moving = 0
+  currentPos = argNum
+  posBaseFrame = firstMemberNum + (10 * (argNum - 1))
+  currentFrames[#Body] = posBaseFrame + 2
+  if SPNum then
+    bodySP.member = member(posBaseFrame + 2)
+  end if
+  mouthBaseFrame = posBaseFrame + 4
+  if Waiting then
+    if argShow then
+      if states[#Mouth] <> 2 then
+        currentFrames[#Mouth] = posBaseFrame + states[#Mouth]
+        if SPNum then
+          mouthSP.member = member(currentFrames[#Mouth])
+        end if
+      else
+        currentFrames[#Mouth] = "Dummy"
+      end if
+    end if
+  else
+    if argShow then
+      me.handleCue(mouthSize)
+    end if
+  end if
+  eyesBaseFrame = posBaseFrame + 60
+  currentFrames[#Eyes] = eyesBaseFrame + states[#Eyes]
+  if argShow and SPNum then
+    eyesSP.member = member(eyesBaseFrame + states[#Eyes])
+  end if
+end
+
+on kill me
+  global gRock
+  if SPNum then
+    bodySP.member = member("Dummy")
+    mouthSP.member = member("Dummy")
+    eyesSP.member = member("Dummy")
+    bgSP.member = member("Dummy")
+  end if
+  reportObj = 0
+  if objectp(gRock) then
+    gRock.m_context.setFocus(#Speaker, 0)
+  end if
+  if objectp(sndObj) then
+    sndObj = sndObj.kill()
+  end if
+  gUseful.frameTimer.deleteObject(me)
+  return 0
+end
+
+on Report me, argObj, argWhat, argOptions
+  if argWhat = #Cue then
+    me.handleCue(argOptions)
+  else
+    if argWhat = #finished then
+      if moving then
+      else
+        if SPNum then
+          if states[#Mouth] <> 2 then
+            mouthSP.member = member(posBaseFrame + states[#Mouth])
+          else
+            mouthSP.member = member("Dummy")
+          end if
+        end if
+      end if
+      Waiting = 1
+      if objectp(reportObj) then
+        reportObj.Report(me, #finished)
+      end if
+    end if
+  end if
+end
+
+on timeTick me
+  if not Active then
+    exit
+  end if
+  if moving then
+    bodySP.member = member(posBaseFrame + frameList[moving])
+    tmpEyes = states[#Eyes]
+    if (tmpEyes = 0) or (tmpEyes = 4) then
+      tmpEyes = tmpEyes / 4
+      eyesSP.member = member(posBaseFrame + frameList[moving] + 210 + (tmpEyes * 70))
+    else
+      eyesSP.member = member("Dummy")
+    end if
+    if Waiting then
+      tmp = states[#Mouth]
+      if tmp = 2 then
+        mouthSP.member = member("Dummy")
+      else
+        if tmp > 2 then
+          tmp = tmp - 1
+        end if
+        mouthSP.member = member(posBaseFrame + frameList[moving] + 490 - 140 + (tmp * 70))
+      end if
+    else
+      tmpIsTalking = integer(sndObj.getCurrentCue() / 50.0)
+      if tmpIsTalking then
+        currentFrames[#Mouth] = posBaseFrame + frameList[moving] + 70
+      else
+        currentFrames[#Mouth] = posBaseFrame + frameList[moving] + 140
+      end if
+      mouthSP.member = member(currentFrames[#Mouth])
+    end if
+    moving = moving + 1
+    if moving > frameList.count() then
+      moving = 0
+      me.setPos(nextPos)
+      tmpDirect = (states[#Agitation] / 8) + 2
+      if random(tmpDirect) = 1 then
+        timeToNextMove = random(4) + 2
+      else
+        timeToNextMove = states[#Agitation] + random(states[#Agitation])
+      end if
+    end if
+  else
+    if timeToNextMove > 0 then
+      timeToNextMove = timeToNextMove - 1
+    end if
+    if timeToNextMove = 0 then
+      me.animate()
+    else
+      nextBlink = nextBlink - 1
+      if nextBlink = 0 then
+        eyesSP.member = member(eyesBaseFrame + states[#Eyes] + numEyes)
+      else
+        if nextBlink < -1 then
+          if (nextBlink < -3) or (random(3) = 1) then
+            eyesSP.member = member(eyesBaseFrame + states[#Eyes])
+            nextBlink = random(states[#Agitation]) + (states[#Agitation] / 2)
+          end if
+        end if
+      end if
+    end if
+  end if
+end
+
+on handleCue me, argVal
+  if integerp(argVal) then
+    mouthSize = argVal
+    if moving then
+    else
+      me.changeMouth(argVal)
+    end if
+  else
+    if listp(argVal) then
+      if moving then
+      else
+        tmpCat = argVal[1]
+        tmpVal = argVal[2]
+        case tmpCat of
+          #b:
+            states[tmpCat] = tmpVal
+            eyesSP.member = member(eyesBaseFrame + tmpVal)
+        end case
+        sndObj.nextCue()
+      end if
+    end if
+  end if
+end
+
+on changeMouth me, argVal
+  argVal = integer(argVal / 33.0)
+  if argVal > 2 then
+    usingFirst = 0
+    mouthOffsetFrame = 0
+  else
+    if argVal > 0 then
+      if framesLeft <= 0 then
+        nextFirst = not nextFirst
+        if nextFirst = 0 then
+          mouthOffsetFrame = 0
+        else
+          mouthOffsetFrame = 3
+        end if
+        framesLeft = random(15) + 12
+      else
+        if usingFirst <> nextFirst then
+          if nextFirst = 0 then
+            mouthOffsetFrame = 0
+          else
+            mouthOffsetFrame = 3
+          end if
+        end if
+      end if
+    else
+      usingFirst = 0
+      mouthOffsetFrame = 0
+    end if
+  end if
+  framesLeft = framesLeft - 1
+  currentFrames[#Mouth] = mouthBaseFrame + mouthOffsetFrame + argVal
+  if SPNum then
+    mouthSP.member = member(mouthBaseFrame + mouthOffsetFrame + argVal)
+  end if
+end
+
+on animate me, argToPos
+  if currentPos = argToPos then
+    exit
+  end if
+  tmpNextPosPossible = duplicate(bodyMoves.getProp(currentPos))
+  if argToPos then
+    tmpNextPosDir = tmpNextPosPossible.getaProp(argToPos)
+    if tmpNextPosDir then
+      tmpNextPos = argToPos
+    else
+      pott("Not possible!")
+      exit
+    end if
+  end if
+  if voidp(tmpNextPos) then
+    tmpNextPos = getRandFromProbList(posProbList)
+    if tmpNextPos = currentPos then
+      exit
+    end if
+    tmpNextPosDir = tmpNextPosPossible.getaProp(tmpNextPos)
+    if voidp(tmpNextPosDir) then
+      exit
+    end if
+  end if
+  if tmpNextPosDir = 1 then
+    tmpAction = symbol("Pos" & convItoS(currentPos, 2) & "_to_Pos" & convItoS(tmpNextPos, 2))
+    frameList = duplicate(animChart[tmpAction])
+  else
+    tmpAction = symbol("Pos" & convItoS(tmpNextPos, 2) & "_to_Pos" & convItoS(currentPos, 2))
+    tmpFrameList = animChart[tmpAction]
+    frameList = []
+    repeat with tmpFrame in tmpFrameList
+      frameList.addAt(1, tmpFrame)
+    end repeat
+  end if
+  repeat with n = 1 to frameList.count()
+    frameList[n] = frameList[n] + 60
+  end repeat
+  nextPos = tmpNextPos
+  tmpCnt = frameList.count()
+  repeat with n = tmpCnt down to 1
+    repeat with m = 1 to 2
+      frameList.addAt(n, frameList[n])
+    end repeat
+  end repeat
+  moving = 1
+  posBaseFrame = firstMemberNum - 1
+  if not Waiting then
+    handleCue(me, mouthSize)
+  end if
+end
+
+on freeze me
+  if objectp(sndObj) then
+    sndObj = sndObj.kill()
+  end if
+  Active = 0
+end
+
+on say me, argSnd, argSndFormat, argReportObj
+  reportObj = argReportObj
+  if objectp(sndObj) then
+    sndObj = sndObj.kill()
+  end if
+  Waiting = 1
+  if argSnd.length = 0 then
+    me.Report(0, #finished)
+    exit
+  end if
+  Waiting = 0
+  if moving then
+  end if
+  timeToNextMove = random(30) + 10
+  tmpOptions = [:]
+  if not voidp(argSndFormat) then
+    tmpOptions[#format] = argSndFormat
+  end if
+  sndObj = script("CueScript").new(me, argSnd, tmpOptions)
+end
+
+on changeCast me
+  if objectp(sndObj) then
+    sndObj = sndObj.kill()
+  end if
+  firstMemberNum = getMemberNum("moves01_0001")
+  if firstMemberNum < 1 then
+    firstMemberNum = getMemberNum("moves_0001")
+  end if
+  me.setPos(currentPos)
+  me.setMood(#Angry)
+end
+
+on getDisplayMembers me
+  lst = [:]
+  repeat with n = 1 to currentFrames.count
+    lst[currentFrames.getPropAt(n)] = member(currentFrames[n])
+  end repeat
+  return [#BG: lst[#BG], #Body: lst[#Body], #Eyes: lst[#Eyes], #Mouth: lst[#Mouth]]
+end

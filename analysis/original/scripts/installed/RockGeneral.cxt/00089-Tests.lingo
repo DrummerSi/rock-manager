@@ -1,0 +1,50 @@
+global gRock
+
+on xTestMod
+  obj = gRock.m_classManager.createObj(#Event)
+  mus = gRock.m_classManager.getObjByID(#RMCJohnbenny)
+  rsetProp(mus, #Mood, 0.5)
+  obj.Modifies = [#RMCJohnbenny: [[[#Mood], -0.5], [[#Health], -0.5]]]
+  obj.setDates(gRock.m_date.getDateInt() + 1, 10)
+end
+
+on xTestDebt
+  records_r = gRock.m_classManager.getObjsOfClass(#Record)
+  totalDebt = 0
+  repeat with record_r in records_r
+    pott(record_r.getDebtToPlayer(), record_r.ID)
+    totalDebt = totalDebt + record_r.getDebtToPlayer()
+  end repeat
+  pott(rgetProp(gRock.m_player, [#accounts, #Gangsta, #Loan]), gRock.m_player.getAccount([#Gangsta, #Loan]))
+  totalDebt = totalDebt + rgetProp(gRock.m_player, [#accounts, #Gangsta, #Loan])
+  pott(totalDebt)
+end
+
+on xxTestEC
+  gRock.m_eventCardsManager.tryNewShowEventCard(#ECArtistQuarrel, [#EventCardOptions: [#HumanID: rex("ÛCRealMusician.ID"), #BullyID: #RMCNick]])
+end
+
+on xtestx
+  mus_r = gRock.m_context.getFocus(#RealMusician)
+  NeededToShow = "Û#" & string(mus_r.ID) & ".getIsOKToShowEventcard()"
+  argECProps = [#EventCardOptions: [#HumanID: mus_r.ID], #NeededToShow: NeededToShow]
+  gRock.m_eventCardsManager.tryNewShowEventCard(#ECOCQuitNow, argECProps)
+  gRock.m_eventCardsManager.tryNewShowEventCard(#ECOCWantQuit, argECProps)
+end
+
+on xtesty
+  rex("x = getTotalModifyingID(ÛCRealMusician.ID)")
+  rex("ÛCRealMusician.needs.satisfy(#NeedParty, 0.5)")
+  rex("a = listDiff(getTotalModifyingID(ÛCRealMusician.ID), x)")
+  pott("DIFF:", rex("a"))
+end
+
+on xTestProposal
+  media_r = rex("Û#Media01")
+  reporter_r = gRock.m_classManager.getObjByID(media_r.Human, #Reporter)
+  MediaActivity_r = reporter_r.MediaActivities[1]
+  ECID = symbol("ECOC" & string(media_r.ID) & "Rq" & string(MediaActivity_r.type))
+  tmpOptions = [#EventCardOptions: [#HumanID: reporter_r.ID, #ReporterID: reporter_r.ID, #MediaID: media_r.ID, #request: MediaActivity_r.type, #MediaActivityID: MediaActivity_r.ID, #DontCloseOnOK: 1]]
+  tmpOptions.addProp(#eventCardProps, makePropListOfList([[#ButtonOK, #ExecuteThis], ["getObjByID(ÛCDlg.m_eventCardOptions.ReporterID).prepareBookMediaActivity(ÛCDlg.m_eventCardOptions)"]]))
+  gRock.m_eventCardsManager.tryNewShowEventCard(ECID, tmpOptions)
+end

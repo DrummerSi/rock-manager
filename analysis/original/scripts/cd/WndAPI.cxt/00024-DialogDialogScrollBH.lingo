@@ -1,0 +1,65 @@
+property ancestor, scrollThisObj
+
+on new me, argItemObj
+  ancestor = script("DialogScrollMainBH").new(argItemObj, me)
+  scrollThisObj = me.findScrollObj()
+  if objectp(scrollThisObj) then
+    scrollThisObj = scrollThisObj.dialogObj
+  end if
+  if not objectp(scrollThisObj) then
+    put "Scroll not found"
+  end if
+  return me
+end
+
+on kill me
+  ancestor = ancestor.kill()
+  return 0
+end
+
+on getItemSize me, argItemCoord
+  return ancestor.defaultItemSize
+end
+
+on scrollPaint me
+end
+
+on scrollRender me
+  scrollThisObj = me.findScrollObj()
+  scrollThisObj = scrollThisObj.dialogObj
+  ancestor.size = getRectSize(scrollThisObj.surroundRect)
+  tmp = -ancestor.scrollTLPixels - scrollThisObj.scrollLocOffset
+  scrollThisObj.scroll(tmp)
+end
+
+on findScrollObj me
+  tmpScrollID = #ScrollThis
+  tmpItemObj = ancestor.itemObj
+  if voidp(tmpItemObj) then
+    return 0
+  end if
+  repeat while 1
+    if tmpItemObj.type = #Dialog then
+      if tmpItemObj.ID = tmpScrollID then
+        return tmpItemObj
+      end if
+    end if
+    tmp = tmpItemObj.ancestor.masterObj.getItem(tmpScrollID)
+    if objectp(tmp) then
+      if tmp.type = #Dialog then
+        return tmp
+      end if
+    end if
+    tmpItemObj = tmpItemObj.ancestor.masterObj.dlgItemParent
+    if not objectp(tmpItemObj) then
+      tmpObj = ancestor.itemObj.ancestor.masterObj.getTopWindow()
+      tmpObj = tmpObj.getItem(tmpScrollID)
+      if objectp(tmpObj) then
+        if tmpObj.type = #Dialog then
+          return tmpObj
+        end if
+      end if
+      return 0
+    end if
+  end repeat
+end

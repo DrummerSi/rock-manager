@@ -1,0 +1,61 @@
+property reportObject, firstMember, loc, SP, mouseObject, ID, scrollWait, Active
+
+on new me, argReportObject, argFirstMember, argLoc, argSP, argOptions
+  reportObject = argReportObject
+  firstMember = getMemberNum(argFirstMember)
+  loc = argLoc
+  SP = argSP
+  set the member of sprite SP to member(firstMember)
+  set the loc of sprite SP to loc
+  ID = getaProp(argOptions, #ID)
+  tmpRect = getMemberRect(argFirstMember) + rect(loc, loc)
+  mouseObject = new(script("MouseObject"), me, tmpRect, argOptions)
+  Active = 1
+  return me
+end
+
+on kill me
+  mouseObject = kill(mouseObject)
+  set the member of sprite SP to member("Dummy")
+  return 0
+end
+
+on activate me, argIsTRUE
+  if argIsTRUE and (Active = 0) then
+    set the member of sprite SP to member(firstMember)
+  end if
+  Active = argIsTRUE
+  if not Active then
+    set the member of sprite SP to member(firstMember + 2)
+  end if
+end
+
+on mouse me, argObj, argWhat
+  if not Active then
+    exit
+  end if
+  if argWhat = #enter then
+    set the member of sprite SP to member(firstMember + 1)
+  else
+    if argWhat = #Leave then
+      set the member of sprite SP to member(firstMember)
+    else
+      if argWhat = #click then
+      else
+        if argWhat = #down then
+          scroll(reportObject, ID)
+          scrollWait = 5
+        else
+          if argWhat = #stillDown then
+            if scrollWait then
+              scrollWait = scrollWait - 1
+            else
+              scroll(reportObject, ID)
+              scrollWait = 1
+            end if
+          end if
+        end if
+      end if
+    end if
+  end if
+end

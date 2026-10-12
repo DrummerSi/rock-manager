@@ -1,0 +1,247 @@
+property sndId, fileName, fullFileName, options, prio, size, interruptMode, finishedMode, interruptedAtTicks, ID, orgFreq, orgLength, volume, muted, reportObj
+global gUseful
+
+on new me, argFileName, argOptions
+  fileName = argFileName
+  if offset(":", fileName) then
+    fullFileName = fileName
+    if fullFileName.char[fullFileName.length - 3..fullFileName.length] <> ".wav" then
+      fullFileName = fullFileName & ".wav"
+    end if
+  else
+    fullFileName = gUseful.soundObj.soundPath & fileName & ".wav"
+  end if
+  options = argOptions
+  if voidp(options) then
+    options = [:]
+  end if
+  size = 0
+  interruptedAtTicks = 0
+  prio = options[#prio]
+  if voidp(prio) then
+    prio = 3
+  end if
+  interruptMode = options[#KeepTrying]
+  if voidp(interruptMode) then
+    interruptMode = #kill
+  end if
+  finishedMode = options[#WhenFinished]
+  if voidp(finishedMode) then
+    finishedMode = #kill
+  end if
+  size = fileGetLength(fullFileName)
+  if size = 0 then
+    put "Sound not found " & fullFileName
+    return 0
+  end if
+  reportObj = options[#ReportTo]
+  volume = 0
+  muted = 0
+  ID = options[#ID]
+  me.preload()
+  if (sndId = 0) and (interruptMode = #kill) then
+    return -1
+  end if
+  gUseful.soundObj.addObject(me)
+  tmpPlayDirect = options[#PlayDirect]
+  if voidp(tmpPlayDirect) then
+    tmpPlayDirect = 1
+  end if
+  if not (tmpPlayDirect = 0) then
+    me.play()
+  end if
+  return me
+end
+
+on kill me
+  if sndId then
+    if not me.finished() then
+      dsStop(sndId)
+    end if
+    dsDelSound(sndId)
+  end if
+  gUseful.soundObj.deleteObject(me)
+  return 0
+end
+
+on masterSays me, argWhat
+  case argWhat of
+    #play:
+      dsPlay(sndId)
+      playing = 1
+      if objectp(reportObj) then
+        reportObj.Report(me, argWhat)
+      end if
+    #stop:
+      dsStop(sndId)
+      dsSetPosition(sndId, 0)
+      playing = 0
+      if objectp(reportObj) then
+        reportObj.Report(me, argWhat)
+      end if
+    #pause:
+      dsStop(sndId)
+      playing = 0
+      if objectp(reportObj) then
+        reportObj.Report(me, argWhat)
+      end if
+    #preload:
+      sndId = dsNewSound(fullFileName, 0)
+      if sndId then
+        size = dsGetSize(sndId)
+        if options[#loop] then
+          dsSetLoop(sndId, 1)
+        end if
+        orgFreq = dsGetFreq(sndId)
+        orgLength = size / float(orgFreq) / 2
+        if objectp(reportObj) then
+          reportObj.Report(me, #Preloaded)
+        end if
+      else
+        put "Not loaded...!"
+      end if
+    #unload:
+      if not me.finished() then
+        me.masterSays(#stop)
+      end if
+      dsDelSound(sndId)
+      sndId = 0
+    #Interrupt:
+      dsStop(sndId)
+      if objectp(reportObj) then
+        reportObj.Report(me, argWhat)
+      end if
+      if interruptMode = #kill then
+        me.kill()
+      else
+        if interruptMode = #restart then
+          dsSetPosition(sndId, 0)
+        else
+          if interruptMode = #Timed then
+            interruptedAtTicks = the ticks
+          end if
+        end if
+      end if
+    #finished:
+      if objectp(reportObj) then
+        reportObj.Report(me, argWhat)
+      end if
+      if finishedMode = #kill then
+        me.kill()
+      end if
+  end case
+end
+
+on preload me
+  gUseful.soundObj.preload(me)
+end
+
+on unload me
+  if not me.finished() then
+    me.stop()
+  end if
+  dsDelSound(sndId)
+  sndId = 0
+end
+
+on play me
+  gUseful.soundObj.play(me)
+end
+
+on stop me
+  gUseful.soundObj.stop(me)
+end
+
+on setFreq me, argFreq
+  dsSetFreq(sndId, argFreq)
+end
+
+on setVol me, argVol, argOption
+  if argOption <> #dB then
+    if argVol = 0 then
+      argVol = -10000
+    else
+      argVol = 1 / (argVol / 100.0)
+      argVol = integer(-100 * log(argVol) * 144 / 10)
+    end if
+  end if
+  if muted = 0 then
+    dsSetVolume(sndId, argVol)
+  end if
+  volume = argVol
+end
+
+on Mute me, argIsTRUE
+  muted = argIsTRUE
+  if muted then
+    dsSetVolume(sndId, -10000)
+  else
+    dsSetVolume(sndId, volume)
+  end if
+end
+
+on setLoop me, argIsTRUE
+  dsSetLoop(sndId, argIsTRUE)
+end
+
+on finished me
+  return not dsIsPlaying(sndId)
+end
+
+on getChannel me
+  return 0
+end
+
+on fade me, inOut, theLength
+end
+
+on getPosition me
+  return dsGetPosition(sndId)
+end
+
+on getPos me
+  return dsGetPosition(sndId)
+end
+
+on getFreq me
+  return dsGetFreq(sndId)
+end
+
+on getSize me
+  return size
+end
+
+on getLength me
+  return dsGetSize(sndId)
+end
+
+on setPan me, argPan
+  if argPan = 0 then
+    argPan = 0
+  else
+    tmp = argPan
+    argPan = 100 - abs(argPan)
+    if argPan = 0 then
+      argPan = -10000
+    else
+      argPan = 1 / (argPan / 100.0)
+      argPan = integer(-100 * log(argPan) * 144 / 10)
+    end if
+    if tmp < 0 then
+      argPan = -argPan
+    end if
+  end if
+  dsSetPan(sndId, integer(argPan))
+end
+
+on isLoaded me
+  return sndId
+end
+
+on isPlaying me
+  return 
+end
+
+on secsToPos me, argSecs
+  return argSecs * float(orgFreq) / 2
+end

@@ -1,0 +1,121 @@
+property ancestor, m_succeeded, m_mission_r
+global gDir, gRock
+
+on new me, argOptions
+  ID = argOptions[#ID]
+  argOptions.setaProp(#ReportTo, me)
+  argOptions.setaProp(#child, me)
+  dialog_r = gRock.m_classManager.getObjByIDAndClass(#DlgMainMenu, #Dialog)
+  dialog_r.dataMemberName = "DlgMainMenuData"
+  argOptions[#DlgInfoObj] = dialog_r
+  ancestor = script("DlgRockAncestorScript").new(argOptions)
+  tmpObj = ancestor.m_objDlg.getItemByPath([#Fond, #icon])
+  itemObj = ancestor.m_objDlg.getItem(#Fond)
+  itemObj.dialogObj.deleteItem(#icon)
+  itemObj.dialogObj.deleteItem(#title)
+  itemObj = ancestor.m_objDlg.getItem(#ButtonCancel)
+  if objectp(itemObj) then
+    rDlgPrepareButton(itemObj, me, "icon_accept01", rGetStr(#szidMainContinue))
+  end if
+  itemObj = ancestor.m_objDlg.getItem(#ButtonOK)
+  rDlgPrepareButton(itemObj, me, "icon_effect01", rGetStr(#szidMainNewGame))
+  itemObj = ancestor.m_objDlg.getItem(#ButtonWeb)
+  rDlgPrepareButton(itemObj, me, "icon_globe01", rGetStr(#szidMainWebsite))
+  itemObj = ancestor.m_objDlg.getItem(#ButtonQuit)
+  rDlgPrepareButton(itemObj, me, "icon_skull01", rGetStr(#szidMainQuit))
+  tmpMemb = member("main menu rocklogo01")
+  itemObj = ancestor.m_objDlg.getItem(#Info)
+  ecard_r = gRock.m_classManager.getObjByIDAndClass(#ECOCMainMenu, #EventCard)
+  if objectp(ecard_r) then
+    tmpTexts = [ecard_r.Headline, ecard_r.comment]
+  else
+    tmpTexts = [#szidMainMenuHeadline, #szidMainMenuComment]
+  end if
+  itemObj.setOneProp(#Pic, rFormatText(tmpTexts, "MainMenuFormatting", [#shadow: 1]))
+  r = itemObj.getOneProp(#inOffsetRect)
+  r[1] = tmpMemb.width + 26
+  itemObj.setOneProp(#inOffsetRect, r)
+  ancestor.m_objDlg.recalc(#DontPaint)
+  tmpSrndSize = getRectSize(ancestor.m_objDlg.surroundRect)
+  midLoc = point(400, 320)
+  dialog_r.loc = midLoc - (tmpSrndSize / 2)
+  tmpLoc = midLoc + point(0, -tmpSrndSize[2] / 2)
+  tmpLoc = dialog_r.loc + point(tmpMemb.regPoint[1] + 16, 0)
+  sprite(ancestor.getSPOverDlg()).member = tmpMemb
+  sprite(ancestor.getSPOverDlg()).loc = tmpLoc
+  sprite(ancestor.getSPOverDlg()).ink = 0
+  canContinue = me.checkCanContinue()
+  if (canContinue = 0) or (argOptions[#NoContinue] = 1) then
+    itemObj = ancestor.m_objDlg.getItem(#ButtonCancel)
+    itemObj.send(#dimButton, 1)
+  end if
+  ancestor.render()
+  return me
+end
+
+on kill me
+  sprite(ancestor.getSPOverDlg()).member = member("Dummy")
+  sprite(ancestor.getSPOverDlg()).ink = 36
+  ancestor.kill()
+  return 0
+end
+
+on GetSPNeed me
+  return ancestor.GetSPNeed() + 1
+end
+
+on Report me, argObj, argWhat
+end
+
+on eventCardCall me, argWhat
+  rSetParserVariable(#TmpCallBack, 0, #Remove)
+  if argWhat = #OKQuit then
+    gRock.autoSave()
+    goMovie("Mout")
+  end if
+end
+
+on mouse me, argObj, argWhat, argOption
+  if objectp(argOption) then
+    if argWhat = #click then
+      ID = argOption.getOneProp(#ID)
+      IDStr = string(ID)
+      if ID = #ButtonOK then
+        gDir.m_objDialogsMaster.openDialog(#MissionChoose)
+        exit
+      else
+        if ID = #ButtonCancel then
+          ancestor.mouse(argObj, argWhat, argOption)
+          exit
+        else
+          if ID = #ButtonQuit then
+            rSetParserVariable(#TmpCallBack, me)
+            gRock.m_eventCardsManager.tryNewShowEventCard(#ECOCAskQuitGame, [#prio: 0])
+            exit
+          else
+            if ID = #ButtonWeb then
+              gotoNetPage(rGetStr(#szidWebAddress))
+            end if
+          end if
+        end if
+      end if
+    end if
+  end if
+end
+
+on checkCanContinue me
+  tmp = gRock.gotSaveGame()
+  canContinue = 1
+  isFirstTime = 0
+  if not stringp(tmp) then
+    if gRock.m_justStartedGame = 1 then
+      isFirstTime = 1
+      canContinue = 0
+    end if
+  end if
+  if gRock.m_noMissionActive = 1 then
+    return 0
+  end if
+  return canContinue
+  return not isFirstTime
+end

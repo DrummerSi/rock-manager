@@ -1,0 +1,228 @@
+on tabDataStringToPropList argStr
+  numLines = the number of lines in argStr
+  wholeList = [[:]]
+  tmpList = wholeList[1]
+  lastDepth = 1
+  the itemDelimiter = numToChar(9)
+  lastLineVals = 0
+  lastVar = VOID
+  repeat with lineNr = 1 to numLines
+    currLine = argStr.line[lineNr]
+    word1 = currLine.word[1]
+    if word1.length = 0 then
+      next repeat
+    end if
+    if word1.char[1..2] = "##" then
+      next repeat
+    end if
+    tmpVar = symbol(word1)
+    tmpOffset = offset(word1, currLine)
+    tmpDepth = the number of items in currLine.char[1..tmpOffset]
+    if tmpDepth > lastDepth then
+      if tmpDepth > (lastDepth + 1) then
+        pott("ERR, more than 1 level down")
+      end if
+      sublist = [:]
+      tmpList.addProp(lastVar, sublist)
+      tmpList = sublist
+    else
+      if not voidp(lastVar) then
+        tmpList.addProp(lastVar, lastLineVals)
+      end if
+      if tmpDepth < lastDepth then
+        tmpList = stepIntoLastList(wholeList[1], tmpDepth - 1)
+      end if
+    end if
+    lastVar = tmpVar
+    if (tmpDepth = 2) and (lastDepth = 1) then
+      firstEntry = currLine.word[2]
+      off = offset(firstEntry, currLine)
+      firstDataItemNr = the number of items in currLine.char[1..off]
+    end if
+    lastLineVals = readLineAsList(currLine, firstDataItemNr)
+    lastDepth = tmpDepth
+  end repeat
+  return wholeList[1]
+end
+
+on rotatedTabDataStringToPropList argStr
+  the itemDelimiter = numToChar(9)
+  numLines = the number of lines in argStr
+  mode = #props
+  propsPerDepth = [:]
+  propsPerDepth.sort()
+  columnPropPaths = [:]
+  columnPropPaths.sort()
+  valsPerColumn = [:]
+  valsPerColumn.sort()
+  lastColNr = 0
+  repeat with lineNr = 1 to numLines
+    currLine = argStr.line[lineNr]
+    word1 = currLine.word[1]
+    if word1.length = 0 then
+      if mode = #props then
+        repeat with n = 1 to columnPropPaths.count
+          valsPerColumn.addProp(columnPropPaths.getPropAt(n), [])
+        end repeat
+        lastColNr = columnPropPaths.getPropAt(columnPropPaths.count)
+        mode = #Vals
+      end if
+      next repeat
+    end if
+    tmpOffset = offset(word1, currLine)
+    firstWordCol = the number of items in currLine.char[1..tmpOffset]
+    totNumItems = the number of items in currLine
+    if mode = #props then
+      propsHere = [:]
+      propsHere.sort()
+      repeat with colNr = firstWordCol to totNumItems
+        tmpWord = currLine.item[colNr]
+        if tmpWord.length = 0 then
+          next repeat
+        end if
+        if tmpWord.char[1..2] = "##" then
+          next repeat
+        end if
+        propsHere.addProp(colNr, symbol(tmpWord))
+        columnPropPaths.addProp(colNr, symbol(tmpWord))
+      end repeat
+      propsPerDepth.addProp(lineNr, propsHere)
+      next repeat
+    end if
+    repeat with colNr = 1 to lastColNr
+      tmpWord = currLine.item[colNr]
+      lst = valsPerColumn.getaProp(colNr)
+      if voidp(lst) then
+        next repeat
+      end if
+      if tmpWord.char[1] = QUOTE then
+        tmpWord = removeExcelQuotes(tmpWord)
+      end if
+      lst.add(tmpWord)
+    end repeat
+  end repeat
+  repeat with n = valsPerColumn.count down to 1
+    lst = valsPerColumn[n]
+    itsEmpty = 1
+    repeat with val in lst
+      if val.length > 0 then
+        itsEmpty = 0
+        exit repeat
+      end if
+    end repeat
+    if itsEmpty then
+      valsPerColumn[n] = []
+    end if
+  end repeat
+  propsPerDepth.addProp(0, [0: #Root])
+  preparedUnder = [:]
+  preparedPerDepth = [:]
+  overLst = propsPerDepth[propsPerDepth.count]
+  repeat with depth = propsPerDepth.count down to 2
+    currlst = overLst
+    overLst = propsPerDepth[depth - 1]
+    nextOverColNr = 0
+    preparedList = 0
+    currOverCol = 0
+    preparedHere = [:]
+    repeat with n = 1 to currlst.count
+      colNr = currlst.getPropAt(n)
+      if colNr > nextOverColNr then
+        if listp(preparedList) then
+          preparedHere.addProp(currOverCol, preparedList)
+        end if
+        overLst.addProp(colNr, -4711)
+        tmpPos = overLst.getPos(-4711)
+        overLst.deleteAt(tmpPos)
+        if tmpPos > overLst.count then
+          nextOverColNr = 9999
+        else
+          nextOverColNr = overLst.getPropAt(tmpPos)
+        end if
+        currOverCol = overLst.getPropAt(tmpPos - 1)
+        preparedList = [:]
+      end if
+      tmpUnder = preparedUnder.getaProp(colNr)
+      Vals = valsPerColumn.getaProp(colNr)
+      if listp(tmpUnder) then
+        preparedList.addProp(currlst[n], tmpUnder)
+        next repeat
+      end if
+      preparedList.addProp(currlst[n], Vals)
+    end repeat
+    preparedHere.addProp(currOverCol, preparedList)
+    preparedPerDepth.addProp(depth, preparedHere)
+    preparedUnder = preparedHere
+  end repeat
+  if 1 then
+    classCols = propsPerDepth.getaProp(1)
+    repeat with classNr = 1 to preparedHere[1].count
+      className = preparedHere[1].getPropAt(classNr)
+      propsAndVals = preparedHere[1][classNr]
+      removeThese = []
+      IDList = propsAndVals.getaProp(#ID)
+      repeat with IDNr = 1 to IDList.count
+        ID = IDList[IDNr]
+        if ID.length = 0 then
+          removeThese.add(IDNr)
+        end if
+      end repeat
+      if removeThese.count = 0 then
+        next repeat
+      end if
+      startColNr = classCols.getPropAt(classNr) + 1
+      if classCols.count > classNr then
+        endColNr = classCols.getPropAt(classNr + 1) - 1
+      else
+        endColNr = valsPerColumn.getPropAt(valsPerColumn.count)
+      end if
+      repeat with valColNr = startColNr to endColNr
+        valsInThisCol = valsPerColumn.getaProp(valColNr)
+        if not listp(valsInThisCol) then
+          next repeat
+        end if
+        if valsInThisCol.count() = 0 then
+          next repeat
+        end if
+        repeat with removeNr = removeThese.count down to 1
+          removeIndex = removeThese[removeNr]
+          valsInThisCol.deleteAt(removeIndex)
+        end repeat
+      end repeat
+    end repeat
+  end if
+  return preparedHere[1]
+end
+
+on rotateAllDataSheets
+  global gRock
+  path = gRock.m_paths.getPath(#data)
+  Files = getFilesInFolder(path)
+  Files = wildCardSearch("Data*.txt", Files)
+  repeat with tmpFile in Files
+    rotateExcel(path & tmpFile, "D:\Data\" & tmpFile)
+  end repeat
+end
+
+on rotateExcel argInFile, argOutFile
+  the itemDelimiter = numToChar(9)
+  str = readFile(argInFile)
+  str = removePCNewLine(str)
+  array = script("MultiDimArrayScript").new()
+  numLines = the number of lines in str
+  repeat with lineNr = 1 to numLines
+    tmpLine = str.line[lineNr]
+    numItems = the number of items in tmpLine
+    repeat with itemNr = 1 to numItems
+      tmpItem = tmpLine.item[itemNr]
+      if tmpItem.length = 0 then
+        next repeat
+      end if
+      array[[itemNr, lineNr]] = tmpItem
+    end repeat
+  end repeat
+  str = array.convToStr()
+  pott(str.length, argOutFile)
+  str = assertPCNewLine(str)
+  pott(writeFile(argOutFile, str))
+end

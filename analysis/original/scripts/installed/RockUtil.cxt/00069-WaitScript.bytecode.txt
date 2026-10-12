@@ -1,0 +1,90 @@
+property m_endMillisecs, m_framesLeft, m_reportObj
+global gUseful
+
+on new me, argReportObj, argNum, argWhat
+  [  0] getparam 8 .............................. <argReportObj>
+  [  2] setprop 1002 ............................ m_reportObj = argReportObj
+  [  5] getparam 24 ............................. <argWhat>
+  [  7] pusharglist 1 ........................... <argWhat>
+  [  9] extcall 68 .............................. <voidp(argWhat)>
+  [ 12] getparam 24 ............................. <argWhat>
+  [ 14] pushsymb 1870 ........................... <#seconds>
+  [ 17] eq ...................................... <argWhat = #seconds>
+  [ 18] or ...................................... <voidp(argWhat) or (argWhat = #seconds)>
+  [ 19] jmpifz [ 43] ............................ if voidp(argWhat) or (argWhat = #seconds) then / else
+  [ 22] getmovieprop 53 ......................... <the milliSeconds>
+  [ 25] getparam 16 ............................. <argNum>
+  [ 27] pushint8 1000 ........................... <1000>
+  [ 30] mul ..................................... <argNum * 1000>
+  [ 31] pusharglist 1 ........................... <argNum * 1000>
+  [ 33] extcall 54 .............................. <integer(argNum * 1000)>
+  [ 36] add ..................................... <the milliSeconds + integer(argNum * 1000)>
+  [ 37] setprop 1871 ............................ m_endMillisecs = the milliSeconds + integer(argNum * 1000)
+  [ 40] jmp [ 57]
+  [ 43] getparam 24 ............................. <argWhat>
+  [ 45] pushsymb 1872 ........................... <#frames>
+  [ 48] eq ...................................... <argWhat = #frames>
+  [ 49] jmpifz [ 57] ............................ if argWhat = #frames then
+  [ 52] getparam 16 ............................. <argNum>
+  [ 54] setprop 1873 ............................ m_framesLeft = argNum
+  [ 57] getglobal 23 ............................ <gUseful>
+  [ 59] getobjprop 24 ........................... <gUseful.frameTimer>
+  [ 61] getparam 0 .............................. <me>
+  [ 63] pusharglistnoret 2 ...................... <gUseful.frameTimer, me>
+  [ 65] objcall 56 .............................. gUseful.frameTimer.addObject(me)
+  [ 68] getparam 0 .............................. <me>
+  [ 70] pusharglistnoret 1 ...................... <me>
+  [ 72] extcall 21 .............................. return me
+  [ 74] ret
+end
+
+on kill me
+  [  0] pushzero ................................ <0>
+  [  1] setprop 1002 ............................ m_reportObj = 0
+  [  4] getglobal 23 ............................ <gUseful>
+  [  6] getobjprop 24 ........................... <gUseful.frameTimer>
+  [  8] getparam 0 .............................. <me>
+  [ 10] pusharglistnoret 2 ...................... <gUseful.frameTimer, me>
+  [ 12] objcall 25 .............................. gUseful.frameTimer.deleteObject(me)
+  [ 14] pushzero ................................ <0>
+  [ 15] pusharglistnoret 1 ...................... <0>
+  [ 17] extcall 21 .............................. return 0
+  [ 19] ret
+end
+
+on timeTick me
+  [  0] getprop 1871 ............................ <m_endMillisecs>
+  [  3] pusharglist 1 ........................... <m_endMillisecs>
+  [  5] extcall 365 ............................. <integerp(m_endMillisecs)>
+  [  8] jmpifz [ 43] ............................ if integerp(m_endMillisecs) then / else
+  [ 11] getmovieprop 53 ......................... <the milliSeconds>
+  [ 14] getprop 1871 ............................ <m_endMillisecs>
+  [ 17] gteq .................................... <the milliSeconds >= m_endMillisecs>
+  [ 18] jmpifz [ 40] ............................ if the milliSeconds >= m_endMillisecs then
+  [ 21] getprop 1002 ............................ <m_reportObj>
+  [ 24] getparam 0 .............................. <me>
+  [ 26] pushsymb 1874 ........................... <#WaitDone>
+  [ 29] pusharglistnoret 3 ...................... <m_reportObj, me, #WaitDone>
+  [ 31] objcall 74 .............................. m_reportObj.Report(me, #WaitDone)
+  [ 34] getparam 0 .............................. <me>
+  [ 36] pusharglistnoret 1 ...................... <me>
+  [ 38] objcall 1 ............................... me.kill()
+  [ 40] jmp [ 80]
+  [ 43] getprop 1873 ............................ <m_framesLeft>
+  [ 46] pushint8 1 .............................. <1>
+  [ 49] sub ..................................... <m_framesLeft - 1>
+  [ 50] setprop 1873 ............................ m_framesLeft = m_framesLeft - 1
+  [ 53] getprop 1873 ............................ <m_framesLeft>
+  [ 56] pushzero ................................ <0>
+  [ 57] eq ...................................... <m_framesLeft = 0>
+  [ 58] jmpifz [ 80] ............................ if m_framesLeft = 0 then
+  [ 61] getprop 1002 ............................ <m_reportObj>
+  [ 64] getparam 0 .............................. <me>
+  [ 66] pushsymb 1874 ........................... <#WaitDone>
+  [ 69] pusharglistnoret 3 ...................... <m_reportObj, me, #WaitDone>
+  [ 71] objcall 74 .............................. m_reportObj.Report(me, #WaitDone)
+  [ 74] getparam 0 .............................. <me>
+  [ 76] pusharglistnoret 1 ...................... <me>
+  [ 78] objcall 1 ............................... me.kill()
+  [ 80] ret
+end

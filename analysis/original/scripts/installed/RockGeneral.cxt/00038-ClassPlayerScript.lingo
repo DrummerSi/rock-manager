@@ -1,0 +1,324 @@
+property ancestor, child, className, belongsTo, _killed, Money, moneyGraph, accounts, OwnedSongs, CPContractor, CPContractPriceModel, CPContractAlbumsLeft, Cred, Success, points, MissionsInfo, AlreadyLostAllMoney
+global gRock
+
+on new me, argChild, argBelongsTo
+  if objectp(argChild) then
+    child = argChild
+  else
+    child = me
+  end if
+  belongsTo = argBelongsTo
+  ancestor = script("ClassConcreteScript").new(child)
+  className = #player
+  Money = script("ClassCoolIntScript").new(VOID, me)
+  moneyGraph = [:]
+  accounts = [:]
+  OwnedSongs = []
+  CPContractor = #none
+  CPContractPriceModel = script("ClassPriceModelScript").new(VOID, me)
+  CPContractAlbumsLeft = 0
+  Cred = 0.0
+  Success = 0.0
+  points = 0
+  MissionsInfo = [:]
+  moneyGraph.sort()
+  me.setupAccounts()
+  return me
+end
+
+on kill me
+  _killed = 1
+  if objectp(ancestor) then
+    ancestor = ancestor.kill()
+  end if
+  child = 0
+  belongsTo = 0
+  return 0
+end
+
+on hasThisMoney me, argAmt
+  if rOKCheatPass() then
+    return 1
+  end if
+  return argAmt <= Money.val
+end
+
+on getWealth me
+  return Money.val
+end
+
+on setupAccounts me
+  accounts = [#Band: [#Gifts: 0, #Training: 0, #Salary: 0], #Studio: [#Rent: 0, #StudioMusicians: 0], #video: [:], #Tour: [#Rent: 0, #Travel: 0, #Expenses: 0, #Tickets: 0], #Design: [:], #Merchandise: [:], #Live: [#Rent: 0, #Tickets: 0], #Publish: [#Licenses: 0, #Royalty: 0], #media: [#Ads: 0, #Bribes: 0], #Gangsta: [#Loan: 0, #Murder: 0, #Threat: 0, #Tamper: 0, #Bribe: 0, #Security: 0], #Record: [#Advance: 0, #Royalty: 0]]
+  repeat with n = 1 to accounts.count
+    lst = accounts[n]
+    mergeLists(lst, [#in: 0, #Out: 0, #tot: 0])
+  end repeat
+end
+
+on getAccount me, arg
+end
+
+on transactMoney me, argAmt, argCategoryPath, argForce
+  if (argAmt < 0) and rOKCheatPass() then
+    argAmt = 0
+  end if
+  if voidp(argCategoryPath) then
+    argCategoryPath = #unknown
+  end if
+  if not listp(argCategoryPath) then
+    argCategoryPath = [argCategoryPath]
+  end if
+  tmpAccount = accounts[argCategoryPath[1]]
+  if voidp(tmpAccount) then
+    tmpAccount = [#in: 0, #Out: 0, #tot: 0]
+    accounts.addProp(argCategoryPath[1], tmpAccount)
+  end if
+  if argCategoryPath.count > 1 then
+    tmpSubAccount = tmpAccount[argCategoryPath[2]]
+    if voidp(tmpSubAccount) then
+      tmpSubAccount = 0
+      tmpAccount[argCategoryPath[2]] = tmpSubAccount
+    end if
+    tmpAccount[argCategoryPath[2]] = tmpAccount[argCategoryPath[2]] + argAmt
+  end if
+  if argAmt < 0 then
+    tmpAccount[#Out] = tmpAccount[#Out] + argAmt
+  else
+    tmpAccount[#in] = tmpAccount[#in] + argAmt
+  end if
+  tmpAccount[#tot] = tmpAccount[#tot] + argAmt
+  pott("Transacting", argCategoryPath)
+  argAmt = integer(argAmt)
+  if argAmt < 0 then
+    if -argAmt > Money.val then
+      mission_r = gRock.m_context.getFocus(#Mission)
+      if mission_r.ID = #Mission08 then
+        argAmt = -Money.val
+      else
+        if mission_r.getIsMissionOver() = 0 then
+          if AlreadyLostAllMoney <> 1 then
+            AlreadyLostAllMoney = 1
+            gRock.m_eventCardsManager.tryNewShowEventCard(#ECOCOutOfMoney, [#prio: 1])
+          end if
+        end if
+      end if
+      if argForce = #Force then
+        argAmt = -Money.val
+      else
+        return 0
+      end if
+    end if
+  end if
+  Money.add(argAmt)
+  me.updateGraphs()
+  return 1
+end
+
+on updateGraphs me
+  global gRock
+  tmpDate = gRock.m_date.getDateInt()
+  if moneyGraph.count then
+    if moneyGraph[moneyGraph.count()] <> Money.val then
+      moneyGraph.setaProp(tmpDate, Money.val)
+    end if
+  else
+    moneyGraph.setaProp(tmpDate, Money.val)
+  end if
+end
+
+on changeCred me, argAmount
+  global gDir
+  Cred = Cred + argAmount
+  if Cred < -7 then
+    Cred = -7
+  else
+    if Cred > 14 then
+      Cred = 14
+    end if
+  end if
+  if objectp(gDir.getaProp(#m_interfaceBar)) then
+    gDir.m_interfaceBar.m_objCredMeter.setConvVal(Cred)
+  end if
+end
+
+on load me
+end
+
+on getTotalDaysPlayed me
+  if not listp(MissionsInfo) then
+    return 0
+  end if
+  tmpTot = 0
+  repeat with n = 1 to MissionsInfo.count
+    tmpInfo = MissionsInfo[n]
+    tmp = tmpInfo[#FirstTimeNumDays]
+    if not voidp(tmp) then
+      tmpTot = tmpTot + tmp
+    end if
+  end repeat
+  return tmpTot
+end
+
+on beforeMissionStart me, argMission_r
+  tmpMissionInfo = MissionsInfo.getaProp(argMission_r.ID)
+  if voidp(tmpMissionInfo) then
+    tmpMissionInfo = [#completed: 0, #Tries: 0, #numDays: 0, #start: 0]
+    MissionsInfo.setaProp(argMission_r.ID, tmpMissionInfo)
+  end if
+  tmpAvailMissions = me.getAvailableMissions()
+  tmpAllMusicians = []
+  repeat with n = 1 to tmpAvailMissions.count
+    mis_r = tmpAvailMissions[n]
+    mergeLists(tmpAllMusicians, mis_r.AvailableMusicians, #Replace)
+  end repeat
+  tmpNotReoccurringMusicians = argMission_r.NeverAvailableMusicians
+  repeat with tmpID in tmpNotReoccurringMusicians
+    if tmpAllMusicians.getPos(tmpID) > 0 then
+      tmpAllMusicians.deleteOne(tmpID)
+    end if
+  end repeat
+  argMission_r.AvailableMusicians = tmpAllMusicians
+  CPContractor = #none
+  CPContractAlbumsLeft = 0
+  moneyGraph = [:]
+  moneyGraph.sort()
+  OwnedSongs = []
+  tmp = tmpMissionInfo[#Tries]
+  tmpMissionInfo[#Tries] = tmp + 1
+  me.setupAccounts()
+end
+
+on getPointsOnMission me, argMissionID
+  tmp = MissionsInfo.getaProp(argMissionID)
+  if voidp(tmp) then
+    return VOID
+  end if
+  return tmp.getaProp(#points)
+end
+
+on getTotalPoints me, argExceptMissionIDs
+  if voidp(argExceptMissionIDs) then
+    argExceptMissionIDs = []
+  end if
+  if symbolp(argExceptMissionIDs) then
+    argExceptMissionIDs = [argExceptMissionIDs]
+  end if
+  tmpTot = 0
+  repeat with n = 1 to MissionsInfo.count
+    misID = MissionsInfo.getPropAt(n)
+    if argExceptMissionIDs.getPos(misID) then
+      next repeat
+    end if
+    Info = MissionsInfo[n]
+    if not listp(Info) then
+      next repeat
+    end if
+    if voidp(Info[#points]) then
+      next repeat
+    end if
+    tmpTot = tmpTot + Info[#points]
+  end repeat
+  return tmpTot
+end
+
+on MissionEnd me, argMission_r, argCompleted, argInfo
+  tmpMissionInfo = MissionsInfo.getaProp(argMission_r.ID)
+  if not listp(tmpMissionInfo) then
+    tmpMissionInfo = [:]
+    MissionsInfo.addProp(argMission_r.ID, tmpMissionInfo)
+  end if
+  if argCompleted then
+    if voidp(tmpMissionInfo[#completed]) then
+      tmpMissionInfo[#completed] = 0
+    end if
+    if tmpMissionInfo[#completed] = 0 then
+      tmpMissionInfo[#FirstTimeNumDays] = argMission_r.getNumDaysSinceStart()
+    end if
+    tmpMissionInfo[#completed] = tmpMissionInfo[#completed] + 1
+    tmpMissionInfo[#numDays] = argMission_r.getNumDaysSinceStart()
+  else
+  end if
+  if listp(argInfo) then
+    mergeLists(tmpMissionInfo, argInfo, #Replace)
+  end if
+end
+
+on getNextMissionID me, argMission_r
+  tmpNextID = VOID
+  if argMission_r.NextMissions.count = 1 then
+    tmpNextID = argMission_r.NextMissions[1]
+  else
+    if argMission_r.NextMissions.count = 0 then
+      tmpSorted = []
+      tmpSorted.sort()
+      missions_r = gRock.m_classManager.getObjsOfClass(#Mission)
+      repeat with mis_r in missions_r
+        tmpSorted.add(mis_r.ID)
+      end repeat
+      tmpPos = tmpSorted.getPos(argMission_r.ID)
+      if tmpPos < tmpSorted.count then
+        tmpNextID = tmpSorted[tmpPos + 1]
+      end if
+      pott("NEXT MISSION", tmpNextID, tmpSorted, "this mission", argMission_r.ID)
+    else
+    end if
+  end if
+  mis_r = gRock.m_classManager.getObjByIDAndClass(tmpNextID, #Mission)
+  if not objectp(mis_r) then
+    return #none
+  else
+    if mis_r.ID = #Mission10 then
+      return #ClockedGame
+    end if
+  end if
+  return tmpNextID
+end
+
+on getAvailableMissions me
+  tmpAvail = []
+  tmpAvail.sort()
+  repeat with n = 1 to MissionsInfo.count
+    tmpID = MissionsInfo.getPropAt(n)
+    tmpAvail.add(tmpID)
+  end repeat
+  tmpOverrideAvail = rgetPref(#AvailableMissions)
+  if listp(tmpOverrideAvail) then
+    tmpAvail = tmpOverrideAvail
+    tmpAvail.sort()
+    repeat with tmpID in tmpAvail
+      MissionsInfo.setaProp(tmpID, [#completed: 0, #Tries: 0])
+    end repeat
+  end if
+  currentMission_r = gRock.m_context.getFocus(#Mission)
+  if objectp(currentMission_r) then
+    if tmpAvail.getPos(currentMission_r.ID) = 0 then
+      tmpAvail.add(currentMission_r.ID)
+    end if
+  end if
+  if tmpAvail.count then
+    tmpLastID = tmpAvail[tmpAvail.count]
+    tmpLastInfo = MissionsInfo.getaProp(tmpLastID)
+    if tmpLastInfo.getaProp(#completed) > 0 then
+      allMissions_r = gRock.m_classManager.getObjsOfClass(#Mission)
+      tmpAll = []
+      tmpAll.sort()
+      repeat with mis_r in allMissions_r
+        tmpAll.add(mis_r.ID)
+      end repeat
+      tmpPos = tmpAll.getPos(tmpLastID)
+      if tmpPos < tmpAll.count then
+        tmpID = tmpAll[tmpPos + 1]
+        tmpAvail.add(tmpID)
+      end if
+    end if
+  else
+    tmpAvail.add(#Mission01)
+  end if
+  tmpPropList = [:]
+  repeat with n = 1 to tmpAvail.count
+    tmpID = tmpAvail[n]
+    mis_r = gRock.m_classManager.getObjByIDAndClass(tmpID, #Mission)
+    tmpPropList.addProp(tmpID, mis_r)
+  end repeat
+  return tmpPropList
+end

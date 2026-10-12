@@ -1,0 +1,144 @@
+property m_formattingList
+global gRock
+
+on new me
+  formattingMembers = findMembers("*Formatting", [#Casts: "RockMaterial"], #members)
+  m_formattingList = [:]
+  repeat with n = 1 to formattingMembers.count()
+    memb = formattingMembers[n]
+    tmp = extractTextFormatting(memb)
+    m_formattingList.addProp(memb.name, tmp)
+  end repeat
+  return me
+end
+
+on kill me
+  return 0
+end
+
+on getFormatting me, argWhich
+  tmp = m_formattingList[argWhich]
+  if not listp(tmp) then
+    repeat with n = 1 to m_formattingList.count()
+      if m_formattingList.getPropAt(n) = argWhich then
+        tmp = m_formattingList[n]
+        exit repeat
+      end if
+    end repeat
+  end if
+  if not listp(tmp) then
+    tmp = extractTextFormatting(member(argWhich))
+    if listp(tmp) then
+      m_formattingList.addProp(argWhich, tmp)
+    end if
+  end if
+  if not listp(tmp) then
+    tmp = m_formattingList["DefaultFormatting"]
+  end if
+  tmp = tmp.duplicate()
+  return tmp
+end
+
+on formatOLD me, argList, argFormatMember, argOutMember, argTempFormatList
+  if voidp(argOutMember) then
+    argOutMember = "RockInfoText"
+  end if
+  if stringp(argOutMember) then
+    argOutMember = member(argOutMember)
+  end if
+  repeat with n = 1 to argList.count
+    val = argList[n]
+    if symbolp(val) then
+      argList[n] = gRock.m_languageManager.getStr(val, [#FirstUppercase: 1])
+      next repeat
+    end if
+    if stringp(val) then
+      argList[n] = gRock.m_languageManager.dereference(val)
+    end if
+  end repeat
+  tmp = me.getFormatting(argFormatMember)
+  formatFromList(argOutMember, tmp, argList)
+  if listp(argTempFormatList) then
+    if not voidp(argTempFormatList[#color]) then
+      argOutMember.color = argTempFormatList[#color]
+    end if
+  end if
+  return argOutMember
+end
+
+on format me, argList, argFormatMember, argOptions
+  if voidp(argOptions) then
+    argOptions = [:]
+  end if
+  outMember = argOptions[#outMember]
+  if voidp(outMember) then
+    outMember = "RockInfoText"
+  end if
+  outMember = member(outMember)
+  returnWhat = argOptions[#return]
+  if voidp(returnWhat) then
+    returnWhat = #image
+  end if
+  repeat with n = 1 to argList.count
+    val = argList[n]
+    if symbolp(val) then
+      val = gRock.m_languageManager.getStr(val, [#FirstUppercase: 1])
+      argList[n] = val
+    else
+      if listp(val) then
+        val = gRock.m_languageManager.getStr(val[1], [#FirstUppercase: 0])
+        argList[n] = val
+      end if
+    end if
+    if stringp(val) then
+      argList[n] = gRock.m_languageManager.dereference(val)
+    end if
+  end repeat
+  tmp = me.getFormatting(argFormatMember)
+  formatFromList(outMember, tmp, argList)
+  if integerp(argOptions[#ForceHeight]) then
+    locV = outMember.linePosToLocV(9999)
+    diff = argOptions[#ForceHeight] - locV
+    if diff > 0 then
+      outMember.text = outMember.text & RETURN & " "
+      outMember.line[outMember.line.count].FixedLinespace = diff
+    end if
+  end if
+  if returnWhat = #member then
+    return outMember
+  end if
+  img = outMember.image
+  if not voidp(argOptions[#shadow]) then
+    X = the milliSeconds
+    img = me.addShadow(img, argOptions[#shadow], rgb(245, 245, 245))
+    return img
+  end if
+  return img.duplicate()
+end
+
+on addShadow me, argImage, argLocOff, argColor, argShadowColor
+  if not listp(argLocOff) then
+    argLocOff = point(1, 1)
+  end if
+  if voidp(argShadowColor) then
+    argShadowColor = rgb(0, 0, 0)
+  end if
+  if argImage.useAlpha = 1 then
+    tmpImg = image(argImage.rect[3] + argLocOff[1], argImage.rect[4] + argLocOff[2], 16)
+    tmpAlpha = argImage.extractAlpha()
+    tmpImg.copyPixels(tmpAlpha, tmpAlpha.rect + rect(argLocOff, argLocOff), tmpAlpha.rect)
+    if voidp(argColor) then
+      tmpImg2 = image(argImage.rect[3], argImage.rect[4], 16)
+      tmpImg2.copyPixels(argImage, argImage.rect, argImage.rect)
+      tmpImg.copyPixels(tmpImg2, tmpImg2.rect, tmpImg2.rect, [#ink: 36])
+    else
+      tmpImg.copyPixels(tmpAlpha, tmpAlpha.rect, tmpAlpha.rect, [#ink: 36, #color: argColor])
+    end if
+    return tmpImg
+  else
+    tmpImg = image(argImage.rect[3] + argLocOff[1], argImage.rect[4] + argLocOff[2], 1)
+    tmpImg2 = image(argImage.rect[3], argImage.rect[4], 16)
+  end if
+  tmpImg.copyPixels(argImage, argImage.rect, argImage.rect)
+  return tmpImg
+end

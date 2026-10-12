@@ -1,0 +1,193 @@
+on rgetProp argObj, argProps, argValType
+  if not listp(argProps) then
+    argProps = [argProps]
+  else
+    argProps = argProps.duplicate()
+  end if
+  if argProps.count = 0 then
+    pott("rgetProp err " & string(argObj))
+  end if
+  tmpFinalProp = argProps[argProps.count]
+  argProps.deleteAt(argProps.count)
+  repeat with tmpProp in argProps
+    if not objectp(argObj) then
+      return VOID
+    end if
+    argObj = getPropFromObjOrAncestor(argObj, tmpProp)
+  end repeat
+  if not objectp(argObj) then
+    return VOID
+  end if
+  if not (argValType = #instance) then
+    tmpProp = getPropFromObjOrAncestor(argObj, tmpFinalProp)
+    if ilk(tmpProp) = #instance then
+      if tmpProp.handler(#getOneProp) then
+        return tmpProp.getOneProp(VOID)
+      end if
+    end if
+  end if
+  return getPropFromObjOrAncestor(argObj, tmpFinalProp)
+end
+
+on rgetPropSimple argObj, argProps, argValType
+  if not listp(argProps) then
+    argProps = [argProps]
+  else
+    argProps = argProps.duplicate()
+  end if
+  if argProps.count = 0 then
+    pott("rgetPropSimple err " & string(argObj))
+  end if
+  tmpFinalProp = argProps[argProps.count]
+  argProps.deleteAt(argProps.count)
+  repeat with tmpProp in argProps
+    if not objectp(argObj) then
+      return VOID
+    end if
+    argObj = getPropFromObjOrAncestor(argObj, tmpProp)
+  end repeat
+  if not objectp(argObj) then
+    return VOID
+  end if
+  return getPropFromObjOrAncestor(argObj, tmpFinalProp)
+end
+
+on zzrgetProp argObj, argProps, argValType
+  if not listp(argProps) then
+    argProps = [argProps]
+  end if
+  repeat with tmpProp in argProps
+    if not objectp(argObj) then
+      return VOID
+    end if
+    argObj = getPropFromObjOrAncestor(argObj, tmpProp)
+  end repeat
+  return argObj
+end
+
+on rsetProp argObj, argProps, argVal, argMode
+  if not listp(argProps) then
+    argProps = [argProps]
+  else
+    argProps = argProps.duplicate()
+  end if
+  if argProps.count = 0 then
+    pott("rsetProp err " & string(argObj))
+  end if
+  tmpFinalProp = argProps[argProps.count]
+  argProps.deleteAt(argProps.count)
+  repeat with tmpProp in argProps
+    if not objectp(argObj) then
+      pott("No prop " & string(tmpProp))
+      return VOID
+    end if
+    argObj = getPropFromObjOrAncestor(argObj, tmpProp)
+  end repeat
+  if not objectp(argObj) then
+    pott("No prop " & string(tmpProp))
+  end if
+  if stringp(argMode) and (argMode <> "=") then
+    orgVal = rgetProp(argObj, tmpFinalProp, ilk(argVal))
+    if voidp(orgVal) then
+      orgVal = 0
+    end if
+    case argMode of
+      "+=":
+        argVal = orgVal + argVal
+      "-=":
+        argVal = orgVal - argVal
+      "*=":
+        argVal = orgVal * argVal
+      "/=":
+        argVal = orgVal / argVal
+    end case
+  end if
+  if (ilk(argObj) = #instance) or (ilk(argObj) = #propList) then
+    tmpProp = getPropFromObjOrAncestor(argObj, tmpFinalProp)
+    if ilk(tmpProp) = #instance then
+      if tmpProp.handler(#setOneProp) then
+        tmpProp.setOneProp(VOID, argVal)
+        exit
+      end if
+    end if
+    if ilk(argObj) = #instance then
+      if argObj.handler(#setOneProp) then
+        argObj.setOneProp(tmpFinalProp, argVal)
+        exit
+      end if
+    end if
+  end if
+  setPropInObjOrAncestor(argObj, tmpFinalProp, argVal)
+end
+
+on rsetPropSimple argObj, argProps, argVal, argMode
+  if not listp(argProps) then
+    argProps = [argProps]
+  else
+    argProps = argProps.duplicate()
+  end if
+  tmpFinalProp = argProps[argProps.count]
+  argProps.deleteAt(argProps.count)
+  repeat with tmpProp in argProps
+    if not objectp(argObj) then
+      pott("No prop " & string(tmpProp))
+      return VOID
+    end if
+    argObj = getPropFromObjOrAncestor(argObj, tmpProp)
+  end repeat
+  if not objectp(argObj) then
+    pott("No prop " & string(tmpProp))
+  end if
+  if stringp(argMode) then
+    orgVal = rgetProp(argObj, tmpFinalProp, ilk(argVal))
+    case argMode of
+      "+=":
+        argVal = orgVal + argVal
+      "-=":
+        argVal = orgVal - argVal
+      "*=":
+        argVal = orgVal * argVal
+      "/=":
+        argVal = orgVal / argVal
+    end case
+  end if
+  setPropInObjOrAncestor(argObj, tmpFinalProp, argVal)
+end
+
+on rdeleteProp argObj, argProps
+  if not listp(argProps) then
+    argProps = [argProps]
+  else
+    argProps = argProps.duplicate()
+  end if
+  tmpFinalProp = argProps[argProps.count]
+  argProps.deleteAt(argProps.count)
+  repeat with tmpProp in argProps
+    if not objectp(argObj) then
+      pott("Remove: No prop " & string(tmpProp))
+      return VOID
+    end if
+    argObj = getPropFromObjOrAncestor(argObj, tmpProp)
+  end repeat
+  argObj.deleteProp(tmpFinalProp)
+end
+
+on rGotHandler argObj, argHandler
+  if argObj.handler(argHandler) then
+    return 1
+  end if
+  if objectp(argObj.getaProp(#ancestor)) then
+    return rGotHandler(argObj.getaProp(#ancestor), argHandler)
+  end if
+  return 0
+end
+
+on rGetAncestorWithHandler argObj, argHandler
+  if argObj.handler(argHandler) then
+    return argObj
+  end if
+  if objectp(argObj.getaProp(#ancestor)) then
+    return rGetAncestorWithHandler(argObj.getaProp(#ancestor), argHandler)
+  end if
+  return VOID
+end

@@ -1,0 +1,60 @@
+property ancestor, m_callBackInfo
+global gDir, gRock
+
+on new me, argOptions
+  argOptions.setaProp(#ReportTo, me)
+  argOptions.setaProp(#child, me)
+  underDlg = gDir.m_objDialogsMaster.getDialogUnder(me)
+  if objectp(underDlg) then
+    underDlg_r = underDlg.m_dialogInfoObj_r
+    ID = symbol("Dlg" & string(argOptions[#ID]))
+    dialogInfoObj_r = gRock.m_classManager.getObjByID(ID, #Dialog)
+    dialogInfoObj_r.icon = underDlg_r.icon
+  end if
+  ancestor = script("DlgRockAncestorScript").new(argOptions)
+  m_callBackInfo = argOptions.getaProp(#CallBackInfo)
+  itemObj = ancestor.m_objDlg.getItem(#Info)
+  if voidp(argOptions[#InfoImage]) then
+    itemObj.setOneProp(#Pic, "Dummy")
+  else
+    if objectp(argOptions[#InfoImage]) then
+      itemObj.setOneProp(#Pic, argOptions[#InfoImage])
+    else
+      if stringp(argOptions[#InfoImage]) then
+        itemObj.setOneProp(#Pic, rFormatText([argOptions[#InfoImage]], "DefaultFormatting", [#shadow: 1]))
+      end if
+    end if
+  end if
+  ancestor.render()
+  return me
+end
+
+on kill me
+  ancestor.kill()
+  m_callBackInfo = 0
+  return 0
+end
+
+on Report me, argObj, argWhat
+end
+
+on mouse me, argObj, argWhat, argOption
+  if objectp(argOption) then
+    if argWhat = #click then
+      ID = argOption.getOneProp(#ID)
+      if ID = #ButtonOK then
+        if listp(m_callBackInfo) then
+          if objectp(m_callBackInfo[#object]) then
+            call(m_callBackInfo[#handler], m_callBackInfo[#object], me, ID)
+            exit
+          end if
+        end if
+        if ancestor.m_objReportTo <> me then
+          ancestor.m_objReportTo.Report(me, ancestor.m_ID, ID)
+          exit
+        end if
+      end if
+    end if
+  end if
+  ancestor.mouse(argObj, argWhat, argOption)
+end

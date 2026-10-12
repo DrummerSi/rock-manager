@@ -1,0 +1,158 @@
+global gRock
+
+on new me
+  return me
+end
+
+on kill me
+  return 0
+end
+
+on makeBestDialogPossible me, argInfoListOrInfoObj
+  dataMemberName = argInfoListOrInfoObj.dataMemberName
+  if voidp(dataMemberName) then
+    dataMemberName = EMPTY
+  end if
+  if dataMemberName.length = 0 then
+    if ilk(argInfoListOrInfoObj) = #instance then
+      dataMemberName = string(argInfoListOrInfoObj.ID) & "Data"
+    else
+      dataMemberName = "Dlg" & string(argInfoListOrInfoObj.ID) & "Data"
+    end if
+  end if
+  if member(dataMemberName).number < 1 then
+    dataMemberName = "DlgRockBaseData"
+    lst = member(dataMemberName).text.value
+    lst = lst[#items]
+    repeat with tmp in lst
+      if tmp[#ID] = #OkCancel then
+        tmp[#rel][2] = [#cp, 4]
+        tmp[#inOffsetRect][2] = 10
+        next repeat
+      end if
+      if tmp[#ID] = #BG then
+        tmp[#rel][4] = [#OkCancel, 4]
+      end if
+    end repeat
+    if ilk(argInfoListOrInfoObj) = #instance then
+      Pic = argInfoListOrInfoObj.Gfx
+    end if
+    bOK = 0
+    if listp(argInfoListOrInfoObj) then
+      repeat with n = argInfoListOrInfoObj[#Split].count() down to 1
+        str = EMPTY
+        repeat with m = 1 to n
+          str = str & argInfoListOrInfoObj[#Split][m]
+        end repeat
+        if not bOK then
+          Pic = str & "Pic"
+          if the number of member Pic > 0 then
+            bOK = 1
+          end if
+        end if
+      end repeat
+    else
+      Pic = argInfoListOrInfoObj.Gfx
+      bOK = 1
+    end if
+    if not bOK then
+      Pic = "DefaultPic"
+    end if
+    lst.add([#ID: #cp, #type: #Pic, #inOffsetRect: rect(20, 60, 0, 0), #rel: [0, 0, #Auto, #Auto], #ch: 4, #blit: 1, #usingMouse: 0, #Pic: Pic])
+  else
+    lst = member(dataMemberName).text.value
+  end if
+  return lst
+end
+
+on setTitle me, argTopDlgObj, argInfoListOrInfoObj, argPlaceObj
+  baseObj = argTopDlgObj.getItem(#base)
+  if objectp(baseObj) then
+    baseObj = baseObj.getaProp(#dialogObj)
+  end if
+  if not objectp(baseObj) then
+    baseObj = argTopDlgObj.getItem(#BG)
+    if baseObj.type <> #Dialog then
+      baseObj = 0
+    else
+      baseObj = baseObj.getaProp(#dialogObj)
+    end if
+  end if
+  if not objectp(baseObj) then
+    baseObj = argTopDlgObj
+  end if
+  fondObj = baseObj.getItem(#Fond)
+  if objectp(fondObj) then
+    fondObj = fondObj.dialogObj
+  else
+    fondObj = baseObj
+  end if
+  obj = fondObj.getItem(#title)
+  if objectp(obj) then
+    str = getPropFromObjOrAncestor(argInfoListOrInfoObj, #name)
+    if voidp(str) or (str = EMPTY) then
+      if objectp(argPlaceObj) then
+        str = argPlaceObj.name
+      else
+        str = "Title"
+      end if
+    end if
+    obj.setOneProp(#editData, str)
+  end if
+  obj = fondObj.getItem(#icon)
+  if objectp(obj) then
+    Pic = getPropFromObjOrAncestor(argInfoListOrInfoObj, #icon)
+    if voidp(Pic) then
+      Pic = "icon_clock01"
+    end if
+    obj.setOneProp(#Pic, Pic)
+  end if
+  obj = fondObj.getItem(#bgColor)
+  if objectp(obj) then
+    obj.setOneProp(#FgColorStr, "#505050")
+  else
+    obj = fondObj.getItem(#BG)
+    if objectp(obj) then
+      obj.setOneProp(#FgColorStr, "#505050")
+    end if
+  end if
+end
+
+on createScrollWnd me, argInfoList, argTopWnd, argReportObj, argSize
+  global gUseful
+  if voidp(argSize) then
+    argSize = point(275, 180)
+  end if
+  scrSetObj = script("Dialog").new([#image: argTopWnd.myImagePtr, #OKtoResize: 0, #ID: #DlgDlg])
+  gUseful.frameTimer.deleteObject(scrSetObj)
+  scrSetObj.rawCreate(member("DlgRockScrollSetData").text.value)
+  itemObj = scrSetObj.getItem(#ScrollThis)
+  if objectp(itemObj) then
+    itemObj.setOneProp(#inOffsetRect, [0, 0, argSize[1], argSize[2]])
+  end if
+  scrDlgObj = script("Dialog").new([#image: argTopWnd.myImagePtr, #OKtoResize: 0, #ID: #DlgDlg])
+  gUseful.frameTimer.deleteObject(scrDlgObj)
+  hiliteObj = script("DialogHiliteItemScript").new(itemObj)
+  repeat with n = 1 to argInfoList.count()
+    itemLst = argInfoList[n]
+    ID = itemLst[#ID]
+    if voidp(ID) then
+      ID = symbol("ListItem" & string(n))
+    end if
+    tmpLst = [#ID: ID, #ch: n, #type: #Dialog, #dialogDataMemberName: "DlgScrollItemData"]
+    scrDlgObj.addItem(tmpLst)
+    itemObj = scrDlgObj.getItem(ID)
+    iconObj = itemObj.dialogObj.getItem(#icon)
+    iconObj.setOneProp(#Pic, itemLst[#icon])
+    textObj = itemObj.dialogObj.getItem(#text)
+    textObj.setOneProp(#editData, itemLst[#text])
+    itemObj.setOneProp(#inOffsetRect, [0, (n - 1) * 30, 0, 0])
+    if objectp(argReportObj) then
+      itemObj.scriptInstanceList.addAt(1, argReportObj)
+    end if
+    itemObj.scriptInstanceList.add(hiliteObj)
+  end repeat
+  itemObj = scrSetObj.getItem(#ScrollThis)
+  itemObj.attachDlg(scrDlgObj)
+  return scrSetObj
+end

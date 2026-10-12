@@ -1,0 +1,56 @@
+property mouseObj, itemObj, scrollDlgObj, scrollMasterObj, scrollDir, scrollInitPause, scrollPause, waitUntil
+
+on new me, argItemObj
+  itemObj = argItemObj
+  scrollDlgObj = itemObj.ancestor.masterObj
+  if itemObj.ID = #ArrowUp then
+    scrollDir = -1
+  else
+    scrollDir = 1
+  end if
+  scrollInitPause = 500
+  scrollPause = 100
+  waitUntil = 0
+  return me
+end
+
+on kill me
+  itemObj = 0
+  return 0
+end
+
+on mouse me, argObj, argWhat
+  if argWhat = #DownOnOther then
+    exit
+  end if
+  if (argWhat = #down) or (argWhat = #stillDown) then
+    if argWhat = #down then
+      waitUntil = the milliSeconds + scrollInitPause
+    else
+      if the milliSeconds < waitUntil then
+        exit
+      end if
+      waitUntil = the milliSeconds + scrollPause
+    end if
+    tmpHandler = #scroll
+    repeat with tmpObj in itemObj.ancestor.scriptInstanceList
+      if (tmpObj <> me) and tmpObj.handler(#scroll) then
+        call(#scroll, tmpObj, scrollDir, #Arrow)
+      end if
+    end repeat
+    if objectp(scrollMasterObj) then
+      scrollMasterObj.scroll(scrollDir, #Arrow)
+    end if
+  else
+    if argWhat = #click then
+    end if
+  end if
+end
+
+on ScrollersReport me, argReportObj
+  scrollMasterObj = argReportObj
+  argReportObj.scrollerReporting(me, itemObj.ID)
+end
+
+on dim me
+end

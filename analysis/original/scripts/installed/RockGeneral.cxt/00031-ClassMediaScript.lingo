@@ -1,0 +1,279 @@
+property ancestor, child, className, belongsTo, _killed, MediaType, StyleMix, StyleMixTolerance, SongType, SongTypeTolerance, MinQuality, ReachesGroups, Reporter, MediaTargets, AdvertisingIDs, currentChart, ChartPic, ChartPosToRating, ChartHeadline, WeightMusicAndImage, reporterObj
+global gRock
+
+on new me, argChild, argBelongsTo
+  if objectp(argChild) then
+    child = argChild
+  else
+    child = me
+  end if
+  belongsTo = argBelongsTo
+  ancestor = script("ClassPlaceScript").new(child)
+  className = #media
+  MediaType = #none
+  StyleMix = script("ClassStyleMixScript").new(VOID, me)
+  StyleMixTolerance = script("ClassStyleMixScript").new(VOID, me)
+  SongType = 0.0
+  SongTypeTolerance = 0.0
+  MinQuality = 0.0
+  ReachesGroups = [:]
+  Reporter = #none
+  MediaTargets = []
+  AdvertisingIDs = []
+  currentChart = [:]
+  ChartPic = EMPTY
+  ChartPosToRating = []
+  ChartHeadline = EMPTY
+  WeightMusicAndImage = 0.0
+  return me
+end
+
+on kill me
+  _killed = 1
+  gRock.m_gameTimer.deleteObject(me)
+  if objectp(StyleMix) then
+    StyleMix = StyleMix.kill()
+  end if
+  if objectp(StyleMixTolerance) then
+    StyleMixTolerance = StyleMixTolerance.kill()
+  end if
+  if objectp(ancestor) then
+    ancestor = ancestor.kill()
+  end if
+  child = 0
+  belongsTo = 0
+  reporterObj = 0
+  return 0
+end
+
+on init me
+  gRock.m_gameTimer.addObject(me)
+  reporterObj = gRock.m_classManager.getObjByIDAndClass(Reporter, #Reporter)
+  if objectp(reporterObj) then
+    reporterObj.belongsTo = me
+  end if
+  ReachesGroups = [:]
+  repeat with n = 1 to MediaTargets.count
+    target_r = gRock.m_classManager.getObjByIDAndClass(MediaTargets[n], #MediaTarget)
+    tmpReachesGroups = target_r.calcReach()
+    repeat with m = 1 to tmpReachesGroups.count
+      tmpGrpID = tmpReachesGroups.getPropAt(m)
+      if tmpReachesGroups[m] > ReachesGroups.getaProp(tmpGrpID) then
+        ReachesGroups[tmpGrpID] = tmpReachesGroups[m]
+      end if
+    end repeat
+  end repeat
+  human_r = gRock.m_classManager.getObjByIDAndClass(ancestor.Human, #Human)
+  if objectp(human_r) then
+    human_r.BelongsToPlace = ancestor.ID
+  end if
+end
+
+on timeTick me
+  if (gRock.m_date.getDateInt() mod 7) = 0 then
+    me.calcChart()
+  end if
+end
+
+on advertise me, argStartDaysFromNow, argDuration, argIntensity, argQuality
+  obj = gRock.m_classManager.createObj(#ExpoAd)
+  tmpDate = gRock.m_date.getDateInt() + argStartDaysFromNow
+  obj.ID = gRock.m_classManager.genUniqueID(obj)
+  obj.Intensity = argIntensity
+  obj.quality = argQuality
+  obj.media = ancestor.ID
+  obj.setDates(tmpDate, argDuration)
+  obj.Moveable = 0
+end
+
+on likesBand me, argBand_r
+end
+
+on likesAlbum me, argAlbum_r
+  tmp = rDefLikesAlbum(me, argAlbum_r, [#music: 1, #image: 1, #SongType: 1, #quality: 1], #ExtraInfo)
+  return tmp[#Like]
+end
+
+on getReporter me
+  return gRock.m_classManager.getObjByIDAndClass(Reporter, #Reporter)
+end
+
+on getAlbumRotation me, argAlbumID
+  rep_r = me.getReporter()
+  if objectp(rep_r) then
+    return rep_r.getAlbumRotation(argAlbumID)
+  end if
+  return 0
+end
+
+on getIsOnChart me, argAlbumID
+  if voidp(argAlbumID) then
+    argAlbumID = gRock.m_context.getFocus(#album).ID
+  end if
+  tmpPos = me.getChartPosition(argAlbumID)
+  if (tmpPos > 0) and (tmpPos < 11) then
+    return 1
+  end if
+  return 0
+end
+
+on getChartPosition me, argAlbumID
+  if voidp(argAlbumID) then
+    argAlbumID = gRock.m_context.getFocus(#album).ID
+  end if
+  if objectp(argAlbumID) then
+    argAlbumID = argAlbumID.ID
+  end if
+  tmpChart = me.getChart()
+  Pos = tmpChart.findPos(argAlbumID)
+  if (Pos = 0) or (Pos > 10) then
+    return 0
+  end if
+  return Pos
+end
+
+on getChart me
+  if currentChart.count = 0 then
+    me.calcChart()
+  end if
+  return currentChart
+end
+
+on calcChart me
+  if ChartPosToRating.count = 0 then
+    exit
+  end if
+  tmpChart = gRock.m_chartsManager.getChart(me.MediaType)
+  if not listp(tmpChart) then
+    exit
+  end if
+  if tmpChart.count = 0 then
+    exit
+  end if
+  tmpRateSorted = [:]
+  tmpRateSorted.sort()
+  tmpMax = tmpChart.count
+  if tmpMax > ChartPosToRating.count then
+    tmpMax = ChartPosToRating.count
+  end if
+  repeat with n = 1 to tmpMax
+    tmpRateSorted.addProp(ChartPosToRating[n], tmpChart[n])
+  end repeat
+  tmpCheckTheseIDs = []
+  if me.MediaType = #Store then
+    tmpAlbum = gRock.m_context.getFocus(#album)
+    if objectp(tmpAlbum) then
+      if tmpAlbum.getAlbumIsReleased() = 1 then
+        mission_r = gRock.m_context.getFocus(#Mission)
+        if mission_r.Vars.getaProp(#TamperChart) = 1 then
+          tmpFakePos = makeRandomBetween(5, 9)
+          tmpRate = tmpRateSorted.getPropAt(tmpFakePos)
+        else
+          tmpRate = tmpAlbum.getSalesTheLastNDays(7)
+        end if
+        if tmpRate > 0 then
+          tmpRateSorted.addProp(tmpRate, tmpAlbum)
+          tmpCheckTheseIDs.add(tmpAlbum.ID)
+        end if
+      end if
+    end if
+  else
+    if me.MediaType = #TV then
+      tmpAlbum = gRock.m_context.getFocus(#album)
+      if objectp(tmpAlbum) then
+        if (tmpAlbum.ReleaseDate > 0) and tmpAlbum.getAlbumGotVideo() then
+          tmpRate = me.getAlbumRotation(tmpAlbum.ID)
+          tmpRateSorted.addProp(tmpRate, tmpAlbum)
+          tmpCheckTheseIDs.add(tmpAlbum.ID)
+        end if
+      end if
+    else
+      if me.MediaType = #Radio then
+        tmpAlbum = gRock.m_context.getFocus(#album)
+        if objectp(tmpAlbum) then
+          if tmpAlbum.ReleaseDate > 0 then
+            tmpRate = me.getAlbumRotation(tmpAlbum.ID)
+            tmpRateSorted.addProp(tmpRate, tmpAlbum)
+            tmpCheckTheseIDs.add(tmpAlbum.ID)
+          end if
+        end if
+      end if
+    end if
+  end if
+  if currentChart.count = 0 then
+    tmpFakeOld = [:]
+    tmpFakeOld.sort()
+    repeat with n = tmpRateSorted.count down to 1
+      tmpObj = tmpRateSorted[n]
+      if tmpObj.className = #ChartSong then
+        tmpLastWeekPos = tmpObj.getFakeLastPosOnChart(me.MediaType)
+        tmpFakeOld.addProp(tmpLastWeekPos, tmpObj)
+      end if
+    end repeat
+    repeat with n = 1 to tmpFakeOld.count
+      tmpObj = tmpFakeOld[n]
+      tmpTotWeeks = tmpObj.getFakeNumWeeksOnChart(me.MediaType)
+      tmpInfo = [#ID: tmpObj.ID, #class: tmpObj.className, #rate: 0, #Pos: n, #LastWeekPos: n, #WeeksTop10: tmpTotWeeks]
+      currentChart.addProp(tmpObj.ID, tmpInfo)
+    end repeat
+  end if
+  tmpNewChart = [:]
+  repeat with n = tmpRateSorted.count down to 1
+    tmpCurrentPos = tmpRateSorted.count - n + 1
+    tmpObj = tmpRateSorted[n]
+    tmpLastWeekPos = currentChart.findPos(tmpObj.ID)
+    if tmpLastWeekPos > 0 then
+      tmpLastWeekInfo = currentChart[tmpLastWeekPos]
+      if (tmpLastWeekPos <= 10) and (tmpCurrentPos < 10) then
+        tmpTotWeeks = tmpLastWeekInfo[#WeeksTop10] + 1
+      else
+        tmpTotWeeks = 0
+      end if
+    else
+      tmpTotWeeks = 0
+    end if
+    tmpRate = tmpRateSorted.getPropAt(n)
+    if voidp(tmpRate) then
+      tmpRate = 0
+    end if
+    if voidp(tmpLastWeekPos) then
+      tmpLastWeekPos = 0
+    end if
+    tmpInfo = [#ID: tmpObj.ID, #class: tmpObj.className, #rate: tmpRate, #Pos: tmpCurrentPos, #LastWeekPos: tmpLastWeekPos, #WeeksTop10: tmpTotWeeks]
+    tmpNewChart.addProp(tmpObj.ID, tmpInfo)
+  end repeat
+  currentChart = tmpNewChart
+  if me.MediaType = #Radio then
+    str = EMPTY
+    repeat with n = 1 to currentChart.count
+      tmp = currentChart[n]
+      obj_r = gRock.m_classManager.getObjByIDAndClass(tmp[#ID], tmp[#class])
+      if tmp[#class] = #ChartSong then
+        str = str & tmp[#ID] & " " & convItoS(tmp[#LastWeekPos], 2) & "Û" & obj_r.getPosOnCharts()[me.MediaType] & " " & convItoS(tmp[#WeeksTop10], 2) & " " & string(obj_r.ChartMovementID) & " __ "
+      end if
+    end repeat
+  end if
+  repeat with tmpID in tmpCheckTheseIDs
+    tmpPos = currentChart.findPos(tmpID)
+    tmpInfo = currentChart[tmpPos]
+    tmpLastPos = tmpInfo[#LastWeekPos]
+    if tmpPos = 1 then
+      gRock.m_msgManager.msg(#ChartEnter, me, tmpPos)
+      gRock.m_msgManager.msg(#ChartNo1, me, tmpLastPos)
+      next repeat
+    end if
+    if tmpPos <= 10 then
+      if (tmpLastPos > 10) or (tmpLastPos = 0) then
+        gRock.m_msgManager.msg(#ChartEnter, me, tmpPos)
+      else
+      end if
+      next repeat
+    end if
+    if (tmpLastPos <= 10) and (tmpLastPos > 0) then
+      tmpCurrAlbum_r = gRock.m_context.getFocus(#album)
+      if tmpCurrAlbum_r.ID = tmpID then
+        gRock.m_msgManager.msg(#ChartExit, me, tmpPos)
+      end if
+    end if
+  end repeat
+end

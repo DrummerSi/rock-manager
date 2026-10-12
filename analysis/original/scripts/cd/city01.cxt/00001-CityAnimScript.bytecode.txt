@@ -1,0 +1,155 @@
+property m_data, m_cnt, m_pause, m_reportObj, m_firstFrame, m_delay, m_frame, m_SP, m_active
+global gUseful
+
+on new me, argReportObj, argName, argSPNum
+  [  0] getparam 8 .............................. <argReportObj>
+  [  2] setprop 6 ............................... m_reportObj = argReportObj
+  [  4] getparam 24 ............................. <argSPNum>
+  [  6] pusharglist 1 ........................... <argSPNum>
+  [  8] extcall 8 ............................... <sprite(argSPNum)>
+  [ 10] setprop 7 ............................... m_SP = sprite(argSPNum)
+  [ 12] getparam 16 ............................. <argName>
+  [ 14] pusharglist 1 ........................... <argName>
+  [ 16] extcall 10 .............................. <member(argName)>
+  [ 18] getobjprop 11 ........................... <member(argName).number>
+  [ 20] setprop 9 ............................... m_firstFrame = member(argName).number
+  [ 22] getparam 16 ............................. <argName>
+  [ 24] pushcons 0 .............................. <"f">
+  [ 26] joinstr ................................. <argName & "f">
+  [ 27] pusharglist 1 ........................... <argName & "f">
+  [ 29] extcall 10 .............................. <member(argName & "f")>
+  [ 31] getobjprop 13 ........................... <member(argName & "f").text>
+  [ 33] setprop 12 .............................. m_data = member(argName & "f").text
+  [ 35] pushcons 8 .............................. <"[">
+  [ 37] getprop 12 .............................. <m_data>
+  [ 39] joinstr ................................. <"[" & m_data>
+  [ 40] pushcons 16 ............................. <"]">
+  [ 42] joinstr ................................. <"[" & m_data & "]">
+  [ 43] setprop 12 .............................. m_data = "[" & m_data & "]"
+  [ 45] getprop 12 .............................. <m_data>
+  [ 47] getobjprop 14 ........................... <m_data.value>
+  [ 49] setprop 12 .............................. m_data = m_data.value
+  [ 51] pushint8 1 .............................. <1>
+  [ 54] setprop 15 .............................. m_cnt = 1
+  [ 56] pushzero ................................ <0>
+  [ 57] setprop 16 .............................. m_pause = 0
+  [ 59] pushzero ................................ <0>
+  [ 60] setprop 17 .............................. m_frame = 0
+  [ 62] pushint8 1 .............................. <1>
+  [ 65] setprop 18 .............................. m_active = 1
+  [ 67] getparam 0 .............................. <me>
+  [ 69] pusharglistnoret 1 ...................... <me>
+  [ 71] extcall 19 .............................. return me
+  [ 73] ret
+end
+
+on kill me
+  [  0] pushzero ................................ <0>
+  [  1] pusharglistnoret 1 ...................... <0>
+  [  3] extcall 19 .............................. return 0
+  [  5] ret
+end
+
+on timeTick me
+  [  0] getprop 18 .............................. <m_active>
+  [  2] not ..................................... <not m_active>
+  [  3] jmpifz [  7] ............................ if not m_active then
+  [  6] ret ..................................... exit
+  [  7] getprop 24 .............................. <m_delay>
+  [  9] jmpifz [ 23] ............................ if m_delay then / else
+  [ 12] getprop 24 .............................. <m_delay>
+  [ 14] pushint8 1 .............................. <1>
+  [ 17] sub ..................................... <m_delay - 1>
+  [ 18] setprop 24 .............................. m_delay = m_delay - 1
+  [ 20] jmp [110]
+  [ 23] pushint8 2 .............................. <2>
+  [ 26] setprop 24 .............................. m_delay = 2
+  [ 28] getprop 16 .............................. <m_pause>
+  [ 30] jmpifz [ 44] ............................ if m_pause then / else
+  [ 33] getprop 16 .............................. <m_pause>
+  [ 35] pushint8 1 .............................. <1>
+  [ 38] sub ..................................... <m_pause - 1>
+  [ 39] setprop 16 .............................. m_pause = m_pause - 1
+  [ 41] jmp [110]
+  [ 44] getprop 12 .............................. <m_data>
+  [ 46] getprop 15 .............................. <m_cnt>
+  [ 48] pusharglist 2 ........................... <m_data, m_cnt>
+  [ 50] objcall 25 .............................. <m_data[m_cnt]>
+  [ 52] setprop 17 .............................. m_frame = m_data[m_cnt]
+  [ 54] getprop 17 .............................. <m_frame>
+  [ 56] pusharglist 1 ........................... <m_frame>
+  [ 58] extcall 26 .............................. <listp(m_frame)>
+  [ 60] jmpifz [ 85] ............................ if listp(m_frame) then
+  [ 63] getprop 17 .............................. <m_frame>
+  [ 65] pushint8 1 .............................. <1>
+  [ 68] pusharglist 2 ........................... <m_frame, 1>
+  [ 70] objcall 25 .............................. <m_frame[1]>
+  [ 72] setprop 16 .............................. m_pause = m_frame[1]
+  [ 74] getprop 17 .............................. <m_frame>
+  [ 76] pushint8 1 .............................. <1>
+  [ 79] pusharglist 2 ........................... <m_frame, 1>
+  [ 81] objcall 27 .............................. <m_frame.getPropAt(1)>
+  [ 83] setprop 17 .............................. m_frame = m_frame.getPropAt(1)
+  [ 85] getprop 15 .............................. <m_cnt>
+  [ 87] pushint8 1 .............................. <1>
+  [ 90] add ..................................... <m_cnt + 1>
+  [ 91] setprop 15 .............................. m_cnt = m_cnt + 1
+  [ 93] getprop 15 .............................. <m_cnt>
+  [ 95] getprop 12 .............................. <m_data>
+  [ 97] pusharglist 1 ........................... <m_data>
+  [ 99] objcall 28 .............................. <m_data.count()>
+  [101] gt ...................................... <m_cnt > m_data.count()>
+  [102] jmpifz [110] ............................ if m_cnt > m_data.count() then
+  [105] pushint8 1 .............................. <1>
+  [108] setprop 15 .............................. m_cnt = 1
+  [110] getprop 6 ............................... <m_reportObj>
+  [112] pusharglist 1 ........................... <m_reportObj>
+  [114] extcall 29 .............................. <objectp(m_reportObj)>
+  [116] jmpifz [134] ............................ if objectp(m_reportObj) then
+  [119] getprop 6 ............................... <m_reportObj>
+  [121] getparam 0 .............................. <me>
+  [123] pushsymb 30 ............................. <#draw>
+  [125] getprop 9 ............................... <m_firstFrame>
+  [127] getprop 17 .............................. <m_frame>
+  [129] add ..................................... <m_firstFrame + m_frame>
+  [130] pusharglistnoret 4 ...................... <m_reportObj, me, #draw, m_firstFrame + m_frame>
+  [132] objcall 31 .............................. m_reportObj.Report(me, #draw, m_firstFrame + m_frame)
+  [134] ret
+end
+
+on redraw me, argLoc
+  [  0] getprop 7 ............................... <m_SP>
+  [  2] getprop 9 ............................... <m_firstFrame>
+  [  4] getprop 17 .............................. <m_frame>
+  [  6] add ..................................... <m_firstFrame + m_frame>
+  [  7] pusharglist 1 ........................... <m_firstFrame + m_frame>
+  [  9] extcall 10 .............................. <member(m_firstFrame + m_frame)>
+  [ 11] setobjprop 10 ........................... m_SP.member = member(m_firstFrame + m_frame)
+  [ 13] getprop 7 ............................... <m_SP>
+  [ 15] getparam 8 .............................. <argLoc>
+  [ 17] setobjprop 32 ........................... m_SP.loc = argLoc
+  [ 20] ret
+end
+
+on activate me, argIsTRUE
+  [  0] getparam 8 .............................. <argIsTRUE>
+  [  2] setprop 18 .............................. m_active = argIsTRUE
+  [  4] ret
+end
+
+on show me, argIsTRUE
+  [  0] getparam 0 .............................. <me>
+  [  2] getparam 8 .............................. <argIsTRUE>
+  [  4] pusharglistnoret 2 ...................... <me, argIsTRUE>
+  [  6] objcall 4 ............................... me.activate(argIsTRUE)
+  [  8] getparam 8 .............................. <argIsTRUE>
+  [ 10] pushzero ................................ <0>
+  [ 11] eq ...................................... <argIsTRUE = 0>
+  [ 12] jmpifz [ 25] ............................ if argIsTRUE = 0 then
+  [ 15] getprop 7 ............................... <m_SP>
+  [ 17] pushcons 24 ............................. <"Dummy">
+  [ 19] pusharglist 1 ........................... <"Dummy">
+  [ 21] extcall 10 .............................. <member("Dummy")>
+  [ 23] setobjprop 10 ........................... m_SP.member = member("Dummy")
+  [ 25] ret
+end

@@ -1,0 +1,59 @@
+property ancestor, child, className, belongsTo, _killed, MusicStyle, ImageStyle, price
+global gRock
+
+on new me, argChild, argBelongsTo
+  if objectp(argChild) then
+    child = argChild
+  else
+    child = me
+  end if
+  belongsTo = argBelongsTo
+  ancestor = script("ClassAudienceExposureScript").new(child)
+  className = #ExpoAd
+  MusicStyle = script("ClassStyleMixScript").new(VOID, me)
+  ImageStyle = script("ClassStyleMixScript").new(VOID, me)
+  price = 0
+  return me
+end
+
+on kill me
+  _killed = 1
+  if objectp(MusicStyle) then
+    MusicStyle = MusicStyle.kill()
+  end if
+  if objectp(ImageStyle) then
+    ImageStyle = ImageStyle.kill()
+  end if
+  if objectp(ancestor) then
+    ancestor = ancestor.kill()
+  end if
+  child = 0
+  belongsTo = 0
+  return 0
+end
+
+on eventChangeState me, argAction, argOption
+  if argAction = #start then
+    ancestor.stdSetReachesGroups()
+    ancestor.stdSetInfluenceWhat()
+    album_r = gRock.m_context.getFocus(#album)
+    if objectp(album_r) then
+      ancestor.QualityPerGroup = [:]
+      repeat with n = 1 to ancestor.ReachesGroups.count
+        tmpGroupID = ancestor.ReachesGroups.getPropAt(n)
+        group_r = gRock.m_classManager.getObjByIDAndClass(tmpGroupID, #Group)
+        tmpLike = rDefLikesAlbum(group_r, album_r, [#music: 1, #image: 1, #SongType: 1, #quality: 1])
+        if tmpLike < -1 then
+          tmpLike = -1.0
+        end if
+        tmpLike = calcAverage([1.0: ancestor.quality, 1.0: tmpLike])
+        ancestor.QualityPerGroup.addProp(tmpGroupID, tmpLike)
+      end repeat
+    end if
+    ancestor.stdFillInBlanks()
+  else
+    if argAction = #stop then
+    end if
+  end if
+  return ancestor.eventChangeState(argAction, argOption)
+end

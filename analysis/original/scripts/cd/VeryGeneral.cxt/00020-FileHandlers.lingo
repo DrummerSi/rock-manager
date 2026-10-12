@@ -1,0 +1,329 @@
+on readBinary argFile
+  openXLib(the moviePath & "FileIO.dll")
+  tmpList = []
+  tmpRead = fileio(#mnew, "read", argFile)
+  if not objectp(tmpRead) then
+    put "Couldnt open"
+    return 
+  else
+    tmpLen = tmpRead(#mGetLength)
+    tmpStr = tmpRead(#mReadFile)
+    tmpPos = tmpRead(#mGetPosition)
+    if tmpPos < tmpLen then
+      add(tmpList, tmpStr)
+      repeat while 1
+        tmpStr = tmpRead(#mReadFile)
+        tmpPos = tmpRead(#mGetPosition)
+        add(tmpList, tmpStr)
+        if tmpPos >= tmpLen then
+          exit repeat
+        end if
+      end repeat
+    end if
+    tmpRead(#mdispose)
+    if count(tmpList) then
+      return tmpList
+    end if
+    return tmpStr
+  end if
+  closeXLib(the moviePath & "FileIO.dll")
+end
+
+on readFile argFileName
+  tmpFile = new(xtra("FileIO"))
+  openFile(tmpFile, argFileName, 1)
+  if status(tmpFile) <> 0 then
+    put error(tmpFile, status(tmpFile)), argFileName
+    return status(tmpFile)
+  end if
+  tmpStr = readFile(tmpFile)
+  closeFile(tmpFile)
+  return tmpStr
+end
+
+on writeFile argFileName, argStr
+  tmpFile = new(xtra("FileIO"))
+  openFile(tmpFile, argFileName, 2)
+  if status(tmpFile) <> 0 then
+    createFile(tmpFile, argFileName)
+    if status(tmpFile) <> 0 then
+      return error(tmpFile, status(tmpFile))
+    end if
+    openFile(tmpFile, argFileName, 2)
+    if status(tmpFile) <> 0 then
+      return error(tmpFile, status(tmpFile))
+    end if
+  end if
+  setPosition(tmpFile, 0)
+  writeString(tmpFile, EMPTY)
+  setPosition(tmpFile, 0)
+  writeString(tmpFile, argStr)
+  closeFile(tmpFile)
+  return 0
+end
+
+on fileStepUpNFolders argPath, argNumSteps, argDelim
+  if voidp(argDelim) then
+    argDelim = "\"
+    if the machineType <> 256 then
+      argDelim = ":"
+    end if
+  end if
+  if voidp(argNumSteps) then
+    argNumSteps = 1
+  end if
+  tmpStart = argPath.length
+  if argPath.char[tmpStart] = argDelim then
+    argNumSteps = argNumSteps + 1
+  end if
+  if tmpStart <= 1 then
+    return EMPTY
+  end if
+  repeat with n = tmpStart down to 1
+    if argPath.char[n] = argDelim then
+      argNumSteps = argNumSteps - 1
+      if argNumSteps <= 0 then
+        return argPath.char[1..n]
+      end if
+    end if
+  end repeat
+  return EMPTY
+end
+
+on getLatestModifiedFileNr argFileList
+  tmpDates = [:]
+  tmpDates.sort()
+  fxObj = xtra("FileXtra3").new()
+  repeat with n = 1 to argFileList.count
+    tmpFile = argFileList[n]
+    if fxObj.fx_FileExists(tmpFile) then
+      tmpDateStr = translateFXDate(fxObj.fx_FileGetModDate(argFileList[n]), #string)
+      tmpDates.addProp(tmpDateStr, n)
+    end if
+  end repeat
+  fxObj = 0
+  if tmpDates.count then
+    return tmpDates[tmpDates.count]
+  end if
+  return 0
+end
+
+on fileExtractPath argFileName
+  tmpLen = length(argFileName)
+  tmpDelim = "\"
+  if the machineType <> 256 then
+    tmpDelim = ":"
+  end if
+  repeat with n = tmpLen down to 1
+    if char n of argFileName = tmpDelim then
+      return char 1 to n of argFileName
+    end if
+  end repeat
+  return EMPTY
+end
+
+on fileExtractName argFileName
+  tmpLen = length(argFileName)
+  tmpDelim = "\"
+  if the machineType <> 256 then
+    tmpDelim = ":"
+  end if
+  repeat with n = tmpLen down to 1
+    if char n of argFileName = tmpDelim then
+      return char (n + 1) to tmpLen of argFileName
+    end if
+  end repeat
+  return argFileName
+end
+
+on fileStripName argFileName
+  argFileName = fileExtractName(argFileName)
+  tmpOff = offset(".", argFileName)
+  if tmpOff then
+    return char 1 to (tmpOff - 1) of argFileName
+  end if
+  return argFileName
+end
+
+on fileGetExtension argFileName
+  tmpOff = offset(".", argFileName)
+  if tmpOff = 0 then
+    return EMPTY
+  end if
+  repeat with n = argFileName.length down to argFileName.length - 3
+    if argFileName.char[n] = "." then
+      return argFileName.char[n + 1..argFileName.length]
+    end if
+  end repeat
+  return EMPTY
+end
+
+on filePathContainsDrive argFileName
+  if offset(":", argFileName) or offset("\\", argFileName) then
+    return 1
+  end if
+  return 0
+end
+
+on fileExists2 argFile, argPossibleExtsList
+  if voidp(argPossibleExtsList) then
+    argPossibleExtsList = [EMPTY]
+  end if
+  tmpPath = fileExtractPath(argFile)
+  tmpFileName = argFile.char[tmpPath.length + 1..argFile.length]
+  repeat with n = 1 to the maxinteger
+    tmpName = getNthFileNameInFolder(tmpPath, n)
+    if tmpName = EMPTY then
+      return 0
+    end if
+    repeat with tmpExt in argPossibleExtsList
+      if tmpName = (tmpFileName & tmpExt) then
+        return 1
+      end if
+    end repeat
+  end repeat
+  return 0
+end
+
+on fileExists argFile, argPossibleExtsList
+  if voidp(argPossibleExtsList) then
+    argPossibleExtsList = [EMPTY]
+  end if
+  tmp = new(xtra("FileIO"))
+  tmpResult = 0
+  repeat with tmpExt in argPossibleExtsList
+    tmpName = argFile & "." & tmpExt
+    openFile(tmp, tmpName, 1)
+    if status(tmp) = 0 then
+      tmpResult = 1
+      closeFile(tmp)
+      exit repeat
+    end if
+    closeFile(tmp)
+  end repeat
+  return tmpResult
+end
+
+on fileGetLength argFile
+  tmp = new(xtra("FileIO"))
+  openFile(tmp, argFile, 1)
+  if status(tmp) <> 0 then
+    return 0
+  end if
+  tmpLen = getLength(tmp)
+  closeFile(tmp)
+  return tmpLen
+end
+
+on getFilesInFolder argPath
+  tmpList = []
+  repeat with n = 1 to the maxinteger
+    tmpName = getNthFileNameInFolder(argPath, n)
+    if tmpName = EMPTY then
+      exit repeat
+      next repeat
+    end if
+    tmpList.add(tmpName)
+  end repeat
+  return tmpList
+end
+
+on isFolderEmpty argPath
+  tmpName = getNthFileNameInFolder(argPath, 1)
+  if tmpName = EMPTY then
+    return 1
+  end if
+  return 0
+end
+
+on createFolders argBasePath, argFolders
+  if voidp(argFolders) then
+    argFolders = ["Rock Manager", "Rock Manager\Save", "Rock Manager\Rendered"]
+  end if
+  fileObj = xtra("FileXtra3").new()
+  createdFolders = []
+  repeat with n = 1 to argFolders.count
+    tmpExists = 1
+    tmpFolder = argBasePath & "\" & argFolders[n]
+    if not fileObj.fx_FolderExists(tmpFolder) then
+      if fileObj.fx_FolderCreate(tmpFolder) = 0 then
+        put "Err"
+        tmpExists = 0
+      end if
+    end if
+    if tmpExists then
+      createdFolders.add(tmpFolder)
+    end if
+  end repeat
+  fileObj = 0
+  return createdFolders
+end
+
+on removePCNewLine argStr
+  nl = numToChar(10)
+  repeat while 1
+    off = offset(nl, argStr)
+    if not off then
+      exit repeat
+    end if
+    put EMPTY into argStr.char[off]
+  end repeat
+  return argStr
+end
+
+on assertPCNewLine argStr
+  nl = numToChar(10)
+  newStr = EMPTY
+  repeat while 1
+    off = offset(RETURN, argStr)
+    if off then
+      if argStr.char[off + 1] <> nl then
+        newStr = newStr & argStr.char[1..off] & nl
+      else
+        newStr = newStr & argStr.char[1..off]
+      end if
+      delete argStr.char[1..off]
+      next repeat
+    end if
+    newStr = newStr & argStr
+    exit repeat
+  end repeat
+  return newStr
+  repeat with n = argStr.length down to 1
+    if argStr.char[n] = RETURN then
+      if argStr.char[n + 1] <> numToChar(10) then
+        put RETURN & numToChar(10) into argStr.char[n]
+      end if
+    end if
+  end repeat
+  return argStr
+end
+
+on translateFXDate argStr, argToWhat
+  Months = "Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec"
+  tmp = offset(argStr.word[2], Months)
+  month = the number of words in Months.char[1..tmp]
+  day = value(argStr.word[3])
+  year = value(argStr.word[5])
+  time = argStr.word[4]
+  the itemDelimiter = ":"
+  Hour = value(time.item[1])
+  min = value(time.item[2])
+  Sec = value(time.item[3])
+  if argToWhat = #System then
+  else
+    if argToWhat = #lingo then
+      lingoDate = date(year, month, day)
+      lingoDate.seconds = listToSecs([#Hour: Hour, #min: min, #Sec: Sec])
+      return lingoDate
+    else
+      if argToWhat = #list then
+        the itemDelimiter = ":"
+        return [#year: year, #month: month, #day: day, #Hour: value(time.item[1]), #min: value(time.item[2]), #Sec: value(time.item[3])]
+      else
+        str = convItoS(year, 4) & " " & convItoS(month, 2) & " " & convItoS(day, 2) & " " & time
+        return str
+      end if
+    end if
+  end if
+end

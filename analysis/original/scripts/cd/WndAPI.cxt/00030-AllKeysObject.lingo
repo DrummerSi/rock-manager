@@ -1,0 +1,36 @@
+property reportObject, tellMovie, Active, reportType, keyCode
+global gUseful
+
+on new me, argReportObject, argReportType, argOptions
+  reportObject = argReportObject
+  reportType = argReportType
+  if not symbolp(reportType) then
+    reportType = #key
+  end if
+  keyCode = -1
+  options = argOptions
+  gUseful.keyObjects.addObject(me)
+  Active = 1
+  return me
+end
+
+on kill me
+  Active = 0
+  gUseful.keyObjects.deleteObject(me)
+  return 0
+end
+
+on key me, argState, argPollCode
+  if not Active then
+    exit
+  end if
+  if reportType = #Poll then
+    tmp = argPollCode
+  else
+    tmp = gUseful.keyObjects.convert(#Poll, reportType, argPollCode)
+  end if
+  reportObject.key(me, argState, tmp)
+end
+
+on getOption me, argProp
+end

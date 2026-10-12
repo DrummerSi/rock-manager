@@ -1,0 +1,153 @@
+property ancestor, child, type, Pic, memberOrImage
+
+on new me, argMasterObj, argChild, argList
+  type = #Pic
+  if not objectp(argChild) then
+    argChild = me
+  end if
+  child = argChild
+  ancestor = new(script("DialogAncestorScript"), argMasterObj, child, argList)
+  return me
+end
+
+on init me
+  ancestor.init()
+  tmp = me.getMyProps()
+  repeat with n = 1 to tmp.count
+    tmpProp = tmp.getPropAt(n)
+    tmpVal = ancestor.temporaryArgs.getaProp(tmpProp)
+    if not voidp(tmpVal) then
+      me.setaProp(tmpProp, ancestor.temporaryArgs.getaProp(tmpProp))
+    end if
+  end repeat
+end
+
+on finalInitsBeforeCalc me
+  ancestor.finalInitsBeforeCalc()
+  me.setOneProp(#Pic, Pic)
+end
+
+on kill me
+  ancestor = ancestor.kill()
+  child = 0
+  Pic = 0
+  memberOrImage = 0
+  return 0
+end
+
+on getMyProps me
+  return [#Pic: [#comment: "Pic", #format: #string, #default: Pic]]
+end
+
+on getProps me
+  tmpList = me.getMyProps()
+  tmpList2 = ancestor.getProps()
+  repeat with n = 1 to tmpList.count()
+    tmpList2.setaProp(tmpList.getPropAt(n), tmpList[n])
+  end repeat
+  return tmpList2
+end
+
+on getEditProps me
+  tmp = [:]
+  tmp.addProp(me.type, me.getMyProps())
+  mergeLists(tmp, ancestor.getEditProps())
+  return tmp
+end
+
+on getOneProp me, argProp
+  tmpList = me.getMyProps()
+  if voidp(tmpList.getaProp(argProp)) then
+    return ancestor.getOneProp(argProp)
+  end if
+  return me.getaProp(argProp)
+end
+
+on setOneProp me, argProp, argVal
+  tmpList = me.getMyProps()
+  if voidp(tmpList.getaProp(argProp)) then
+    ancestor.setOneProp(argProp, argVal)
+  else
+    if ancestor.ImUpAndRunningAlready = 0 then
+      me.setaProp(argProp, argVal)
+      exit
+    end if
+    if argProp = #Pic then
+      if ilk(argVal) = #image then
+        memberOrImage = argVal
+        ancestor.setOneProp(#blit, 1)
+      else
+        if ilk(argVal) = #member then
+          memberOrImage = argVal
+        else
+          if not stringp(argVal) then
+            argVal = "DefaultPic"
+          end if
+          memberOrImage = member(argVal)
+          if memberOrImage.number < 1 then
+            argVal = "DefaultPic"
+            memberOrImage = member(argVal)
+          end if
+        end if
+        if memberOrImage.type = #text then
+          tmpImg = memberOrImage.image
+          tmpRect = tmpImg.rect
+        else
+          if memberOrImage.type = #bitmap then
+            ancestor.regPoint = memberOrImage.regPoint
+          else
+            memberOrImage = member("Dummy")
+          end if
+        end if
+      end if
+      ancestor.masterObj.invalidateRect(ancestor.calcRect)
+      ancestor.setAutoSize(point(memberOrImage.width, memberOrImage.height))
+      ancestor.masterObj.changed(#Rects)
+    end if
+  end if
+  me.setaProp(argProp, argVal)
+end
+
+on calcRectDone me
+  ancestor.calcRectDone()
+  if ancestor.lastCalcRect <> ancestor.calcRect then
+    ancestor.masterObj.invalidateRect(ancestor.lastCalcRect)
+    ancestor.masterObj.invalidateRect(ancestor.calcRect)
+  end if
+end
+
+on paint me, argDstRect
+  if ilk(memberOrImage) = #image then
+    tmpSrcImg = Pic
+  else
+    tmpSrcImg = memberOrImage.image
+  end if
+  ancestor.paintThis(argDstRect, tmpSrcImg)
+end
+
+on setLayer me, argLayerNum, argLayerPtr
+  ancestor.setLayer(argLayerNum, argLayerPtr)
+  if ancestor.blit then
+    exit
+  end if
+  ancestor.reserveSprite()
+end
+
+on render me, argOffsetRect
+  ancestor.render(argOffsetRect)
+  if ancestor.blit = 1 then
+    exit
+  end if
+  tmpSPNum = ancestor.getSprite()
+  if tmpSPNum then
+    sprite(tmpSPNum).member = memberOrImage
+    sprite(tmpSPNum).rect = ancestor.onStageRect
+  end if
+end
+
+on getNumSprites me
+  if ancestor.blit then
+    return 0
+  end if
+  return 1
+end

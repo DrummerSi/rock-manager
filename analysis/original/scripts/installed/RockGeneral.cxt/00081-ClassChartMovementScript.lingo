@@ -1,0 +1,69 @@
+property ancestor, child, className, belongsTo, _killed, Movement
+
+on new me, argChild, argBelongsTo
+  if objectp(argChild) then
+    child = argChild
+  else
+    child = me
+  end if
+  belongsTo = argBelongsTo
+  ancestor = script("ClassConcreteScript").new(child)
+  className = #ChartMovement
+  Movement = [:]
+  return me
+end
+
+on kill me
+  _killed = 1
+  if objectp(ancestor) then
+    ancestor = ancestor.kill()
+  end if
+  child = 0
+  belongsTo = 0
+  return 0
+end
+
+on getLifeTime me
+  tmpMax = 0
+  repeat with n = 1 to Movement.count
+    tmpList = Movement[n]
+    tmpOff = tmpList[1]
+    tmpWeeks = tmpList.count - 1
+    tmpWeeks = tmpWeeks + tmpOff
+    if tmpWeeks > tmpMax then
+      tmpMax = tmpWeeks
+    end if
+  end repeat
+  return tmpMax
+end
+
+on getPosOnCharts me, argWeekNr
+  perChart = [:]
+  repeat with n = 1 to Movement.count
+    tmpList = Movement[n]
+    tmpOff = tmpList[1]
+    tmpPos = 0
+    if argWeekNr >= tmpOff then
+      tmpWeeks = tmpList.count - 1
+      if argWeekNr <= (tmpOff + tmpWeeks) then
+        tmpPos = tmpList[argWeekNr - tmpOff + 1]
+      end if
+    end if
+    perChart.addProp(Movement.getPropAt(n), tmpPos)
+  end repeat
+  return perChart
+end
+
+on getNumWeeksOnCharts me, argWeekNr
+  perChart = [:]
+  repeat with n = 1 to Movement.count
+    tmpList = Movement[n]
+    tmpOff = tmpList[1]
+    tmp = argWeekNr - tmpOff
+    if tmp < 0 then
+      tmp = 0
+    end if
+    perChart.addProp(Movement.getPropAt(n), tmp)
+  end repeat
+  return perChart
+end

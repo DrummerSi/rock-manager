@@ -1,0 +1,84 @@
+property ancestor
+global gDir, gRock
+
+on new me, argOptions
+  ID = argOptions[#ID]
+  argOptions.setaProp(#ReportTo, me)
+  argOptions.setaProp(#child, me)
+  ancestor = script("DlgRockAncestorScript").new(argOptions)
+  itemObj = ancestor.m_objDlg.getItemByPath([#frame, #dlg, #Frame1])
+  itemObj.setOneProp(#rel, [0, 0, [#ZYXSrnd, 3], [#ZYXSrnd, 4]])
+  album_r = gRock.m_context.getFocus(#album)
+  likesSortedGroups = [:]
+  likesSortedGroups.sort()
+  groups_r = gRock.m_classManager.getObjsOfClass(#Group)
+  if objectp(album_r) then
+    repeat with group_r in groups_r
+      tmpLikes = group_r.Attitudes.getAttitude([album_r.ID, #Likes])
+      likesSortedGroups.addProp(tmpLikes, group_r)
+    end repeat
+  else
+    repeat with group_r in groups_r
+      likesSortedGroups.addProp(0.0, group_r)
+    end repeat
+  end if
+  showTheseGroups = [:]
+  repeat with n = 1 to 3
+    tmpNum = likesSortedGroups.count - n + 1
+    showTheseGroups.addProp(likesSortedGroups.getPropAt(tmpNum), likesSortedGroups[tmpNum])
+  end repeat
+  itemObj = ancestor.m_objDlg.getItemByPath([#frame, #Head, #Info])
+  itemObj.setOneProp(#editData, rGetStr(#szidTargetGroup))
+  itemObj = ancestor.m_objDlg.getItemByPath([#frame, #Head, #icon])
+  itemObj.setOneProp(#Pic, "Dummy")
+  itemObj = ancestor.m_objDlg.getItemByPath([#frame, #dlg])
+  tmpObj = ancestor.m_objDlg.getItemByPath([#frame, #dlg, #Pic])
+  itemObj.dialogObj.deleteItem(tmpObj)
+  tmpRel = 0
+  repeat with n = 1 to showTheseGroups.count
+    group_r = showTheseGroups[n]
+    tmpLikes = showTheseGroups.getPropAt(n)
+    if tmpLikes < 0 then
+      tmpLikes = 0
+    end if
+    tmpID = symbol("X" & string(n))
+    tmpItemObj = itemObj.dialogObj.addItem([#ID: tmpID, #type: #Dialog, #dialogDataMemberName: "DlgSurveyInfoData", #inOffsetRect: rect(0, 5, 0, 0), #rel: [0, tmpRel, #Auto, #Auto]])
+    tmpInfoObj = tmpItemObj.dialogObj.getItem(#Info)
+    tmpAgeStr = string(group_r.AgeRange.min) & "-" & string(group_r.AgeRange.max)
+    tmpInfoObj.setOneProp(#Pic, rFormatText([group_r.name, group_r.comment, #szidAge, tmpAgeStr, #szidGroupSize, rCurrency(group_r.size)], "TargetGroupFormatting"))
+    tmpPercent = integer(100 * tmpLikes)
+    tmpPercentObj = tmpItemObj.dialogObj.getItem(#Percent)
+    tmpPercentObj.setOneProp(#Pic, rFormatText([string(tmpPercent) & "%"], "TargetGroupPercentFormatting"))
+    tmpInfoObj = tmpItemObj.dialogObj.getItem(#Pie)
+    tmpNumPics = 20
+    tmp = tmpPercent / integer(100.0 / tmpNumPics)
+    tmpPiePic = member(member("pie01_0000").number + tmpNumPics - tmp)
+    tmpInfoObj.setOneProp(#Pic, tmpPiePic)
+    tmpRel = [tmpID, 4]
+  end repeat
+  ancestor.render()
+  return me
+end
+
+on kill me
+  ancestor.kill()
+  m_actions_r = 0
+  m_action_r = 0
+  return 0
+end
+
+on Report me, argObj, argWhat
+end
+
+on mouse me, argObj, argWhat, argOption
+  if objectp(argOption) then
+    if argWhat = #click then
+      ID = argOption.getOneProp(#ID)
+      IDStr = string(ID)
+      ancestor.mouse(argObj, argWhat, argOption)
+    end if
+  end if
+end
+
+on X me
+end

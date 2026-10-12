@@ -1,0 +1,792 @@
+property m_locOrg, m_locScroll, m_objsBuildings, m_SPbg, m_widthScrollArea, m_objsMouseScroll, m_iScrollDir, m_animObjs, m_sndObj, m_numVisibleBuildings, m_waitingToStartSound, m_active
+global gDir, gUseful, gRock
+
+on new me
+  [  0] pushzero ................................ <0>
+  [  1] pushzero ................................ <0>
+  [  2] pusharglist 2 ........................... <0, 0>
+  [  4] extcall 75 .............................. <point(0, 0)>
+  [  7] setprop 74 .............................. m_locScroll = point(0, 0)
+  [ 10] pusharglist 0 ........................... <[:]>
+  [ 12] pushproplist ............................ <[:]>
+  [ 13] setprop 76 .............................. m_objsBuildings = [:]
+  [ 16] pushcons 0 .............................. <"city_background01">
+  [ 18] pusharglist 1 ........................... <"city_background01">
+  [ 20] extcall 8 ............................... <member("city_background01")>
+  [ 22] setlocal 0 .............................. BGMember = member("city_background01")
+  [ 24] getglobal 35 ............................ <gRock>
+  [ 27] getobjprop 77 ........................... <gRock.m_classManager>
+  [ 30] pushsymb 78 ............................. <#place>
+  [ 33] pusharglist 2 ........................... <gRock.m_classManager, #place>
+  [ 35] objcall 79 .............................. <gRock.m_classManager.getObjsWithBaseClass(#place)>
+  [ 38] setlocal 8 .............................. places = gRock.m_classManager.getObjsWithBaseClass(#place)
+  [ 40] pushcons 8 .............................. <"city_background01">
+  [ 42] pusharglist 1 ........................... <"city_background01">
+  [ 44] extcall 8 ............................... <member("city_background01")>
+  [ 46] setlocal 0 .............................. BGMember = member("city_background01")
+  [ 48] getglobal 81 ............................ <gDir>
+  [ 51] pushsymb 7 .............................. <#m_spriteList>
+  [ 53] pushsymb 12 ............................. <#ScrollBG>
+  [ 55] pusharglist 3 ........................... <gDir, #m_spriteList, #ScrollBG>
+  [ 57] objcall 82 .............................. <gDir.m_spriteList[#ScrollBG]>
+  [ 60] pusharglist 1 ........................... <gDir.m_spriteList[#ScrollBG]>
+  [ 62] extcall 64 .............................. <sprite(gDir.m_spriteList[#ScrollBG])>
+  [ 65] setprop 80 .............................. m_SPbg = sprite(gDir.m_spriteList[#ScrollBG])
+  [ 68] getprop 80 .............................. <m_SPbg>
+  [ 71] getlocal 0 .............................. <BGMember>
+  [ 73] setobjprop 8 ............................ m_SPbg.member = BGMember
+  [ 75] pushint8 400 ............................ <400>
+  [ 78] pushint8 340 ............................ <340>
+  [ 81] pusharglist 2 ........................... <400, 340>
+  [ 83] extcall 75 .............................. <point(400, 340)>
+  [ 86] setprop 83 .............................. m_locOrg = point(400, 340)
+  [ 89] getprop 80 .............................. <m_SPbg>
+  [ 92] getprop 83 .............................. <m_locOrg>
+  [ 95] setobjprop 84 ........................... m_SPbg.loc = m_locOrg
+  [ 98] pushcons 16 ............................. <"HotspotsField">
+  [100] pusharglist 1 ........................... <"HotspotsField">
+  [102] extcall 8 ............................... <member("HotspotsField")>
+  [104] getobjprop 9 ............................ <member("HotspotsField").text>
+  [106] getobjprop 10 ........................... <member("HotspotsField").text.value>
+  [108] setlocal 16 ............................. hotspots = member("HotspotsField").text.value
+  [110] getlocal 16 ............................. <hotspots>
+  [112] pusharglist 1 ........................... <hotspots>
+  [114] extcall 11 .............................. <listp(hotspots)>
+  [116] not ..................................... <not listp(hotspots)>
+  [117] jmpifz [125] ............................ if not listp(hotspots) then
+  [120] pusharglist 0 ........................... <[:]>
+  [122] pushproplist ............................ <[:]>
+  [123] setlocal 16 ............................. hotspots = [:]
+  [125] getglobal 81 ............................ <gDir>
+  [128] pushsymb 7 .............................. <#m_spriteList>
+  [130] pushsymb 13 ............................. <#Buildings>
+  [132] pusharglist 3 ........................... <gDir, #m_spriteList, #Buildings>
+  [134] objcall 82 .............................. <gDir.m_spriteList[#Buildings]>
+  [137] setlocal 24 ............................. SPNum = gDir.m_spriteList[#Buildings]
+  [139] getlocal 8 .............................. <places>
+  [141] peek 0
+  [143] pusharglist 1
+  [145] extcall 85
+  [148] pushint8 1
+  [150] peek 0
+  [152] peek 2
+  [154] lteq
+  [155] jmpifz [271] ............................ repeat with placeObj in places
+  [158] peek 2
+  [160] peek 1
+  [162] pusharglist 2
+  [164] extcall 51
+  [167] setlocal 32
+  [169] getlocal 16 ............................. <hotspots>
+  [171] getlocal 32 ............................. <placeObj>
+  [173] getobjprop 86 ........................... <placeObj.ID>
+  [176] pusharglist 2 ........................... <hotspots, placeObj.ID>
+  [178] objcall 87 .............................. <hotspots.getaProp(placeObj.ID)>
+  [181] setlocal 40 ............................. tmpRect = hotspots.getaProp(placeObj.ID)
+  [183] getlocal 40 ............................. <tmpRect>
+  [185] pusharglist 1 ........................... <tmpRect>
+  [187] extcall 11 .............................. <listp(tmpRect)>
+  [189] jmpifz [212] ............................ if listp(tmpRect) then
+  [192] getlocal 40 ............................. <tmpRect>
+  [194] getlocal 0 .............................. <BGMember>
+  [196] getobjprop 88 ........................... <BGMember.regPoint>
+  [199] getlocal 0 .............................. <BGMember>
+  [201] getobjprop 88 ........................... <BGMember.regPoint>
+  [204] pusharglist 2 ........................... <BGMember.regPoint, BGMember.regPoint>
+  [206] extcall 65 .............................. <rect(BGMember.regPoint, BGMember.regPoint)>
+  [209] sub ..................................... <tmpRect - rect(BGMember.regPoint, BGMember.regPoint)>
+  [210] setlocal 40 ............................. tmpRect = tmpRect - rect(BGMember.regPoint, BGMember.regPoint)
+  [212] pushcons 24 ............................. <"BuildingScript">
+  [214] pusharglist 1 ........................... <"BuildingScript">
+  [216] extcall 49 .............................. <script("BuildingScript")>
+  [219] getparam 0 .............................. <me>
+  [221] getlocal 32 ............................. <placeObj>
+  [223] getobjprop 86 ........................... <placeObj.ID>
+  [226] getlocal 24 ............................. <SPNum>
+  [228] getlocal 32 ............................. <placeObj>
+  [230] getlocal 40 ............................. <tmpRect>
+  [232] pusharglist 6 ........................... <script("BuildingScript"), me, placeObj.ID, SPNum, placeObj, tmpRect>
+  [234] objcall 0 ............................... <script("BuildingScript").new(me, placeObj.ID, SPNum, placeObj, tmpRect)>
+  [236] setlocal 48 ............................. obj = script("BuildingScript").new(me, placeObj.ID, SPNum, placeObj, tmpRect)
+  [238] getprop 76 .............................. <m_objsBuildings>
+  [241] getlocal 32 ............................. <placeObj>
+  [243] getobjprop 86 ........................... <placeObj.ID>
+  [246] getlocal 48 ............................. <obj>
+  [248] pusharglistnoret 3 ...................... <m_objsBuildings, placeObj.ID, obj>
+  [250] objcall 89 .............................. m_objsBuildings.addProp(placeObj.ID, obj)
+  [253] getlocal 24 ............................. <SPNum>
+  [255] getlocal 48 ............................. <obj>
+  [257] pusharglist 1 ........................... <obj>
+  [259] objcall 90 .............................. <obj.GetSPNeed()>
+  [262] add ..................................... <SPNum + obj.GetSPNeed()>
+  [263] setlocal 24 ............................. SPNum = SPNum + obj.GetSPNeed()
+  [265] pushint8 1
+  [267] add
+  [268] endrepeat [150]
+  [271] pop 3
+  [273] pushzero ................................ <0>
+  [274] setprop 91 .............................. m_numVisibleBuildings = 0
+  [277] getprop 76 .............................. <m_objsBuildings>
+  [280] peek 0
+  [282] pusharglist 1
+  [284] extcall 85
+  [287] pushint8 1
+  [289] peek 0
+  [291] peek 2
+  [293] lteq
+  [294] jmpifz [341] ............................ repeat with obj in m_objsBuildings
+  [297] peek 2
+  [299] peek 1
+  [301] pusharglist 2
+  [303] extcall 51
+  [306] setlocal 48
+  [308] getlocal 48 ............................. <obj>
+  [310] pusharglistnoret 1 ...................... <obj>
+  [312] objcall 92 .............................. obj.show()
+  [315] getlocal 48 ............................. <obj>
+  [317] pusharglist 1 ........................... <obj>
+  [319] objcall 93 .............................. <obj.getIsVisible()>
+  [322] jmpifz [335] ............................ if obj.getIsVisible() then
+  [325] getprop 91 .............................. <m_numVisibleBuildings>
+  [328] pushint8 1 .............................. <1>
+  [331] add ..................................... <m_numVisibleBuildings + 1>
+  [332] setprop 91 .............................. m_numVisibleBuildings = m_numVisibleBuildings + 1
+  [335] pushint8 1
+  [337] add
+  [338] endrepeat [289]
+  [341] pop 3
+  [343] pushint8 100 ............................ <100>
+  [346] setprop 94 .............................. m_widthScrollArea = 100
+  [349] getglobal 39 ............................ <gUseful>
+  [352] getobjprop 95 ........................... <gUseful.frameTimer>
+  [355] getparam 0 .............................. <me>
+  [357] pusharglistnoret 2 ...................... <gUseful.frameTimer, me>
+  [359] objcall 96 .............................. gUseful.frameTimer.addObject(me)
+  [362] pushcons 32 ............................. <"car01_0017">
+  [364] pushcons 40 ............................. <"crane01_0022">
+  [366] pushcons 48 ............................. <"radar01_0007">
+  [368] pushcons 56 ............................. <"radiotower01_0000">
+  [370] pushcons 64 ............................. <"tvtower01_0000">
+  [372] pushcons 72 ............................. <"water01_0000">
+  [374] pushcons 80 ............................. <"car02_0005">
+  [376] pusharglist 7 ........................... <["car01_0017", "crane01_0022", "radar01_0007", "radiotower01_0000", "tvtower01_0000", "water01_0000", "car02_0005"]>
+  [378] pushlist ................................ <["car01_0017", "crane01_0022", "radar01_0007", "radiotower01_0000", "tvtower01_0000", "water01_0000", "car02_0005"]>
+  [379] setlocal 56 ............................. tmpAnims = ["car01_0017", "crane01_0022", "radar01_0007", "radiotower01_0000", "tvtower01_0000", "water01_0000", "car02_0005"]
+  [381] pusharglist 0 ........................... <[]>
+  [383] pushlist ................................ <[]>
+  [384] setprop 97 .............................. m_animObjs = []
+  [387] getlocal 56 ............................. <tmpAnims>
+  [389] peek 0
+  [391] pusharglist 1
+  [393] extcall 85
+  [396] pushint8 1
+  [398] peek 0
+  [400] peek 2
+  [402] lteq
+  [403] jmpifz [459] ............................ repeat with animName in tmpAnims
+  [406] peek 2
+  [408] peek 1
+  [410] pusharglist 2
+  [412] extcall 51
+  [415] setlocal 64
+  [417] pushcons 88 ............................. <"CityAnimScript">
+  [419] pusharglist 1 ........................... <"CityAnimScript">
+  [421] extcall 49 .............................. <script("CityAnimScript")>
+  [424] pushzero ................................ <0>
+  [425] getlocal 64 ............................. <animName>
+  [427] getlocal 24 ............................. <SPNum>
+  [429] pusharglist 4 ........................... <script("CityAnimScript"), 0, animName, SPNum>
+  [431] objcall 0 ............................... <script("CityAnimScript").new(0, animName, SPNum)>
+  [433] setlocal 48 ............................. obj = script("CityAnimScript").new(0, animName, SPNum)
+  [435] getprop 97 .............................. <m_animObjs>
+  [438] getlocal 48 ............................. <obj>
+  [440] pusharglistnoret 2 ...................... <m_animObjs, obj>
+  [442] objcall 98 .............................. m_animObjs.add(obj)
+  [445] getlocal 24 ............................. <SPNum>
+  [447] pushint8 1 .............................. <1>
+  [450] add ..................................... <SPNum + 1>
+  [451] setlocal 24 ............................. SPNum = SPNum + 1
+  [453] pushint8 1
+  [455] add
+  [456] endrepeat [398]
+  [459] pop 3
+  [461] pusharglist 0 ........................... <[]>
+  [463] pushlist ................................ <[]>
+  [464] setprop 99 .............................. m_objsMouseScroll = []
+  [467] getprop 99 .............................. <m_objsMouseScroll>
+  [470] pushcons 96 ............................. <"MouseObject">
+  [472] pusharglist 1 ........................... <"MouseObject">
+  [474] extcall 49 .............................. <script("MouseObject")>
+  [477] getparam 0 .............................. <me>
+  [479] pushint8 200 ............................ <200>
+  [482] inv ..................................... <-200>
+  [483] pushzero ................................ <0>
+  [484] getprop 94 .............................. <m_widthScrollArea>
+  [487] pushint8 600 ............................ <600>
+  [490] pusharglist 4 ........................... <-200, 0, m_widthScrollArea, 600>
+  [492] extcall 65 .............................. <rect(-200, 0, m_widthScrollArea, 600)>
+  [495] pushsymb 86 ............................. <#ID>
+  [498] pushsymb 100 ............................ <#ScrollLeft>
+  [501] pushsymb 101 ............................ <#layer>
+  [504] pushint8 9 .............................. <9>
+  [507] pushsymb 102 ............................ <#PassButton>
+  [510] pushint8 1 .............................. <1>
+  [513] pushsymb 103 ............................ <#cursorRoll>
+  [516] pushsymb 104 ............................ <#NoClick>
+  [519] pusharglist 8 ........................... <[#ID: #ScrollLeft, #layer: 9, #PassButton: 1, #cursorRoll: #NoClick]>
+  [521] pushproplist ............................ <[#ID: #ScrollLeft, #layer: 9, #PassButton: 1, #cursorRoll: #NoClick]>
+  [522] pusharglist 4 ........................... <script("MouseObject"), me, rect(-200, 0, m_widthScrollArea, 600), [#ID: #ScrollLeft, #layer: 9, #PassButton: 1, #cursorRoll: #NoClick]>
+  [524] objcall 0 ............................... <script("MouseObject").new(me, rect(-200, 0, m_widthScrollArea, 600), [#ID: #ScrollLeft, #layer: 9, #PassButton: 1, #cursorRoll: #NoClick])>
+  [526] pusharglistnoret 2 ...................... <m_objsMouseScroll, script("MouseObject").new(me, rect(-200, 0, m_widthScrollArea, 600), [#ID: #ScrollLeft, #layer: 9, #PassButton: 1, #cursorRoll: #NoClick])>
+  [528] objcall 98 .............................. m_objsMouseScroll.add(script("MouseObject").new(me, rect(-200, 0, m_widthScrollArea, 600), [#ID: #ScrollLeft, #layer: 9, #PassButton: 1, #cursorRoll: #NoClick]))
+  [531] getprop 99 .............................. <m_objsMouseScroll>
+  [534] pushcons 104 ............................ <"MouseObject">
+  [536] pusharglist 1 ........................... <"MouseObject">
+  [538] extcall 49 .............................. <script("MouseObject")>
+  [541] getparam 0 .............................. <me>
+  [543] pushint8 800 ............................ <800>
+  [546] getprop 94 .............................. <m_widthScrollArea>
+  [549] sub ..................................... <800 - m_widthScrollArea>
+  [550] pushzero ................................ <0>
+  [551] pushint8 1000 ........................... <1000>
+  [554] pushint8 600 ............................ <600>
+  [557] pusharglist 4 ........................... <800 - m_widthScrollArea, 0, 1000, 600>
+  [559] extcall 65 .............................. <rect(800 - m_widthScrollArea, 0, 1000, 600)>
+  [562] pushsymb 86 ............................. <#ID>
+  [565] pushsymb 105 ............................ <#ScrollRight>
+  [568] pushsymb 101 ............................ <#layer>
+  [571] pushint8 9 .............................. <9>
+  [574] pushsymb 102 ............................ <#PassButton>
+  [577] pushint8 1 .............................. <1>
+  [580] pushsymb 103 ............................ <#cursorRoll>
+  [583] pushsymb 104 ............................ <#NoClick>
+  [586] pusharglist 8 ........................... <[#ID: #ScrollRight, #layer: 9, #PassButton: 1, #cursorRoll: #NoClick]>
+  [588] pushproplist ............................ <[#ID: #ScrollRight, #layer: 9, #PassButton: 1, #cursorRoll: #NoClick]>
+  [589] pusharglist 4 ........................... <script("MouseObject"), me, rect(800 - m_widthScrollArea, 0, 1000, 600), [#ID: #ScrollRight, #layer: 9, #PassButton: 1, #cursorRoll: #NoClick]>
+  [591] objcall 0 ............................... <script("MouseObject").new(me, rect(800 - m_widthScrollArea, 0, 1000, 600), [#ID: #ScrollRight, #layer: 9, #PassButton: 1, #cursorRoll: #NoClick])>
+  [593] pusharglistnoret 2 ...................... <m_objsMouseScroll, script("MouseObject").new(me, rect(800 - m_widthScrollArea, 0, 1000, 600), [#ID: #ScrollRight, #layer: 9, #PassButton: 1, #cursorRoll: #NoClick])>
+  [595] objcall 98 .............................. m_objsMouseScroll.add(script("MouseObject").new(me, rect(800 - m_widthScrollArea, 0, 1000, 600), [#ID: #ScrollRight, #layer: 9, #PassButton: 1, #cursorRoll: #NoClick]))
+  [598] pushzero ................................ <0>
+  [599] setprop 106 ............................. m_iScrollDir = 0
+  [602] pushint8 4 .............................. <4>
+  [605] setprop 107 ............................. m_waitingToStartSound = 4
+  [608] pushint8 1 .............................. <1>
+  [611] setprop 108 ............................. m_active = 1
+  [614] getparam 0 .............................. <me>
+  [616] pusharglistnoret 1 ...................... <me>
+  [618] extcall 46 .............................. return me
+  [621] ret
+end
+
+on getPlaceGfxObjByID me, argID
+  [  0] getprop 76 .............................. <m_objsBuildings>
+  [  3] getparam 8 .............................. <argID>
+  [  5] pusharglist 2 ........................... <m_objsBuildings, argID>
+  [  7] objcall 87 .............................. <m_objsBuildings.getaProp(argID)>
+  [ 10] pusharglistnoret 1 ...................... <m_objsBuildings.getaProp(argID)>
+  [ 12] extcall 46 .............................. return m_objsBuildings.getaProp(argID)
+  [ 15] ret
+end
+
+on kill me
+  [  0] getprop 119 ............................. <m_sndObj>
+  [  3] pusharglist 1 ........................... <m_sndObj>
+  [  5] extcall 63 .............................. <objectp(m_sndObj)>
+  [  8] jmpifz [ 21] ............................ if objectp(m_sndObj) then
+  [ 11] getprop 119 ............................. <m_sndObj>
+  [ 14] pusharglist 1 ........................... <m_sndObj>
+  [ 16] objcall 3 ............................... <m_sndObj.kill()>
+  [ 18] setprop 119 ............................. m_sndObj = m_sndObj.kill()
+  [ 21] getprop 97 .............................. <m_animObjs>
+  [ 24] peek 0
+  [ 26] pusharglist 1
+  [ 28] extcall 85
+  [ 31] pushint8 1
+  [ 33] peek 0
+  [ 35] peek 2
+  [ 37] lteq
+  [ 38] jmpifz [ 63] ............................ repeat with obj in m_animObjs
+  [ 41] peek 2
+  [ 43] peek 1
+  [ 45] pusharglist 2
+  [ 47] extcall 51
+  [ 50] setlocal 0
+  [ 52] getlocal 0 .............................. <obj>
+  [ 54] pusharglistnoret 1 ...................... <obj>
+  [ 56] objcall 3 ............................... obj.kill()
+  [ 58] pushint8 1
+  [ 60] add
+  [ 61] endrepeat [ 33]
+  [ 63] pop 3
+  [ 65] pusharglist 0 ........................... <[]>
+  [ 67] pushlist ................................ <[]>
+  [ 68] setprop 97 .............................. m_animObjs = []
+  [ 71] getprop 76 .............................. <m_objsBuildings>
+  [ 74] peek 0
+  [ 76] pusharglist 1
+  [ 78] extcall 85
+  [ 81] pushint8 1
+  [ 83] peek 0
+  [ 85] peek 2
+  [ 87] lteq
+  [ 88] jmpifz [113] ............................ repeat with obj in m_objsBuildings
+  [ 91] peek 2
+  [ 93] peek 1
+  [ 95] pusharglist 2
+  [ 97] extcall 51
+  [100] setlocal 0
+  [102] getlocal 0 .............................. <obj>
+  [104] pusharglistnoret 1 ...................... <obj>
+  [106] objcall 3 ............................... obj.kill()
+  [108] pushint8 1
+  [110] add
+  [111] endrepeat [ 83]
+  [113] pop 3
+  [115] pusharglist 0 ........................... <[:]>
+  [117] pushproplist ............................ <[:]>
+  [118] setprop 76 .............................. m_objsBuildings = [:]
+  [121] getprop 99 .............................. <m_objsMouseScroll>
+  [124] peek 0
+  [126] pusharglist 1
+  [128] extcall 85
+  [131] pushint8 1
+  [133] peek 0
+  [135] peek 2
+  [137] lteq
+  [138] jmpifz [163] ............................ repeat with obj in m_objsMouseScroll
+  [141] peek 2
+  [143] peek 1
+  [145] pusharglist 2
+  [147] extcall 51
+  [150] setlocal 0
+  [152] getlocal 0 .............................. <obj>
+  [154] pusharglistnoret 1 ...................... <obj>
+  [156] objcall 3 ............................... obj.kill()
+  [158] pushint8 1
+  [160] add
+  [161] endrepeat [133]
+  [163] pop 3
+  [165] pusharglist 0 ........................... <[]>
+  [167] pushlist ................................ <[]>
+  [168] setprop 99 .............................. m_objsMouseScroll = []
+  [171] getglobal 39 ............................ <gUseful>
+  [174] getobjprop 95 ........................... <gUseful.frameTimer>
+  [177] getparam 0 .............................. <me>
+  [179] pusharglistnoret 2 ...................... <gUseful.frameTimer, me>
+  [181] objcall 120 ............................. gUseful.frameTimer.deleteObject(me)
+  [184] pushzero ................................ <0>
+  [185] pusharglistnoret 1 ...................... <0>
+  [187] extcall 46 .............................. return 0
+  [190] ret
+end
+
+on redraw me
+  [  0] getprop 83 .............................. <m_locOrg>
+  [  3] getprop 74 .............................. <m_locScroll>
+  [  6] add ..................................... <m_locOrg + m_locScroll>
+  [  7] setlocal 0 .............................. loc = m_locOrg + m_locScroll
+  [  9] getprop 80 .............................. <m_SPbg>
+  [ 12] getlocal 0 .............................. <loc>
+  [ 14] setobjprop 84 ........................... m_SPbg.loc = loc
+  [ 17] pushzero ................................ <0>
+  [ 18] setprop 91 .............................. m_numVisibleBuildings = 0
+  [ 21] getprop 76 .............................. <m_objsBuildings>
+  [ 24] peek 0
+  [ 26] pusharglist 1
+  [ 28] extcall 85
+  [ 31] pushint8 1
+  [ 33] peek 0
+  [ 35] peek 2
+  [ 37] lteq
+  [ 38] jmpifz [ 85] ............................ repeat with obj in m_objsBuildings
+  [ 41] peek 2
+  [ 43] peek 1
+  [ 45] pusharglist 2
+  [ 47] extcall 51
+  [ 50] setlocal 8
+  [ 52] getlocal 8 .............................. <obj>
+  [ 54] pusharglistnoret 1 ...................... <obj>
+  [ 56] objcall 72 .............................. obj.timeTick()
+  [ 59] getlocal 8 .............................. <obj>
+  [ 61] pusharglist 1 ........................... <obj>
+  [ 63] objcall 93 .............................. <obj.getIsVisible()>
+  [ 66] jmpifz [ 79] ............................ if obj.getIsVisible() then
+  [ 69] getprop 91 .............................. <m_numVisibleBuildings>
+  [ 72] pushint8 1 .............................. <1>
+  [ 75] add ..................................... <m_numVisibleBuildings + 1>
+  [ 76] setprop 91 .............................. m_numVisibleBuildings = m_numVisibleBuildings + 1
+  [ 79] pushint8 1
+  [ 81] add
+  [ 82] endrepeat [ 33]
+  [ 85] pop 3
+  [ 87] getprop 97 .............................. <m_animObjs>
+  [ 90] peek 0
+  [ 92] pusharglist 1
+  [ 94] extcall 85
+  [ 97] pushint8 1
+  [ 99] peek 0
+  [101] peek 2
+  [103] lteq
+  [104] jmpifz [139] ............................ repeat with obj in m_animObjs
+  [107] peek 2
+  [109] peek 1
+  [111] pusharglist 2
+  [113] extcall 51
+  [116] setlocal 8
+  [118] getlocal 8 .............................. <obj>
+  [120] pusharglistnoret 1 ...................... <obj>
+  [122] objcall 72 .............................. obj.timeTick()
+  [125] getlocal 8 .............................. <obj>
+  [127] getlocal 0 .............................. <loc>
+  [129] pusharglistnoret 2 ...................... <obj, loc>
+  [131] objcall 5 ............................... obj.redraw(loc)
+  [133] pushint8 1
+  [135] add
+  [136] endrepeat [ 99]
+  [139] pop 3
+  [141] ret
+end
+
+on mouse me, argObj, argWhat
+  [  0] getparam 8 .............................. <argObj>
+  [  2] getobjprop 86 ........................... <argObj.ID>
+  [  5] pushsymb 100 ............................ <#ScrollLeft>
+  [  8] eq ...................................... <argObj.ID = #ScrollLeft>
+  [  9] getparam 8 .............................. <argObj>
+  [ 11] getobjprop 86 ........................... <argObj.ID>
+  [ 14] pushsymb 105 ............................ <#ScrollRight>
+  [ 17] eq ...................................... <argObj.ID = #ScrollRight>
+  [ 18] or ...................................... <(argObj.ID = #ScrollLeft) or (argObj.ID = #ScrollRight)>
+  [ 19] jmpifz [ 75] ............................ if (argObj.ID = #ScrollLeft) or (argObj.ID = #ScrollRight) then
+  [ 22] getparam 16 ............................. <argWhat>
+  [ 24] pushsymb 121 ............................ <#enter>
+  [ 27] eq ...................................... <argWhat = #enter>
+  [ 28] jmpifz [ 62] ............................ if argWhat = #enter then / else
+  [ 31] getparam 8 .............................. <argObj>
+  [ 33] getobjprop 86 ........................... <argObj.ID>
+  [ 36] pushsymb 100 ............................ <#ScrollLeft>
+  [ 39] eq ...................................... <argObj.ID = #ScrollLeft>
+  [ 40] jmpifz [ 53] ............................ if argObj.ID = #ScrollLeft then / else
+  [ 43] pushint8 1 .............................. <1>
+  [ 46] inv ..................................... <-1>
+  [ 47] setprop 106 ............................. m_iScrollDir = -1
+  [ 50] jmp [ 59]
+  [ 53] pushint8 1 .............................. <1>
+  [ 56] setprop 106 ............................. m_iScrollDir = 1
+  [ 59] jmp [ 75]
+  [ 62] getparam 16 ............................. <argWhat>
+  [ 64] pushsymb 122 ............................ <#Leave>
+  [ 67] eq ...................................... <argWhat = #Leave>
+  [ 68] jmpifz [ 75] ............................ if argWhat = #Leave then
+  [ 71] pushzero ................................ <0>
+  [ 72] setprop 106 ............................. m_iScrollDir = 0
+  [ 75] ret
+end
+
+on timeTick me
+  [  0] getprop 108 ............................. <m_active>
+  [  3] not ..................................... <not m_active>
+  [  4] jmpifz [  8] ............................ if not m_active then
+  [  7] ret ..................................... exit
+  [  8] getprop 107 ............................. <m_waitingToStartSound>
+  [ 11] pushzero ................................ <0>
+  [ 12] gt ...................................... <m_waitingToStartSound > 0>
+  [ 13] jmpifz [ 41] ............................ if m_waitingToStartSound > 0 then
+  [ 16] getprop 107 ............................. <m_waitingToStartSound>
+  [ 19] pushint8 1 .............................. <1>
+  [ 22] sub ..................................... <m_waitingToStartSound - 1>
+  [ 23] setprop 107 ............................. m_waitingToStartSound = m_waitingToStartSound - 1
+  [ 26] getprop 107 ............................. <m_waitingToStartSound>
+  [ 29] pushzero ................................ <0>
+  [ 30] eq ...................................... <m_waitingToStartSound = 0>
+  [ 31] jmpifz [ 41] ............................ if m_waitingToStartSound = 0 then
+  [ 34] getparam 0 .............................. <me>
+  [ 36] pusharglistnoret 1 ...................... <me>
+  [ 38] objcall 73 .............................. me.startSound()
+  [ 41] getprop 106 ............................. <m_iScrollDir>
+  [ 44] pushzero ................................ <0>
+  [ 45] nteq .................................... <m_iScrollDir <> 0>
+  [ 46] jmpifz [285] ............................ if m_iScrollDir <> 0 then
+  [ 49] getmovieprop 125 ........................ <the mouseLoc>
+  [ 52] setlocal 0 .............................. tmp = the mouseLoc
+  [ 54] getlocal 0 .............................. <tmp>
+  [ 56] pushint8 1 .............................. <1>
+  [ 59] pusharglist 2 ........................... <tmp, 1>
+  [ 61] objcall 51 .............................. <tmp[1]>
+  [ 64] getprop 94 .............................. <m_widthScrollArea>
+  [ 67] lt ...................................... <tmp[1] < m_widthScrollArea>
+  [ 68] jmpifz [ 90] ............................ if tmp[1] < m_widthScrollArea then / else
+  [ 71] getprop 94 .............................. <m_widthScrollArea>
+  [ 74] getlocal 0 .............................. <tmp>
+  [ 76] pushint8 1 .............................. <1>
+  [ 79] pusharglist 2 ........................... <tmp, 1>
+  [ 81] objcall 51 .............................. <tmp[1]>
+  [ 84] sub ..................................... <m_widthScrollArea - tmp[1]>
+  [ 85] setlocal 8 .............................. tmpDiff = m_widthScrollArea - tmp[1]
+  [ 87] jmp [131]
+  [ 90] getlocal 0 .............................. <tmp>
+  [ 92] pushint8 1 .............................. <1>
+  [ 95] pusharglist 2 ........................... <tmp, 1>
+  [ 97] objcall 51 .............................. <tmp[1]>
+  [100] pushint8 800 ............................ <800>
+  [103] getprop 94 .............................. <m_widthScrollArea>
+  [106] sub ..................................... <800 - m_widthScrollArea>
+  [107] gt ...................................... <tmp[1] > (800 - m_widthScrollArea)>
+  [108] jmpifz [131] ............................ if tmp[1] > (800 - m_widthScrollArea) then
+  [111] pushint8 800 ............................ <800>
+  [114] getprop 94 .............................. <m_widthScrollArea>
+  [117] sub ..................................... <800 - m_widthScrollArea>
+  [118] getlocal 0 .............................. <tmp>
+  [120] pushint8 1 .............................. <1>
+  [123] pusharglist 2 ........................... <tmp, 1>
+  [125] objcall 51 .............................. <tmp[1]>
+  [128] sub ..................................... <800 - m_widthScrollArea - tmp[1]>
+  [129] setlocal 8 .............................. tmpDiff = 800 - m_widthScrollArea - tmp[1]
+  [131] getlocal 8 .............................. <tmpDiff>
+  [133] pusharglist 1 ........................... <tmpDiff>
+  [135] extcall 126 ............................. <integerp(tmpDiff)>
+  [138] jmpifz [285] ............................ if integerp(tmpDiff) then
+  [141] getlocal 8 .............................. <tmpDiff>
+  [143] getprop 94 .............................. <m_widthScrollArea>
+  [146] pusharglist 1 ........................... <m_widthScrollArea>
+  [148] extcall 127 ............................. <float(m_widthScrollArea)>
+  [151] div ..................................... <tmpDiff / float(m_widthScrollArea)>
+  [152] setlocal 16 ............................. tmpFract = tmpDiff / float(m_widthScrollArea)
+  [154] getlocal 16 ............................. <tmpFract>
+  [156] pusharglist 1 ........................... <tmpFract>
+  [158] extcall 128 ............................. <abs(tmpFract)>
+  [161] pushcons 112 ............................ <1.0>
+  [163] gt ...................................... <abs(tmpFract) > 1.0>
+  [164] jmpifz [179] ............................ if abs(tmpFract) > 1.0 then
+  [167] pushcons 120 ............................ <1.0>
+  [169] getlocal 16 ............................. <tmpFract>
+  [171] pusharglist 1 ........................... <tmpFract>
+  [173] extcall 129 ............................. <getSign(tmpFract)>
+  [176] mul ..................................... <1.0 * getSign(tmpFract)>
+  [177] setlocal 16 ............................. tmpFract = 1.0 * getSign(tmpFract)
+  [179] getprop 74 .............................. <m_locScroll>
+  [182] pushint8 1 .............................. <1>
+  [185] getlocal 16 ............................. <tmpFract>
+  [187] pushcons 128 ............................ <20.0>
+  [189] mul ..................................... <tmpFract * 20.0>
+  [190] getprop 74 .............................. <m_locScroll>
+  [193] pushint8 1 .............................. <1>
+  [196] pusharglist 2 ........................... <m_locScroll, 1>
+  [198] objcall 51 .............................. <m_locScroll[1]>
+  [201] add ..................................... <(tmpFract * 20.0) + m_locScroll[1]>
+  [202] pusharglistnoret 3 ...................... <m_locScroll, 1, (tmpFract * 20.0) + m_locScroll[1]>
+  [204] objcall 130 ............................. m_locScroll[1] = (tmpFract * 20.0) + m_locScroll[1]
+  [207] getprop 74 .............................. <m_locScroll>
+  [210] pushint8 1 .............................. <1>
+  [213] pusharglist 2 ........................... <m_locScroll, 1>
+  [215] objcall 51 .............................. <m_locScroll[1]>
+  [218] pusharglist 1 ........................... <m_locScroll[1]>
+  [220] extcall 128 ............................. <abs(m_locScroll[1])>
+  [223] pushint8 1200 ........................... <1200>
+  [226] pushint8 50 ............................. <50>
+  [229] add ..................................... <1200 + 50>
+  [230] pushint8 800 ............................ <800>
+  [233] sub ..................................... <1200 + 50 - 800>
+  [234] pushint8 2 .............................. <2>
+  [237] div ..................................... <(1200 + 50 - 800) / 2>
+  [238] gt ...................................... <abs(m_locScroll[1]) > ((1200 + 50 - 800) / 2)>
+  [239] jmpifz [285] ............................ if abs(m_locScroll[1]) > ((1200 + 50 - 800) / 2) then
+  [242] getprop 74 .............................. <m_locScroll>
+  [245] pushint8 1 .............................. <1>
+  [248] pushint8 1200 ........................... <1200>
+  [251] pushint8 50 ............................. <50>
+  [254] add ..................................... <1200 + 50>
+  [255] pushint8 800 ............................ <800>
+  [258] sub ..................................... <1200 + 50 - 800>
+  [259] pushint8 2 .............................. <2>
+  [262] div ..................................... <(1200 + 50 - 800) / 2>
+  [263] getprop 74 .............................. <m_locScroll>
+  [266] pushint8 1 .............................. <1>
+  [269] pusharglist 2 ........................... <m_locScroll, 1>
+  [271] objcall 51 .............................. <m_locScroll[1]>
+  [274] pusharglist 1 ........................... <m_locScroll[1]>
+  [276] extcall 129 ............................. <getSign(m_locScroll[1])>
+  [279] mul ..................................... <(1200 + 50 - 800) / 2 * getSign(m_locScroll[1])>
+  [280] pusharglistnoret 3 ...................... <m_locScroll, 1, (1200 + 50 - 800) / 2 * getSign(m_locScroll[1])>
+  [282] objcall 130 ............................. m_locScroll[1] = (1200 + 50 - 800) / 2 * getSign(m_locScroll[1])
+  [285] getparam 0 .............................. <me>
+  [287] pusharglistnoret 1 ...................... <me>
+  [289] objcall 5 ............................... me.redraw()
+  [291] ret
+end
+
+on pause me, argIsTRUE
+  [  0] getparam 8 .............................. <argIsTRUE>
+  [  2] not ..................................... <not argIsTRUE>
+  [  3] setprop 108 ............................. m_active = not argIsTRUE
+  [  6] getparam 8 .............................. <argIsTRUE>
+  [  8] jmpifz [ 35] ............................ if argIsTRUE then / else
+  [ 11] getprop 119 ............................. <m_sndObj>
+  [ 14] pusharglist 1 ........................... <m_sndObj>
+  [ 16] extcall 63 .............................. <objectp(m_sndObj)>
+  [ 19] jmpifz [ 32] ............................ if objectp(m_sndObj) then
+  [ 22] getprop 119 ............................. <m_sndObj>
+  [ 25] pusharglist 1 ........................... <m_sndObj>
+  [ 27] objcall 3 ............................... <m_sndObj.kill()>
+  [ 29] setprop 119 ............................. m_sndObj = m_sndObj.kill()
+  [ 32] jmp [ 41]
+  [ 35] pushint8 6 .............................. <6>
+  [ 38] setprop 107 ............................. m_waitingToStartSound = 6
+  [ 41] pushzero ................................ <0>
+  [ 42] setprop 106 ............................. m_iScrollDir = 0
+  [ 45] getprop 97 .............................. <m_animObjs>
+  [ 48] peek 0
+  [ 50] pusharglist 1
+  [ 52] extcall 85
+  [ 55] pushint8 1
+  [ 57] peek 0
+  [ 59] peek 2
+  [ 61] lteq
+  [ 62] jmpifz [ 92] ............................ repeat with obj in m_animObjs
+  [ 65] peek 2
+  [ 67] peek 1
+  [ 69] pusharglist 2
+  [ 71] extcall 51
+  [ 74] setlocal 0
+  [ 76] getlocal 0 .............................. <obj>
+  [ 78] getparam 8 .............................. <argIsTRUE>
+  [ 80] not ..................................... <not argIsTRUE>
+  [ 81] pusharglistnoret 2 ...................... <obj, not argIsTRUE>
+  [ 83] objcall 53 .............................. obj.activate(not argIsTRUE)
+  [ 86] pushint8 1
+  [ 88] add
+  [ 89] endrepeat [ 57]
+  [ 92] pop 3
+  [ 94] getprop 76 .............................. <m_objsBuildings>
+  [ 97] peek 0
+  [ 99] pusharglist 1
+  [101] extcall 85
+  [104] pushint8 1
+  [106] peek 0
+  [108] peek 2
+  [110] lteq
+  [111] jmpifz [138] ............................ repeat with obj in m_objsBuildings
+  [114] peek 2
+  [116] peek 1
+  [118] pusharglist 2
+  [120] extcall 51
+  [123] setlocal 0
+  [125] getlocal 0 .............................. <obj>
+  [127] getparam 8 .............................. <argIsTRUE>
+  [129] pusharglistnoret 2 ...................... <obj, argIsTRUE>
+  [131] objcall 6 ............................... obj.pause(argIsTRUE)
+  [133] pushint8 1
+  [135] add
+  [136] endrepeat [106]
+  [138] pop 3
+  [140] ret
+end
+
+on startSound me
+  [  0] getprop 119 ............................. <m_sndObj>
+  [  3] pusharglist 1 ........................... <m_sndObj>
+  [  5] extcall 63 .............................. <objectp(m_sndObj)>
+  [  8] jmpifz [ 21] ............................ if objectp(m_sndObj) then
+  [ 11] getprop 119 ............................. <m_sndObj>
+  [ 14] pusharglist 1 ........................... <m_sndObj>
+  [ 16] objcall 3 ............................... <m_sndObj.kill()>
+  [ 18] setprop 119 ............................. m_sndObj = m_sndObj.kill()
+  [ 21] getprop 91 .............................. <m_numVisibleBuildings>
+  [ 24] pusharglist 1 ........................... <m_numVisibleBuildings>
+  [ 26] extcall 127 ............................. <float(m_numVisibleBuildings)>
+  [ 29] getprop 76 .............................. <m_objsBuildings>
+  [ 32] getobjprop 85 ........................... <m_objsBuildings.count>
+  [ 35] div ..................................... <float(m_numVisibleBuildings) / m_objsBuildings.count>
+  [ 36] setlocal 0 .............................. partVisible = float(m_numVisibleBuildings) / m_objsBuildings.count
+  [ 38] getlocal 0 .............................. <partVisible>
+  [ 40] pushcons 136 ............................ <0.20000000000000001>
+  [ 42] pushint8 1 .............................. <1>
+  [ 45] pushcons 144 ............................ <0.40000000000000002>
+  [ 47] pushint8 2 .............................. <2>
+  [ 50] pushcons 152 ............................ <0.59999999999999998>
+  [ 52] pushint8 3 .............................. <3>
+  [ 55] pushcons 160 ............................ <0.80000000000000004>
+  [ 57] pushint8 4 .............................. <4>
+  [ 60] pushcons 168 ............................ <2.0>
+  [ 62] pushint8 5 .............................. <5>
+  [ 65] pusharglist 10 .......................... <[0.20000000000000001: 1, 0.40000000000000002: 2, 0.59999999999999998: 3, 0.80000000000000004: 4, 2.0: 5]>
+  [ 67] pushproplist ............................ <[0.20000000000000001: 1, 0.40000000000000002: 2, 0.59999999999999998: 3, 0.80000000000000004: 4, 2.0: 5]>
+  [ 68] pusharglist 2 ........................... <partVisible, [0.20000000000000001: 1, 0.40000000000000002: 2, 0.59999999999999998: 3, 0.80000000000000004: 4, 2.0: 5]>
+  [ 70] extcall 134 ............................. <comesBeforeValInList(partVisible, [0.20000000000000001: 1, 0.40000000000000002: 2, 0.59999999999999998: 3, 0.80000000000000004: 4, 2.0: 5])>
+  [ 73] setlocal 8 .............................. tmpSndSuffix = comesBeforeValInList(partVisible, [0.20000000000000001: 1, 0.40000000000000002: 2, 0.59999999999999998: 3, 0.80000000000000004: 4, 2.0: 5])
+  [ 75] pushcons 176 ............................ <"CityAmbience">
+  [ 77] getlocal 8 .............................. <tmpSndSuffix>
+  [ 79] pushint8 2 .............................. <2>
+  [ 82] pusharglist 2 ........................... <tmpSndSuffix, 2>
+  [ 84] extcall 135 ............................. <convItoS(tmpSndSuffix, 2)>
+  [ 87] joinstr ................................. <"CityAmbience" & convItoS(tmpSndSuffix, 2)>
+  [ 88] setlocal 16 ............................. tmpSnd = "CityAmbience" & convItoS(tmpSndSuffix, 2)
+  [ 90] pushcons 184 ............................ <"CityAmbience01">
+  [ 92] setlocal 16 ............................. tmpSnd = "CityAmbience01"
+  [ 94] pushsymb 137 ............................ <#CitySound>
+  [ 97] pusharglist 1 ........................... <#CitySound>
+  [ 99] extcall 136 ............................. <getSystemPref(#CitySound)>
+  [102] pushsymb 138 ............................ <#Mute>
+  [105] eq ...................................... <getSystemPref(#CitySound) = #Mute>
+  [106] jmpifz [110] ............................ if getSystemPref(#CitySound) = #Mute then
+  [109] ret ..................................... exit
+  [110] pushcons 192 ............................ <"SoundScript">
+  [112] pusharglist 1 ........................... <"SoundScript">
+  [114] extcall 49 .............................. <script("SoundScript")>
+  [117] getglobal 35 ............................ <gRock>
+  [120] getobjprop 41 ........................... <gRock.m_paths>
+  [123] pushsymb 42 ............................. <#sound>
+  [126] pusharglist 2 ........................... <gRock.m_paths, #sound>
+  [128] objcall 43 .............................. <gRock.m_paths.getPath(#sound)>
+  [131] getlocal 16 ............................. <tmpSnd>
+  [133] joinstr ................................. <gRock.m_paths.getPath(#sound) & tmpSnd>
+  [134] getglobal 39 ............................ <gUseful>
+  [137] getobjprop 139 .......................... <gUseful.soundFileExt>
+  [140] joinstr ................................. <gRock.m_paths.getPath(#sound) & tmpSnd & gUseful.soundFileExt>
+  [141] pushsymb 140 ............................ <#PlayDirect>
+  [144] pushzero ................................ <0>
+  [145] pushsymb 141 ............................ <#vol>
+  [148] pushsymb 142 ............................ <#CityBGVol>
+  [151] pusharglist 4 ........................... <[#PlayDirect: 0, #vol: #CityBGVol]>
+  [153] pushproplist ............................ <[#PlayDirect: 0, #vol: #CityBGVol]>
+  [154] pusharglist 3 ........................... <script("SoundScript"), gRock.m_paths.getPath(#sound) & tmpSnd & gUseful.soundFileExt, [#PlayDirect: 0, #vol: #CityBGVol]>
+  [156] objcall 0 ............................... <script("SoundScript").new(gRock.m_paths.getPath(#sound) & tmpSnd & gUseful.soundFileExt, [#PlayDirect: 0, #vol: #CityBGVol])>
+  [158] setprop 119 ............................. m_sndObj = script("SoundScript").new(gRock.m_paths.getPath(#sound) & tmpSnd & gUseful.soundFileExt, [#PlayDirect: 0, #vol: #CityBGVol])
+  [161] getprop 119 ............................. <m_sndObj>
+  [164] pusharglist 1 ........................... <m_sndObj>
+  [166] extcall 63 .............................. <objectp(m_sndObj)>
+  [169] jmpifz [252] ............................ if objectp(m_sndObj) then
+  [172] getprop 119 ............................. <m_sndObj>
+  [175] pushint8 1 .............................. <1>
+  [178] pusharglistnoret 2 ...................... <m_sndObj, 1>
+  [180] objcall 143 ............................. m_sndObj.setLoop(1)
+  [183] getprop 119 ............................. <m_sndObj>
+  [186] pushsymb 144 ............................ <#in>
+  [189] pushint8 1000 ........................... <1000>
+  [192] pusharglistnoret 3 ...................... <m_sndObj, #in, 1000>
+  [194] objcall 145 ............................. m_sndObj.fade(#in, 1000)
+  [197] getprop 119 ............................. <m_sndObj>
+  [200] pushsymb 147 ............................ <#Secs>
+  [203] pusharglist 2 ........................... <m_sndObj, #Secs>
+  [205] objcall 148 ............................. <m_sndObj.getLength(#Secs)>
+  [208] pushint8 1000 ........................... <1000>
+  [211] mul ..................................... <m_sndObj.getLength(#Secs) * 1000>
+  [212] pusharglist 1 ........................... <m_sndObj.getLength(#Secs) * 1000>
+  [214] extcall 146 ............................. <integer(m_sndObj.getLength(#Secs) * 1000)>
+  [217] setlocal 24 ............................. tmpRnd = integer(m_sndObj.getLength(#Secs) * 1000)
+  [219] getlocal 24 ............................. <tmpRnd>
+  [221] pusharglist 1 ........................... <tmpRnd>
+  [223] extcall 149 ............................. <random(tmpRnd)>
+  [226] setlocal 24 ............................. tmpRnd = random(tmpRnd)
+  [228] getprop 119 ............................. <m_sndObj>
+  [231] getlocal 24 ............................. <tmpRnd>
+  [233] pushcons 200 ............................ <1000.0>
+  [235] div ..................................... <tmpRnd / 1000.0>
+  [236] pushsymb 147 ............................ <#Secs>
+  [239] pusharglistnoret 3 ...................... <m_sndObj, tmpRnd / 1000.0, #Secs>
+  [241] objcall 150 ............................. m_sndObj.setPosition(tmpRnd / 1000.0, #Secs)
+  [244] getprop 119 ............................. <m_sndObj>
+  [247] pusharglistnoret 1 ...................... <m_sndObj>
+  [249] objcall 151 ............................. m_sndObj.play()
+  [252] ret
+end

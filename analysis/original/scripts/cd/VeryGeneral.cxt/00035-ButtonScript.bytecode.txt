@@ -1,0 +1,544 @@
+property firstFrame, mouseObj, SP, reportObj, ID, loc, displaying, Active, extraReports, states, SPUse, currentState, Toggle, rollObj, toggleState
+
+on new me, argReportObj, argMainMembOrRect, argLoc, argSP, argOptions
+  [  0] getparam 32 ............................. <argSP>
+  [  2] setprop 294 ............................. SP = argSP
+  [  5] getparam 8 .............................. <argReportObj>
+  [  7] setprop 691 ............................. reportObj = argReportObj
+  [ 10] getparam 40 ............................. <argOptions>
+  [ 12] pusharglist 1 ........................... <argOptions>
+  [ 14] extcall 128 ............................. <listp(argOptions)>
+  [ 17] jmpifz [109] ............................ if listp(argOptions) then
+  [ 20] getparam 40 ............................. <argOptions>
+  [ 22] pushsymb 160 ............................ <#ID>
+  [ 25] pusharglist 2 ........................... <argOptions, #ID>
+  [ 27] extcall 152 ............................. <getaProp(argOptions, #ID)>
+  [ 30] setprop 160 ............................. ID = getaProp(argOptions, #ID)
+  [ 33] getparam 40 ............................. <argOptions>
+  [ 35] pushsymb 242 ............................ <#layer>
+  [ 38] pusharglist 2 ........................... <argOptions, #layer>
+  [ 40] extcall 152 ............................. <getaProp(argOptions, #layer)>
+  [ 43] setlocal 0 .............................. tmpLayer = getaProp(argOptions, #layer)
+  [ 45] getparam 40 ............................. <argOptions>
+  [ 47] pushsymb 771 ............................ <#states>
+  [ 50] pusharglist 2 ........................... <argOptions, #states>
+  [ 52] extcall 152 ............................. <getaProp(argOptions, #states)>
+  [ 55] setprop 771 ............................. states = getaProp(argOptions, #states)
+  [ 58] getparam 40 ............................. <argOptions>
+  [ 60] pushsymb 772 ............................ <#SPUse>
+  [ 63] pusharglist 2 ........................... <argOptions, #SPUse>
+  [ 65] extcall 152 ............................. <getaProp(argOptions, #SPUse)>
+  [ 68] setprop 772 ............................. SPUse = getaProp(argOptions, #SPUse)
+  [ 71] getparam 40 ............................. <argOptions>
+  [ 73] pushsymb 770 ............................ <#Toggle>
+  [ 76] pusharglist 2 ........................... <argOptions, #Toggle>
+  [ 78] extcall 152 ............................. <getaProp(argOptions, #Toggle)>
+  [ 81] setprop 770 ............................. Toggle = getaProp(argOptions, #Toggle)
+  [ 84] getparam 40 ............................. <argOptions>
+  [ 86] pushsymb 773 ............................ <#useRollHelp>
+  [ 89] pusharglist 2 ........................... <argOptions, #useRollHelp>
+  [ 91] extcall 152 ............................. <getaProp(argOptions, #useRollHelp)>
+  [ 94] setlocal 8 .............................. tmpUseRollHelp = getaProp(argOptions, #useRollHelp)
+  [ 96] getparam 40 ............................. <argOptions>
+  [ 98] pushsymb 457 ............................ <#Extra>
+  [101] pusharglist 2 ........................... <argOptions, #Extra>
+  [103] extcall 152 ............................. <getaProp(argOptions, #Extra)>
+  [106] setprop 456 ............................. extraReports = getaProp(argOptions, #Extra)
+  [109] getlocal 0 .............................. <tmpLayer>
+  [111] pusharglist 1 ........................... <tmpLayer>
+  [113] extcall 104 ............................. <voidp(tmpLayer)>
+  [116] jmpifz [124] ............................ if voidp(tmpLayer) then
+  [119] pushint8 499 ............................ <499>
+  [122] setlocal 0 .............................. tmpLayer = 499
+  [124] getprop 294 ............................. <SP>
+  [127] pusharglist 1 ........................... <SP>
+  [129] extcall 104 ............................. <voidp(SP)>
+  [132] getprop 294 ............................. <SP>
+  [135] pushzero ................................ <0>
+  [136] eq ...................................... <SP = 0>
+  [137] or ...................................... <voidp(SP) or (SP = 0)>
+  [138] jmpifz [145] ............................ if voidp(SP) or (SP = 0) then
+  [141] pushzero ................................ <0>
+  [142] setprop 772 ............................. SPUse = 0
+  [145] getprop 771 ............................. <states>
+  [148] pushsymb 223 ............................ <#down>
+  [151] eq ...................................... <states = #down>
+  [152] jmpifz [170] ............................ if states = #down then / else
+  [155] pushsymb 223 ............................ <#down>
+  [158] pushint8 1 .............................. <1>
+  [161] pusharglist 2 ........................... <[#down: 1]>
+  [163] pushproplist ............................ <[#down: 1]>
+  [164] setprop 771 ............................. states = [#down: 1]
+  [167] jmp [223]
+  [170] getprop 771 ............................. <states>
+  [173] pushsymb 769 ............................ <#normal>
+  [176] eq ...................................... <states = #normal>
+  [177] jmpifz [189] ............................ if states = #normal then / else
+  [180] pusharglist 0 ........................... <[:]>
+  [182] pushproplist ............................ <[:]>
+  [183] setprop 771 ............................. states = [:]
+  [186] jmp [223]
+  [189] getprop 771 ............................. <states>
+  [192] pushsymb 774 ............................ <#All>
+  [195] eq ...................................... <states = #All>
+  [196] jmpifz [223] ............................ if states = #All then
+  [199] pushsymb 223 ............................ <#down>
+  [202] pushint8 1 .............................. <1>
+  [205] pushsymb 263 ............................ <#enter>
+  [208] pushint8 2 .............................. <2>
+  [211] pushsymb 454 ............................ <#dim>
+  [214] pushint8 3 .............................. <3>
+  [217] pusharglist 6 ........................... <[#down: 1, #enter: 2, #dim: 3]>
+  [219] pushproplist ............................ <[#down: 1, #enter: 2, #dim: 3]>
+  [220] setprop 771 ............................. states = [#down: 1, #enter: 2, #dim: 3]
+  [223] getprop 771 ............................. <states>
+  [226] pusharglist 1 ........................... <states>
+  [228] extcall 104 ............................. <voidp(states)>
+  [231] jmpifz [252] ............................ if voidp(states) then
+  [234] pushsymb 223 ............................ <#down>
+  [237] pushint8 1 .............................. <1>
+  [240] pushsymb 263 ............................ <#enter>
+  [243] pushint8 2 .............................. <2>
+  [246] pusharglist 4 ........................... <[#down: 1, #enter: 2]>
+  [248] pushproplist ............................ <[#down: 1, #enter: 2]>
+  [249] setprop 771 ............................. states = [#down: 1, #enter: 2]
+  [252] getprop 771 ............................. <states>
+  [255] pushsymb 769 ............................ <#normal>
+  [258] pusharglist 2 ........................... <states, #normal>
+  [260] extcall 152 ............................. <getaProp(states, #normal)>
+  [263] pusharglist 1 ........................... <getaProp(states, #normal)>
+  [265] extcall 104 ............................. <voidp(getaProp(states, #normal))>
+  [268] jmpifz [283] ............................ if voidp(getaProp(states, #normal)) then
+  [271] getprop 771 ............................. <states>
+  [274] pushsymb 769 ............................ <#normal>
+  [277] pushzero ................................ <0>
+  [278] pusharglistnoret 3 ...................... <states, #normal, 0>
+  [280] extcall 180 ............................. setaProp(states, #normal, 0)
+  [283] getprop 772 ............................. <SPUse>
+  [286] pusharglist 1 ........................... <SPUse>
+  [288] extcall 104 ............................. <voidp(SPUse)>
+  [291] jmpifz [300] ............................ if voidp(SPUse) then
+  [294] pushint8 1 .............................. <1>
+  [297] setprop 772 ............................. SPUse = 1
+  [300] getprop 770 ............................. <Toggle>
+  [303] pusharglist 1 ........................... <Toggle>
+  [305] extcall 104 ............................. <voidp(Toggle)>
+  [308] jmpifz [315] ............................ if voidp(Toggle) then
+  [311] pushzero ................................ <0>
+  [312] setprop 770 ............................. Toggle = 0
+  [315] getprop 456 ............................. <extraReports>
+  [318] pusharglist 1 ........................... <extraReports>
+  [320] extcall 104 ............................. <voidp(extraReports)>
+  [323] jmpifz [332] ............................ if voidp(extraReports) then
+  [326] pusharglist 0 ........................... <[]>
+  [328] pushlist ................................ <[]>
+  [329] setprop 456 ............................. extraReports = []
+  [332] getparam 24 ............................. <argLoc>
+  [334] setprop 247 ............................. loc = argLoc
+  [337] getlocal 8 .............................. <tmpUseRollHelp>
+  [339] pusharglist 1 ........................... <tmpUseRollHelp>
+  [341] extcall 34 .............................. <objectp(tmpUseRollHelp)>
+  [344] jmpifz [379] ............................ if objectp(tmpUseRollHelp) then
+  [347] pushcons 0 .............................. <"RollOverScript">
+  [349] pusharglist 1 ........................... <"RollOverScript">
+  [351] extcall 11 .............................. <script("RollOverScript")>
+  [353] getlocal 8 .............................. <tmpUseRollHelp>
+  [355] pushint8 1 .............................. <1>
+  [358] inv ..................................... <-1>
+  [359] getprop 160 ............................. <ID>
+  [362] getprop 247 ............................. <loc>
+  [365] pushsymb 776 ............................ <#UseOwnMouseObj>
+  [368] pushzero ................................ <0>
+  [369] pusharglist 2 ........................... <[#UseOwnMouseObj: 0]>
+  [371] pushproplist ............................ <[#UseOwnMouseObj: 0]>
+  [372] pusharglist 6 ........................... <script("RollOverScript"), tmpUseRollHelp, -1, ID, loc, [#UseOwnMouseObj: 0]>
+  [374] extcall 0 ............................... <new(script("RollOverScript"), tmpUseRollHelp, -1, ID, loc, [#UseOwnMouseObj: 0])>
+  [376] setprop 775 ............................. rollObj = new(script("RollOverScript"), tmpUseRollHelp, -1, ID, loc, [#UseOwnMouseObj: 0])
+  [379] getparam 16 ............................. <argMainMembOrRect>
+  [381] pusharglist 1 ........................... <argMainMembOrRect>
+  [383] extcall 129 ............................. <ilk(argMainMembOrRect)>
+  [386] setlocal 16 ............................. tmpIlk = ilk(argMainMembOrRect)
+  [388] getlocal 16 ............................. <tmpIlk>
+  [390] pushsymb 95 ............................. <#integer>
+  [393] eq ...................................... <tmpIlk = #integer>
+  [394] jmpifz [405] ............................ if tmpIlk = #integer then / else
+  [397] getparam 16 ............................. <argMainMembOrRect>
+  [399] setprop 315 ............................. firstFrame = argMainMembOrRect
+  [402] jmp [435]
+  [405] getlocal 16 ............................. <tmpIlk>
+  [407] pushsymb 105 ............................ <#rect>
+  [410] eq ...................................... <tmpIlk = #rect>
+  [411] jmpifz [425] ............................ if tmpIlk = #rect then / else
+  [414] getparam 16 ............................. <argMainMembOrRect>
+  [416] setlocal 24 ............................. tmpRect = argMainMembOrRect
+  [418] pushzero ................................ <0>
+  [419] setprop 315 ............................. firstFrame = 0
+  [422] jmp [435]
+  [425] getparam 16 ............................. <argMainMembOrRect>
+  [427] pusharglist 1 ........................... <argMainMembOrRect>
+  [429] extcall 309 ............................. <getMemberNum(argMainMembOrRect)>
+  [432] setprop 315 ............................. firstFrame = getMemberNum(argMainMembOrRect)
+  [435] getprop 772 ............................. <SPUse>
+  [438] jmpifz [452] ............................ if SPUse then
+  [441] getprop 294 ............................. <SP>
+  [444] getprop 247 ............................. <loc>
+  [447] pushint8 33 ............................. <33>
+  [450] set 6 ................................... set the loc of sprite SP to loc
+  [452] pushint8 1 .............................. <1>
+  [455] setprop 458 ............................. displaying = 1
+  [458] pushint8 1 .............................. <1>
+  [461] setprop 164 ............................. Active = 1
+  [464] pushsymb 769 ............................ <#normal>
+  [467] setprop 777 ............................. currentState = #normal
+  [470] getprop 315 ............................. <firstFrame>
+  [473] jmpifz [517] ............................ if firstFrame then
+  [476] getprop 315 ............................. <firstFrame>
+  [479] pusharglist 1 ........................... <firstFrame>
+  [481] extcall 307 ............................. <member(firstFrame)>
+  [484] pusharglist 1 ........................... <member(firstFrame)>
+  [486] extcall 464 ............................. <getMemberRect(member(firstFrame))>
+  [489] setlocal 24 ............................. tmpRect = getMemberRect(member(firstFrame))
+  [491] getprop 247 ............................. <loc>
+  [494] getprop 247 ............................. <loc>
+  [497] pusharglist 2 ........................... <loc, loc>
+  [499] extcall 105 ............................. <rect(loc, loc)>
+  [502] getlocal 24 ............................. <tmpRect>
+  [504] add ..................................... <rect(loc, loc) + tmpRect>
+  [505] setlocal 24 ............................. tmpRect = rect(loc, loc) + tmpRect
+  [507] getparam 0 .............................. <me>
+  [509] getprop 777 ............................. <currentState>
+  [512] pusharglistnoret 2 ...................... <me, currentState>
+  [514] objcall 768 ............................. me.setState(currentState)
+  [517] pushcons 8 .............................. <"MouseObject">
+  [519] pusharglist 1 ........................... <"MouseObject">
+  [521] extcall 11 .............................. <script("MouseObject")>
+  [523] getparam 0 .............................. <me>
+  [525] getlocal 24 ............................. <tmpRect>
+  [527] pushsymb 242 ............................ <#layer>
+  [530] getlocal 0 .............................. <tmpLayer>
+  [532] pushsymb 240 ............................ <#noPassRoll>
+  [535] pushint8 1 .............................. <1>
+  [538] pushsymb 243 ............................ <#PassButton>
+  [541] pushzero ................................ <0>
+  [542] pusharglist 6 ........................... <[#layer: tmpLayer, #noPassRoll: 1, #PassButton: 0]>
+  [544] pushproplist ............................ <[#layer: tmpLayer, #noPassRoll: 1, #PassButton: 0]>
+  [545] pusharglist 4 ........................... <script("MouseObject"), me, tmpRect, [#layer: tmpLayer, #noPassRoll: 1, #PassButton: 0]>
+  [547] extcall 0 ............................... <new(script("MouseObject"), me, tmpRect, [#layer: tmpLayer, #noPassRoll: 1, #PassButton: 0])>
+  [549] setprop 460 ............................. mouseObj = new(script("MouseObject"), me, tmpRect, [#layer: tmpLayer, #noPassRoll: 1, #PassButton: 0])
+  [552] getparam 0 .............................. <me>
+  [554] pusharglistnoret 1 ...................... <me>
+  [556] extcall 32 .............................. return me
+  [559] ret
+end
+
+on kill me
+  [  0] getprop 772 ............................. <SPUse>
+  [  3] jmpifz [ 21] ............................ if SPUse then
+  [  6] getprop 294 ............................. <SP>
+  [  9] pushcons 16 ............................. <"Dummy">
+  [ 11] pusharglist 1 ........................... <"Dummy">
+  [ 13] extcall 307 ............................. <member("Dummy")>
+  [ 16] pushint8 37 ............................. <37>
+  [ 19] set 6 ................................... set the member of sprite SP to member("Dummy")
+  [ 21] getprop 460 ............................. <mouseObj>
+  [ 24] pusharglist 1 ........................... <mouseObj>
+  [ 26] localcall 1 ............................. <kill(mouseObj)>
+  [ 28] setprop 460 ............................. mouseObj = kill(mouseObj)
+  [ 31] getprop 775 ............................. <rollObj>
+  [ 34] pusharglist 1 ........................... <rollObj>
+  [ 36] extcall 34 .............................. <objectp(rollObj)>
+  [ 39] jmpifz [ 52] ............................ if objectp(rollObj) then
+  [ 42] getprop 775 ............................. <rollObj>
+  [ 45] pusharglist 1 ........................... <rollObj>
+  [ 47] localcall 1 ............................. <kill(rollObj)>
+  [ 49] setprop 775 ............................. rollObj = kill(rollObj)
+  [ 52] pushzero ................................ <0>
+  [ 53] setprop 691 ............................. reportObj = 0
+  [ 56] pushzero ................................ <0>
+  [ 57] pusharglistnoret 1 ...................... <0>
+  [ 59] extcall 32 .............................. return 0
+  [ 62] ret
+end
+
+on setMember me, argMainMemb
+  [  0] getparam 8 .............................. <argMainMemb>
+  [  2] pusharglist 1 ........................... <argMainMemb>
+  [  4] extcall 309 ............................. <getMemberNum(argMainMemb)>
+  [  7] setprop 315 ............................. firstFrame = getMemberNum(argMainMemb)
+  [ 10] getprop 315 ............................. <firstFrame>
+  [ 13] pusharglist 1 ........................... <firstFrame>
+  [ 15] extcall 307 ............................. <member(firstFrame)>
+  [ 18] pusharglist 1 ........................... <member(firstFrame)>
+  [ 20] extcall 464 ............................. <getMemberRect(member(firstFrame))>
+  [ 23] setlocal 0 .............................. tmpRect = getMemberRect(member(firstFrame))
+  [ 25] getprop 247 ............................. <loc>
+  [ 28] getprop 247 ............................. <loc>
+  [ 31] pusharglist 2 ........................... <loc, loc>
+  [ 33] extcall 105 ............................. <rect(loc, loc)>
+  [ 36] getlocal 0 .............................. <tmpRect>
+  [ 38] add ..................................... <rect(loc, loc) + tmpRect>
+  [ 39] setlocal 0 .............................. tmpRect = rect(loc, loc) + tmpRect
+  [ 41] getprop 460 ............................. <mouseObj>
+  [ 44] getlocal 0 .............................. <tmpRect>
+  [ 46] setobjprop 239 .......................... mouseObj.myRect = tmpRect
+  [ 49] getprop 772 ............................. <SPUse>
+  [ 52] jmpifz [ 71] ............................ if SPUse then
+  [ 55] getprop 294 ............................. <SP>
+  [ 58] getprop 315 ............................. <firstFrame>
+  [ 61] pusharglist 1 ........................... <firstFrame>
+  [ 63] extcall 307 ............................. <member(firstFrame)>
+  [ 66] pushint8 37 ............................. <37>
+  [ 69] set 6 ................................... set the member of sprite SP to member(firstFrame)
+  [ 71] ret
+end
+
+on setLoc me, argLoc
+  [  0] getparam 8 .............................. <argLoc>
+  [  2] getprop 247 ............................. <loc>
+  [  5] sub ..................................... <argLoc - loc>
+  [  6] setlocal 0 .............................. tmpDiff = argLoc - loc
+  [  8] getparam 8 .............................. <argLoc>
+  [ 10] setprop 247 ............................. loc = argLoc
+  [ 13] getprop 460 ............................. <mouseObj>
+  [ 16] getobjprop 239 .......................... <mouseObj.myRect>
+  [ 19] setlocal 8 .............................. tmpRect = mouseObj.myRect
+  [ 21] getlocal 8 .............................. <tmpRect>
+  [ 23] getlocal 0 .............................. <tmpDiff>
+  [ 25] getlocal 0 .............................. <tmpDiff>
+  [ 27] pusharglist 2 ........................... <tmpDiff, tmpDiff>
+  [ 29] extcall 105 ............................. <rect(tmpDiff, tmpDiff)>
+  [ 32] add ..................................... <tmpRect + rect(tmpDiff, tmpDiff)>
+  [ 33] setlocal 8 .............................. tmpRect = tmpRect + rect(tmpDiff, tmpDiff)
+  [ 35] getprop 460 ............................. <mouseObj>
+  [ 38] getlocal 8 .............................. <tmpRect>
+  [ 40] setobjprop 239 .......................... mouseObj.myRect = tmpRect
+  [ 43] getprop 772 ............................. <SPUse>
+  [ 46] jmpifz [ 60] ............................ if SPUse then
+  [ 49] getprop 294 ............................. <SP>
+  [ 52] getprop 247 ............................. <loc>
+  [ 55] pushint8 33 ............................. <33>
+  [ 58] set 6 ................................... set the loc of sprite SP to loc
+  [ 60] ret
+end
+
+on display me, argIsTRUE
+  [  0] getparam 8 .............................. <argIsTRUE>
+  [  2] setprop 458 ............................. displaying = argIsTRUE
+  [  5] getparam 0 .............................. <me>
+  [  7] getparam 8 .............................. <argIsTRUE>
+  [  9] pusharglistnoret 2 ...................... <me, argIsTRUE>
+  [ 11] localcall 6 ............................. activate(me, argIsTRUE)
+  [ 13] getparam 8 .............................. <argIsTRUE>
+  [ 15] jmpifz [ 64] ............................ if argIsTRUE then / else
+  [ 18] getprop 771 ............................. <states>
+  [ 21] pushsymb 769 ............................ <#normal>
+  [ 24] pusharglist 2 ........................... <states, #normal>
+  [ 26] extcall 152 ............................. <getaProp(states, #normal)>
+  [ 29] setlocal 0 .............................. tmp = getaProp(states, #normal)
+  [ 31] getprop 294 ............................. <SP>
+  [ 34] getprop 315 ............................. <firstFrame>
+  [ 37] getlocal 0 .............................. <tmp>
+  [ 39] add ..................................... <firstFrame + tmp>
+  [ 40] pusharglist 1 ........................... <firstFrame + tmp>
+  [ 42] extcall 307 ............................. <member(firstFrame + tmp)>
+  [ 45] pushint8 37 ............................. <37>
+  [ 48] set 6 ................................... set the member of sprite SP to member(firstFrame + tmp)
+  [ 50] getprop 294 ............................. <SP>
+  [ 53] getprop 247 ............................. <loc>
+  [ 56] pushint8 33 ............................. <33>
+  [ 59] set 6 ................................... set the loc of sprite SP to loc
+  [ 61] jmp [ 79]
+  [ 64] getprop 294 ............................. <SP>
+  [ 67] pushcons 24 ............................. <"Dummy">
+  [ 69] pusharglist 1 ........................... <"Dummy">
+  [ 71] extcall 307 ............................. <member("Dummy")>
+  [ 74] pushint8 37 ............................. <37>
+  [ 77] set 6 ................................... set the member of sprite SP to member("Dummy")
+  [ 79] ret
+end
+
+on dim me
+  [  0] getparam 0 .............................. <me>
+  [  2] pushzero ................................ <0>
+  [  3] pusharglistnoret 2 ...................... <me, 0>
+  [  5] localcall 6 ............................. activate(me, 0)
+  [  7] getprop 771 ............................. <states>
+  [ 10] pushsymb 454 ............................ <#dim>
+  [ 13] pusharglist 2 ........................... <states, #dim>
+  [ 15] extcall 152 ............................. <getaProp(states, #dim)>
+  [ 18] setlocal 0 .............................. tmp = getaProp(states, #dim)
+  [ 20] getlocal 0 .............................. <tmp>
+  [ 22] pusharglist 1 ........................... <tmp>
+  [ 24] extcall 104 ............................. <voidp(tmp)>
+  [ 27] not ..................................... <not voidp(tmp)>
+  [ 28] jmpifz [ 61] ............................ if not voidp(tmp) then
+  [ 31] getprop 294 ............................. <SP>
+  [ 34] getprop 315 ............................. <firstFrame>
+  [ 37] getlocal 0 .............................. <tmp>
+  [ 39] add ..................................... <firstFrame + tmp>
+  [ 40] pusharglist 1 ........................... <firstFrame + tmp>
+  [ 42] extcall 307 ............................. <member(firstFrame + tmp)>
+  [ 45] pushint8 37 ............................. <37>
+  [ 48] set 6 ................................... set the member of sprite SP to member(firstFrame + tmp)
+  [ 50] getprop 294 ............................. <SP>
+  [ 53] getprop 247 ............................. <loc>
+  [ 56] pushint8 33 ............................. <33>
+  [ 59] set 6 ................................... set the loc of sprite SP to loc
+  [ 61] ret
+end
+
+on activate me, argIsTRUE
+  [  0] getparam 8 .............................. <argIsTRUE>
+  [  2] setprop 164 ............................. Active = argIsTRUE
+  [  5] getprop 460 ............................. <mouseObj>
+  [  8] getparam 8 .............................. <argIsTRUE>
+  [ 10] pusharglistnoret 2 ...................... <mouseObj, argIsTRUE>
+  [ 12] localcall 6 ............................. activate(mouseObj, argIsTRUE)
+  [ 14] getprop 775 ............................. <rollObj>
+  [ 17] pusharglist 1 ........................... <rollObj>
+  [ 19] extcall 34 .............................. <objectp(rollObj)>
+  [ 22] jmpifz [ 34] ............................ if objectp(rollObj) then
+  [ 25] getprop 775 ............................. <rollObj>
+  [ 28] getparam 8 .............................. <argIsTRUE>
+  [ 30] pusharglistnoret 2 ...................... <rollObj, argIsTRUE>
+  [ 32] localcall 6 ............................. activate(rollObj, argIsTRUE)
+  [ 34] ret
+end
+
+on mouse me, argObj, argWhat
+  [  0] getparam 16 ............................. <argWhat>
+  [  2] pushsymb 263 ............................ <#enter>
+  [  5] eq ...................................... <argWhat = #enter>
+  [  6] jmpifz [ 44] ............................ if argWhat = #enter then / else
+  [  9] getprop 775 ............................. <rollObj>
+  [ 12] pusharglist 1 ........................... <rollObj>
+  [ 14] extcall 34 .............................. <objectp(rollObj)>
+  [ 17] jmpifz [ 32] ............................ if objectp(rollObj) then
+  [ 20] getprop 775 ............................. <rollObj>
+  [ 23] getparam 8 .............................. <argObj>
+  [ 25] getparam 16 ............................. <argWhat>
+  [ 27] pusharglistnoret 3 ...................... <rollObj, argObj, argWhat>
+  [ 29] objcall 258 ............................. rollObj.mouse(argObj, argWhat)
+  [ 32] getparam 0 .............................. <me>
+  [ 34] getparam 16 ............................. <argWhat>
+  [ 36] pusharglistnoret 2 ...................... <me, argWhat>
+  [ 38] objcall 768 ............................. me.setState(argWhat)
+  [ 41] jmp [183]
+  [ 44] getparam 16 ............................. <argWhat>
+  [ 46] pushsymb 264 ............................ <#Leave>
+  [ 49] eq ...................................... <argWhat = #Leave>
+  [ 50] jmpifz [ 96] ............................ if argWhat = #Leave then / else
+  [ 53] getprop 775 ............................. <rollObj>
+  [ 56] pusharglist 1 ........................... <rollObj>
+  [ 58] extcall 34 .............................. <objectp(rollObj)>
+  [ 61] jmpifz [ 76] ............................ if objectp(rollObj) then
+  [ 64] getprop 775 ............................. <rollObj>
+  [ 67] getparam 8 .............................. <argObj>
+  [ 69] getparam 16 ............................. <argWhat>
+  [ 71] pusharglistnoret 3 ...................... <rollObj, argObj, argWhat>
+  [ 73] objcall 258 ............................. rollObj.mouse(argObj, argWhat)
+  [ 76] getprop 770 ............................. <Toggle>
+  [ 79] not ..................................... <not Toggle>
+  [ 80] jmpifz [ 93] ............................ if not Toggle then
+  [ 83] getparam 0 .............................. <me>
+  [ 85] pushsymb 769 ............................ <#normal>
+  [ 88] pusharglistnoret 2 ...................... <me, #normal>
+  [ 90] objcall 768 ............................. me.setState(#normal)
+  [ 93] jmp [183]
+  [ 96] getparam 16 ............................. <argWhat>
+  [ 98] pushsymb 223 ............................ <#down>
+  [101] eq ...................................... <argWhat = #down>
+  [102] jmpifz [158] ............................ if argWhat = #down then / else
+  [105] getprop 770 ............................. <Toggle>
+  [108] jmpifz [146] ............................ if Toggle then / else
+  [111] getprop 777 ............................. <currentState>
+  [114] pushsymb 223 ............................ <#down>
+  [117] eq ...................................... <currentState = #down>
+  [118] jmpifz [134] ............................ if currentState = #down then / else
+  [121] getparam 0 .............................. <me>
+  [123] pushsymb 769 ............................ <#normal>
+  [126] pusharglistnoret 2 ...................... <me, #normal>
+  [128] objcall 768 ............................. me.setState(#normal)
+  [131] jmp [143]
+  [134] getparam 0 .............................. <me>
+  [136] getparam 16 ............................. <argWhat>
+  [138] pusharglistnoret 2 ...................... <me, argWhat>
+  [140] objcall 768 ............................. me.setState(argWhat)
+  [143] jmp [155]
+  [146] getparam 0 .............................. <me>
+  [148] getparam 16 ............................. <argWhat>
+  [150] pusharglistnoret 2 ...................... <me, argWhat>
+  [152] objcall 768 ............................. me.setState(argWhat)
+  [155] jmp [183]
+  [158] getparam 16 ............................. <argWhat>
+  [160] pushsymb 250 ............................ <#click>
+  [163] eq ...................................... <argWhat = #click>
+  [164] jmpifz [183] ............................ if argWhat = #click then
+  [167] getprop 770 ............................. <Toggle>
+  [170] not ..................................... <not Toggle>
+  [171] jmpifz [183] ............................ if not Toggle then
+  [174] getparam 0 .............................. <me>
+  [176] getparam 16 ............................. <argWhat>
+  [178] pusharglistnoret 2 ...................... <me, argWhat>
+  [180] objcall 768 ............................. me.setState(argWhat)
+  [183] getprop 691 ............................. <reportObj>
+  [186] getparam 0 .............................. <me>
+  [188] getparam 16 ............................. <argWhat>
+  [190] pusharglistnoret 3 ...................... <reportObj, me, argWhat>
+  [192] objcall 258 ............................. reportObj.mouse(me, argWhat)
+  [195] ret
+end
+
+on setState me, argState, argForce
+  [  0] getprop 315 ............................. <firstFrame>
+  [  3] setlocal 0 .............................. tmpFrame = firstFrame
+  [  5] getprop 772 ............................. <SPUse>
+  [  8] not ..................................... <not SPUse>
+  [  9] jmpifz [ 27] ............................ if not SPUse then
+  [ 12] getlocal 0 .............................. <tmpFrame>
+  [ 14] pushint8 1 .............................. <1>
+  [ 17] sub ..................................... <tmpFrame - 1>
+  [ 18] setlocal 0 .............................. tmpFrame = tmpFrame - 1
+  [ 20] getparam 16 ............................. <argForce>
+  [ 22] not ..................................... <not argForce>
+  [ 23] jmpifz [ 27] ............................ if not argForce then
+  [ 26] ret ..................................... exit
+  [ 27] getprop 771 ............................. <states>
+  [ 30] getparam 8 .............................. <argState>
+  [ 32] pusharglist 2 ........................... <states, argState>
+  [ 34] extcall 152 ............................. <getaProp(states, argState)>
+  [ 37] setlocal 8 .............................. tmp = getaProp(states, argState)
+  [ 39] getlocal 8 .............................. <tmp>
+  [ 41] pusharglist 1 ........................... <tmp>
+  [ 43] extcall 94 .............................. <integerp(tmp)>
+  [ 46] jmpifz [100] ............................ if integerp(tmp) then
+  [ 49] getlocal 8 .............................. <tmp>
+  [ 51] pushint8 99 ............................. <99>
+  [ 54] inv ..................................... <-99>
+  [ 55] eq ...................................... <tmp = -99>
+  [ 56] jmpifz [ 77] ............................ if tmp = -99 then / else
+  [ 59] getprop 294 ............................. <SP>
+  [ 62] pushcons 32 ............................. <"Dummy">
+  [ 64] pusharglist 1 ........................... <"Dummy">
+  [ 66] extcall 307 ............................. <member("Dummy")>
+  [ 69] pushint8 37 ............................. <37>
+  [ 72] set 6 ................................... set the member of sprite SP to member("Dummy")
+  [ 74] jmp [ 95]
+  [ 77] getprop 294 ............................. <SP>
+  [ 80] getlocal 0 .............................. <tmpFrame>
+  [ 82] getlocal 8 .............................. <tmp>
+  [ 84] add ..................................... <tmpFrame + tmp>
+  [ 85] pusharglist 1 ........................... <tmpFrame + tmp>
+  [ 87] extcall 307 ............................. <member(tmpFrame + tmp)>
+  [ 90] pushint8 37 ............................. <37>
+  [ 93] set 6 ................................... set the member of sprite SP to member(tmpFrame + tmp)
+  [ 95] getparam 8 .............................. <argState>
+  [ 97] setprop 777 ............................. currentState = argState
+  [100] getparam 16 ............................. <argForce>
+  [102] jmpifz [116] ............................ if argForce then
+  [105] getprop 294 ............................. <SP>
+  [108] getprop 247 ............................. <loc>
+  [111] pushint8 33 ............................. <33>
+  [114] set 6 ................................... set the loc of sprite SP to loc
+  [116] ret
+end

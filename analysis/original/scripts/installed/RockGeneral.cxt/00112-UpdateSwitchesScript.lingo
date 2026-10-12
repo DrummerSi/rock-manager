@@ -1,0 +1,73 @@
+property m_switchesMaster
+global gClassManager
+
+on new me
+  m_dataPath = "\\resurs\Monsterland\_Projects\Rockmanager\Data\"
+  if not objectp(gClassManager) then
+    gClassManager = script("ClassManagerScript").new(m_dataPath)
+    gClassManager.instantiate(VOID, ["*"])
+    pott("Inited")
+  end if
+  m_switchesMaster = script("ImportSwitchesScript").new(m_dataPath)
+  me.update()
+  return me
+end
+
+on update me
+  updatedList = [:]
+  repeat with classNr = 1 to gClassManager.m_classesVars.count
+    className = gClassManager.m_classesVars.getPropAt(classNr)
+    propsSwitches = m_switchesMaster.getPropInfo([className])
+    propsSwitches = me.removeStandardSwitches(propsSwitches)
+    updatedClass = [0: propsSwitches]
+    updatedList.addProp(className, updatedClass)
+    me.updateClass(className, [className], updatedClass)
+  end repeat
+  m_switchesMaster.makeStringFromHierarchyData(updatedList)
+end
+
+on removeStandardSwitches me, argPropsSwitches
+  if voidp(argPropsSwitches) then
+    argPropsSwitches = [:]
+  end if
+  repeat with switchNr = argPropsSwitches.count down to 1
+    switchVal = argPropsSwitches[switchNr]
+    if switchVal = m_switchesMaster.getStandardSwitchVal(argPropsSwitches.getPropAt(switchNr)) then
+      argPropsSwitches.deleteAt(switchNr)
+      next repeat
+    end if
+    if switchVal = EMPTY then
+      argPropsSwitches.deleteAt(switchNr)
+    end if
+  end repeat
+  return argPropsSwitches
+end
+
+on updateClass me, argClass, argCurrPath, argResult
+  baseClasses = gClassManager.getBaseClassesOfClass(argClass)
+  if voidp(baseClasses) then
+    baseClasses = []
+  end if
+  baseClasses = baseClasses.duplicate()
+  baseClasses.add(argClass)
+  repeat with tmpClass in baseClasses
+    propsInfo = gClassManager.getPropsInClass(tmpClass)
+    repeat with n = 1 to propsInfo.count
+      prop = propsInfo.getPropAt(n)
+      if prop = #ID then
+        next repeat
+      end if
+      Info = propsInfo[n]
+      currPath = argCurrPath.duplicate()
+      currPath.add(prop)
+      propsSwitches = m_switchesMaster.getPropInfo(currPath)
+      propsSwitches = me.removeStandardSwitches(propsSwitches)
+      tmp = [0: propsSwitches]
+      argResult.addProp(prop, tmp)
+      if gClassManager.isStdType(Info[1]) then
+        next repeat
+      end if
+      me.updateClass(Info[1], currPath, tmp)
+    end repeat
+  end repeat
+end

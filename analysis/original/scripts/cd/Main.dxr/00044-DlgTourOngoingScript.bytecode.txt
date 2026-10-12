@@ -1,0 +1,1677 @@
+property ancestor, m_tour_r, m_currentCityID, m_travelObj, m_startCityID, m_goingBackHome, m_isTravelling, m_currTourConcert_r, m_moodModifiers, m_luxuryMakeAngry, m_lastMoods, m_deactivatedTriggers, m_tourCompleted, m_isQuitting, m_numDoneCities
+global gDir, gRock
+
+on new me, argOptions
+  [  0] getparam 8 .............................. <argOptions>
+  [  2] pushsymb 86 ............................. <#ID>
+  [  5] pusharglist 2 ........................... <argOptions, #ID>
+  [  7] objcall 51 .............................. <argOptions[#ID]>
+  [ 10] setlocal 0 .............................. ID = argOptions[#ID]
+  [ 12] getparam 8 .............................. <argOptions>
+  [ 14] pushsymb 437 ............................ <#ReportTo>
+  [ 17] getparam 0 .............................. <me>
+  [ 19] pusharglistnoret 3 ...................... <argOptions, #ReportTo, me>
+  [ 21] objcall 438 ............................. argOptions.setaProp(#ReportTo, me)
+  [ 24] getparam 8 .............................. <argOptions>
+  [ 26] pushsymb 439 ............................ <#child>
+  [ 29] getparam 0 .............................. <me>
+  [ 31] pusharglistnoret 3 ...................... <argOptions, #child, me>
+  [ 33] objcall 438 ............................. argOptions.setaProp(#child, me)
+  [ 36] pushcons 0 .............................. <"DlgRockAncestorScript">
+  [ 38] pusharglist 1 ........................... <"DlgRockAncestorScript">
+  [ 40] extcall 49 .............................. <script("DlgRockAncestorScript")>
+  [ 43] getparam 8 .............................. <argOptions>
+  [ 45] pusharglist 2 ........................... <script("DlgRockAncestorScript"), argOptions>
+  [ 47] objcall 0 ............................... <script("DlgRockAncestorScript").new(argOptions)>
+  [ 49] setprop 447 ............................. ancestor = script("DlgRockAncestorScript").new(argOptions)
+  [ 52] pushsymb 1613 ........................... <#TmpTourDlg>
+  [ 55] getparam 0 .............................. <me>
+  [ 57] pusharglistnoret 2 ...................... <#TmpTourDlg, me>
+  [ 59] extcall 1513 ............................ rSetParserVariable(#TmpTourDlg, me)
+  [ 62] getglobal 35 ............................ <gRock>
+  [ 65] getobjprop 36 ........................... <gRock.m_context>
+  [ 68] pushsymb 1352 ........................... <#BandTour>
+  [ 71] pusharglist 2 ........................... <gRock.m_context, #BandTour>
+  [ 73] objcall 359 ............................. <gRock.m_context.getFocus(#BandTour)>
+  [ 76] setprop 1614 ............................ m_tour_r = gRock.m_context.getFocus(#BandTour)
+  [ 79] getprop 1614 ............................ <m_tour_r>
+  [ 82] pusharglist 1 ........................... <m_tour_r>
+  [ 84] extcall 63 .............................. <objectp(m_tour_r)>
+  [ 87] setlocal 8 .............................. gotTour = objectp(m_tour_r)
+  [ 89] getlocal 8 .............................. <gotTour>
+  [ 91] jmpifz [109] ............................ if gotTour then
+  [ 94] getprop 1614 ............................ <m_tour_r>
+  [ 97] pushsymb 1410 ........................... <#ConcertDates>
+  [100] pusharglist 2 ........................... <m_tour_r, #ConcertDates>
+  [102] objcall 85 .............................. <m_tour_r.ConcertDates.count>
+  [105] pushzero ................................ <0>
+  [106] gt ...................................... <m_tour_r.ConcertDates.count > 0>
+  [107] setlocal 8 .............................. gotTour = m_tour_r.ConcertDates.count > 0
+  [109] pusharglist 0 ........................... <[]>
+  [111] pushlist ................................ <[]>
+  [112] setprop 1615 ............................ m_moodModifiers = []
+  [115] pushzero ................................ <0>
+  [116] setprop 1616 ............................ m_tourCompleted = 0
+  [119] pushzero ................................ <0>
+  [120] setprop 1617 ............................ m_isQuitting = 0
+  [123] pusharglist 0 ........................... <[]>
+  [125] pushlist ................................ <[]>
+  [126] setprop 1618 ............................ m_deactivatedTriggers = []
+  [129] getprop 447 ............................. <ancestor>
+  [132] getobjprop 360 .......................... <ancestor.m_objDlg>
+  [135] pushsymb 705 ............................ <#InfoFrame>
+  [138] pushsymb 584 ............................ <#Head>
+  [141] pushsymb 429 ............................ <#icon>
+  [144] pusharglist 3 ........................... <[#InfoFrame, #Head, #icon]>
+  [146] pushlist ................................ <[#InfoFrame, #Head, #icon]>
+  [147] pusharglist 2 ........................... <ancestor.m_objDlg, [#InfoFrame, #Head, #icon]>
+  [149] objcall 411 ............................. <ancestor.m_objDlg.getItemByPath([#InfoFrame, #Head, #icon])>
+  [152] setlocal 16 ............................. itemObj = ancestor.m_objDlg.getItemByPath([#InfoFrame, #Head, #icon])
+  [154] getlocal 16 ............................. <itemObj>
+  [156] pushsymb 361 ............................ <#Pic>
+  [159] pushcons 8 .............................. <"icon_spotlight02">
+  [161] pusharglistnoret 3 ...................... <itemObj, #Pic, "icon_spotlight02">
+  [163] objcall 364 ............................. itemObj.setOneProp(#Pic, "icon_spotlight02")
+  [166] getprop 447 ............................. <ancestor>
+  [169] getobjprop 360 .......................... <ancestor.m_objDlg>
+  [172] pushsymb 705 ............................ <#InfoFrame>
+  [175] pushsymb 584 ............................ <#Head>
+  [178] pushsymb 393 ............................ <#Info>
+  [181] pusharglist 3 ........................... <[#InfoFrame, #Head, #Info]>
+  [183] pushlist ................................ <[#InfoFrame, #Head, #Info]>
+  [184] pusharglist 2 ........................... <ancestor.m_objDlg, [#InfoFrame, #Head, #Info]>
+  [186] objcall 411 ............................. <ancestor.m_objDlg.getItemByPath([#InfoFrame, #Head, #Info])>
+  [189] setlocal 16 ............................. itemObj = ancestor.m_objDlg.getItemByPath([#InfoFrame, #Head, #Info])
+  [191] getlocal 16 ............................. <itemObj>
+  [193] pushsymb 412 ............................ <#editData>
+  [196] pushsymb 1619 ........................... <#szidTourHeadTotalResults>
+  [199] pusharglist 1 ........................... <#szidTourHeadTotalResults>
+  [201] extcall 413 ............................. <rGetStr(#szidTourHeadTotalResults)>
+  [204] pusharglistnoret 3 ...................... <itemObj, #editData, rGetStr(#szidTourHeadTotalResults)>
+  [206] objcall 364 ............................. itemObj.setOneProp(#editData, rGetStr(#szidTourHeadTotalResults))
+  [209] pushzero ................................ <0>
+  [210] setprop 1620 ............................ m_numDoneCities = 0
+  [213] getlocal 8 .............................. <gotTour>
+  [215] jmpifz [744] ............................ if gotTour then
+  [218] getglobal 35 ............................ <gRock>
+  [221] getobjprop 56 ........................... <gRock.m_msgManager>
+  [224] getparam 0 .............................. <me>
+  [226] pusharglistnoret 2 ...................... <gRock.m_msgManager, me>
+  [228] objcall 96 .............................. gRock.m_msgManager.addObject(me)
+  [231] getparam 0 .............................. <me>
+  [233] pushsymb 1621 ........................... <#start>
+  [236] pusharglistnoret 2 ...................... <me, #start>
+  [238] objcall 1608 ............................ me.handleDatesPostponing(#start)
+  [241] getglobal 35 ............................ <gRock>
+  [244] getobjprop 36 ........................... <gRock.m_context>
+  [247] pushsymb 448 ............................ <#Band>
+  [250] pusharglist 2 ........................... <gRock.m_context, #Band>
+  [252] objcall 359 ............................. <gRock.m_context.getFocus(#Band)>
+  [255] setlocal 24 ............................. band_r = gRock.m_context.getFocus(#Band)
+  [257] getlocal 24 ............................. <band_r>
+  [259] pusharglist 1 ........................... <band_r>
+  [261] objcall 450 ............................. <band_r.getMusicianObjs()>
+  [264] setlocal 32 ............................. musicians_r = band_r.getMusicianObjs()
+  [266] getprop 1622 ............................ <m_lastMoods>
+  [269] pusharglist 1 ........................... <m_lastMoods>
+  [271] extcall 181 ............................. <voidp(m_lastMoods)>
+  [274] jmpifz [345] ............................ if voidp(m_lastMoods) then
+  [277] pusharglist 0 ........................... <[:]>
+  [279] pushproplist ............................ <[:]>
+  [280] setprop 1622 ............................ m_lastMoods = [:]
+  [283] getlocal 32 ............................. <musicians_r>
+  [285] peek 0
+  [287] pusharglist 1
+  [289] extcall 85
+  [292] pushint8 1
+  [294] peek 0
+  [296] peek 2
+  [298] lteq
+  [299] jmpifz [343] ............................ repeat with mus_r in musicians_r
+  [302] peek 2
+  [304] peek 1
+  [306] pusharglist 2
+  [308] extcall 51
+  [311] setlocal 40
+  [313] getlocal 40 ............................. <mus_r>
+  [315] pushsymb 687 ............................ <#Mood>
+  [318] pusharglist 2 ........................... <mus_r, #Mood>
+  [320] extcall 283 ............................. <rgetProp(mus_r, #Mood)>
+  [323] setlocal 48 ............................. tmpMood = rgetProp(mus_r, #Mood)
+  [325] getprop 1622 ............................ <m_lastMoods>
+  [328] getlocal 40 ............................. <mus_r>
+  [330] getlocal 48 ............................. <tmpMood>
+  [332] pusharglistnoret 3 ...................... <m_lastMoods, mus_r, tmpMood>
+  [334] objcall 89 .............................. m_lastMoods.addProp(mus_r, tmpMood)
+  [337] pushint8 1
+  [339] add
+  [340] endrepeat [294]
+  [343] pop 3
+  [345] pushcons 16 ............................. <0.0>
+  [347] setprop 1623 ............................ m_luxuryMakeAngry = 0.0
+  [350] getprop 1614 ............................ <m_tour_r>
+  [353] getobjprop 1378 ......................... <m_tour_r.Expenses>
+  [356] peek 0
+  [358] pusharglist 1
+  [360] extcall 85
+  [363] pushint8 1
+  [365] peek 0
+  [367] peek 2
+  [369] lteq
+  [370] jmpifz [420] ............................ repeat with tmpExpenseID in m_tour_r.Expenses
+  [373] peek 2
+  [375] peek 1
+  [377] pusharglist 2
+  [379] extcall 51
+  [382] setlocal 56
+  [384] getglobal 35 ............................ <gRock>
+  [387] getobjprop 77 ........................... <gRock.m_classManager>
+  [390] getlocal 56 ............................. <tmpExpenseID>
+  [392] pushsymb 1389 ........................... <#TourExpense>
+  [395] pusharglist 3 ........................... <gRock.m_classManager, tmpExpenseID, #TourExpense>
+  [397] objcall 403 ............................. <gRock.m_classManager.getObjByIDAndClass(tmpExpenseID, #TourExpense)>
+  [400] setlocal 64 ............................. expense_r = gRock.m_classManager.getObjByIDAndClass(tmpExpenseID, #TourExpense)
+  [402] getprop 1623 ............................ <m_luxuryMakeAngry>
+  [405] getlocal 64 ............................. <expense_r>
+  [407] getobjprop 1624 ......................... <expense_r.LuxuryFactor>
+  [410] add ..................................... <m_luxuryMakeAngry + expense_r.LuxuryFactor>
+  [411] setprop 1623 ............................ m_luxuryMakeAngry = m_luxuryMakeAngry + expense_r.LuxuryFactor
+  [414] pushint8 1
+  [416] add
+  [417] endrepeat [365]
+  [420] pop 3
+  [422] pushcons 24 ............................. <0.10000000000000001>
+  [424] inv ..................................... <-0.10000000000000001>
+  [425] pushcons 32 ............................. <1.0>
+  [427] getprop 1623 ............................ <m_luxuryMakeAngry>
+  [430] sub ..................................... <1.0 - m_luxuryMakeAngry>
+  [431] mul ..................................... <-0.10000000000000001 * (1.0 - m_luxuryMakeAngry)>
+  [432] setprop 1623 ............................ m_luxuryMakeAngry = -0.10000000000000001 * (1.0 - m_luxuryMakeAngry)
+  [435] pusharglist 0 ........................... <[]>
+  [437] pushlist ................................ <[]>
+  [438] setprop 1615 ............................ m_moodModifiers = []
+  [441] getglobal 35 ............................ <gRock>
+  [444] getobjprop 36 ........................... <gRock.m_context>
+  [447] pushsymb 448 ............................ <#Band>
+  [450] pusharglist 2 ........................... <gRock.m_context, #Band>
+  [452] objcall 359 ............................. <gRock.m_context.getFocus(#Band)>
+  [455] setlocal 24 ............................. band_r = gRock.m_context.getFocus(#Band)
+  [457] getlocal 24 ............................. <band_r>
+  [459] pusharglist 1 ........................... <band_r>
+  [461] objcall 450 ............................. <band_r.getMusicianObjs()>
+  [464] setlocal 32 ............................. musicians_r = band_r.getMusicianObjs()
+  [466] getlocal 32 ............................. <musicians_r>
+  [468] peek 0
+  [470] pusharglist 1
+  [472] extcall 85
+  [475] pushint8 1
+  [477] peek 0
+  [479] peek 2
+  [481] lteq
+  [482] jmpifz [536] ............................ repeat with mus_r in musicians_r
+  [485] peek 2
+  [487] peek 1
+  [489] pusharglist 2
+  [491] extcall 51
+  [494] setlocal 40
+  [496] pushsymb 1625 ........................... <#Travel>
+  [499] getlocal 40 ............................. <mus_r>
+  [501] getobjprop 86 ........................... <mus_r.ID>
+  [504] pushsymb 687 ............................ <#Mood>
+  [507] pushcons 40 ............................. <0.0>
+  [509] pushzero ................................ <0>
+  [510] pushsymb 1626 ........................... <#Constant>
+  [513] pusharglist 6 ........................... <#Travel, mus_r.ID, #Mood, 0.0, 0, #Constant>
+  [515] extcall 1273 ............................ <rCreateModifier(#Travel, mus_r.ID, #Mood, 0.0, 0, #Constant)>
+  [518] setlocal 72 ............................. modifier = rCreateModifier(#Travel, mus_r.ID, #Mood, 0.0, 0, #Constant)
+  [520] getprop 1615 ............................ <m_moodModifiers>
+  [523] getlocal 72 ............................. <modifier>
+  [525] pusharglistnoret 2 ...................... <m_moodModifiers, modifier>
+  [527] objcall 98 .............................. m_moodModifiers.add(modifier)
+  [530] pushint8 1
+  [532] add
+  [533] endrepeat [477]
+  [536] pop 3
+  [538] getprop 447 ............................. <ancestor>
+  [541] getobjprop 360 .......................... <ancestor.m_objDlg>
+  [544] pushsymb 365 ............................ <#DontPaint>
+  [547] pusharglistnoret 2 ...................... <ancestor.m_objDlg, #DontPaint>
+  [549] objcall 366 ............................. ancestor.m_objDlg.recalc(#DontPaint)
+  [552] getprop 447 ............................. <ancestor>
+  [555] getobjprop 360 .......................... <ancestor.m_objDlg>
+  [558] pushsymb 1343 ........................... <#Globe>
+  [561] pusharglist 2 ........................... <ancestor.m_objDlg, #Globe>
+  [563] objcall 362 ............................. <ancestor.m_objDlg.getItem(#Globe)>
+  [566] setlocal 16 ............................. itemObj = ancestor.m_objDlg.getItem(#Globe)
+  [568] getlocal 16 ............................. <itemObj>
+  [570] pusharglist 1 ........................... <itemObj>
+  [572] objcall 369 ............................. <itemObj.getOnStageRect()>
+  [575] setlocal 80 ............................. tmpR = itemObj.getOnStageRect()
+  [577] getlocal 80 ............................. <tmpR>
+  [579] pushint8 1 .............................. <1>
+  [582] pusharglist 2 ........................... <tmpR, 1>
+  [584] objcall 51 .............................. <tmpR[1]>
+  [587] getlocal 80 ............................. <tmpR>
+  [589] pushint8 2 .............................. <2>
+  [592] pusharglist 2 ........................... <tmpR, 2>
+  [594] objcall 51 .............................. <tmpR[2]>
+  [597] pusharglist 2 ........................... <tmpR[1], tmpR[2]>
+  [599] extcall 75 .............................. <point(tmpR[1], tmpR[2])>
+  [602] setlocal 88 ............................. tmpP = point(tmpR[1], tmpR[2])
+  [604] pushzero ................................ <0>
+  [605] setprop 1627 ............................ m_goingBackHome = 0
+  [608] pushzero ................................ <0>
+  [609] setprop 1628 ............................ m_isTravelling = 0
+  [612] getglobal 35 ............................ <gRock>
+  [615] getobjprop 52 ........................... <gRock.m_gameTimer>
+  [618] getparam 0 .............................. <me>
+  [620] pushint8 99 ............................. <99>
+  [623] pushint8 1 .............................. <1>
+  [626] pusharglistnoret 4 ...................... <gRock.m_gameTimer, me, 99, 1>
+  [628] objcall 96 .............................. gRock.m_gameTimer.addObject(me, 99, 1)
+  [631] getglobal 35 ............................ <gRock>
+  [634] getobjprop 52 ........................... <gRock.m_gameTimer>
+  [637] pushint8 3 .............................. <3>
+  [640] setobjprop 1629 ......................... gRock.m_gameTimer.speedFactor = 3
+  [643] pushzero ................................ <0>
+  [644] getprop 447 ............................. <ancestor>
+  [647] pusharglist 1 ........................... <ancestor>
+  [649] objcall 504 ............................. <ancestor.getSPOverDlg()>
+  [652] getlocal 88 ............................. <tmpP>
+  [654] pusharglist 0 ........................... <>
+  [656] extcall 381 ............................. <VOID>
+  [659] pushsymb 1630 ........................... <#NoMouse>
+  [662] pusharglist 5 ........................... <0, ancestor.getSPOverDlg(), tmpP, VOID, #NoMouse>
+  [664] extcall 1344 ............................ <prepareTourGlobe(0, ancestor.getSPOverDlg(), tmpP, VOID, #NoMouse)>
+  [667] setlocal 96 ............................. tmp = prepareTourGlobe(0, ancestor.getSPOverDlg(), tmpP, VOID, #NoMouse)
+  [669] getlocal 96 ............................. <tmp>
+  [671] pushsymb 1350 ........................... <#startCityID>
+  [674] pusharglist 2 ........................... <tmp, #startCityID>
+  [676] objcall 51 .............................. <tmp[#startCityID]>
+  [679] setprop 1349 ............................ m_startCityID = tmp[#startCityID]
+  [682] getprop 1349 ............................ <m_startCityID>
+  [685] setprop 1631 ............................ m_currentCityID = m_startCityID
+  [688] getlocal 96 ............................. <tmp>
+  [690] pushsymb 1343 ........................... <#Globe>
+  [693] pusharglist 2 ........................... <tmp, #Globe>
+  [695] objcall 51 .............................. <tmp[#Globe]>
+  [698] setlocal 104 ............................ globeObj = tmp[#Globe]
+  [700] pushcons 48 ............................. <"TourTravelScript">
+  [702] pusharglist 1 ........................... <"TourTravelScript">
+  [704] extcall 49 .............................. <script("TourTravelScript")>
+  [707] getparam 0 .............................. <me>
+  [709] getlocal 104 ............................ <globeObj>
+  [711] getprop 447 ............................. <ancestor>
+  [714] pusharglist 1 ........................... <ancestor>
+  [716] objcall 504 ............................. <ancestor.getSPOverDlg()>
+  [719] pushint8 1 .............................. <1>
+  [722] add ..................................... <ancestor.getSPOverDlg() + 1>
+  [723] pusharglist 4 ........................... <script("TourTravelScript"), me, globeObj, ancestor.getSPOverDlg() + 1>
+  [725] objcall 0 ............................... <script("TourTravelScript").new(me, globeObj, ancestor.getSPOverDlg() + 1)>
+  [727] setprop 1632 ............................ m_travelObj = script("TourTravelScript").new(me, globeObj, ancestor.getSPOverDlg() + 1)
+  [730] getparam 0 .............................. <me>
+  [732] pusharglistnoret 1 ...................... <me>
+  [734] objcall 1338 ............................ me.updateTable()
+  [737] getparam 0 .............................. <me>
+  [739] pusharglistnoret 1 ...................... <me>
+  [741] objcall 1612 ............................ me.leaveForNextCity()
+  [744] getprop 447 ............................. <ancestor>
+  [747] pusharglistnoret 1 ...................... <ancestor>
+  [749] objcall 457 ............................. ancestor.render()
+  [752] getparam 0 .............................. <me>
+  [754] pusharglistnoret 1 ...................... <me>
+  [756] extcall 46 .............................. return me
+  [759] ret
+end
+
+on handleDatesPostponing me, argStartOrEndTour
+  [  0] getglobal 35 ............................ <gRock>
+  [  3] getobjprop 36 ........................... <gRock.m_context>
+  [  6] pushsymb 273 ............................ <#Mission>
+  [  9] pusharglist 2 ........................... <gRock.m_context, #Mission>
+  [ 11] objcall 359 ............................. <gRock.m_context.getFocus(#Mission)>
+  [ 14] setlocal 0 .............................. mission_r = gRock.m_context.getFocus(#Mission)
+  [ 16] getparam 8 .............................. <argStartOrEndTour>
+  [ 18] pushsymb 1621 ........................... <#start>
+  [ 21] eq ...................................... <argStartOrEndTour = #start>
+  [ 22] jmpifz [183] ............................ if argStartOrEndTour = #start then / else
+  [ 25] getlocal 0 .............................. <mission_r>
+  [ 27] getprop 1614 ............................ <m_tour_r>
+  [ 30] getobjprop 357 .......................... <m_tour_r.duration>
+  [ 33] pusharglistnoret 2 ...................... <mission_r, m_tour_r.duration>
+  [ 35] objcall 910 ............................. mission_r.postponeDates(m_tour_r.duration)
+  [ 38] getglobal 35 ............................ <gRock>
+  [ 41] getobjprop 77 ........................... <gRock.m_classManager>
+  [ 44] pushsymb 269 ............................ <#Trigger>
+  [ 47] pusharglist 2 ........................... <gRock.m_classManager, #Trigger>
+  [ 49] objcall 238 ............................. <gRock.m_classManager.getObjsOfClass(#Trigger)>
+  [ 52] setlocal 8 .............................. triggers_r = gRock.m_classManager.getObjsOfClass(#Trigger)
+  [ 54] getlocal 8 .............................. <triggers_r>
+  [ 56] peek 0
+  [ 58] pusharglist 1
+  [ 60] extcall 85
+  [ 63] pushint8 1
+  [ 65] peek 0
+  [ 67] peek 2
+  [ 69] lteq
+  [ 70] jmpifz [147] ............................ repeat with trigger_r in triggers_r
+  [ 73] peek 2
+  [ 75] peek 1
+  [ 77] pusharglist 2
+  [ 79] extcall 51
+  [ 82] setlocal 16
+  [ 84] getlocal 16 ............................. <trigger_r>
+  [ 86] getobjprop 1485 ......................... <trigger_r.Active>
+  [ 89] pushint8 1 .............................. <1>
+  [ 92] eq ...................................... <trigger_r.Active = 1>
+  [ 93] jmpifz [141] ............................ if trigger_r.Active = 1 then
+  [ 96] getlocal 16 ............................. <trigger_r>
+  [ 98] pusharglist 1 ........................... <trigger_r>
+  [100] objcall 1638 ............................ <trigger_r.IsActiveDuringTour()>
+  [103] pushzero ................................ <0>
+  [104] eq ...................................... <trigger_r.IsActiveDuringTour() = 0>
+  [105] jmpifz [141] ............................ if trigger_r.IsActiveDuringTour() = 0 then
+  [108] getlocal 16 ............................. <trigger_r>
+  [110] pushzero ................................ <0>
+  [111] setobjprop 1485 ......................... trigger_r.Active = 0
+  [114] getlocal 16 ............................. <trigger_r>
+  [116] getlocal 16 ............................. <trigger_r>
+  [118] getobjprop 1639 ......................... <trigger_r.TriggerActivateDate>
+  [121] getprop 1614 ............................ <m_tour_r>
+  [124] getobjprop 357 .......................... <m_tour_r.duration>
+  [127] add ..................................... <trigger_r.TriggerActivateDate + m_tour_r.duration>
+  [128] setobjprop 1639 ......................... trigger_r.TriggerActivateDate = trigger_r.TriggerActivateDate + m_tour_r.duration
+  [131] getprop 1618 ............................ <m_deactivatedTriggers>
+  [134] getlocal 16 ............................. <trigger_r>
+  [136] pusharglistnoret 2 ...................... <m_deactivatedTriggers, trigger_r>
+  [138] objcall 98 .............................. m_deactivatedTriggers.add(trigger_r)
+  [141] pushint8 1
+  [143] add
+  [144] endrepeat [ 65]
+  [147] pop 3
+  [149] getglobal 35 ............................ <gRock>
+  [152] getobjprop 54 ........................... <gRock.m_eventCardsManager>
+  [155] getprop 1614 ............................ <m_tour_r>
+  [158] getobjprop 357 .......................... <m_tour_r.duration>
+  [161] pusharglistnoret 2 ...................... <gRock.m_eventCardsManager, m_tour_r.duration>
+  [163] objcall 910 ............................. gRock.m_eventCardsManager.postponeDates(m_tour_r.duration)
+  [166] getglobal 35 ............................ <gRock>
+  [169] getobjprop 54 ........................... <gRock.m_eventCardsManager>
+  [172] pushint8 1 .............................. <1>
+  [175] pusharglistnoret 2 ...................... <gRock.m_eventCardsManager, 1>
+  [177] objcall 55 .............................. gRock.m_eventCardsManager.setOKToShowOnTopOfNumDialogs(1)
+  [180] jmp [367]
+  [183] pushzero ................................ <0>
+  [184] setlocal 24 ............................. endedDaysEarly = 0
+  [186] getprop 1616 ............................ <m_tourCompleted>
+  [189] pushzero ................................ <0>
+  [190] eq ...................................... <m_tourCompleted = 0>
+  [191] jmpifz [236] ............................ if m_tourCompleted = 0 then
+  [194] getprop 1614 ............................ <m_tour_r>
+  [197] pusharglist 1 ........................... <m_tour_r>
+  [199] extcall 63 .............................. <objectp(m_tour_r)>
+  [202] jmpifz [236] ............................ if objectp(m_tour_r) then
+  [205] getprop 1614 ............................ <m_tour_r>
+  [208] getobjprop 355 .......................... <m_tour_r.StartDate>
+  [211] getprop 1614 ............................ <m_tour_r>
+  [214] getobjprop 357 .......................... <m_tour_r.duration>
+  [217] add ..................................... <m_tour_r.StartDate + m_tour_r.duration>
+  [218] setlocal 32 ............................. expectedEndDate = m_tour_r.StartDate + m_tour_r.duration
+  [220] getlocal 32 ............................. <expectedEndDate>
+  [222] getglobal 35 ............................ <gRock>
+  [225] getobjprop 208 .......................... <gRock.m_date>
+  [228] pusharglist 1 ........................... <gRock.m_date>
+  [230] objcall 209 ............................. <gRock.m_date.getDateInt()>
+  [233] sub ..................................... <expectedEndDate - gRock.m_date.getDateInt()>
+  [234] setlocal 24 ............................. endedDaysEarly = expectedEndDate - gRock.m_date.getDateInt()
+  [236] getlocal 0 .............................. <mission_r>
+  [238] getlocal 24 ............................. <endedDaysEarly>
+  [240] inv ..................................... <-endedDaysEarly>
+  [241] pusharglistnoret 2 ...................... <mission_r, -endedDaysEarly>
+  [243] objcall 910 ............................. mission_r.postponeDates(-endedDaysEarly)
+  [246] getprop 1618 ............................ <m_deactivatedTriggers>
+  [249] peek 0
+  [251] pusharglist 1
+  [253] extcall 85
+  [256] pushint8 1
+  [258] peek 0
+  [260] peek 2
+  [262] lteq
+  [263] jmpifz [304] ............................ repeat with trigger_r in m_deactivatedTriggers
+  [266] peek 2
+  [268] peek 1
+  [270] pusharglist 2
+  [272] extcall 51
+  [275] setlocal 16
+  [277] getlocal 16 ............................. <trigger_r>
+  [279] pushint8 1 .............................. <1>
+  [282] setobjprop 1485 ......................... trigger_r.Active = 1
+  [285] getlocal 16 ............................. <trigger_r>
+  [287] getlocal 16 ............................. <trigger_r>
+  [289] getobjprop 1639 ......................... <trigger_r.TriggerActivateDate>
+  [292] getlocal 24 ............................. <endedDaysEarly>
+  [294] sub ..................................... <trigger_r.TriggerActivateDate - endedDaysEarly>
+  [295] setobjprop 1639 ......................... trigger_r.TriggerActivateDate = trigger_r.TriggerActivateDate - endedDaysEarly
+  [298] pushint8 1
+  [300] add
+  [301] endrepeat [258]
+  [304] pop 3
+  [306] getprop 1614 ............................ <m_tour_r>
+  [309] pusharglist 1 ........................... <m_tour_r>
+  [311] extcall 63 .............................. <objectp(m_tour_r)>
+  [314] not ..................................... <not objectp(m_tour_r)>
+  [315] jmpifz [319] ............................ if not objectp(m_tour_r) then
+  [318] ret ..................................... exit
+  [319] getprop 1614 ............................ <m_tour_r>
+  [322] pusharglist 0 ........................... <>
+  [324] extcall 381 ............................. <VOID>
+  [327] getprop 1614 ............................ <m_tour_r>
+  [330] getobjprop 357 .......................... <m_tour_r.duration>
+  [333] getlocal 24 ............................. <endedDaysEarly>
+  [335] sub ..................................... <m_tour_r.duration - endedDaysEarly>
+  [336] pusharglistnoret 3 ...................... <m_tour_r, VOID, m_tour_r.duration - endedDaysEarly>
+  [338] objcall 210 ............................. m_tour_r.setDates(VOID, m_tour_r.duration - endedDaysEarly)
+  [341] getglobal 35 ............................ <gRock>
+  [344] getobjprop 54 ........................... <gRock.m_eventCardsManager>
+  [347] pushzero ................................ <0>
+  [348] pusharglistnoret 2 ...................... <gRock.m_eventCardsManager, 0>
+  [350] objcall 55 .............................. gRock.m_eventCardsManager.setOKToShowOnTopOfNumDialogs(0)
+  [353] getglobal 35 ............................ <gRock>
+  [356] getobjprop 54 ........................... <gRock.m_eventCardsManager>
+  [359] getlocal 24 ............................. <endedDaysEarly>
+  [361] inv ..................................... <-endedDaysEarly>
+  [362] pusharglistnoret 2 ...................... <gRock.m_eventCardsManager, -endedDaysEarly>
+  [364] objcall 910 ............................. gRock.m_eventCardsManager.postponeDates(-endedDaysEarly)
+  [367] ret
+end
+
+on kill me
+  [  0] getglobal 35 ............................ <gRock>
+  [  3] getobjprop 52 ........................... <gRock.m_gameTimer>
+  [  6] pushint8 1 .............................. <1>
+  [  9] setobjprop 1629 ......................... gRock.m_gameTimer.speedFactor = 1
+  [ 12] getglobal 35 ............................ <gRock>
+  [ 15] getobjprop 56 ........................... <gRock.m_msgManager>
+  [ 18] getparam 0 .............................. <me>
+  [ 20] pusharglistnoret 2 ...................... <gRock.m_msgManager, me>
+  [ 22] objcall 120 ............................. gRock.m_msgManager.deleteObject(me)
+  [ 25] getparam 0 .............................. <me>
+  [ 27] pushsymb 1643 ........................... <#stop>
+  [ 30] pusharglistnoret 2 ...................... <me, #stop>
+  [ 32] objcall 1608 ............................ me.handleDatesPostponing(#stop)
+  [ 35] pusharglist 0 ........................... <[:]>
+  [ 37] pushproplist ............................ <[:]>
+  [ 38] setprop 1622 ............................ m_lastMoods = [:]
+  [ 41] getprop 1615 ............................ <m_moodModifiers>
+  [ 44] peek 0
+  [ 46] pusharglist 1
+  [ 48] extcall 85
+  [ 51] pushint8 1
+  [ 53] peek 0
+  [ 55] peek 2
+  [ 57] lteq
+  [ 58] jmpifz [ 83] ............................ repeat with modifier in m_moodModifiers
+  [ 61] peek 2
+  [ 63] peek 1
+  [ 65] pusharglist 2
+  [ 67] extcall 51
+  [ 70] setlocal 0
+  [ 72] getlocal 0 .............................. <modifier>
+  [ 74] pusharglistnoret 1 ...................... <modifier>
+  [ 76] objcall 3 ............................... modifier.kill()
+  [ 78] pushint8 1
+  [ 80] add
+  [ 81] endrepeat [ 53]
+  [ 83] pop 3
+  [ 85] pusharglist 0 ........................... <[]>
+  [ 87] pushlist ................................ <[]>
+  [ 88] setprop 1615 ............................ m_moodModifiers = []
+  [ 91] pushzero ................................ <0>
+  [ 92] setprop 1644 ............................ m_currTourConcert_r = 0
+  [ 95] getprop 1632 ............................ <m_travelObj>
+  [ 98] pusharglist 1 ........................... <m_travelObj>
+  [100] extcall 63 .............................. <objectp(m_travelObj)>
+  [103] jmpifz [116] ............................ if objectp(m_travelObj) then
+  [106] getprop 1632 ............................ <m_travelObj>
+  [109] pusharglist 1 ........................... <m_travelObj>
+  [111] objcall 3 ............................... <m_travelObj.kill()>
+  [113] setprop 1632 ............................ m_travelObj = m_travelObj.kill()
+  [116] getprop 447 ............................. <ancestor>
+  [119] pusharglistnoret 1 ...................... <ancestor>
+  [121] objcall 3 ............................... ancestor.kill()
+  [123] getglobal 35 ............................ <gRock>
+  [126] getobjprop 52 ........................... <gRock.m_gameTimer>
+  [129] getparam 0 .............................. <me>
+  [131] pusharglistnoret 2 ...................... <gRock.m_gameTimer, me>
+  [133] objcall 120 ............................. gRock.m_gameTimer.deleteObject(me)
+  [136] getprop 1616 ............................ <m_tourCompleted>
+  [139] pushzero ................................ <0>
+  [140] nteq .................................... <m_tourCompleted <> 0>
+  [141] jmpifz [175] ............................ if m_tourCompleted <> 0 then
+  [144] getglobal 35 ............................ <gRock>
+  [147] getobjprop 54 ........................... <gRock.m_eventCardsManager>
+  [150] pushsymb 1645 ........................... <#ECOCTourComplete>
+  [153] pusharglistnoret 2 ...................... <gRock.m_eventCardsManager, #ECOCTourComplete>
+  [155] objcall 563 ............................. gRock.m_eventCardsManager.tryNewShowEventCard(#ECOCTourComplete)
+  [158] getglobal 35 ............................ <gRock>
+  [161] getobjprop 56 ........................... <gRock.m_msgManager>
+  [164] pushsymb 1646 ........................... <#BandTourComplete>
+  [167] getprop 1620 ............................ <m_numDoneCities>
+  [170] pusharglistnoret 3 ...................... <gRock.m_msgManager, #BandTourComplete, m_numDoneCities>
+  [172] objcall 58 .............................. gRock.m_msgManager.msg(#BandTourComplete, m_numDoneCities)
+  [175] pushsymb 1613 ........................... <#TmpTourDlg>
+  [178] pusharglist 0 ........................... <>
+  [180] extcall 381 ............................. <VOID>
+  [183] pushsymb 921 ............................ <#Remove>
+  [186] pusharglistnoret 3 ...................... <#TmpTourDlg, VOID, #Remove>
+  [188] extcall 1513 ............................ rSetParserVariable(#TmpTourDlg, VOID, #Remove)
+  [191] pushzero ................................ <0>
+  [192] pusharglistnoret 1 ...................... <0>
+  [194] extcall 46 .............................. return 0
+  [197] ret
+end
+
+on GetSPNeed me
+  [  0] getprop 447 ............................. <ancestor>
+  [  3] pusharglist 1 ........................... <ancestor>
+  [  5] objcall 90 .............................. <ancestor.GetSPNeed()>
+  [  8] pushint8 2 .............................. <2>
+  [ 11] add ..................................... <ancestor.GetSPNeed() + 2>
+  [ 12] pusharglistnoret 1 ...................... <ancestor.GetSPNeed() + 2>
+  [ 14] extcall 46 .............................. return ancestor.GetSPNeed() + 2
+  [ 17] ret
+end
+
+on timeTick me
+  [  0] getprop 1628 ............................ <m_isTravelling>
+  [  3] pushzero ................................ <0>
+  [  4] eq ...................................... <m_isTravelling = 0>
+  [  5] jmpifz [ 33] ............................ if m_isTravelling = 0 then
+  [  8] getprop 1644 ............................ <m_currTourConcert_r>
+  [ 11] pusharglist 1 ........................... <m_currTourConcert_r>
+  [ 13] extcall 63 .............................. <objectp(m_currTourConcert_r)>
+  [ 16] jmpifz [ 33] ............................ if objectp(m_currTourConcert_r) then
+  [ 19] getglobal 35 ............................ <gRock>
+  [ 22] getobjprop 354 .......................... <gRock.m_eventsManager>
+  [ 25] getprop 1644 ............................ <m_currTourConcert_r>
+  [ 28] pusharglistnoret 2 ...................... <gRock.m_eventsManager, m_currTourConcert_r>
+  [ 30] objcall 1647 ............................ gRock.m_eventsManager.stopObject(m_currTourConcert_r)
+  [ 33] getprop 1617 ............................ <m_isQuitting>
+  [ 36] jmpifz [ 45] ............................ if m_isQuitting then
+  [ 39] getparam 0 .............................. <me>
+  [ 41] pusharglistnoret 1 ...................... <me>
+  [ 43] objcall 3 ............................... me.kill()
+  [ 45] ret
+end
+
+on cancelTour me
+  [  0] pushint8 1 .............................. <1>
+  [  3] setprop 1617 ............................ m_isQuitting = 1
+  [  6] ret
+end
+
+on msg me, argWhat, argOption
+  [  0] getparam 8 .............................. <argWhat>
+  [  2] pushsymb 1648 ........................... <#EnterDialog>
+  [  5] eq ...................................... <argWhat = #EnterDialog>
+  [  6] jmpifz [ 60] ............................ if argWhat = #EnterDialog then / else
+  [  9] getprop 1628 ............................ <m_isTravelling>
+  [ 12] jmpifz [ 57] ............................ if m_isTravelling then
+  [ 15] getparam 16 ............................. <argOption>
+  [ 17] pushsymb 158 ............................ <#m_ID>
+  [ 20] pusharglist 2 ........................... <argOption, #m_ID>
+  [ 22] extcall 283 ............................. <rgetProp(argOption, #m_ID)>
+  [ 25] getparam 0 .............................. <me>
+  [ 27] pushsymb 158 ............................ <#m_ID>
+  [ 30] pusharglist 2 ........................... <me, #m_ID>
+  [ 32] extcall 283 ............................. <rgetProp(me, #m_ID)>
+  [ 35] eq ...................................... <rgetProp(argOption, #m_ID) = rgetProp(me, #m_ID)>
+  [ 36] jmpifz [ 40] ............................ if rgetProp(argOption, #m_ID) = rgetProp(me, #m_ID) then
+  [ 39] ret ..................................... exit
+  [ 40] getprop 1632 ............................ <m_travelObj>
+  [ 43] pushint8 1 .............................. <1>
+  [ 46] pusharglistnoret 2 ...................... <m_travelObj, 1>
+  [ 48] objcall 6 ............................... m_travelObj.pause(1)
+  [ 50] pushcons 56 ............................. <"Must stop plane in midair and wait until dialog's closed!">
+  [ 52] pusharglistnoret 1 ...................... <"Must stop plane in midair and wait until dialog's closed!">
+  [ 54] extcall 161 ............................. pott("Must stop plane in midair and wait until dialog's closed!")
+  [ 57] jmp [139]
+  [ 60] getparam 8 .............................. <argWhat>
+  [ 62] pushsymb 1649 ........................... <#ExitDialog>
+  [ 65] eq ...................................... <argWhat = #ExitDialog>
+  [ 66] jmpifz [139] ............................ if argWhat = #ExitDialog then
+  [ 69] getparam 16 ............................. <argOption>
+  [ 71] pushsymb 158 ............................ <#m_ID>
+  [ 74] pusharglist 2 ........................... <argOption, #m_ID>
+  [ 76] extcall 283 ............................. <rgetProp(argOption, #m_ID)>
+  [ 79] getparam 0 .............................. <me>
+  [ 81] pushsymb 158 ............................ <#m_ID>
+  [ 84] pusharglist 2 ........................... <me, #m_ID>
+  [ 86] extcall 283 ............................. <rgetProp(me, #m_ID)>
+  [ 89] eq ...................................... <rgetProp(argOption, #m_ID) = rgetProp(me, #m_ID)>
+  [ 90] jmpifz [ 94] ............................ if rgetProp(argOption, #m_ID) = rgetProp(me, #m_ID) then
+  [ 93] ret ..................................... exit
+  [ 94] getprop 1617 ............................ <m_isQuitting>
+  [ 97] pushint8 1 .............................. <1>
+  [100] eq ...................................... <m_isQuitting = 1>
+  [101] jmpifz [111] ............................ if m_isQuitting = 1 then
+  [104] getparam 0 .............................. <me>
+  [106] pusharglistnoret 1 ...................... <me>
+  [108] objcall 3 ............................... me.kill()
+  [110] ret ..................................... exit
+  [111] getglobal 35 ............................ <gRock>
+  [114] getobjprop 52 ........................... <gRock.m_gameTimer>
+  [117] pushint8 1 .............................. <1>
+  [120] pusharglistnoret 2 ...................... <gRock.m_gameTimer, 1>
+  [122] objcall 53 .............................. gRock.m_gameTimer.activate(1)
+  [125] getprop 1628 ............................ <m_isTravelling>
+  [128] jmpifz [139] ............................ if m_isTravelling then
+  [131] getprop 1632 ............................ <m_travelObj>
+  [134] pushzero ................................ <0>
+  [135] pusharglistnoret 2 ...................... <m_travelObj, 0>
+  [137] objcall 6 ............................... m_travelObj.pause(0)
+  [139] ret
+end
+
+on focusChange me, argGotFocus
+  [  0] getprop 447 ............................. <ancestor>
+  [  3] getparam 8 .............................. <argGotFocus>
+  [  5] pusharglistnoret 2 ...................... <ancestor, argGotFocus>
+  [  7] objcall 518 ............................. ancestor.focusChange(argGotFocus)
+  [ 10] ret
+end
+
+on Report me, argObj, argWhat, argOption
+  [  0] getparam 8 .............................. <argObj>
+  [  2] getprop 1632 ............................ <m_travelObj>
+  [  5] eq ...................................... <argObj = m_travelObj>
+  [  6] jmpifz [184] ............................ if argObj = m_travelObj then / else
+  [  9] getparam 16 ............................. <argWhat>
+  [ 11] pushsymb 1650 ........................... <#done>
+  [ 14] eq ...................................... <argWhat = #done>
+  [ 15] jmpifz [181] ............................ if argWhat = #done then
+  [ 18] pushcons 64 ............................. <"Landed!">
+  [ 20] pusharglistnoret 1 ...................... <"Landed!">
+  [ 22] extcall 161 ............................. pott("Landed!")
+  [ 25] pushzero ................................ <0>
+  [ 26] setprop 1628 ............................ m_isTravelling = 0
+  [ 29] getprop 1627 ............................ <m_goingBackHome>
+  [ 32] pushint8 1 .............................. <1>
+  [ 35] eq ...................................... <m_goingBackHome = 1>
+  [ 36] jmpifz [ 55] ............................ if m_goingBackHome = 1 then / else
+  [ 39] pushint8 1 .............................. <1>
+  [ 42] setprop 1616 ............................ m_tourCompleted = 1
+  [ 45] getparam 0 .............................. <me>
+  [ 47] pusharglistnoret 1 ...................... <me>
+  [ 49] objcall 3 ............................... me.kill()
+  [ 51] ret ..................................... exit
+  [ 52] jmp [181]
+  [ 55] getparam 0 .............................. <me>
+  [ 57] pusharglistnoret 1 ...................... <me>
+  [ 59] objcall 1610 ............................ me.checkMusiciansMoods()
+  [ 62] getprop 1617 ............................ <m_isQuitting>
+  [ 65] jmpifz [ 92] ............................ if m_isQuitting then
+  [ 68] getglobal 35 ............................ <gRock>
+  [ 71] getobjprop 54 ........................... <gRock.m_eventCardsManager>
+  [ 74] pushint8 1 .............................. <1>
+  [ 77] setobjprop 1651 ......................... gRock.m_eventCardsManager.m_OKToShow = 1
+  [ 80] getglobal 35 ............................ <gRock>
+  [ 83] getobjprop 54 ........................... <gRock.m_eventCardsManager>
+  [ 86] pusharglistnoret 1 ...................... <gRock.m_eventCardsManager>
+  [ 88] objcall 1652 ............................ gRock.m_eventCardsManager.openWaitingCard()
+  [ 91] ret ..................................... exit
+  [ 92] getglobal 35 ............................ <gRock>
+  [ 95] getobjprop 77 ........................... <gRock.m_classManager>
+  [ 98] pushsymb 1554 ........................... <#TourConcert>
+  [101] pusharglist 2 ........................... <gRock.m_classManager, #TourConcert>
+  [103] objcall 199 ............................. <gRock.m_classManager.createObj(#TourConcert)>
+  [106] setprop 1644 ............................ m_currTourConcert_r = gRock.m_classManager.createObj(#TourConcert)
+  [109] getprop 1644 ............................ <m_currTourConcert_r>
+  [112] getglobal 35 ............................ <gRock>
+  [115] getobjprop 77 ........................... <gRock.m_classManager>
+  [118] getprop 1644 ............................ <m_currTourConcert_r>
+  [121] pusharglist 2 ........................... <gRock.m_classManager, m_currTourConcert_r>
+  [123] objcall 200 ............................. <gRock.m_classManager.genUniqueID(m_currTourConcert_r)>
+  [126] setobjprop 86 ........................... m_currTourConcert_r.ID = gRock.m_classManager.genUniqueID(m_currTourConcert_r)
+  [129] getprop 1644 ............................ <m_currTourConcert_r>
+  [132] getprop 1631 ............................ <m_currentCityID>
+  [135] setobjprop 37 ........................... m_currTourConcert_r.City = m_currentCityID
+  [138] getprop 1644 ............................ <m_currTourConcert_r>
+  [141] getprop 1614 ............................ <m_tour_r>
+  [144] getobjprop 86 ........................... <m_tour_r.ID>
+  [147] setobjprop 1377 ......................... m_currTourConcert_r.Tour = m_tour_r.ID
+  [150] getprop 1614 ............................ <m_tour_r>
+  [153] getobjprop 1653 ......................... <m_tour_r.ConcertIDs>
+  [156] getprop 1644 ............................ <m_currTourConcert_r>
+  [159] getobjprop 86 ........................... <m_currTourConcert_r.ID>
+  [162] pusharglistnoret 2 ...................... <m_tour_r.ConcertIDs, m_currTourConcert_r.ID>
+  [164] objcall 98 .............................. m_tour_r.ConcertIDs.add(m_currTourConcert_r.ID)
+  [167] getprop 1644 ............................ <m_currTourConcert_r>
+  [170] pushsymb 1654 ........................... <#Now>
+  [173] pushint8 1 .............................. <1>
+  [176] pusharglistnoret 3 ...................... <m_currTourConcert_r, #Now, 1>
+  [178] objcall 210 ............................. m_currTourConcert_r.setDates(#Now, 1)
+  [181] jmp [403]
+  [184] getparam 16 ............................. <argWhat>
+  [186] pushsymb 1655 ........................... <#Closed>
+  [189] eq ...................................... <argWhat = #Closed>
+  [190] jmpifz [373] ............................ if argWhat = #Closed then / else
+  [193] getparam 8 .............................. <argObj>
+  [195] pushsymb 158 ............................ <#m_ID>
+  [198] pusharglist 2 ........................... <argObj, #m_ID>
+  [200] extcall 283 ............................. <rgetProp(argObj, #m_ID)>
+  [203] pushsymb 1656 ........................... <#DlgTourConcertResult>
+  [206] nteq .................................... <rgetProp(argObj, #m_ID) <> #DlgTourConcertResult>
+  [207] jmpifz [211] ............................ if rgetProp(argObj, #m_ID) <> #DlgTourConcertResult then
+  [210] ret ..................................... exit
+  [211] getprop 1620 ............................ <m_numDoneCities>
+  [214] pushint8 1 .............................. <1>
+  [217] add ..................................... <m_numDoneCities + 1>
+  [218] setprop 1620 ............................ m_numDoneCities = m_numDoneCities + 1
+  [221] getprop 1644 ............................ <m_currTourConcert_r>
+  [224] getobjprop 206 .......................... <m_currTourConcert_r.quality>
+  [227] pushzero ................................ <0>
+  [228] lt ...................................... <m_currTourConcert_r.quality < 0>
+  [229] jmpifz [239] ............................ if m_currTourConcert_r.quality < 0 then
+  [232] getprop 1644 ............................ <m_currTourConcert_r>
+  [235] pushzero ................................ <0>
+  [236] setobjprop 206 .......................... m_currTourConcert_r.quality = 0
+  [239] pushcons 72 ............................. <0.10000000000000001>
+  [241] getprop 1644 ............................ <m_currTourConcert_r>
+  [244] getobjprop 206 .......................... <m_currTourConcert_r.quality>
+  [247] pushcons 80 ............................. <0.69999999999999996>
+  [249] sub ..................................... <m_currTourConcert_r.quality - 0.69999999999999996>
+  [250] mul ..................................... <0.10000000000000001 * (m_currTourConcert_r.quality - 0.69999999999999996)>
+  [251] setlocal 0 .............................. tmpMoodChange = 0.10000000000000001 * (m_currTourConcert_r.quality - 0.69999999999999996)
+  [253] getglobal 35 ............................ <gRock>
+  [256] getobjprop 36 ........................... <gRock.m_context>
+  [259] pushsymb 448 ............................ <#Band>
+  [262] pusharglist 2 ........................... <gRock.m_context, #Band>
+  [264] objcall 359 ............................. <gRock.m_context.getFocus(#Band)>
+  [267] setlocal 8 .............................. band_r = gRock.m_context.getFocus(#Band)
+  [269] getlocal 8 .............................. <band_r>
+  [271] pusharglist 1 ........................... <band_r>
+  [273] objcall 450 ............................. <band_r.getMusicianObjs()>
+  [276] setlocal 16 ............................. musicians_r = band_r.getMusicianObjs()
+  [278] getlocal 16 ............................. <musicians_r>
+  [280] peek 0
+  [282] pusharglist 1
+  [284] extcall 85
+  [287] pushint8 1
+  [289] peek 0
+  [291] peek 2
+  [293] lteq
+  [294] jmpifz [335] ............................ repeat with mus_r in musicians_r
+  [297] peek 2
+  [299] peek 1
+  [301] pusharglist 2
+  [303] extcall 51
+  [306] setlocal 24
+  [308] pushsymb 778 ............................ <#Concert>
+  [311] getlocal 24 ............................. <mus_r>
+  [313] getobjprop 86 ........................... <mus_r.ID>
+  [316] pushsymb 687 ............................ <#Mood>
+  [319] getlocal 0 .............................. <tmpMoodChange>
+  [321] pushint8 4 .............................. <4>
+  [324] pusharglistnoret 5 ...................... <#Concert, mus_r.ID, #Mood, tmpMoodChange, 4>
+  [326] extcall 1273 ............................ rCreateModifier(#Concert, mus_r.ID, #Mood, tmpMoodChange, 4)
+  [329] pushint8 1
+  [331] add
+  [332] endrepeat [289]
+  [335] pop 3
+  [337] getparam 0 .............................. <me>
+  [339] pusharglistnoret 1 ...................... <me>
+  [341] objcall 1610 ............................ me.checkMusiciansMoods()
+  [344] getprop 1617 ............................ <m_isQuitting>
+  [347] pushzero ................................ <0>
+  [348] eq ...................................... <m_isQuitting = 0>
+  [349] jmpifz [366] ............................ if m_isQuitting = 0 then
+  [352] getparam 0 .............................. <me>
+  [354] pusharglistnoret 1 ...................... <me>
+  [356] objcall 1338 ............................ me.updateTable()
+  [359] getparam 0 .............................. <me>
+  [361] pusharglistnoret 1 ...................... <me>
+  [363] objcall 1612 ............................ me.leaveForNextCity()
+  [366] pushzero ................................ <0>
+  [367] setprop 1644 ............................ m_currTourConcert_r = 0
+  [370] jmp [403]
+  [373] getparam 16 ............................. <argWhat>
+  [375] pushsymb 433 ............................ <#DlgConfirm>
+  [378] eq ...................................... <argWhat = #DlgConfirm>
+  [379] jmpifz [403] ............................ if argWhat = #DlgConfirm then
+  [382] getparam 24 ............................. <argOption>
+  [384] pushsymb 278 ............................ <#ButtonOK>
+  [387] eq ...................................... <argOption = #ButtonOK>
+  [388] jmpifz [403] ............................ if argOption = #ButtonOK then
+  [391] getparam 8 .............................. <argObj>
+  [393] pusharglistnoret 1 ...................... <argObj>
+  [395] objcall 3 ............................... argObj.kill()
+  [397] getparam 0 .............................. <me>
+  [399] pusharglistnoret 1 ...................... <me>
+  [401] objcall 3 ............................... me.kill()
+  [403] ret
+end
+
+on checkMusiciansMoods me
+  [  0] getglobal 35 ............................ <gRock>
+  [  3] getobjprop 36 ........................... <gRock.m_context>
+  [  6] pushsymb 448 ............................ <#Band>
+  [  9] pusharglist 2 ........................... <gRock.m_context, #Band>
+  [ 11] objcall 359 ............................. <gRock.m_context.getFocus(#Band)>
+  [ 14] setlocal 0 .............................. band_r = gRock.m_context.getFocus(#Band)
+  [ 16] getlocal 0 .............................. <band_r>
+  [ 18] pusharglist 1 ........................... <band_r>
+  [ 20] objcall 450 ............................. <band_r.getMusicianObjs()>
+  [ 23] setlocal 8 .............................. musicians_r = band_r.getMusicianObjs()
+  [ 25] pusharglist 0 ........................... <[:]>
+  [ 27] pushproplist ............................ <[:]>
+  [ 28] setlocal 16 ............................. tmpEventCards = [:]
+  [ 30] pushsymb 602 ............................ <#none>
+  [ 33] setlocal 24 ............................. tmpWhat = #none
+  [ 35] pushcons 88 ............................. <"ECOCTourAngry">
+  [ 37] setlocal 32 ............................. ECID = "ECOCTourAngry"
+  [ 39] getlocal 8 .............................. <musicians_r>
+  [ 41] peek 0
+  [ 43] pusharglist 1
+  [ 45] extcall 85
+  [ 48] pushint8 1
+  [ 50] peek 0
+  [ 52] peek 2
+  [ 54] lteq
+  [ 55] jmpifz [245] ............................ repeat with mus_r in musicians_r
+  [ 58] peek 2
+  [ 60] peek 1
+  [ 62] pusharglist 2
+  [ 64] extcall 51
+  [ 67] setlocal 40
+  [ 69] getlocal 40 ............................. <mus_r>
+  [ 71] pusharglistnoret 1 ...................... <mus_r>
+  [ 73] objcall 685 ............................. mus_r.calcFaceSettings()
+  [ 76] getlocal 40 ............................. <mus_r>
+  [ 78] pushsymb 687 ............................ <#Mood>
+  [ 81] pusharglist 2 ........................... <mus_r, #Mood>
+  [ 83] extcall 283 ............................. <rgetProp(mus_r, #Mood)>
+  [ 86] setlocal 48 ............................. tmpMood = rgetProp(mus_r, #Mood)
+  [ 88] pushcons 96 ............................. <"TourMood">
+  [ 90] getlocal 40 ............................. <mus_r>
+  [ 92] getobjprop 172 .......................... <mus_r.name>
+  [ 95] getlocal 48 ............................. <tmpMood>
+  [ 97] pusharglistnoret 3 ...................... <"TourMood", mus_r.name, tmpMood>
+  [ 99] extcall 161 ............................. pott("TourMood", mus_r.name, tmpMood)
+  [102] getlocal 48 ............................. <tmpMood>
+  [104] pushcons 104 ............................ <0.14999999999999999>
+  [106] lt ...................................... <tmpMood < 0.14999999999999999>
+  [107] jmpifz [165] ............................ if tmpMood < 0.14999999999999999 then / else
+  [110] getparam 0 .............................. <me>
+  [112] getlocal 40 ............................. <mus_r>
+  [114] pusharglist 2 ........................... <me, mus_r>
+  [116] objcall 1611 ............................ <me.getReasonAngry(mus_r)>
+  [119] setlocal 56 ............................. tmpReason = me.getReasonAngry(mus_r)
+  [121] pusharglist 0 ........................... <[:]>
+  [123] pushproplist ............................ <[:]>
+  [124] setlocal 16 ............................. tmpEventCards = [:]
+  [126] getlocal 16 ............................. <tmpEventCards>
+  [128] getlocal 40 ............................. <mus_r>
+  [130] getlocal 32 ............................. <ECID>
+  [132] getlocal 56 ............................. <tmpReason>
+  [134] pusharglist 1 ........................... <tmpReason>
+  [136] extcall 159 ............................. <string(tmpReason)>
+  [139] joinstr ................................. <ECID & string(tmpReason)>
+  [140] pushcons 112 ............................ <"Quit">
+  [142] joinstr ................................. <ECID & string(tmpReason) & "Quit">
+  [143] pusharglist 1 ........................... <ECID & string(tmpReason) & "Quit">
+  [145] extcall 296 ............................. <symbol(ECID & string(tmpReason) & "Quit")>
+  [148] pusharglistnoret 3 ...................... <tmpEventCards, mus_r, symbol(ECID & string(tmpReason) & "Quit")>
+  [150] objcall 89 .............................. tmpEventCards.addProp(mus_r, symbol(ECID & string(tmpReason) & "Quit"))
+  [153] pushint8 1 .............................. <1>
+  [156] setprop 1617 ............................ m_isQuitting = 1
+  [159] jmp [245] ............................... exit repeat
+  [162] jmp [227]
+  [165] getlocal 48 ............................. <tmpMood>
+  [167] pushcons 120 ............................ <0.25>
+  [169] lt ...................................... <tmpMood < 0.25>
+  [170] jmpifz [227] ............................ if tmpMood < 0.25 then
+  [173] getprop 1622 ............................ <m_lastMoods>
+  [176] getlocal 40 ............................. <mus_r>
+  [178] pusharglist 2 ........................... <m_lastMoods, mus_r>
+  [180] objcall 87 .............................. <m_lastMoods.getaProp(mus_r)>
+  [183] pushcons 128 ............................ <0.25>
+  [185] gt ...................................... <m_lastMoods.getaProp(mus_r) > 0.25>
+  [186] jmpifz [227] ............................ if m_lastMoods.getaProp(mus_r) > 0.25 then
+  [189] getparam 0 .............................. <me>
+  [191] getlocal 40 ............................. <mus_r>
+  [193] pusharglist 2 ........................... <me, mus_r>
+  [195] objcall 1611 ............................ <me.getReasonAngry(mus_r)>
+  [198] setlocal 56 ............................. tmpReason = me.getReasonAngry(mus_r)
+  [200] getlocal 16 ............................. <tmpEventCards>
+  [202] getlocal 40 ............................. <mus_r>
+  [204] getlocal 32 ............................. <ECID>
+  [206] getlocal 56 ............................. <tmpReason>
+  [208] pusharglist 1 ........................... <tmpReason>
+  [210] extcall 159 ............................. <string(tmpReason)>
+  [213] joinstr ................................. <ECID & string(tmpReason)>
+  [214] pushcons 136 ............................ <"Warning">
+  [216] joinstr ................................. <ECID & string(tmpReason) & "Warning">
+  [217] pusharglist 1 ........................... <ECID & string(tmpReason) & "Warning">
+  [219] extcall 296 ............................. <symbol(ECID & string(tmpReason) & "Warning")>
+  [222] pusharglistnoret 3 ...................... <tmpEventCards, mus_r, symbol(ECID & string(tmpReason) & "Warning")>
+  [224] objcall 89 .............................. tmpEventCards.addProp(mus_r, symbol(ECID & string(tmpReason) & "Warning"))
+  [227] getprop 1622 ............................ <m_lastMoods>
+  [230] getlocal 40 ............................. <mus_r>
+  [232] getlocal 48 ............................. <tmpMood>
+  [234] pusharglistnoret 3 ...................... <m_lastMoods, mus_r, tmpMood>
+  [236] objcall 438 ............................. m_lastMoods.setaProp(mus_r, tmpMood)
+  [239] pushint8 1
+  [241] add
+  [242] endrepeat [ 50]
+  [245] pop 3
+  [247] getglobal 81 ............................ <gDir>
+  [250] pusharglist 1 ........................... <gDir>
+  [252] extcall 63 .............................. <objectp(gDir)>
+  [255] jmpifz [288] ............................ if objectp(gDir) then
+  [258] getglobal 81 ............................ <gDir>
+  [261] pushsymb 48 ............................. <#m_interfaceBar>
+  [264] pusharglist 2 ........................... <gDir, #m_interfaceBar>
+  [266] objcall 51 .............................. <gDir[#m_interfaceBar]>
+  [269] pusharglist 1 ........................... <gDir[#m_interfaceBar]>
+  [271] extcall 63 .............................. <objectp(gDir[#m_interfaceBar])>
+  [274] jmpifz [288] ............................ if objectp(gDir[#m_interfaceBar]) then
+  [277] getglobal 81 ............................ <gDir>
+  [280] getobjprop 48 ........................... <gDir.m_interfaceBar>
+  [283] pusharglistnoret 1 ...................... <gDir.m_interfaceBar>
+  [285] objcall 1658 ............................ gDir.m_interfaceBar.redrawBand()
+  [288] pushint8 1 .............................. <1>
+  [291] setlocal 64
+  [293] getlocal 64
+  [295] getlocal 16 ............................. <tmpEventCards>
+  [297] getobjprop 85 ........................... <tmpEventCards.count>
+  [300] lteq
+  [301] jmpifz [363] ............................ repeat with n = 1 to tmpEventCards.count
+  [304] getlocal 16 ............................. <tmpEventCards>
+  [306] getlocal 64 ............................. <n>
+  [308] pusharglist 2 ........................... <tmpEventCards, n>
+  [310] objcall 297 ............................. <tmpEventCards.getPropAt(n)>
+  [313] setlocal 40 ............................. mus_r = tmpEventCards.getPropAt(n)
+  [315] getglobal 35 ............................ <gRock>
+  [318] getobjprop 54 ........................... <gRock.m_eventCardsManager>
+  [321] getlocal 16 ............................. <tmpEventCards>
+  [323] getlocal 64 ............................. <n>
+  [325] pusharglist 2 ........................... <tmpEventCards, n>
+  [327] objcall 51 .............................. <tmpEventCards[n]>
+  [330] pushsymb 1659 ........................... <#EventCardOptions>
+  [333] pushsymb 1660 ........................... <#HumanID>
+  [336] getlocal 40 ............................. <mus_r>
+  [338] getobjprop 86 ........................... <mus_r.ID>
+  [341] pusharglist 2 ........................... <[#HumanID: mus_r.ID]>
+  [343] pushproplist ............................ <[#HumanID: mus_r.ID]>
+  [344] pusharglist 2 ........................... <[#EventCardOptions: [#HumanID: mus_r.ID]]>
+  [346] pushproplist ............................ <[#EventCardOptions: [#HumanID: mus_r.ID]]>
+  [347] pusharglistnoret 3 ...................... <gRock.m_eventCardsManager, tmpEventCards[n], [#EventCardOptions: [#HumanID: mus_r.ID]]>
+  [349] objcall 563 ............................. gRock.m_eventCardsManager.tryNewShowEventCard(tmpEventCards[n], [#EventCardOptions: [#HumanID: mus_r.ID]])
+  [352] pushint8 1
+  [355] getlocal 64
+  [357] add
+  [358] setlocal 64
+  [360] endrepeat [293]
+  [363] ret
+end
+
+on getReasonAngry me, argMusician_r
+  [  0] pusharglist 0 ........................... <[:]>
+  [  2] pushproplist ............................ <[:]>
+  [  3] setlocal 0 .............................. sortedTotalMods = [:]
+  [  5] getlocal 0 .............................. <sortedTotalMods>
+  [  7] pusharglistnoret 1 ...................... <sortedTotalMods>
+  [  9] objcall 295 ............................. sortedTotalMods.sort()
+  [ 12] pushsymb 778 ............................ <#Concert>
+  [ 15] pushsymb 1625 ........................... <#Travel>
+  [ 18] pusharglist 2 ........................... <[#Concert, #Travel]>
+  [ 20] pushlist ................................ <[#Concert, #Travel]>
+  [ 21] setlocal 8 .............................. tmpInterestedIn = [#Concert, #Travel]
+  [ 23] getlocal 8 .............................. <tmpInterestedIn>
+  [ 25] peek 0
+  [ 27] pusharglist 1
+  [ 29] extcall 85
+  [ 32] pushint8 1
+  [ 34] peek 0
+  [ 36] peek 2
+  [ 38] lteq
+  [ 39] jmpifz [160] ............................ repeat with tmpModID in tmpInterestedIn
+  [ 42] peek 2
+  [ 44] peek 1
+  [ 46] pusharglist 2
+  [ 48] extcall 51
+  [ 51] setlocal 16
+  [ 53] getglobal 35 ............................ <gRock>
+  [ 56] getobjprop 738 .......................... <gRock.m_modifiersManager>
+  [ 59] pushsymb 1665 ........................... <#ModifiedID>
+  [ 62] getparam 8 .............................. <argMusician_r>
+  [ 64] getobjprop 86 ........................... <argMusician_r.ID>
+  [ 67] pushsymb 1666 ........................... <#ModifierID>
+  [ 70] getlocal 16 ............................. <tmpModID>
+  [ 72] pusharglist 4 ........................... <[#ModifiedID: argMusician_r.ID, #ModifierID: tmpModID]>
+  [ 74] pushproplist ............................ <[#ModifiedID: argMusician_r.ID, #ModifierID: tmpModID]>
+  [ 75] pusharglist 2 ........................... <gRock.m_modifiersManager, [#ModifiedID: argMusician_r.ID, #ModifierID: tmpModID]>
+  [ 77] objcall 1667 ............................ <gRock.m_modifiersManager.findModifiers([#ModifiedID: argMusician_r.ID, #ModifierID: tmpModID])>
+  [ 80] setlocal 24 ............................. mods = gRock.m_modifiersManager.findModifiers([#ModifiedID: argMusician_r.ID, #ModifierID: tmpModID])
+  [ 82] pushzero ................................ <0>
+  [ 83] setlocal 32 ............................. tot = 0
+  [ 85] pushint8 1 .............................. <1>
+  [ 88] setlocal 40
+  [ 90] getlocal 40
+  [ 92] getlocal 24 ............................. <mods>
+  [ 94] getobjprop 85 ........................... <mods.count>
+  [ 97] lteq
+  [ 98] jmpifz [143] ............................ repeat with n = 1 to mods.count
+  [101] getlocal 24 ............................. <mods>
+  [103] getlocal 40 ............................. <n>
+  [105] pusharglist 2 ........................... <mods, n>
+  [107] objcall 51 .............................. <mods[n]>
+  [110] pusharglist 1 ........................... <mods[n]>
+  [112] objcall 1668 ............................ <mods[n].getModifiedValsAndProps()>
+  [115] setlocal 48 ............................. tmpModified = mods[n].getModifiedValsAndProps()
+  [117] getlocal 32 ............................. <tot>
+  [119] getlocal 48 ............................. <tmpModified>
+  [121] pushint8 1 .............................. <1>
+  [124] pusharglist 2 ........................... <tmpModified, 1>
+  [126] objcall 297 ............................. <tmpModified.getPropAt(1)>
+  [129] add ..................................... <tot + tmpModified.getPropAt(1)>
+  [130] setlocal 32 ............................. tot = tot + tmpModified.getPropAt(1)
+  [132] pushint8 1
+  [135] getlocal 40
+  [137] add
+  [138] setlocal 40
+  [140] endrepeat [ 90]
+  [143] getlocal 0 .............................. <sortedTotalMods>
+  [145] getlocal 32 ............................. <tot>
+  [147] getlocal 16 ............................. <tmpModID>
+  [149] pusharglistnoret 3 ...................... <sortedTotalMods, tot, tmpModID>
+  [151] objcall 89 .............................. sortedTotalMods.addProp(tot, tmpModID)
+  [154] pushint8 1
+  [156] add
+  [157] endrepeat [ 34]
+  [160] pop 3
+  [162] getlocal 0 .............................. <sortedTotalMods>
+  [164] getobjprop 85 ........................... <sortedTotalMods.count>
+  [167] jmpifz [185] ............................ if sortedTotalMods.count then
+  [170] getlocal 0 .............................. <sortedTotalMods>
+  [172] pushint8 1 .............................. <1>
+  [175] pusharglist 2 ........................... <sortedTotalMods, 1>
+  [177] objcall 51 .............................. <sortedTotalMods[1]>
+  [180] pusharglistnoret 1 ...................... <sortedTotalMods[1]>
+  [182] extcall 46 .............................. return sortedTotalMods[1]
+  [185] pushsymb 602 ............................ <#none>
+  [188] pusharglistnoret 1 ...................... <#none>
+  [190] extcall 46 .............................. return #none
+  [193] ret
+end
+
+on mouse me, argObj, argWhat, argOption
+  [  0] getparam 24 ............................. <argOption>
+  [  2] pusharglist 1 ........................... <argOption>
+  [  4] extcall 63 .............................. <objectp(argOption)>
+  [  7] jmpifz [ 76] ............................ if objectp(argOption) then
+  [ 10] getparam 16 ............................. <argWhat>
+  [ 12] pushsymb 187 ............................ <#click>
+  [ 15] eq ...................................... <argWhat = #click>
+  [ 16] jmpifz [ 76] ............................ if argWhat = #click then
+  [ 19] getparam 24 ............................. <argOption>
+  [ 21] pushsymb 86 ............................. <#ID>
+  [ 24] pusharglist 2 ........................... <argOption, #ID>
+  [ 26] objcall 456 ............................. <argOption.getOneProp(#ID)>
+  [ 29] setlocal 0 .............................. ID = argOption.getOneProp(#ID)
+  [ 31] getlocal 0 .............................. <ID>
+  [ 33] pushsymb 279 ............................ <#ButtonCancel>
+  [ 36] eq ...................................... <ID = #ButtonCancel>
+  [ 37] jmpifz [ 62] ............................ if ID = #ButtonCancel then
+  [ 40] getglobal 35 ............................ <gRock>
+  [ 43] getobjprop 54 ........................... <gRock.m_eventCardsManager>
+  [ 46] pushsymb 1676 ........................... <#ECOCBandTourCancel>
+  [ 49] pushsymb 562 ............................ <#prio>
+  [ 52] pushzero ................................ <0>
+  [ 53] pusharglist 2 ........................... <[#prio: 0]>
+  [ 55] pushproplist ............................ <[#prio: 0]>
+  [ 56] pusharglistnoret 3 ...................... <gRock.m_eventCardsManager, #ECOCBandTourCancel, [#prio: 0]>
+  [ 58] objcall 563 ............................. gRock.m_eventCardsManager.tryNewShowEventCard(#ECOCBandTourCancel, [#prio: 0])
+  [ 61] ret ..................................... exit
+  [ 62] getprop 447 ............................. <ancestor>
+  [ 65] getparam 8 .............................. <argObj>
+  [ 67] getparam 16 ............................. <argWhat>
+  [ 69] getparam 24 ............................. <argOption>
+  [ 71] pusharglistnoret 4 ...................... <ancestor, argObj, argWhat, argOption>
+  [ 73] objcall 71 .............................. ancestor.mouse(argObj, argWhat, argOption)
+  [ 76] ret
+end
+
+on updateTable me
+  [  0] getprop 1614 ............................ <m_tour_r>
+  [  3] getobjprop 1372 ......................... <m_tour_r.Cities>
+  [  6] getprop 1631 ............................ <m_currentCityID>
+  [  9] pusharglist 2 ........................... <m_tour_r.Cities, m_currentCityID>
+  [ 11] objcall 254 ............................. <m_tour_r.Cities.getPos(m_currentCityID)>
+  [ 14] setlocal 0 .............................. Pos = m_tour_r.Cities.getPos(m_currentCityID)
+  [ 16] pushcons 144 ............................ <EMPTY>
+  [ 18] setlocal 8 .............................. str1 = EMPTY
+  [ 20] pushcons 152 ............................ <EMPTY>
+  [ 22] setlocal 16 ............................. str2 = EMPTY
+  [ 24] pushzero ................................ <0>
+  [ 25] setlocal 24 ............................. Total = 0
+  [ 27] getlocal 0 .............................. <Pos>
+  [ 29] pushzero ................................ <0>
+  [ 30] gt ...................................... <Pos > 0>
+  [ 31] jmpifz [412] ............................ if Pos > 0 then
+  [ 34] pushint8 1 .............................. <1>
+  [ 37] setlocal 32
+  [ 39] getlocal 32
+  [ 41] getlocal 0 .............................. <Pos>
+  [ 43] lteq
+  [ 44] jmpifz [398] ............................ repeat with n = 1 to Pos
+  [ 47] getprop 1614 ............................ <m_tour_r>
+  [ 50] getobjprop 1372 ......................... <m_tour_r.Cities>
+  [ 53] getlocal 32 ............................. <n>
+  [ 55] pusharglist 2 ........................... <m_tour_r.Cities, n>
+  [ 57] objcall 51 .............................. <m_tour_r.Cities[n]>
+  [ 60] setlocal 40 ............................. tmpID = m_tour_r.Cities[n]
+  [ 62] getglobal 35 ............................ <gRock>
+  [ 65] getobjprop 77 ........................... <gRock.m_classManager>
+  [ 68] getlocal 40 ............................. <tmpID>
+  [ 70] pushsymb 1362 ........................... <#TourCity>
+  [ 73] pusharglist 3 ........................... <gRock.m_classManager, tmpID, #TourCity>
+  [ 75] objcall 403 ............................. <gRock.m_classManager.getObjByIDAndClass(tmpID, #TourCity)>
+  [ 78] setlocal 48 ............................. city_r = gRock.m_classManager.getObjByIDAndClass(tmpID, #TourCity)
+  [ 80] getprop 1614 ............................ <m_tour_r>
+  [ 83] getobjprop 1653 ......................... <m_tour_r.ConcertIDs>
+  [ 86] getlocal 32 ............................. <n>
+  [ 88] pusharglist 2 ........................... <m_tour_r.ConcertIDs, n>
+  [ 90] objcall 51 .............................. <m_tour_r.ConcertIDs[n]>
+  [ 93] setlocal 56 ............................. tmpConcertID = m_tour_r.ConcertIDs[n]
+  [ 95] getglobal 35 ............................ <gRock>
+  [ 98] getobjprop 77 ........................... <gRock.m_classManager>
+  [101] getlocal 56 ............................. <tmpConcertID>
+  [103] pushsymb 1554 ........................... <#TourConcert>
+  [106] pusharglist 3 ........................... <gRock.m_classManager, tmpConcertID, #TourConcert>
+  [108] objcall 403 ............................. <gRock.m_classManager.getObjByIDAndClass(tmpConcertID, #TourConcert)>
+  [111] setlocal 64 ............................. concert_r = gRock.m_classManager.getObjByIDAndClass(tmpConcertID, #TourConcert)
+  [113] getlocal 8 .............................. <str1>
+  [115] getlocal 48 ............................. <city_r>
+  [117] getobjprop 172 .......................... <city_r.name>
+  [120] joinstr ................................. <str1 & city_r.name>
+  [121] pushcons 160 ............................ <RETURN>
+  [123] joinstr ................................. <str1 & city_r.name & RETURN>
+  [124] setlocal 8 .............................. str1 = str1 & city_r.name & RETURN
+  [126] getlocal 64 ............................. <concert_r>
+  [128] getobjprop 1677 ......................... <concert_r.VenueIncome>
+  [131] setlocal 72 ............................. tmpRevenue = concert_r.VenueIncome
+  [133] getlocal 24 ............................. <Total>
+  [135] getlocal 72 ............................. <tmpRevenue>
+  [137] add ..................................... <Total + tmpRevenue>
+  [138] setlocal 24 ............................. Total = Total + tmpRevenue
+  [140] getlocal 16 ............................. <str2>
+  [142] getlocal 72 ............................. <tmpRevenue>
+  [144] pushzero ................................ <0>
+  [145] pushint8 1 .............................. <1>
+  [148] pusharglist 3 ........................... <tmpRevenue, 0, 1>
+  [150] extcall 493 ............................. <rCurrency(tmpRevenue, 0, 1)>
+  [153] joinstr ................................. <str2 & rCurrency(tmpRevenue, 0, 1)>
+  [154] pushcons 168 ............................ <RETURN>
+  [156] joinstr ................................. <str2 & rCurrency(tmpRevenue, 0, 1) & RETURN>
+  [157] setlocal 16 ............................. str2 = str2 & rCurrency(tmpRevenue, 0, 1) & RETURN
+  [159] getlocal 64 ............................. <concert_r>
+  [161] getobjprop 206 .......................... <concert_r.quality>
+  [164] pushcons 176 ............................ <0.0>
+  [166] pushcons 184 ............................ <1.0>
+  [168] pusharglist 2 ........................... <[0.0, 1.0]>
+  [170] pushlist ................................ <[0.0, 1.0]>
+  [171] pushzero ................................ <0>
+  [172] pushint8 10 ............................. <10>
+  [175] pusharglist 2 ........................... <[0, 10]>
+  [177] pushlist ................................ <[0, 10]>
+  [178] pushzero ................................ <0>
+  [179] pushsymb 1679 ........................... <#limit>
+  [182] pusharglist 5 ........................... <concert_r.quality, [0.0, 1.0], [0, 10], 0, #limit>
+  [184] extcall 1678 ............................ <convValToRange(concert_r.quality, [0.0, 1.0], [0, 10], 0, #limit)>
+  [187] setlocal 80 ............................. grade = convValToRange(concert_r.quality, [0.0, 1.0], [0, 10], 0, #limit)
+  [189] pushcons 192 ............................ <"meter_stars">
+  [191] getlocal 80 ............................. <grade>
+  [193] pushint8 2 .............................. <2>
+  [196] pusharglist 2 ........................... <grade, 2>
+  [198] extcall 135 ............................. <convItoS(grade, 2)>
+  [201] joinstr ................................. <"meter_stars" & convItoS(grade, 2)>
+  [202] pusharglist 1 ........................... <"meter_stars" & convItoS(grade, 2)>
+  [204] extcall 8 ............................... <member("meter_stars" & convItoS(grade, 2))>
+  [206] setlocal 88 ............................. stars = member("meter_stars" & convItoS(grade, 2))
+  [208] pushcons 200 ............................ <"Stars">
+  [210] getlocal 32 ............................. <n>
+  [212] pusharglist 1 ........................... <n>
+  [214] extcall 159 ............................. <string(n)>
+  [217] joinstr ................................. <"Stars" & string(n)>
+  [218] pusharglist 1 ........................... <"Stars" & string(n)>
+  [220] extcall 296 ............................. <symbol("Stars" & string(n))>
+  [223] setlocal 40 ............................. tmpID = symbol("Stars" & string(n))
+  [225] getprop 447 ............................. <ancestor>
+  [228] getobjprop 360 .......................... <ancestor.m_objDlg>
+  [231] getlocal 40 ............................. <tmpID>
+  [233] pusharglist 2 ........................... <ancestor.m_objDlg, tmpID>
+  [235] objcall 362 ............................. <ancestor.m_objDlg.getItem(tmpID)>
+  [238] pusharglist 1 ........................... <ancestor.m_objDlg.getItem(tmpID)>
+  [240] extcall 63 .............................. <objectp(ancestor.m_objDlg.getItem(tmpID))>
+  [243] not ..................................... <not objectp(ancestor.m_objDlg.getItem(tmpID))>
+  [244] jmpifz [387] ............................ if not objectp(ancestor.m_objDlg.getItem(tmpID)) then
+  [247] pushsymb 86 ............................. <#ID>
+  [250] getlocal 40 ............................. <tmpID>
+  [252] pushsymb 536 ............................ <#type>
+  [255] pushsymb 361 ............................ <#Pic>
+  [258] pushsymb 361 ............................ <#Pic>
+  [261] pushcons 208 ............................ <"meter_stars">
+  [263] getlocal 80 ............................. <grade>
+  [265] pushint8 2 .............................. <2>
+  [268] pusharglist 2 ........................... <grade, 2>
+  [270] extcall 135 ............................. <convItoS(grade, 2)>
+  [273] joinstr ................................. <"meter_stars" & convItoS(grade, 2)>
+  [274] pushsymb 455 ............................ <#inOffsetRect>
+  [277] pushint8 90 ............................. <90>
+  [280] pushint8 38 ............................. <38>
+  [283] getlocal 32 ............................. <n>
+  [285] pushint8 1 .............................. <1>
+  [288] sub ..................................... <n - 1>
+  [289] pushint8 16 ............................. <16>
+  [292] mul ..................................... <(n - 1) * 16>
+  [293] add ..................................... <38 + ((n - 1) * 16)>
+  [294] pushzero ................................ <0>
+  [295] pushzero ................................ <0>
+  [296] pusharglist 4 ........................... <90, 38 + ((n - 1) * 16), 0, 0>
+  [298] extcall 65 .............................. <rect(90, 38 + ((n - 1) * 16), 0, 0)>
+  [301] pushsymb 537 ............................ <#rel>
+  [304] pushsymb 705 ............................ <#InfoFrame>
+  [307] pushint8 1 .............................. <1>
+  [310] pusharglist 2 ........................... <[#InfoFrame, 1]>
+  [312] pushlist ................................ <[#InfoFrame, 1]>
+  [313] pushsymb 705 ............................ <#InfoFrame>
+  [316] pushint8 2 .............................. <2>
+  [319] pusharglist 2 ........................... <[#InfoFrame, 2]>
+  [321] pushlist ................................ <[#InfoFrame, 2]>
+  [322] pushsymb 538 ............................ <#Auto>
+  [325] pushsymb 538 ............................ <#Auto>
+  [328] pusharglist 4 ........................... <[[#InfoFrame, 1], [#InfoFrame, 2], #Auto, #Auto]>
+  [330] pushlist ................................ <[[#InfoFrame, 1], [#InfoFrame, 2], #Auto, #Auto]>
+  [331] pushsymb 301 ............................ <#ch>
+  [334] pushint8 10 ............................. <10>
+  [337] pushsymb 539 ............................ <#topLeftMeansWhat>
+  [340] pushzero ................................ <0>
+  [341] pushzero ................................ <0>
+  [342] pusharglist 2 ........................... <[0, 0]>
+  [344] pushlist ................................ <[0, 0]>
+  [345] pushsymb 1680 ........................... <#zoomFacts>
+  [348] pushint8 2 .............................. <2>
+  [351] pushint8 2 .............................. <2>
+  [354] pusharglist 2 ........................... <[2, 2]>
+  [356] pushlist ................................ <[2, 2]>
+  [357] pushsymb 998 ............................ <#blit>
+  [360] pushint8 1 .............................. <1>
+  [363] pushsymb 758 ............................ <#ink>
+  [366] pushzero ................................ <0>
+  [367] pusharglist 20 .......................... <[#ID: tmpID, #type: #Pic, #Pic: "meter_stars" & convItoS(grade, 2), #inOffsetRect: rect(90, 38 + ((n - 1) * 16), 0, 0), #rel: [[#InfoFrame, 1], [#InfoFrame, 2], #Auto, #Auto], #ch: 10, #topLeftMeansWhat: [0, 0], #zoomFacts: [2, 2], #blit: 1, #ink: 0]>
+  [369] pushproplist ............................ <[#ID: tmpID, #type: #Pic, #Pic: "meter_stars" & convItoS(grade, 2), #inOffsetRect: rect(90, 38 + ((n - 1) * 16), 0, 0), #rel: [[#InfoFrame, 1], [#InfoFrame, 2], #Auto, #Auto], #ch: 10, #topLeftMeansWhat: [0, 0], #zoomFacts: [2, 2], #blit: 1, #ink: 0]>
+  [370] setlocal 96 ............................. tmpList = [#ID: tmpID, #type: #Pic, #Pic: "meter_stars" & convItoS(grade, 2), #inOffsetRect: rect(90, 38 + ((n - 1) * 16), 0, 0), #rel: [[#InfoFrame, 1], [#InfoFrame, 2], #Auto, #Auto], #ch: 10, #topLeftMeansWhat: [0, 0], #zoomFacts: [2, 2], #blit: 1, #ink: 0]
+  [372] getprop 447 ............................. <ancestor>
+  [375] getobjprop 360 .......................... <ancestor.m_objDlg>
+  [378] getlocal 96 ............................. <tmpList>
+  [380] pusharglist 2 ........................... <ancestor.m_objDlg, tmpList>
+  [382] objcall 541 ............................. <ancestor.m_objDlg.addItem(tmpList)>
+  [385] setlocal 104 ............................ itemObj = ancestor.m_objDlg.addItem(tmpList)
+  [387] pushint8 1
+  [390] getlocal 32
+  [392] add
+  [393] setlocal 32
+  [395] endrepeat [ 39]
+  [398] getlocal 8 .............................. <str1>
+  [400] pushcons 216 ............................ <RETURN>
+  [402] joinstr ................................. <str1 & RETURN>
+  [403] setlocal 8 .............................. str1 = str1 & RETURN
+  [405] getlocal 16 ............................. <str2>
+  [407] pushcons 224 ............................ <RETURN>
+  [409] joinstr ................................. <str2 & RETURN>
+  [410] setlocal 16 ............................. str2 = str2 & RETURN
+  [412] getlocal 8 .............................. <str1>
+  [414] pushsymb 1681 ........................... <#szidTourTotalRevenue>
+  [417] pusharglist 1 ........................... <#szidTourTotalRevenue>
+  [419] extcall 413 ............................. <rGetStr(#szidTourTotalRevenue)>
+  [422] joinstr ................................. <str1 & rGetStr(#szidTourTotalRevenue)>
+  [423] pushcons 232 ............................ <RETURN>
+  [425] joinstr ................................. <str1 & rGetStr(#szidTourTotalRevenue) & RETURN>
+  [426] setlocal 8 .............................. str1 = str1 & rGetStr(#szidTourTotalRevenue) & RETURN
+  [428] getlocal 16 ............................. <str2>
+  [430] getlocal 24 ............................. <Total>
+  [432] pushzero ................................ <0>
+  [433] pushint8 1 .............................. <1>
+  [436] pusharglist 3 ........................... <Total, 0, 1>
+  [438] extcall 493 ............................. <rCurrency(Total, 0, 1)>
+  [441] joinstr ................................. <str2 & rCurrency(Total, 0, 1)>
+  [442] pushcons 240 ............................ <RETURN>
+  [444] joinstr ................................. <str2 & rCurrency(Total, 0, 1) & RETURN>
+  [445] setlocal 16 ............................. str2 = str2 & rCurrency(Total, 0, 1) & RETURN
+  [447] getprop 1614 ............................ <m_tour_r>
+  [450] getobjprop 486 .......................... <m_tour_r.price>
+  [453] setlocal 112 ............................ tmpPrepaid = m_tour_r.price
+  [455] getlocal 8 .............................. <str1>
+  [457] pushsymb 1682 ........................... <#szidTourPrepaid>
+  [460] pusharglist 1 ........................... <#szidTourPrepaid>
+  [462] extcall 413 ............................. <rGetStr(#szidTourPrepaid)>
+  [465] joinstr ................................. <str1 & rGetStr(#szidTourPrepaid)>
+  [466] pushcons 248 ............................ <RETURN>
+  [468] joinstr ................................. <str1 & rGetStr(#szidTourPrepaid) & RETURN>
+  [469] setlocal 8 .............................. str1 = str1 & rGetStr(#szidTourPrepaid) & RETURN
+  [471] getlocal 16 ............................. <str2>
+  [473] getlocal 112 ............................ <tmpPrepaid>
+  [475] pushzero ................................ <0>
+  [476] pushint8 1 .............................. <1>
+  [479] pusharglist 3 ........................... <tmpPrepaid, 0, 1>
+  [481] extcall 493 ............................. <rCurrency(tmpPrepaid, 0, 1)>
+  [484] joinstr ................................. <str2 & rCurrency(tmpPrepaid, 0, 1)>
+  [485] pushcons 256 ............................ <RETURN>
+  [488] joinstr ................................. <str2 & rCurrency(tmpPrepaid, 0, 1) & RETURN>
+  [489] setlocal 16 ............................. str2 = str2 & rCurrency(tmpPrepaid, 0, 1) & RETURN
+  [491] getlocal 8 .............................. <str1>
+  [493] pushcons 264 ............................ <"______________________________________">
+  [496] joinstr ................................. <str1 & "______________________________________">
+  [497] pushcons 272 ............................ <RETURN>
+  [500] joinstr ................................. <str1 & "______________________________________" & RETURN>
+  [501] setlocal 8 .............................. str1 = str1 & "______________________________________" & RETURN
+  [503] getlocal 16 ............................. <str2>
+  [505] pushcons 280 ............................ <RETURN>
+  [508] joinstr ................................. <str2 & RETURN>
+  [509] setlocal 16 ............................. str2 = str2 & RETURN
+  [511] getlocal 24 ............................. <Total>
+  [513] getlocal 112 ............................ <tmpPrepaid>
+  [515] sub ..................................... <Total - tmpPrepaid>
+  [516] setlocal 24 ............................. Total = Total - tmpPrepaid
+  [518] getlocal 8 .............................. <str1>
+  [520] pushsymb 845 ............................ <#szidTotal>
+  [523] pusharglist 1 ........................... <#szidTotal>
+  [525] extcall 413 ............................. <rGetStr(#szidTotal)>
+  [528] joinstr ................................. <str1 & rGetStr(#szidTotal)>
+  [529] pushcons 288 ............................ <RETURN>
+  [532] joinstr ................................. <str1 & rGetStr(#szidTotal) & RETURN>
+  [533] setlocal 8 .............................. str1 = str1 & rGetStr(#szidTotal) & RETURN
+  [535] getlocal 16 ............................. <str2>
+  [537] getlocal 24 ............................. <Total>
+  [539] pushzero ................................ <0>
+  [540] pushint8 1 .............................. <1>
+  [543] pusharglist 3 ........................... <Total, 0, 1>
+  [545] extcall 493 ............................. <rCurrency(Total, 0, 1)>
+  [548] joinstr ................................. <str2 & rCurrency(Total, 0, 1)>
+  [549] pushcons 296 ............................ <RETURN>
+  [552] joinstr ................................. <str2 & rCurrency(Total, 0, 1) & RETURN>
+  [553] setlocal 16 ............................. str2 = str2 & rCurrency(Total, 0, 1) & RETURN
+  [555] getparam 0 .............................. <me>
+  [557] getlocal 8 .............................. <str1>
+  [559] getlocal 16 ............................. <str2>
+  [561] pusharglist 3 ........................... <me, str1, str2>
+  [563] objcall 1339 ............................ <me.createImage(str1, str2)>
+  [566] setlocal 120 ............................ img = me.createImage(str1, str2)
+  [568] getprop 447 ............................. <ancestor>
+  [571] getobjprop 360 .......................... <ancestor.m_objDlg>
+  [574] pushsymb 705 ............................ <#InfoFrame>
+  [577] pushsymb 588 ............................ <#dlg>
+  [580] pushsymb 361 ............................ <#Pic>
+  [583] pusharglist 3 ........................... <[#InfoFrame, #dlg, #Pic]>
+  [585] pushlist ................................ <[#InfoFrame, #dlg, #Pic]>
+  [586] pusharglist 2 ........................... <ancestor.m_objDlg, [#InfoFrame, #dlg, #Pic]>
+  [588] objcall 411 ............................. <ancestor.m_objDlg.getItemByPath([#InfoFrame, #dlg, #Pic])>
+  [591] setlocal 104 ............................ itemObj = ancestor.m_objDlg.getItemByPath([#InfoFrame, #dlg, #Pic])
+  [593] getlocal 104 ............................ <itemObj>
+  [595] pushsymb 758 ............................ <#ink>
+  [598] pushint8 36 ............................. <36>
+  [601] pusharglistnoret 3 ...................... <itemObj, #ink, 36>
+  [603] objcall 364 ............................. itemObj.setOneProp(#ink, 36)
+  [606] getlocal 104 ............................ <itemObj>
+  [608] pushsymb 361 ............................ <#Pic>
+  [611] getlocal 120 ............................ <img>
+  [613] pusharglistnoret 3 ...................... <itemObj, #Pic, img>
+  [615] objcall 364 ............................. itemObj.setOneProp(#Pic, img)
+  [618] getprop 447 ............................. <ancestor>
+  [621] getobjprop 360 .......................... <ancestor.m_objDlg>
+  [624] pusharglistnoret 1 ...................... <ancestor.m_objDlg>
+  [626] objcall 1683 ............................ ancestor.m_objDlg.incorporateNewItems()
+  [629] ret
+end
+
+on createImage me, argLeftText, argRightText, argFormatting
+  [  0] getparam 8 .............................. <argLeftText>
+  [  2] pusharglist 1 ........................... <[argLeftText]>
+  [  4] pushlist ................................ <[argLeftText]>
+  [  5] pushcons 304 ............................ <"TourTableFormatting">
+  [  8] pushsymb 46 ............................. <#return>
+  [ 11] pushsymb 8 .............................. <#member>
+  [ 13] pusharglist 2 ........................... <[#return: #member]>
+  [ 15] pushproplist ............................ <[#return: #member]>
+  [ 16] pusharglist 3 ........................... <[argLeftText], "TourTableFormatting", [#return: #member]>
+  [ 18] extcall 382 ............................. <rFormatText([argLeftText], "TourTableFormatting", [#return: #member])>
+  [ 21] setlocal 0 .............................. tmpMemb = rFormatText([argLeftText], "TourTableFormatting", [#return: #member])
+  [ 23] getlocal 0 .............................. <tmpMemb>
+  [ 25] pushint8 230 ............................ <230>
+  [ 28] setobjprop 385 .......................... tmpMemb.width = 230
+  [ 31] getlocal 0 .............................. <tmpMemb>
+  [ 33] pushint8 15 ............................. <15>
+  [ 36] setobjprop 386 .......................... tmpMemb.FixedLinespace = 15
+  [ 39] getlocal 0 .............................. <tmpMemb>
+  [ 41] getobjprop 387 .......................... <tmpMemb.image>
+  [ 44] setlocal 8 .............................. tmpImg = tmpMemb.image
+  [ 46] getlocal 8 .............................. <tmpImg>
+  [ 48] pushsymb 65 ............................. <#rect>
+  [ 51] pushint8 3 .............................. <3>
+  [ 54] pusharglist 3 ........................... <tmpImg, #rect, 3>
+  [ 56] objcall 82 .............................. <tmpImg.rect[3]>
+  [ 59] getlocal 8 .............................. <tmpImg>
+  [ 61] pushsymb 65 ............................. <#rect>
+  [ 64] pushint8 4 .............................. <4>
+  [ 67] pusharglist 3 ........................... <tmpImg, #rect, 4>
+  [ 69] objcall 82 .............................. <tmpImg.rect[4]>
+  [ 72] pushint8 8 .............................. <8>
+  [ 75] pusharglist 3 ........................... <tmpImg.rect[3], tmpImg.rect[4], 8>
+  [ 77] extcall 387 ............................. <image(tmpImg.rect[3], tmpImg.rect[4], 8)>
+  [ 80] setlocal 16 ............................. img = image(tmpImg.rect[3], tmpImg.rect[4], 8)
+  [ 82] getlocal 16 ............................. <img>
+  [ 84] getlocal 8 .............................. <tmpImg>
+  [ 86] getlocal 8 .............................. <tmpImg>
+  [ 88] getobjprop 65 ........................... <tmpImg.rect>
+  [ 91] getlocal 8 .............................. <tmpImg>
+  [ 93] getobjprop 65 ........................... <tmpImg.rect>
+  [ 96] pusharglistnoret 4 ...................... <img, tmpImg, tmpImg.rect, tmpImg.rect>
+  [ 98] objcall 388 ............................. img.copyPixels(tmpImg, tmpImg.rect, tmpImg.rect)
+  [101] getlocal 0 .............................. <tmpMemb>
+  [103] pushcons 312 ............................ <EMPTY>
+  [106] setobjprop 9 ............................ tmpMemb.text = EMPTY
+  [108] getlocal 0 .............................. <tmpMemb>
+  [110] pushsymb 384 ............................ <#alignment>
+  [113] pushsymb 1427 ........................... <#right>
+  [116] pusharglist 2 ........................... <[#alignment: #right]>
+  [118] pushproplist ............................ <[#alignment: #right]>
+  [119] pusharglistnoret 2 ...................... <tmpMemb, [#alignment: #right]>
+  [121] extcall 1426 ............................ formatTextMember(tmpMemb, [#alignment: #right])
+  [124] getlocal 0 .............................. <tmpMemb>
+  [126] pushint8 15 ............................. <15>
+  [129] setobjprop 386 .......................... tmpMemb.FixedLinespace = 15
+  [132] getlocal 0 .............................. <tmpMemb>
+  [134] getparam 16 ............................. <argRightText>
+  [136] setobjprop 9 ............................ tmpMemb.text = argRightText
+  [138] getlocal 0 .............................. <tmpMemb>
+  [140] getobjprop 387 .......................... <tmpMemb.image>
+  [143] setlocal 8 .............................. tmpImg = tmpMemb.image
+  [145] getlocal 16 ............................. <img>
+  [147] getlocal 8 .............................. <tmpImg>
+  [149] getlocal 8 .............................. <tmpImg>
+  [151] getobjprop 65 ........................... <tmpImg.rect>
+  [154] getlocal 8 .............................. <tmpImg>
+  [156] getobjprop 65 ........................... <tmpImg.rect>
+  [159] pusharglistnoret 4 ...................... <img, tmpImg, tmpImg.rect, tmpImg.rect>
+  [161] objcall 388 ............................. img.copyPixels(tmpImg, tmpImg.rect, tmpImg.rect)
+  [164] getlocal 16 ............................. <img>
+  [166] pusharglistnoret 1 ...................... <img>
+  [168] extcall 46 .............................. return img
+  [171] ret
+end
+
+on leaveForNextCity me
+  [  0] getglobal 35 ............................ <gRock>
+  [  3] getobjprop 52 ........................... <gRock.m_gameTimer>
+  [  6] pushint8 1 .............................. <1>
+  [  9] pusharglistnoret 2 ...................... <gRock.m_gameTimer, 1>
+  [ 11] objcall 53 .............................. gRock.m_gameTimer.activate(1)
+  [ 14] pushint8 1 .............................. <1>
+  [ 17] setprop 1628 ............................ m_isTravelling = 1
+  [ 20] getprop 1623 ............................ <m_luxuryMakeAngry>
+  [ 23] pushcons 320 ............................ <0.02>
+  [ 26] sub ..................................... <m_luxuryMakeAngry - 0.02>
+  [ 27] setprop 1623 ............................ m_luxuryMakeAngry = m_luxuryMakeAngry - 0.02
+  [ 30] pushcons 328 ............................ <"m_luxuryMakeAngry">
+  [ 33] getprop 1623 ............................ <m_luxuryMakeAngry>
+  [ 36] pusharglistnoret 2 ...................... <"m_luxuryMakeAngry", m_luxuryMakeAngry>
+  [ 38] extcall 161 ............................. pott("m_luxuryMakeAngry", m_luxuryMakeAngry)
+  [ 41] getglobal 35 ............................ <gRock>
+  [ 44] getobjprop 36 ........................... <gRock.m_context>
+  [ 47] pushsymb 448 ............................ <#Band>
+  [ 50] pusharglist 2 ........................... <gRock.m_context, #Band>
+  [ 52] objcall 359 ............................. <gRock.m_context.getFocus(#Band)>
+  [ 55] setlocal 0 .............................. band_r = gRock.m_context.getFocus(#Band)
+  [ 57] getlocal 0 .............................. <band_r>
+  [ 59] pusharglist 1 ........................... <band_r>
+  [ 61] objcall 450 ............................. <band_r.getMusicianObjs()>
+  [ 64] setlocal 8 .............................. musicians_r = band_r.getMusicianObjs()
+  [ 66] getlocal 8 .............................. <musicians_r>
+  [ 68] peek 0
+  [ 70] pusharglist 1
+  [ 72] extcall 85
+  [ 75] pushint8 1
+  [ 77] peek 0
+  [ 79] peek 2
+  [ 81] lteq
+  [ 82] jmpifz [192] ............................ repeat with mus_r in musicians_r
+  [ 85] peek 2
+  [ 87] peek 1
+  [ 89] pusharglist 2
+  [ 91] extcall 51
+  [ 94] setlocal 16
+  [ 96] getglobal 35 ............................ <gRock>
+  [ 99] getobjprop 738 .......................... <gRock.m_modifiersManager>
+  [102] pushsymb 1666 ........................... <#ModifierID>
+  [105] pushsymb 1625 ........................... <#Travel>
+  [108] pushsymb 1665 ........................... <#ModifiedID>
+  [111] getlocal 16 ............................. <mus_r>
+  [113] getobjprop 86 ........................... <mus_r.ID>
+  [116] pusharglist 4 ........................... <[#ModifierID: #Travel, #ModifiedID: mus_r.ID]>
+  [118] pushproplist ............................ <[#ModifierID: #Travel, #ModifiedID: mus_r.ID]>
+  [119] pusharglist 2 ........................... <gRock.m_modifiersManager, [#ModifierID: #Travel, #ModifiedID: mus_r.ID]>
+  [121] objcall 1667 ............................ <gRock.m_modifiersManager.findModifiers([#ModifierID: #Travel, #ModifiedID: mus_r.ID])>
+  [124] setlocal 24 ............................. modifier = gRock.m_modifiersManager.findModifiers([#ModifierID: #Travel, #ModifiedID: mus_r.ID])
+  [126] getlocal 24 ............................. <modifier>
+  [128] getobjprop 85 ........................... <modifier.count>
+  [131] pushzero ................................ <0>
+  [132] eq ...................................... <modifier.count = 0>
+  [133] jmpifz [152] ............................ if modifier.count = 0 then
+  [136] pushcons 336 ............................ <"Travel Mod not found!">
+  [139] getlocal 16 ............................. <mus_r>
+  [141] getobjprop 86 ........................... <mus_r.ID>
+  [144] pusharglistnoret 2 ...................... <"Travel Mod not found!", mus_r.ID>
+  [146] extcall 161 ............................. pott("Travel Mod not found!", mus_r.ID)
+  [149] jmp [186] ............................... next repeat
+  [152] getlocal 24 ............................. <modifier>
+  [154] pushint8 1 .............................. <1>
+  [157] pusharglist 2 ........................... <modifier, 1>
+  [159] objcall 51 .............................. <modifier[1]>
+  [162] setlocal 24 ............................. modifier = modifier[1]
+  [164] getlocal 24 ............................. <modifier>
+  [166] pushsymb 687 ............................ <#Mood>
+  [169] pusharglist 1 ........................... <[#Mood]>
+  [171] pushlist ................................ <[#Mood]>
+  [172] getprop 1623 ............................ <m_luxuryMakeAngry>
+  [175] pusharglist 2 ........................... <[[#Mood], m_luxuryMakeAngry]>
+  [177] pushlist ................................ <[[#Mood], m_luxuryMakeAngry]>
+  [178] pusharglist 1 ........................... <[[[#Mood], m_luxuryMakeAngry]]>
+  [180] pushlist ................................ <[[[#Mood], m_luxuryMakeAngry]]>
+  [181] pusharglistnoret 2 ...................... <modifier, [[[#Mood], m_luxuryMakeAngry]]>
+  [183] objcall 1690 ............................ modifier.setModifyInfo([[[#Mood], m_luxuryMakeAngry]])
+  [186] pushint8 1
+  [188] add
+  [189] endrepeat [ 77]
+  [192] pop 3
+  [194] getprop 1614 ............................ <m_tour_r>
+  [197] getobjprop 1372 ......................... <m_tour_r.Cities>
+  [200] getprop 1631 ............................ <m_currentCityID>
+  [203] pusharglist 2 ........................... <m_tour_r.Cities, m_currentCityID>
+  [205] objcall 254 ............................. <m_tour_r.Cities.getPos(m_currentCityID)>
+  [208] setlocal 32 ............................. Pos = m_tour_r.Cities.getPos(m_currentCityID)
+  [210] pushzero ................................ <0>
+  [211] setlocal 40 ............................. nextCityID = 0
+  [213] getlocal 32 ............................. <Pos>
+  [215] getprop 1614 ............................ <m_tour_r>
+  [218] pushsymb 1372 ........................... <#Cities>
+  [221] pusharglist 2 ........................... <m_tour_r, #Cities>
+  [223] objcall 85 .............................. <m_tour_r.Cities.count>
+  [226] eq ...................................... <Pos = m_tour_r.Cities.count>
+  [227] jmpifz [249] ............................ if Pos = m_tour_r.Cities.count then / else
+  [230] pushint8 1 .............................. <1>
+  [233] setprop 1627 ............................ m_goingBackHome = 1
+  [236] getprop 1349 ............................ <m_startCityID>
+  [239] setlocal 40 ............................. nextCityID = m_startCityID
+  [241] pushint8 1 .............................. <1>
+  [244] setlocal 48 ............................. timeToNextCity = 1
+  [246] jmp [311]
+  [249] getlocal 32 ............................. <Pos>
+  [251] pushzero ................................ <0>
+  [252] eq ...................................... <Pos = 0>
+  [253] jmpifz [278] ............................ if Pos = 0 then / else
+  [256] getprop 1614 ............................ <m_tour_r>
+  [259] getobjprop 1410 ......................... <m_tour_r.ConcertDates>
+  [262] getlocal 32 ............................. <Pos>
+  [264] pushint8 1 .............................. <1>
+  [267] add ..................................... <Pos + 1>
+  [268] pusharglist 2 ........................... <m_tour_r.ConcertDates, Pos + 1>
+  [270] objcall 51 .............................. <m_tour_r.ConcertDates[Pos + 1]>
+  [273] setlocal 48 ............................. timeToNextCity = m_tour_r.ConcertDates[Pos + 1]
+  [275] jmp [311]
+  [278] getprop 1614 ............................ <m_tour_r>
+  [281] getobjprop 1410 ......................... <m_tour_r.ConcertDates>
+  [284] getlocal 32 ............................. <Pos>
+  [286] pushint8 1 .............................. <1>
+  [289] add ..................................... <Pos + 1>
+  [290] pusharglist 2 ........................... <m_tour_r.ConcertDates, Pos + 1>
+  [292] objcall 51 .............................. <m_tour_r.ConcertDates[Pos + 1]>
+  [295] getprop 1614 ............................ <m_tour_r>
+  [298] getobjprop 1410 ......................... <m_tour_r.ConcertDates>
+  [301] getlocal 32 ............................. <Pos>
+  [303] pusharglist 2 ........................... <m_tour_r.ConcertDates, Pos>
+  [305] objcall 51 .............................. <m_tour_r.ConcertDates[Pos]>
+  [308] sub ..................................... <m_tour_r.ConcertDates[Pos + 1] - m_tour_r.ConcertDates[Pos]>
+  [309] setlocal 48 ............................. timeToNextCity = m_tour_r.ConcertDates[Pos + 1] - m_tour_r.ConcertDates[Pos]
+  [311] getlocal 48 ............................. <timeToNextCity>
+  [313] pushint8 1 .............................. <1>
+  [316] gt ...................................... <timeToNextCity > 1>
+  [317] jmpifz [328] ............................ if timeToNextCity > 1 then
+  [320] getlocal 48 ............................. <timeToNextCity>
+  [322] pushint8 1 .............................. <1>
+  [325] sub ..................................... <timeToNextCity - 1>
+  [326] setlocal 48 ............................. timeToNextCity = timeToNextCity - 1
+  [328] getlocal 40 ............................. <nextCityID>
+  [330] pusharglist 1 ........................... <nextCityID>
+  [332] extcall 1012 ............................ <symbolp(nextCityID)>
+  [335] not ..................................... <not symbolp(nextCityID)>
+  [336] jmpifz [358] ............................ if not symbolp(nextCityID) then
+  [339] getprop 1614 ............................ <m_tour_r>
+  [342] getobjprop 1372 ......................... <m_tour_r.Cities>
+  [345] getlocal 32 ............................. <Pos>
+  [347] pushint8 1 .............................. <1>
+  [350] add ..................................... <Pos + 1>
+  [351] pusharglist 2 ........................... <m_tour_r.Cities, Pos + 1>
+  [353] objcall 51 .............................. <m_tour_r.Cities[Pos + 1]>
+  [356] setlocal 40 ............................. nextCityID = m_tour_r.Cities[Pos + 1]
+  [358] getprop 1632 ............................ <m_travelObj>
+  [361] getprop 1631 ............................ <m_currentCityID>
+  [364] getlocal 40 ............................. <nextCityID>
+  [366] getlocal 48 ............................. <timeToNextCity>
+  [368] pusharglistnoret 4 ...................... <m_travelObj, m_currentCityID, nextCityID, timeToNextCity>
+  [370] objcall 1691 ............................ m_travelObj.startTravel(m_currentCityID, nextCityID, timeToNextCity)
+  [373] getlocal 40 ............................. <nextCityID>
+  [375] setprop 1631 ............................ m_currentCityID = nextCityID
+  [378] ret
+end

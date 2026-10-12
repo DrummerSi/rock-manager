@@ -1,0 +1,102 @@
+on rotate3D arg3D, argSinCos, argAxis
+  if not listp(argSinCos) then
+    argSinCos = [sin(argSinCos), cos(argSinCos)]
+  end if
+  if argAxis = 1 then
+    return [arg3D[1], (arg3D[2] * argSinCos[2]) - (arg3D[3] * argSinCos[1]), (arg3D[3] * argSinCos[2]) + (arg3D[2] * argSinCos[1])]
+  else
+    if argAxis = 2 then
+      return [(arg3D[1] * argSinCos[2]) + (arg3D[3] * argSinCos[1]), arg3D[2], (arg3D[3] * argSinCos[2]) - (arg3D[1] * argSinCos[1])]
+    else
+      if argAxis = 3 then
+        return [(arg3D[1] * argSinCos[2]) + (arg3D[2] * argSinCos[1]), (arg3D[2] * argSinCos[2]) - (arg3D[1] * argSinCos[1]), arg3D[3]]
+      end if
+    end if
+  end if
+end
+
+on longLatTo3D argLongLatLoc, argRadius
+  longR = argLongLatLoc[1]
+  latR = argLongLatLoc[2]
+  sinCos = [[sin(latR), cos(latR)], [sin(longR), cos(longR)]]
+  tmp3DLoc = [0, 0, -1] * argRadius
+  tmp3DLoc = rotate3D(tmp3DLoc, sinCos[1], 1)
+  tmp3DLoc = rotate3D(tmp3DLoc, sinCos[2], 2)
+  return tmp3DLoc
+end
+
+on longTest argLongLatFact
+  tmp3D = longLatTo3D(argLongLatFact * PI, 100)
+end
+
+on ThreeDToLongLat arg3DLoc
+  rotationY = calcDirection(point(0, 0), point(arg3DLoc[1], arg3DLoc[3]), #radians)
+  tmpNew = rotate3D(arg3DLoc, rotationY, 2)
+  rotationX = calcDirection(point(0, 0), point(tmpNew[2], -tmpNew[3]), #radians)
+  if rotationX > PI then
+    rotationX = -((2 * PI) - rotationX)
+  end if
+  if abs(rotationX) > (PI / 2) then
+    rotationX = getSign(rotationX) * -(PI - abs(rotationX))
+  end if
+  if rotationY > PI then
+    rotationY = -((2 * PI) - rotationY)
+  end if
+  longitude = -rotationY
+  latitude = -rotationX
+  return point(longitude, latitude)
+end
+
+on DMStoRadians argDMS
+  degrees = float(argDMS[1])
+  if argDMS.count > 1 then
+    degrees = degrees + (getSign(degrees) * argDMS[2] / 60.0)
+  end if
+  if argDMS.count > 2 then
+    degrees = degrees + (getSign(degrees) * argDMS[3] / 60.0 / 60.0)
+  end if
+  rads = PI * degrees / 180.0
+  return rads
+end
+
+on DMSStringToDMSList argStr
+  tmpCoord = []
+  tmpValList = []
+  lastStart = 1
+  tmpNumRead = 0
+  nowReading = #none
+  repeat with n = 1 to argStr.length
+    ch = argStr.char[n]
+    if (ch >= "0") and (ch <= "9") then
+      if nowReading = #number then
+      else
+        lastStart = n
+      end if
+      nowReading = #number
+      next repeat
+    end if
+    if nowReading = #number then
+      tmpValList.add(value(argStr.char[lastStart..n - 1]))
+    end if
+    nowReading = #none
+    if (ch = "N") or (ch = "S") or (ch = "E") or (ch = "W") then
+      if (ch = "N") or (ch = "S") then
+        if ch = "N" then
+          tmpValList[1] = -tmpValList[1]
+        end if
+        tmpCoord[2] = tmpValList
+      else
+        if ch = "W" then
+          tmpValList[1] = -tmpValList[1]
+        end if
+        tmpCoord[1] = tmpValList
+      end if
+      tmpNumRead = tmpNumRead + 1
+      if tmpNumRead = 2 then
+        exit repeat
+      end if
+      tmpValList = []
+    end if
+  end repeat
+  return tmpCoord
+end

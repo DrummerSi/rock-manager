@@ -1,0 +1,42 @@
+property m_soundName, m_do, m_sndObj
+global gDir, gUseful, gRock
+
+on beginSprite me
+  m_sndObj = script("SoundScript").new(gRock.m_paths.m_paths[#sound] & m_soundName & gUseful.soundFileExt, [#ReportTo: me, #vol: #Speak])
+end
+
+on exitFrame me
+  if (m_do = #wait) and objectp(m_sndObj) then
+    go(the frame)
+  else
+    if (m_do = #WaitAtEndFrame) and objectp(m_sndObj) then
+      if the frame = sprite(me.spriteNum).endFrame then
+        go(the frame)
+      end if
+    end if
+  end if
+end
+
+on stopSound me
+  if objectp(m_sndObj) then
+    m_sndObj = m_sndObj.kill()
+  end if
+end
+
+on endSprite me
+  if objectp(m_sndObj) then
+    m_sndObj = m_sndObj.kill()
+  end if
+end
+
+on Report me, argObj, argWhat
+  if argWhat = #finished then
+    if objectp(m_sndObj) then
+      m_sndObj = m_sndObj.kill()
+    end if
+  end if
+end
+
+on getPropertyDescriptionList me
+  return [#m_soundName: [#comment: "Play sound", #format: #string, #default: EMPTY], #m_do: [#comment: "Do what", #format: #symbol, #default: #wait, #range: [#wait, #nothing, #WaitAtEndFrame]]]
+end

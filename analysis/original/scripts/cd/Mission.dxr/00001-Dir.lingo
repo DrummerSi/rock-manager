@@ -1,0 +1,64 @@
+property m_spriteList, m_objDialogsMaster, m_actorCasts, m_scoreInfo
+global gRock
+
+on new me
+  pott("Dir start")
+  set the exitLock to 1
+  set the mouseUpScript to "VirtualMouseUp"
+  set the mouseDownScript to "VirtualMouseDown"
+  set the keyUpScript to "VirtualKeyUp"
+  set the keyDownScript to "VirtualKeyDown"
+  m_spriteList = member("SpriteList").text.value
+  if not listp(m_spriteList) then
+    m_spriteList = [#AuthorDialog: 2, #Dialogs: 3]
+  end if
+  return me
+end
+
+on init me
+  pott("Dir init")
+  gRock.m_gameTimer.activate(0)
+  m_objDialogsMaster = script("DialogsMasterScript").new(m_spriteList[#Dialogs])
+  m_actorCasts = script("ActorCastsScript").new()
+  sprite(m_spriteList[#AuthorDialog]).member = member("Dummy")
+  m_scoreInfo = member("ScoreInfo").text.value
+  pott("Dir init end")
+end
+
+on startMovie me
+  pott("Dir startMovie")
+  if (the runMode = "Author") and (the frame > 1) then
+    tmpFrame = marker(0)
+    numLines = the number of lines in the labelList
+    repeat with n = 1 to numLines
+      tmpLabel = (the labelList).line[n]
+      if label(tmpLabel) = tmpFrame then
+        gRock.m_context.setFocus(#Mission, gRock.m_classManager.getObjByIDAndClass(symbol(tmpLabel), #Mission))
+        exit repeat
+      end if
+    end repeat
+    tmpFrame = the frame
+  else
+    mission_r = gRock.m_context.getFocus(#Mission)
+    if not objectp(mission_r) then
+      pott("No mission selected!")
+      mission_r = gRock.m_classManager.getObjByIDAndClass(#Mission01, #Mission)
+    end if
+    tmpLabel = string(mission_r.ID)
+    tmpFrame = label(tmpLabel)
+    if tmpFrame = 0 then
+      pott("No marker for " & tmpLabel)
+      tmpFrame = label("Mission01")
+    end if
+  end if
+  sprite(m_spriteList[#AuthorDialog]).member = member("Dummy")
+  m_objDialogsMaster.openDialog(#MissionIntro)
+  preloadCastsOfFrame(tmpFrame)
+  go(tmpFrame)
+end
+
+on kill me
+  m_actorCasts = m_actorCasts.kill()
+  m_objDialogsMaster = m_objDialogsMaster.kill()
+  return 0
+end

@@ -1,0 +1,200 @@
+property ancestor, child, className, belongsTo, Age, Gender, MusicStyle, MusicStyleTolerance, Musicality, Patience, Loyalty, Attitudes, Honesty, Economy, RefNr, SoundPrefix, ModifiesMe, BelongsToPlace, modifiedVals, changedVars
+global gRock
+
+on new me, argChild, argBelongsTo
+  if objectp(argChild) then
+    child = argChild
+  else
+    child = me
+  end if
+  belongsTo = argBelongsTo
+  ancestor = script("ClassConcreteScript").new(child)
+  className = #Human
+  Age = 0
+  Gender = #none
+  MusicStyle = script("ClassStyleMixScript").new(VOID, me)
+  MusicStyleTolerance = script("ClassStyleMixScript").new(VOID, me)
+  Musicality = script("ClassDynamicVarScript").new(VOID, me)
+  Patience = script("ClassDynamicTriggerVarScript").new(VOID, me)
+  Loyalty = script("ClassDynamicVarScript").new(VOID, me)
+  Attitudes = script("ClassAttitudesScript").new(VOID, me)
+  Honesty = 0.0
+  Economy = 0.0
+  RefNr = 0
+  SoundPrefix = EMPTY
+  ModifiesMe = []
+  BelongsToPlace = #none
+  Patience.LoseFact = 0.01
+  Patience.normal = 1
+  Patience.Current = 0.10009999999999999
+  Patience.mode = #AutoLose
+  Patience.ValTriggers = [0.10000000000000001: #OutOfPatience, 1.10000000000000009: 1]
+  changedVars = [:]
+  modifiedVals = [:]
+  return me
+end
+
+on kill me
+  if objectp(Attitudes) then
+    Attitudes = Attitudes.kill()
+  end if
+  if objectp(Musicality) then
+    Musicality = Musicality.kill()
+  end if
+  if objectp(Loyalty) then
+    Loyalty = Loyalty.kill()
+  end if
+  if objectp(Patience) then
+    Patience = Patience.kill()
+  end if
+  if objectp(ancestor) then
+    ancestor = ancestor.kill()
+  end if
+  child = 0
+  belongsTo = 0
+  return 0
+end
+
+on Report me, argObj, argWhat, argOptional
+  if argObj = Patience then
+    if argWhat = #OutOfPatience then
+      if argOptional[#Change] < 0 then
+      end if
+    end if
+  end if
+end
+
+on setPatience me, argVal
+  pott("SetPatience", argVal)
+  Patience.Current = argVal
+end
+
+on addModifier me, argObj
+  ModifiesMe.add(argObj)
+end
+
+on deleteModifier me, argObj
+  ModifiesMe.deleteOne(argObj)
+end
+
+on gotModifier me, argID
+  repeat with n = 1 to ModifiesMe.count
+    obj = ModifiesMe[n]
+    if obj.ID = argID then
+      return 1
+    end if
+  end repeat
+  return 0
+end
+
+on getBelongsToPlace me
+  return gRock.m_classManager.getObjByIDAndClass(BelongsToPlace, #place)
+end
+
+on getSoundFilePrefix me
+  if BelongsToPlace <> #none then
+    str = string(BelongsToPlace)
+  else
+    str = string(ancestor.ID)
+  end if
+  Prefix = str.char[1] & str.char[str.length - 1..str.length]
+  return Prefix
+end
+
+on checkModifiers me
+  repeat with n = 1 to changedVars.count()
+    rsetProp(child, changedVars[n], changedVars.getPropAt(n), "-=")
+  end repeat
+  tmpOldChangedVars = changedVars.duplicate()
+  tmpPropsChanged = []
+  tmpTotVals = []
+  repeat with n = 1 to ModifiesMe.count
+    obj = ModifiesMe[n]
+    modifiesWhatInMeList = obj.Modifies.getaProp(ancestor.ID)
+    if listp(modifiesWhatInMeList) then
+      repeat with m = 1 to modifiesWhatInMeList.count()
+        modifiesWhatInMe = modifiesWhatInMeList[m]
+        tmpPos = tmpPropsChanged.getPos(modifiesWhatInMe[1])
+        if tmpPos = 0 then
+          tmpPropsChanged.add(modifiesWhatInMe[1])
+          tmpTotVals.add(modifiesWhatInMe[2])
+          next repeat
+        end if
+        tmpTotVals[tmpPos] = tmpTotVals[tmpPos] + modifiesWhatInMe[2]
+      end repeat
+    end if
+  end repeat
+  tmpReturn = [:]
+  tmpReturn.sort()
+  changedVars = [:]
+  changedVars.sort()
+  repeat with n = 1 to tmpPropsChanged.count()
+    tmpObj = rgetProp(child, tmpPropsChanged[n], #instance)
+    tmpChangedBeforePos = tmpOldChangedVars.getPos(tmpPropsChanged[n])
+    tmpOldVal = 0.0
+    if tmpChangedBeforePos then
+      tmpOldVal = tmpOldChangedVars.getPropAt(tmpChangedBeforePos)
+      tmpOldChangedVars.deleteAt(tmpChangedBeforePos)
+    end if
+    if ilk(tmpObj) = #instance then
+      if tmpObj.className = #DynamicTriggerVar then
+        tmpOldVal = tmpOldVal + tmpObj.Current
+        tmpObj.Current = tmpObj.Current + tmpTotVals[n]
+        tmpObj.checkAndTrig(tmpOldVal, tmpObj.Current)
+      else
+        rsetProp(child, tmpPropsChanged[n], tmpTotVals[n], "+=")
+      end if
+    else
+      rsetProp(child, tmpPropsChanged[n], tmpTotVals[n], "+=")
+    end if
+    tmpReturn.addProp(tmpTotVals[n], tmpPropsChanged[n])
+    changedVars.addProp(tmpTotVals[n], tmpPropsChanged[n])
+  end repeat
+  if tmpOldChangedVars.count then
+    pott("Mods gone!", tmpOldChangedVars)
+  end if
+  repeat with n = 1 to tmpOldChangedVars.count
+    tmpObj = rgetProp(child, tmpOldChangedVars[n], #instance)
+    if objectp(tmpObj) then
+      if tmpObj.className = #DynamicTriggerVar then
+        tmpOldVal = tmpObj.Current + tmpOldChangedVars.getPropAt(n)
+        tmpObj.Current = tmpObj.Current
+        tmpObj.checkAndTrig(tmpOldVal, tmpObj.Current)
+      end if
+    end if
+    tmpReturn.addProp(tmpOldChangedVars.getPropAt(n), tmpOldChangedVars[n])
+  end repeat
+  modifiedVals = [:]
+  repeat with n = 1 to tmpReturn.count()
+    tmpProp = tmpReturn[n]
+    if listp(tmpProp) then
+      tmpProp = tmpProp[tmpProp.count()]
+    end if
+    modifiedVals.addProp(tmpProp, tmpReturn.getPropAt(n))
+  end repeat
+  return modifiedVals
+end
+
+on zzlikesBand me, argBand_r
+  if voidp(argBand_r) then
+    argBand_r = gRock.m_context.getFocus(#Band)
+  end if
+  if voidp(argBand_r) then
+    return #NoBand
+  end if
+  me.checkModifiers()
+  tmpAtt = Attitudes.getAttitude([argBand_r.ID, #Likes])
+  pott("likesBand", tmpAtt)
+  place_r = gRock.m_classManager.getObjByIDAndClass(BelongsToPlace, #place)
+  if objectp(place_r) then
+    tmpLikeStyle = checkWithinTolerance(place_r.StyleMix, place_r.StyleMixTolerance, argBand_r.MusicStyle)
+    tmpLikeType = checkWithinTolerance(place_r.SongType, place_r.SongTypeTolerance, argBand_r.SongType)
+    tmpLike = calcAverage([1.0: tmpLikeStyle, 1.0: tmpLikeType])
+    tmpLike = tmpLike + tmpAtt
+    tmpAtt = Attitudes.Attitudes[argBand_r.ID]
+    pott("likesBand2", tmpLike, tmpAtt)
+    return tmpLike
+  else
+    return tmpAtt
+  end if
+end

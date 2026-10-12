@@ -1,0 +1,250 @@
+property m_items, m_wnd, m_options
+global gMUICallbackObj
+
+on new me, argDialogPropList, argOptions
+  [  0] getparam 16 ............................. <argOptions>
+  [  2] setprop 556 ............................. m_options = argOptions
+  [  5] getprop 556 ............................. <m_options>
+  [  8] pusharglist 1 ........................... <m_options>
+  [ 10] extcall 290 ............................. <listp(m_options)>
+  [ 13] not ..................................... <not listp(m_options)>
+  [ 14] jmpifz [ 23] ............................ if not listp(m_options) then
+  [ 17] pusharglist 0 ........................... <[:]>
+  [ 19] pushproplist ............................ <[:]>
+  [ 20] setprop 556 ............................. m_options = [:]
+  [ 23] getparam 8 .............................. <argDialogPropList>
+  [ 25] pusharglist 1 ........................... <argDialogPropList>
+  [ 27] extcall 557 ............................. <ilk(argDialogPropList)>
+  [ 30] pushsymb 65 ............................. <#member>
+  [ 33] eq ...................................... <ilk(argDialogPropList) = #member>
+  [ 34] jmpifz [ 55] ............................ if ilk(argDialogPropList) = #member then
+  [ 37] getparam 8 .............................. <argDialogPropList>
+  [ 39] getobjprop 28 ........................... <argDialogPropList.text>
+  [ 41] pusharglist 1 ........................... <argDialogPropList.text>
+  [ 43] extcall 549 ............................. <propListFromTable(argDialogPropList.text)>
+  [ 46] setparam 8 .............................. argDialogPropList = propListFromTable(argDialogPropList.text)
+  [ 48] getparam 8 .............................. <argDialogPropList>
+  [ 50] pusharglistnoret 1 ...................... <argDialogPropList>
+  [ 52] extcall 47 .............................. put argDialogPropList
+  [ 55] getparam 8 .............................. <argDialogPropList>
+  [ 57] pusharglist 1 ........................... <argDialogPropList>
+  [ 59] extcall 290 ............................. <listp(argDialogPropList)>
+  [ 62] not ..................................... <not listp(argDialogPropList)>
+  [ 63] jmpifz [ 83] ............................ if not listp(argDialogPropList) then
+  [ 66] pushsymb 251 ............................ <#window>
+  [ 69] pusharglist 0 ........................... <[:]>
+  [ 71] pushproplist ............................ <[:]>
+  [ 72] pushsymb 551 ............................ <#items>
+  [ 75] pusharglist 0 ........................... <[:]>
+  [ 77] pushproplist ............................ <[:]>
+  [ 78] pusharglist 4 ........................... <[#window: [:], #items: [:]]>
+  [ 80] pushproplist ............................ <[#window: [:], #items: [:]]>
+  [ 81] setparam 8 .............................. argDialogPropList = [#window: [:], #items: [:]]
+  [ 83] pushcons 0 .............................. <"mui">
+  [ 85] pusharglist 1 ........................... <"mui">
+  [ 87] extcall 7 ............................... <xtra("mui")>
+  [ 89] pusharglist 1 ........................... <xtra("mui")>
+  [ 91] objcall 37 .............................. <xtra("mui").new()>
+  [ 94] setprop 558 ............................. m_wnd = xtra("mui").new()
+  [ 97] getprop 558 ............................. <m_wnd>
+  [100] getparam 8 .............................. <argDialogPropList>
+  [102] pushsymb 251 ............................ <#window>
+  [105] pusharglist 2 ........................... <argDialogPropList, #window>
+  [107] objcall 63 .............................. <argDialogPropList[#window]>
+  [110] getparam 8 .............................. <argDialogPropList>
+  [112] pushsymb 551 ............................ <#items>
+  [115] pusharglist 2 ........................... <argDialogPropList, #items>
+  [117] objcall 63 .............................. <argDialogPropList[#items]>
+  [120] pusharglist 3 ........................... <m_wnd, argDialogPropList[#window], argDialogPropList[#items]>
+  [122] extcall 559 ............................. <setMUIWndProps(m_wnd, argDialogPropList[#window], argDialogPropList[#items])>
+  [125] setlocal 0 .............................. tmp = setMUIWndProps(m_wnd, argDialogPropList[#window], argDialogPropList[#items])
+  [127] getlocal 0 .............................. <tmp>
+  [129] pushsymb 551 ............................ <#items>
+  [132] pusharglist 2 ........................... <tmp, #items>
+  [134] objcall 63 .............................. <tmp[#items]>
+  [137] setprop 560 ............................. m_items = tmp[#items]
+  [140] getparam 0 .............................. <me>
+  [142] setglobal 561 ........................... gMUICallbackObj = me
+  [145] getparam 0 .............................. <me>
+  [147] pusharglistnoret 1 ...................... <me>
+  [149] extcall 2 ............................... return me
+  [151] ret
+end
+
+on kill me
+  [  0] pushzero ................................ <0>
+  [  1] setglobal 561 ........................... gMUICallbackObj = 0
+  [  4] pushzero ................................ <0>
+  [  5] setprop 560 ............................. m_items = 0
+  [  8] getparam 0 .............................. <me>
+  [ 10] pusharglistnoret 1 ...................... <me>
+  [ 12] objcall 554 ............................. me.close()
+  [ 15] pushzero ................................ <0>
+  [ 16] setprop 558 ............................. m_wnd = 0
+  [ 19] pushzero ................................ <0>
+  [ 20] pusharglistnoret 1 ...................... <0>
+  [ 22] extcall 2 ............................... return 0
+  [ 24] ret
+end
+
+on open me
+  [  0] getprop 558 ............................. <m_wnd>
+  [  3] pusharglistnoret 1 ...................... <m_wnd>
+  [  5] objcall 563 ............................. m_wnd.Run()
+  [  8] ret
+end
+
+on close me
+  [  0] getprop 558 ............................. <m_wnd>
+  [  3] pusharglist 1 ........................... <m_wnd>
+  [  5] extcall 50 .............................. <objectp(m_wnd)>
+  [  8] jmpifz [ 24] ............................ if objectp(m_wnd) then
+  [ 11] getprop 558 ............................. <m_wnd>
+  [ 14] pushzero ................................ <0>
+  [ 15] pusharglistnoret 2 ...................... <m_wnd, 0>
+  [ 17] objcall 564 ............................. m_wnd.stop(0)
+  [ 20] pushzero ................................ <0>
+  [ 21] setprop 558 ............................. m_wnd = 0
+  [ 24] ret
+end
+
+on makeCallBack me, argWhat, argOption
+  [  0] getprop 556 ............................. <m_options>
+  [  3] pushsymb 357 ............................ <#CallBackInfo>
+  [  6] pusharglist 2 ........................... <m_options, #CallBackInfo>
+  [  8] objcall 63 .............................. <m_options[#CallBackInfo]>
+  [ 11] pusharglist 1 ........................... <m_options[#CallBackInfo]>
+  [ 13] extcall 290 ............................. <listp(m_options[#CallBackInfo])>
+  [ 16] not ..................................... <not listp(m_options[#CallBackInfo])>
+  [ 17] jmpifz [ 21] ............................ if not listp(m_options[#CallBackInfo]) then
+  [ 20] ret ..................................... exit
+  [ 21] getprop 556 ............................. <m_options>
+  [ 24] pushsymb 357 ............................ <#CallBackInfo>
+  [ 27] pusharglist 2 ........................... <m_options, #CallBackInfo>
+  [ 29] objcall 63 .............................. <m_options[#CallBackInfo]>
+  [ 32] pushsymb 363 ............................ <#object>
+  [ 35] pusharglist 2 ........................... <m_options[#CallBackInfo], #object>
+  [ 37] objcall 63 .............................. <m_options[#CallBackInfo][#object]>
+  [ 40] setlocal 0 .............................. obj = m_options[#CallBackInfo][#object]
+  [ 42] getlocal 0 .............................. <obj>
+  [ 44] pusharglist 1 ........................... <obj>
+  [ 46] extcall 50 .............................. <objectp(obj)>
+  [ 49] not ..................................... <not objectp(obj)>
+  [ 50] jmpifz [120] ............................ if not objectp(obj) then / else
+  [ 53] getparam 8 .............................. <argWhat>
+  [ 55] pusharglist 1 ........................... <argWhat>
+  [ 57] extcall 93 .............................. <string(argWhat)>
+  [ 60] setlocal 8 .............................. whatStr = string(argWhat)
+  [ 62] getparam 8 .............................. <argWhat>
+  [ 64] pusharglist 1 ........................... <argWhat>
+  [ 66] extcall 565 ............................. <symbolp(argWhat)>
+  [ 69] jmpifz [ 79] ............................ if symbolp(argWhat) then
+  [ 72] pushcons 8 .............................. <"#">
+  [ 74] getlocal 8 .............................. <whatStr>
+  [ 76] joinstr ................................. <"#" & whatStr>
+  [ 77] setlocal 8 .............................. whatStr = "#" & whatStr
+  [ 79] getprop 556 ............................. <m_options>
+  [ 82] pushsymb 357 ............................ <#CallBackInfo>
+  [ 85] pusharglist 2 ........................... <m_options, #CallBackInfo>
+  [ 87] objcall 63 .............................. <m_options[#CallBackInfo]>
+  [ 90] pushsymb 364 ............................ <#handler>
+  [ 93] pusharglist 2 ........................... <m_options[#CallBackInfo], #handler>
+  [ 95] objcall 63 .............................. <m_options[#CallBackInfo][#handler]>
+  [ 98] pusharglist 1 ........................... <m_options[#CallBackInfo][#handler]>
+  [100] extcall 93 .............................. <string(m_options[#CallBackInfo][#handler])>
+  [103] pushcons 16 ............................. <"(">
+  [105] joinstr ................................. <string(m_options[#CallBackInfo][#handler]) & "(">
+  [106] getlocal 8 .............................. <whatStr>
+  [108] joinstr ................................. <string(m_options[#CallBackInfo][#handler]) & "(" & whatStr>
+  [109] pushcons 24 ............................. <")">
+  [111] joinstr ................................. <string(m_options[#CallBackInfo][#handler]) & "(" & whatStr & ")">
+  [112] pusharglistnoret 1 ...................... <string(m_options[#CallBackInfo][#handler]) & "(" & whatStr & ")">
+  [114] extcall 566 ............................. do(string(m_options[#CallBackInfo][#handler]) & "(" & whatStr & ")")
+  [117] jmp [152]
+  [120] getprop 556 ............................. <m_options>
+  [123] pushsymb 357 ............................ <#CallBackInfo>
+  [126] pusharglist 2 ........................... <m_options, #CallBackInfo>
+  [128] objcall 63 .............................. <m_options[#CallBackInfo]>
+  [131] pushsymb 364 ............................ <#handler>
+  [134] pusharglist 2 ........................... <m_options[#CallBackInfo], #handler>
+  [136] objcall 63 .............................. <m_options[#CallBackInfo][#handler]>
+  [139] getlocal 0 .............................. <obj>
+  [141] getparam 0 .............................. <me>
+  [143] getparam 8 .............................. <argWhat>
+  [145] getparam 16 ............................. <argOption>
+  [147] pusharglistnoret 5 ...................... <m_options[#CallBackInfo][#handler], obj, me, argWhat, argOption>
+  [149] extcall 291 ............................. call(m_options[#CallBackInfo][#handler], obj, me, argWhat, argOption)
+  [152] ret
+end
+
+on callback me, argWhat, arg2, arg3
+  [  0] getparam 8 .............................. <argWhat>
+  [  2] pusharglist 1 ........................... <argWhat>
+  [  4] extcall 93 .............................. <string(argWhat)>
+  [  7] setlocal 0 .............................. whatStr = string(argWhat)
+  [  9] pushcons 32 ............................. <"Item">
+  [ 11] getlocal 0 .............................. <whatStr>
+  [ 13] pusharglist 2 ........................... <"Item", whatStr>
+  [ 15] extcall 55 .............................. <offset("Item", whatStr)>
+  [ 18] pushint8 1 .............................. <1>
+  [ 21] eq ...................................... <offset("Item", whatStr) = 1>
+  [ 22] jmpifz [105] ............................ if offset("Item", whatStr) = 1 then / else
+  [ 25] getprop 560 ............................. <m_items>
+  [ 28] getparam 16 ............................. <arg2>
+  [ 30] pusharglist 2 ........................... <m_items, arg2>
+  [ 32] objcall 420 ............................. <m_items.getPropAt(arg2)>
+  [ 35] setlocal 8 .............................. ID = m_items.getPropAt(arg2)
+  [ 37] getparam 8 .............................. <argWhat>
+  [ 39] pushsymb 570 ............................ <#itemClicked>
+  [ 42] eq ...................................... <argWhat = #itemClicked>
+  [ 43] jmpifz [ 60] ............................ if argWhat = #itemClicked then / else
+  [ 46] getparam 0 .............................. <me>
+  [ 48] getparam 8 .............................. <argWhat>
+  [ 50] getlocal 8 .............................. <ID>
+  [ 52] pusharglistnoret 3 ...................... <me, argWhat, ID>
+  [ 54] objcall 350 ............................. me.makeCallBack(argWhat, ID)
+  [ 57] jmp [102]
+  [ 60] getparam 8 .............................. <argWhat>
+  [ 62] pushsymb 571 ............................ <#itemChanged>
+  [ 65] eq ...................................... <argWhat = #itemChanged>
+  [ 66] jmpifz [102] ............................ if argWhat = #itemChanged then
+  [ 69] getparam 24 ............................. <arg3>
+  [ 71] pushsymb 8 .............................. <#type>
+  [ 73] pusharglist 2 ........................... <arg3, #type>
+  [ 75] objcall 63 .............................. <arg3[#type]>
+  [ 78] pushsymb 572 ............................ <#editText>
+  [ 81] eq ...................................... <arg3[#type] = #editText>
+  [ 82] jmpifz [102] ............................ if arg3[#type] = #editText then
+  [ 85] getlocal 8 .............................. <ID>
+  [ 87] getparam 24 ............................. <arg3>
+  [ 89] pushsymb 444 ............................ <#value>
+  [ 92] pusharglist 2 ........................... <arg3, #value>
+  [ 94] objcall 63 .............................. <arg3[#value]>
+  [ 97] pusharglistnoret 2 ...................... <ID, arg3[#value]>
+  [ 99] extcall 47 .............................. put ID, arg3[#value]
+  [102] jmp [131]
+  [105] pushcons 40 ............................. <"Window">
+  [107] getlocal 0 .............................. <whatStr>
+  [109] pusharglist 2 ........................... <"Window", whatStr>
+  [111] extcall 55 .............................. <offset("Window", whatStr)>
+  [114] pushint8 1 .............................. <1>
+  [117] eq ...................................... <offset("Window", whatStr) = 1>
+  [118] jmpifz [124] ............................ if offset("Window", whatStr) = 1 then / else
+  [121] jmp [131]
+  [124] pushcons 48 ............................. <"ERROR">
+  [126] pusharglistnoret 1 ...................... <"ERROR">
+  [128] extcall 47 .............................. put "ERROR"
+  [131] pushint8 2 .............................. <2>
+  [134] setlocal 16
+  [136] getlocal 16
+  [138] pusharglist 0 ........................... <>
+  [140] thebuiltin 573 .......................... <the paramCount>
+  [143] lteq
+  [144] jmpifz [157] ............................ repeat with n = 2 to the paramCount
+  [147] pushint8 1
+  [150] getlocal 16
+  [152] add
+  [153] setlocal 16
+  [155] endrepeat [136]
+  [157] ret
+end

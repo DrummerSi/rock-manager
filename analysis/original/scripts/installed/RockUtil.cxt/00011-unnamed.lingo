@@ -1,0 +1,173 @@
+on xtestcheck
+  sequencer = script("PlaySequenceScript").new()
+  sequencer.load("Sequence3")
+  track = script("TrackScript").new(sequencer)
+  track.load("Track1")
+  sequencer.addTrack(track, #test)
+  sequencer.prepare()
+end
+
+on autogenVoiceSoundSet argPrefix, argList
+  if voidp(argPrefix) then
+    argPrefix = "Testsnd"
+  end if
+  if voidp(argList) then
+    argList = [[1, 2], [3, [4, 5]], [6, 7]]
+  end if
+  allSyllables = []
+  newList = []
+  repeat with noteNr = 1 to argList.count()
+    numSyllablesPerWord = []
+    allSyllables.add(numSyllablesPerWord)
+    perNote = argList[noteNr]
+    if not listp(perNote) then
+      perNote = [perNote]
+    end if
+    autogenLittleList(argPrefix, perNote, noteNr, 0)
+    newPerNote = []
+    repeat with m = perNote.count() down to 1
+      Info = perNote[m]
+      if ilk(Info) = #list then
+        numSyllablesPerWord.addAt(1, Info.count())
+        tmpSubList = Info.duplicate()
+        autogenLittleList(argPrefix, tmpSubList, noteNr, 1)
+        repeat with o = tmpSubList.count() down to 1
+          newPerNote.addAt(1, tmpSubList[o])
+        end repeat
+        next repeat
+      end if
+      numSyllablesPerWord.addAt(1, 1)
+      newPerNote.addAt(1, Info)
+    end repeat
+    newList.add(newPerNote)
+  end repeat
+  return [#numSyllables: allSyllables, #SoundSet: newList]
+end
+
+on autogenLittleList argPrefix, argList, argNoteNr, argIsSyllable
+  repeat with n = 1 to argList.count()
+    Info = argList[n]
+    fileName = 0
+    if integerp(Info) then
+      if argIsSyllable = 1 then
+        tmpSuffix = convItoS(n, 2)
+      else
+        tmpSuffix = "01"
+      end if
+      fileName = argPrefix & convItoS(argNoteNr, 3) & "-" & convItoS(Info, 2) & "-" & tmpSuffix
+    else
+      if stringp(Info) then
+        fileName = Info
+      end if
+    end if
+    if stringp(fileName) then
+      Info = [#file: fileName]
+    end if
+    argList[n] = Info
+    if ilk(Info) = #propList then
+      if voidp(Info.getaProp(#Pitch)) then
+        Info.setaProp(#Pitch, 1)
+      end if
+    end if
+  end repeat
+end
+
+on checkForSyllables argSequencer, argEvents, argNumSyllables, argSoundSetList
+  m_sequencer = argSequencer
+  m_events = argEvents
+  totTicks = m_sequencer.getSequenceLength(#ticks)
+  lastNoteAndWord = [#note: -1, #word: -1]
+  repeat with n = 1 to m_events.count()
+    Event = m_events[n]
+    note = Event[#note]
+    if not voidp(note) then
+      if note > argNumSyllables.count() then
+        next repeat
+      end if
+      numSyllablesPerWord = argNumSyllables[note]
+      numWords = numSyllablesPerWord.count()
+      tmpSounds = argSoundSetList[note]
+      currentTime = m_events.getPropAt(n)
+      if n < m_events.count() then
+        nextEvent = m_events[n + 1]
+        nextTime = m_events.getPropAt(n + 1)
+      else
+        nextEvent = m_events[1]
+        nextTime = m_events.getPropAt(n) + 1
+        totTicks = m_sequencer.getSequenceLength(#ticks)
+        tmp = 1 + (nextTime / totTicks)
+        nextTime = tmp * totTicks
+      end if
+      diff = nextTime - currentTime
+      diffInSeconds = diff * m_sequencer.getSecsPerTick()
+      tmpRndList = []
+      tmpEnoughTime = []
+      repeat with X = 1 to numWords
+        tmpRndList.add(X)
+        tmpEnoughTime.add(1)
+      end repeat
+      repeat with wordNr = numWords down to 1
+        if diffInSeconds < (numSyllablesPerWord[wordNr] * 0.20000000000000001) then
+          tmpOK = 1
+          if (n + numSyllablesPerWord[wordNr] - 1) > m_events.count() then
+            tmpOK = 0
+          else
+            repeat with X = n + 1 to n + numSyllablesPerWord[wordNr] - 1
+              tmpEvent = m_events[X]
+              if tmpEvent[#note] <> note then
+                tmpOK = 0
+                exit repeat
+              end if
+            end repeat
+          end if
+          if tmpOK then
+            tmpEnoughTime[wordNr] = 0
+            next repeat
+          end if
+          tmpEnoughTime.deleteAt(wordNr)
+          tmpRndList.deleteAt(wordNr)
+        end if
+      end repeat
+      wordNr = Event[#word]
+      if voidp(wordNr) then
+        wordNr = 0
+      end if
+      Event.deleteProp(#word)
+      if (wordNr = 0) or (wordNr > numWords) then
+        if lastNoteAndWord[#note] = note then
+          if tmpRndList.count() > 1 then
+            tmpRndList.deleteOne(lastNoteAndWord[#word])
+            tmpEnoughTime.deleteOne(lastNoteAndWord[#word])
+          end if
+        end if
+      end if
+      tmpRnd = random(tmpRndList.count())
+      wordNr = tmpRndList[tmpRnd]
+      lastNoteAndWord[#note] = note
+      lastNoteAndWord[#word] = wordNr
+      numSyllables = numSyllablesPerWord[wordNr]
+      if tmpEnoughTime[tmpRnd] = 0 then
+      end if
+      layerNum = 1
+      repeat with m = 1 to wordNr - 1
+        layerNum = layerNum + numSyllablesPerWord[m]
+      end repeat
+      if numSyllables > 1 then
+        timePerNote = float(diff) / numSyllables
+        m_events.deleteAt(n)
+        repeat with m = 1 to numSyllables
+          tmpNewEvent = Event.duplicate()
+          tmpNewEvent.addProp(#layer, layerNum + m - 1)
+          m_events.addProp(currentTime + integer((m - 1) * timePerNote), tmpNewEvent)
+        end repeat
+        n = n + numSyllables - 1
+        next repeat
+      end if
+      m_events.deleteAt(n)
+      tmpNewEvent = Event.duplicate()
+      tmpNewEvent.addProp(#layer, layerNum)
+      m_events.addProp(currentTime, tmpNewEvent)
+    end if
+  end repeat
+  return m_events
+end

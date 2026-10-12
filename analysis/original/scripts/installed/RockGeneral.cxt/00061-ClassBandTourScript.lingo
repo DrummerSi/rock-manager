@@ -1,0 +1,61 @@
+property ancestor, child, className, belongsTo, _killed, Cities, StageDesign, StageQuality, ConcertDates, Expenses, ConcertIDs, price
+global gRock
+
+on new me, argChild, argBelongsTo
+  if objectp(argChild) then
+    child = argChild
+  else
+    child = me
+  end if
+  belongsTo = argBelongsTo
+  ancestor = script("ClassEventScript").new(child)
+  className = #BandTour
+  Cities = []
+  StageDesign = [:]
+  StageQuality = 0.0
+  ConcertDates = []
+  Expenses = []
+  ConcertIDs = []
+  price = 0
+  return me
+end
+
+on kill me
+  _killed = 1
+  if objectp(ancestor) then
+    ancestor = ancestor.kill()
+  end if
+  child = 0
+  belongsTo = 0
+  return 0
+end
+
+on eventChangeState me, argAction, argOption
+  if argAction = #start then
+    band_r = gRock.m_context.getFocus(#Band)
+    muss_r = band_r.getMusicianObjs()
+    repeat with mus_r in muss_r
+      ancestor.neededIDs.add(mus_r.ID)
+    end repeat
+    tmpAway = band_r.getWhoAreOccupied()
+    if (tmpAway.count > 0) or (band_r.getMusicianObjs().count = 0) then
+      gRock.m_eventCardsManager.tryNewShowEventCard(#ECOCBandIncomplete)
+      gRock.m_eventsManager.deleteEvent(me)
+      return 0
+    else
+      gRock.m_context.setFocus(#BandTour, me)
+      gRock.m_eventCardsManager.tryNewShowEventCard(VOID, [#DlgScript: #TourOngoing])
+    end if
+  else
+    if argAction = #stop then
+      gRock.m_context.setFocus(#BandTour, 0)
+      pott("Tour ended!")
+    end if
+  end if
+  tmp = ancestor.eventChangeState(argAction, argOption)
+  return tmp
+end
+
+on timeTick me
+  gRock.m_date.getDateInt()
+end

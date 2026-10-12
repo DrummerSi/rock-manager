@@ -1,0 +1,108 @@
+on showFileIOErrors
+  b = new(xtra("FileIO"))
+  repeat with n = 1 down to -10000
+    tmpStr = b.error(n)
+    if stringp(tmpStr) then
+      if tmpStr <> "Unknown error" then
+        put tmpStr, n
+      end if
+    end if
+  end repeat
+end
+
+on getFileTree argFolder, argFoldersOnly, arg_zMaxDepth, arg_zDepth
+  tmpList = [:]
+  sort(tmpList)
+  arg_zDepth = arg_zDepth + 1
+  if (arg_zMaxDepth > 0) and (arg_zDepth > arg_zMaxDepth) then
+    return tmpList
+  end if
+  repeat with n = 1 to the maxinteger
+    tmpName = getNthFileNameInFolder(argFolder, n)
+    if tmpName = EMPTY then
+      exit repeat
+    end if
+    tmpSubList = getFileTree(argFolder & "\" & tmpName, argFoldersOnly, arg_zMaxDepth, arg_zDepth)
+    tmpIsFolder = count(tmpSubList)
+    if not tmpIsFolder then
+      tmpIsFolder = checkFileNameIfFolder(tmpName)
+    end if
+    if tmpIsFolder then
+      tmpList.addProp(tmpName, tmpSubList)
+      next repeat
+    end if
+    if not argFoldersOnly then
+      tmpList.addProp(tmpName, 0)
+    end if
+  end repeat
+  return tmpList
+end
+
+on getFolderContents argFolder
+  tmpFiles = []
+  tmpFolders = []
+  tmpList = getFileTree(argFolder, 0, 1)
+  repeat with n = 1 to tmpList.count()
+    tmpName = tmpList.getPropAt(n)
+    if listp(tmpList[n]) then
+      tmpFolders.add(tmpName)
+      next repeat
+    end if
+    tmpFiles.add(tmpName)
+  end repeat
+  return [#Folders: tmpFolders, #Files: tmpFiles]
+end
+
+on checkFileNameIfFolder argName, argPath
+  tmpOK = 0
+  if offset(".", argName) then
+    repeat with n = argName.length down to 1
+      if argName.char[n] = "." then
+        if n < (argName.length - 4) then
+          tmpOK = 1
+          exit repeat
+        end if
+      end if
+    end repeat
+  else
+    tmpOK = 1
+  end if
+  if tmpOK then
+  end if
+  return tmpOK
+end
+
+on convFileTreeToStr argList, argDelim, argLevel
+  tmpStr = EMPTY
+  tmpLF = RETURN
+  tmpLvlStr = EMPTY
+  repeat with tmpLbl = 1 to argLevel
+    tmpLvlStr = tmpLvlStr & argDelim
+  end repeat
+  repeat with n = 1 to argList.count()
+    tmpName = argList.getPropAt(n)
+    tmpStr = tmpStr & tmpLvlStr & tmpName & tmpLF
+    tmpSub = argList[n]
+    if listp(tmpSub) then
+      tmpStr = tmpStr & convFileTreeToStr(tmpSub, argDelim, argLevel + 1)
+    end if
+  end repeat
+  return tmpStr
+end
+
+on convFileTreeToStr2Cols argList, argInFolder
+  tmpDirs = EMPTY
+  tmpFiles = EMPTY
+  tmpDelim = " "
+  tmpLF = RETURN
+  repeat with n = 1 to count(argList)
+    tmpSub = getAt(argList, n)
+    tmpName = getPropAt(argList, n)
+    if listp(tmpSub) then
+      tmpDirs = tmpDirs & argInFolder & "\" & tmpName & tmpLF & convFileTreeToStr2Cols(tmpSub, argInFolder & "\" & tmpName)
+      next repeat
+    end if
+    tmpFiles = tmpFiles & tmpDelim & tmpName & tmpLF
+  end repeat
+  return tmpFiles & tmpDirs
+end

@@ -1,0 +1,303 @@
+global gMembers
+
+on assertCastLib argCastFileName, argCastNumOrName, argMustBeCorrectPath
+  if voidp(argCastNumOrName) then
+    repeat with n = 2 to the number of castLibs
+      if castLib(2).fileName = argCastFileName then
+      end if
+    end repeat
+  else
+    currFileName = fileStripName(castLib(argCastNumOrName).fileName)
+    if argCastFileName = currFileName then
+      return 1
+    end if
+    tmpExists = 0
+    repeat with path in the searchPaths
+      if fileExists2(path & argCastFileName, [".cst", ".cxt"]) then
+        tmpExists = 1
+        exit repeat
+      end if
+    end repeat
+    if not tmpExists then
+      return 0
+    end if
+    castLib(argCastNumOrName).fileName = argCastFileName
+    currFileName = fileStripName(castLib(argCastNumOrName).fileName)
+    if argCastFileName = currFileName then
+      return 1
+    end if
+  end if
+  return 0
+end
+
+on newMember argType, argName, argCastLibOrMember
+  if voidp(argCastLibOrMember) then
+    argCastLibOrMember = 1
+  end if
+  if voidp(argName) then
+    argName = EMPTY
+  end if
+  if ilk(argCastLibOrMember) = #member then
+    tmp = new(argType, argCastLibOrMember)
+  else
+    tmp = new(argType, castLib(argCastLibOrMember))
+  end if
+  tmp.name = argName
+  return tmp
+end
+
+on assertMember argType, argName, argCastLib
+  tmp = the number of member argName of castLib argCastLib
+  if tmp > 0 then
+    tmp = member(tmp)
+    if tmp.type = argType then
+      return member(tmp)
+    end if
+  end if
+  return newMember(argType, argName, argCastLib)
+end
+
+on tryGetMember argMemberName, argElseUseMember
+  tmp = member(argMemberName)
+  if tmp.number > 0 then
+    return tmp
+  end if
+  return argElseUseMember
+end
+
+on newFieldMember argName, argMembNr, argCastLib
+  tmp = new(#field, member(argMembNr, argCastLib))
+  tmp.name = argName
+  tmp.wordWrap = 0
+  return tmp
+end
+
+on getMemberRect argMember
+  if not objectp(argMember) then
+    argMember = member(argMember)
+  end if
+  tmpRect = member(argMember).rect
+  tmpReg = member(argMember).regPoint
+  return rect(-tmpReg, -tmpReg) + tmpRect
+end
+
+on getMemberRect2 argMember
+  tmpRect = argMember.rect
+  tmpReg = argMember.regPoint
+  return rect(-tmpReg, -tmpReg) + tmpRect
+end
+
+on getMemberNum argStr, argCast
+  if objectp(argStr) then
+    return argStr.number
+  else
+    if objectp(gMembers) then
+      return gMembers.getMemberNum(argStr, argCast)
+    else
+      if voidp(argCast) then
+        return the number of member argStr
+      else
+        return member(argStr, argCast).number
+      end if
+    end if
+  end if
+end
+
+on memberExists argStr
+  return getMemberNum(argStr) > 0
+end
+
+on getMember argStr
+  if voidp(argStr) then
+    return member("Dummy")
+  end if
+  tmpNum = getMemberNum(argStr)
+  if tmpNum <= 0 then
+    return member("Dummy")
+  else
+    return member(tmpNum)
+  end if
+end
+
+on getMember2 argStr, argIfNotExistsUseThis
+  if voidp(argStr) then
+    return argIfNotExistsUseThis
+  end if
+  tmpNum = getMemberNum(argStr)
+  if tmpNum <= 0 then
+    return argIfNotExistsUseThis
+  else
+    return member(tmpNum)
+  end if
+end
+
+on safeUnloadMember argMemberName
+  if stringp(argMemberName) then
+    if getMemberNum(argMemberName) > 0 then
+      unloadMember(argMemberName)
+    end if
+  end if
+end
+
+on safePreloadMember argMembNameOrNr
+  if not listp(argMembNameOrNr) then
+    argMembNameOrNr = [argMembNameOrNr]
+  end if
+  repeat with tmp in argMembNameOrNr
+    if not integerp(tmp) then
+      tmp = getMemberNum(tmp)
+    end if
+    if tmp > 0 then
+      preloadMember(tmp)
+    end if
+  end repeat
+  exit
+  if stringp(argMembNameOrNr) then
+    argMembNameOrNr = getMemberNum(argMembNameOrNr)
+  end if
+  if argMembNameOrNr > 0 then
+    preloadMember(argMembNameOrNr)
+  end if
+end
+
+on findMembers argWildCardStr, argCriteria, argReturnAs
+  if voidp(argCriteria) then
+    argCriteria = [:]
+  end if
+  tmpCasts = argCriteria[#castLibs]
+  if voidp(tmpCasts) then
+    tmpCasts = argCriteria[#Casts]
+  end if
+  if voidp(tmpCasts) then
+    tmpCasts = []
+    repeat with n = 1 to the number of castLibs
+      tmpCasts.add(n)
+    end repeat
+  else
+    if not listp(tmpCasts) then
+      tmpCasts = [tmpCasts]
+    end if
+  end if
+  argCriteria.deleteProp(#Casts)
+  tmpTypes = argCriteria[#Types]
+  if voidp(tmpTypes) then
+    tmpTypes = [#All]
+  else
+    if not listp(tmpTypes) then
+      tmpTypes = [tmpTypes]
+    end if
+  end if
+  argCriteria.setaProp(#Types, tmpTypes)
+  tmp = argCriteria[#modifiedDate]
+  if listp(tmp) then
+    if voidp(tmp[#end]) then
+      tmp[#end] = the systemDate
+    end if
+  end if
+  tmp = argCriteria[#palette]
+  if not voidp(tmp) then
+    tmpTypes = [#bitmap]
+  end if
+  tmpNames = []
+  tmpMembers = []
+  repeat with tmpCast in tmpCasts
+    repeat with n = 1 to the number of castMembers of castLib tmpCast
+      tmpMemb = member(n, tmpCast)
+      tmpType = tmpMemb.type
+      if ((tmpTypes[1] = #All) or tmpTypes.getPos(tmpType)) and (tmpType <> #empty) then
+        tmpOK = 1
+        repeat with tmpCritNr = 1 to argCriteria.count()
+          tmpCrit = argCriteria.getPropAt(tmpCritNr)
+          tmpVal = argCriteria[tmpCritNr]
+          if tmpCrit = #type then
+            if (tmpVal.getPos(tmpType) = 0) or (tmpVal[1] <> #All) then
+              tmpOK = 0
+              exit repeat
+            end if
+            next repeat
+          end if
+          if tmpCrit = #size then
+            tmpSize = tmpMemb.size
+            if (tmpSize < tmpVal[#min]) or ((tmpSize > tmpVal[#max]) and (tmpVal[#max] >= 0)) then
+              tmpOK = 0
+              exit repeat
+            end if
+            next repeat
+          end if
+          if tmpCrit = #modifiedDate then
+            tmpDate = tmpMemb.modifiedDate
+            if (tmpDate < tmpVal[#start]) or (tmpDate > tmpVal[#end]) then
+              tmpOK = 0
+              exit repeat
+            end if
+            next repeat
+          end if
+          if tmpCrit = #creationDate then
+            next repeat
+          end if
+          if tmpCrit = #palette then
+            if tmpType = #bitmap then
+              if integerp(tmpVal) then
+                if tmpMemb.palette <> tmpVal then
+                  tmpOK = 0
+                end if
+                next repeat
+              end if
+              if tmpMemb.paletteRef <> tmpVal then
+                tmpOK = 0
+              end if
+            end if
+          end if
+        end repeat
+        if tmpOK then
+          tmpNames.add(tmpMemb.name)
+          tmpMembers.add(tmpMemb)
+        end if
+      end if
+    end repeat
+  end repeat
+  if (argReturnAs = #Names) or voidp(argReturnAs) then
+    tmpRetList = wildCardSearch(argWildCardStr, tmpNames, #Strings)
+  else
+    if argReturnAs = #NumbersNames then
+      tmpRetList = [:]
+      tmpList = wildCardSearch(argWildCardStr, tmpNames, #Positions)
+      repeat with tmpPos in tmpList
+        tmpRetList.addProp(tmpMembers[tmpPos].memberNum, tmpNames[tmpPos])
+      end repeat
+    else
+      if argReturnAs = #members then
+        tmpRetList = []
+        tmpList = wildCardSearch(argWildCardStr, tmpNames, #Positions)
+        repeat with tmpPos in tmpList
+          tmpRetList.add(tmpMembers[tmpPos])
+        end repeat
+      end if
+    end if
+  end if
+  return tmpRetList
+end
+
+on xxxRecompileScripts argCastList
+  if voidp(argCastList) then
+    argCastList = []
+    repeat with n = 1 to the number of castLibs
+      argCastList.add(n)
+    end repeat
+  else
+    if integerp(argCastList) or stringp(argCastList) then
+      argCastList = [argCastList]
+    end if
+  end if
+  numScripts = 0
+  repeat with tmpCast in argCastList
+    repeat with memberNr = 1 to the number of castMembers
+      tmpMemb = member(memberNr, castLib(tmpCast))
+      if tmpMemb.type = #script then
+        numScripts = numScripts + 1
+        tmpMemb.scriptText = tmpMemb.scriptText
+      end if
+    end repeat
+  end repeat
+  pott(numScripts)
+end

@@ -1,0 +1,298 @@
+property counter, framesPerTick, Active, addObjects, deleteObjects, objects, attachedToObject, totalTicks, ID, timerProp
+
+on new me, argFramesPerTick, argAttachToObject, argID
+  [  0] getparam 24 ............................. <argID>
+  [  2] setprop 60 .............................. ID = argID
+  [  5] pushcons 0 .............................. <"TimerItIsOKToTick">
+  [  7] getprop 60 .............................. <ID>
+  [ 10] pusharglist 1 ........................... <ID>
+  [ 12] extcall 38 .............................. <string(ID)>
+  [ 15] joinstr ................................. <"TimerItIsOKToTick" & string(ID)>
+  [ 16] pusharglist 1 ........................... <"TimerItIsOKToTick" & string(ID)>
+  [ 18] extcall 626 ............................. <symbol("TimerItIsOKToTick" & string(ID))>
+  [ 21] setprop 781 ............................. timerProp = symbol("TimerItIsOKToTick" & string(ID))
+  [ 24] getparam 8 .............................. <argFramesPerTick>
+  [ 26] setprop 782 ............................. framesPerTick = argFramesPerTick
+  [ 29] getprop 782 ............................. <framesPerTick>
+  [ 32] setprop 783 ............................. counter = framesPerTick
+  [ 35] pushint8 1 .............................. <1>
+  [ 38] setprop 541 ............................. Active = 1
+  [ 41] pusharglist 0 ........................... <[:]>
+  [ 43] pushproplist ............................ <[:]>
+  [ 44] setprop 784 ............................. addObjects = [:]
+  [ 47] pusharglist 0 ........................... <[]>
+  [ 49] pushlist ................................ <[]>
+  [ 50] setprop 785 ............................. deleteObjects = []
+  [ 53] pusharglist 0 ........................... <[:]>
+  [ 55] pushproplist ............................ <[:]>
+  [ 56] setprop 786 ............................. objects = [:]
+  [ 59] getprop 786 ............................. <objects>
+  [ 62] pusharglistnoret 1 ...................... <objects>
+  [ 64] objcall 325 ............................. objects.sort()
+  [ 67] getparam 16 ............................. <argAttachToObject>
+  [ 69] setprop 787 ............................. attachedToObject = argAttachToObject
+  [ 72] getprop 787 ............................. <attachedToObject>
+  [ 75] pusharglist 1 ........................... <attachedToObject>
+  [ 77] extcall 71 .............................. <objectp(attachedToObject)>
+  [ 80] jmpifz [ 93] ............................ if objectp(attachedToObject) then
+  [ 83] getprop 787 ............................. <attachedToObject>
+  [ 86] getparam 0 .............................. <me>
+  [ 88] pusharglistnoret 2 ...................... <attachedToObject, me>
+  [ 90] objcall 56 .............................. attachedToObject.addObject(me)
+  [ 93] pushzero ................................ <0>
+  [ 94] setprop 788 ............................. totalTicks = 0
+  [ 97] getparam 0 .............................. <me>
+  [ 99] pusharglistnoret 1 ...................... <me>
+  [101] extcall 21 .............................. return me
+  [103] ret
+end
+
+on kill me
+  [  0] getprop 787 ............................. <attachedToObject>
+  [  3] pusharglist 1 ........................... <attachedToObject>
+  [  5] extcall 71 .............................. <objectp(attachedToObject)>
+  [  8] jmpifz [ 20] ............................ if objectp(attachedToObject) then
+  [ 11] getprop 787 ............................. <attachedToObject>
+  [ 14] getparam 0 .............................. <me>
+  [ 16] pusharglistnoret 2 ...................... <attachedToObject, me>
+  [ 18] objcall 25 .............................. attachedToObject.deleteObject(me)
+  [ 20] pushzero ................................ <0>
+  [ 21] pusharglistnoret 1 ...................... <0>
+  [ 23] extcall 21 .............................. return 0
+  [ 25] ret
+end
+
+on getrate me
+  [  0] getprop 782 ............................. <framesPerTick>
+  [  3] pusharglistnoret 1 ...................... <framesPerTick>
+  [  5] extcall 21 .............................. return framesPerTick
+  [  7] ret
+end
+
+on changeRate me, argNewRate, argTickAsWell
+  [  0] getparam 8 .............................. <argNewRate>
+  [  2] setprop 782 ............................. framesPerTick = argNewRate
+  [  5] getprop 782 ............................. <framesPerTick>
+  [  8] pushint8 1 .............................. <1>
+  [ 11] add ..................................... <framesPerTick + 1>
+  [ 12] setprop 783 ............................. counter = framesPerTick + 1
+  [ 15] getparam 16 ............................. <argTickAsWell>
+  [ 17] jmpifz [ 26] ............................ if argTickAsWell then
+  [ 20] getparam 0 .............................. <me>
+  [ 22] pusharglistnoret 1 ...................... <me>
+  [ 24] localcall 4 ............................. timeTick(me)
+  [ 26] ret
+end
+
+on timeTick me, argObj, argOption
+  [  0] getprop 541 ............................. <Active>
+  [  3] jmpifz [128] ............................ if Active then
+  [  6] getparam 0 .............................. <me>
+  [  8] pusharglistnoret 1 ...................... <me>
+  [ 10] localcall 8 ............................. refreshLists(me)
+  [ 12] getprop 788 ............................. <totalTicks>
+  [ 15] pushint8 1 .............................. <1>
+  [ 18] add ..................................... <totalTicks + 1>
+  [ 19] setprop 788 ............................. totalTicks = totalTicks + 1
+  [ 22] getprop 783 ............................. <counter>
+  [ 25] pushint8 1 .............................. <1>
+  [ 28] add ..................................... <counter + 1>
+  [ 29] setprop 783 ............................. counter = counter + 1
+  [ 32] getprop 783 ............................. <counter>
+  [ 35] getprop 782 ............................. <framesPerTick>
+  [ 38] gteq .................................... <counter >= framesPerTick>
+  [ 39] jmpifz [128] ............................ if counter >= framesPerTick then
+  [ 42] getprop 786 ............................. <objects>
+  [ 45] pusharglist 1 ........................... <objects>
+  [ 47] objcall 32 .............................. <objects.count()>
+  [ 50] setlocal 0
+  [ 52] getlocal 0
+  [ 54] pushint8 1 .............................. <1>
+  [ 57] gteq
+  [ 58] jmpifz [124] ............................ repeat with n = objects.count() down to 1
+  [ 61] getprop 786 ............................. <objects>
+  [ 64] getlocal 0 .............................. <n>
+  [ 66] pusharglist 2 ........................... <objects, n>
+  [ 68] objcall 34 .............................. <objects[n]>
+  [ 71] setlocal 8 .............................. tmpObj = objects[n]
+  [ 73] getlocal 8 .............................. <tmpObj>
+  [ 75] getprop 781 ............................. <timerProp>
+  [ 78] pusharglist 2 ........................... <tmpObj, timerProp>
+  [ 80] objcall 67 .............................. <tmpObj.getaProp(timerProp)>
+  [ 83] pushint8 1 .............................. <1>
+  [ 86] eq ...................................... <tmpObj.getaProp(timerProp) = 1>
+  [ 87] jmpifz [103] ............................ if tmpObj.getaProp(timerProp) = 1 then
+  [ 90] getlocal 8 .............................. <tmpObj>
+  [ 92] getparam 0 .............................. <me>
+  [ 94] getparam 16 ............................. <argOption>
+  [ 96] getprop 782 ............................. <framesPerTick>
+  [ 99] pusharglistnoret 4 ...................... <tmpObj, me, argOption, framesPerTick>
+  [101] objcall 5 ............................... tmpObj.timeTick(me, argOption, framesPerTick)
+  [103] getprop 541 ............................. <Active>
+  [106] not ..................................... <not Active>
+  [107] jmpifz [113] ............................ if not Active then
+  [110] jmp [124] ............................... exit repeat
+  [113] pushint8 -1
+  [116] getlocal 0
+  [118] add
+  [119] setlocal 0
+  [121] endrepeat [ 52]
+  [124] pushzero ................................ <0>
+  [125] setprop 783 ............................. counter = 0
+  [128] ret
+end
+
+on activate me, YesNo
+  [  0] getparam 8 .............................. <YesNo>
+  [  2] setprop 541 ............................. Active = YesNo
+  [  5] ret
+end
+
+on addObject me, argObj, argPrio
+  [  0] getparam 16 ............................. <argPrio>
+  [  2] pusharglist 1 ........................... <argPrio>
+  [  4] extcall 68 .............................. <voidp(argPrio)>
+  [  7] jmpifz [ 15] ............................ if voidp(argPrio) then
+  [ 10] pushint8 50 ............................. <50>
+  [ 13] setparam 16 ............................. argPrio = 50
+  [ 15] getparam 8 .............................. <argObj>
+  [ 17] getprop 781 ............................. <timerProp>
+  [ 20] pushint8 1 .............................. <1>
+  [ 23] pusharglistnoret 3 ...................... <argObj, timerProp, 1>
+  [ 25] objcall 28 .............................. argObj.setaProp(timerProp, 1)
+  [ 27] getprop 785 ............................. <deleteObjects>
+  [ 30] getparam 8 .............................. <argObj>
+  [ 32] pusharglist 2 ........................... <deleteObjects, argObj>
+  [ 34] objcall 92 .............................. <deleteObjects.getPos(argObj)>
+  [ 37] pushzero ................................ <0>
+  [ 38] eq ...................................... <deleteObjects.getPos(argObj) = 0>
+  [ 39] jmpifz [104] ............................ if deleteObjects.getPos(argObj) = 0 then / else
+  [ 42] getprop 784 ............................. <addObjects>
+  [ 45] getparam 8 .............................. <argObj>
+  [ 47] pusharglist 2 ........................... <addObjects, argObj>
+  [ 49] objcall 92 .............................. <addObjects.getPos(argObj)>
+  [ 52] jmpifz [ 67] ............................ if addObjects.getPos(argObj) then / else
+  [ 55] pushcons 8 .............................. <"WARNING! already in addObjects!">
+  [ 57] getparam 8 .............................. <argObj>
+  [ 59] pusharglistnoret 2 ...................... <"WARNING! already in addObjects!", argObj>
+  [ 61] extcall 36 .............................. pott("WARNING! already in addObjects!", argObj)
+  [ 64] jmp [ 89]
+  [ 67] getprop 786 ............................. <objects>
+  [ 70] getparam 8 .............................. <argObj>
+  [ 72] pusharglist 2 ........................... <objects, argObj>
+  [ 74] objcall 92 .............................. <objects.getPos(argObj)>
+  [ 77] jmpifz [ 89] ............................ if objects.getPos(argObj) then
+  [ 80] pushcons 16 ............................. <"WARNING! already in OBJECTS!">
+  [ 82] getparam 8 .............................. <argObj>
+  [ 84] pusharglistnoret 2 ...................... <"WARNING! already in OBJECTS!", argObj>
+  [ 86] extcall 36 .............................. pott("WARNING! already in OBJECTS!", argObj)
+  [ 89] getprop 784 ............................. <addObjects>
+  [ 92] getparam 16 ............................. <argPrio>
+  [ 94] getparam 8 .............................. <argObj>
+  [ 96] pusharglistnoret 3 ...................... <addObjects, argPrio, argObj>
+  [ 98] objcall 307 ............................. addObjects.addProp(argPrio, argObj)
+  [101] jmp [123]
+  [104] pushcons 24 ............................. <"Add/delete timer object!">
+  [106] getparam 8 .............................. <argObj>
+  [108] pusharglistnoret 2 ...................... <"Add/delete timer object!", argObj>
+  [110] extcall 36 .............................. pott("Add/delete timer object!", argObj)
+  [113] getprop 785 ............................. <deleteObjects>
+  [116] getparam 8 .............................. <argObj>
+  [118] pusharglistnoret 2 ...................... <deleteObjects, argObj>
+  [120] objcall 104 ............................. deleteObjects.deleteOne(argObj)
+  [123] ret
+end
+
+on deleteObject me, argObj
+  [  0] getparam 8 .............................. <argObj>
+  [  2] getprop 781 ............................. <timerProp>
+  [  5] pushzero ................................ <0>
+  [  6] pusharglistnoret 3 ...................... <argObj, timerProp, 0>
+  [  8] extcall 28 .............................. setaProp(argObj, timerProp, 0)
+  [ 10] getprop 784 ............................. <addObjects>
+  [ 13] getparam 8 .............................. <argObj>
+  [ 15] pusharglist 2 ........................... <addObjects, argObj>
+  [ 17] objcall 92 .............................. <addObjects.getPos(argObj)>
+  [ 20] pushzero ................................ <0>
+  [ 21] eq ...................................... <addObjects.getPos(argObj) = 0>
+  [ 22] jmpifz [ 38] ............................ if addObjects.getPos(argObj) = 0 then / else
+  [ 25] getprop 785 ............................. <deleteObjects>
+  [ 28] getparam 8 .............................. <argObj>
+  [ 30] pusharglistnoret 2 ...................... <deleteObjects, argObj>
+  [ 32] objcall 50 .............................. deleteObjects.add(argObj)
+  [ 35] jmp [ 57]
+  [ 38] pushcons 32 ............................. <"Delete/add timer object!">
+  [ 40] getparam 8 .............................. <argObj>
+  [ 42] pusharglistnoret 2 ...................... <"Delete/add timer object!", argObj>
+  [ 44] extcall 36 .............................. pott("Delete/add timer object!", argObj)
+  [ 47] getprop 784 ............................. <addObjects>
+  [ 50] getparam 8 .............................. <argObj>
+  [ 52] pusharglistnoret 2 ...................... <addObjects, argObj>
+  [ 54] objcall 104 ............................. addObjects.deleteOne(argObj)
+  [ 57] ret
+end
+
+on refreshLists me
+  [  0] pushint8 1 .............................. <1>
+  [  3] setlocal 0
+  [  5] getlocal 0
+  [  7] getprop 784 ............................. <addObjects>
+  [ 10] pusharglist 1 ........................... <addObjects>
+  [ 12] objcall 32 .............................. <addObjects.count()>
+  [ 15] lteq
+  [ 16] jmpifz [ 77] ............................ repeat with n = 1 to addObjects.count()
+  [ 19] getprop 784 ............................. <addObjects>
+  [ 22] getlocal 0 .............................. <n>
+  [ 24] pusharglist 2 ........................... <addObjects, n>
+  [ 26] objcall 34 .............................. <addObjects[n]>
+  [ 29] setlocal 8 .............................. tmpObj = addObjects[n]
+  [ 31] getprop 786 ............................. <objects>
+  [ 34] getlocal 8 .............................. <tmpObj>
+  [ 36] pusharglist 2 ........................... <objects, tmpObj>
+  [ 38] objcall 92 .............................. <objects.getPos(tmpObj)>
+  [ 41] pushzero ................................ <0>
+  [ 42] eq ...................................... <objects.getPos(tmpObj) = 0>
+  [ 43] jmpifz [ 66] ............................ if objects.getPos(tmpObj) = 0 then
+  [ 46] getprop 786 ............................. <objects>
+  [ 49] getprop 784 ............................. <addObjects>
+  [ 52] getlocal 0 .............................. <n>
+  [ 54] pusharglist 2 ........................... <addObjects, n>
+  [ 56] objcall 33 .............................. <addObjects.getPropAt(n)>
+  [ 59] getlocal 8 .............................. <tmpObj>
+  [ 61] pusharglistnoret 3 ...................... <objects, addObjects.getPropAt(n), tmpObj>
+  [ 63] objcall 307 ............................. objects.addProp(addObjects.getPropAt(n), tmpObj)
+  [ 66] pushint8 1
+  [ 69] getlocal 0
+  [ 71] add
+  [ 72] setlocal 0
+  [ 74] endrepeat [  5]
+  [ 77] pusharglist 0 ........................... <[:]>
+  [ 79] pushproplist ............................ <[:]>
+  [ 80] setprop 784 ............................. addObjects = [:]
+  [ 83] getprop 785 ............................. <deleteObjects>
+  [ 86] peek 0
+  [ 88] pusharglist 1
+  [ 90] extcall 32
+  [ 93] pushint8 1
+  [ 95] peek 0
+  [ 97] peek 2
+  [ 99] lteq
+  [100] jmpifz [130] ............................ repeat with tmpObj in deleteObjects
+  [103] peek 2
+  [105] peek 1
+  [107] pusharglist 2
+  [109] extcall 34
+  [112] setlocal 8
+  [114] getprop 786 ............................. <objects>
+  [117] getlocal 8 .............................. <tmpObj>
+  [119] pusharglistnoret 2 ...................... <objects, tmpObj>
+  [121] objcall 104 ............................. objects.deleteOne(tmpObj)
+  [124] pushint8 1
+  [126] add
+  [127] endrepeat [ 95]
+  [130] pop 3
+  [132] pusharglist 0 ........................... <[]>
+  [134] pushlist ................................ <[]>
+  [135] setprop 785 ............................. deleteObjects = []
+  [138] ret
+end

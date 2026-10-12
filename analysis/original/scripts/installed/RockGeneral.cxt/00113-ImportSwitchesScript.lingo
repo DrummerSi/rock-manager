@@ -1,0 +1,252 @@
+property m_infoColumns, m_data, m_switches, m_saveClasses
+
+on new me, argPath
+  m_dataPath = argPath
+  if voidp(m_dataPath) then
+    m_dataPath = "\\resurs\Monsterland\_Projects\Rockmanager\Data\"
+  end if
+  pott("Load ClassPropsSwitches")
+  argStr = readFile(m_dataPath & "ClassPropsSwitches.txt")
+  the itemDelimiter = numToChar(9)
+  columns = []
+  m_switches = [:]
+  m_infoColumns = [:]
+  m_infoColumns.sort()
+  firstLine = argStr.line[1]
+  firstItemNr = me.whichItemNrIsFirstWord(firstLine)
+  repeat with itemNr = firstItemNr to the number of items in firstLine
+    tmpItem = firstLine.item[itemNr]
+    tmpItem = removeExcelQuotes(tmpItem)
+    propName = symbol(tmpItem.word[1])
+    delete m_dataPath.word[1]
+    Info = value(tmpItem)
+    if not listp(Info) then
+      Info = [:]
+    end if
+    infoSwitch = Info.duplicate()
+    infoSwitch.setaProp(#column, itemNr)
+    m_switches.addProp(propName, infoSwitch)
+    tmp = [:]
+    tmp.addProp(propName, Info)
+    m_infoColumns.addProp(itemNr, tmp)
+  end repeat
+  if m_infoColumns.count = 0 then
+    m_infoColumns.addProp(20, [:])
+  end if
+  m_data = me.makeHierarchyDataFromString(argStr)
+  argStr = 0
+  pott("Done")
+  return me
+end
+
+on kill me
+  m_data = 0
+  m_switches = 0
+  m_saveClasses = 0
+  return 0
+end
+
+on makeHierarchyDataFromString me, argStr
+  lf = numToChar(10)
+  currPath = []
+  wholeList = [:]
+  sublist = [:]
+  currList = [:]
+  wholeList = [currList]
+  m_saveClasses = [:]
+  lastIndentation = 1
+  numLines = the number of lines in argStr
+  repeat with lineNr = 1 to numLines
+    tmpLine = argStr.line[lineNr]
+    if tmpLine.char[1] = lf then
+      delete currPath.char[1]
+    end if
+    currIndentation = me.whichItemNrIsFirstWord(tmpLine)
+    if currIndentation = 0 then
+      next repeat
+    end if
+    if currIndentation >= m_infoColumns.getPropAt(1) then
+      next repeat
+    end if
+    propStr = tmpLine.item[currIndentation]
+    prop = symbol(propStr)
+    if currIndentation > lastIndentation then
+      if currIndentation > (lastIndentation + 1) then
+      end if
+      currList = sublist
+    else
+      if currIndentation < lastIndentation then
+        repeat with n = currPath.count down to currIndentation
+          currPath.deleteAt(n)
+        end repeat
+        currList = descendIntoList(wholeList[1], currPath)
+      end if
+    end if
+    currPath[currIndentation] = prop
+    repeat with n = currPath.count down to currIndentation + 1
+      currPath.deleteAt(n)
+    end repeat
+    sublist = [:]
+    currList.addProp(prop, sublist)
+    Info = me.getInfoOnLine(tmpLine)
+    sublist.addProp(0, Info)
+    if Info.getaProp(#save) = 1 then
+      m_saveClasses.setaProp(currPath[1], 1)
+    end if
+    lastIndentation = currIndentation
+  end repeat
+  return wholeList[1]
+end
+
+on whichItemNrIsFirstWord me, argLine
+  if the number of words in argLine = 0 then
+    return 0
+  end if
+  wrd = argLine.word[1]
+  if wrd = " " then
+    return 0
+  end if
+  off = offset(wrd, argLine)
+  tmp = the number of items in argLine.char[1..off]
+  return tmp
+end
+
+on getInfoOnLine me, argLine
+  Info = [:]
+  numItems = the number of items in argLine
+  repeat with n = 1 to m_infoColumns.count
+    itemNr = m_infoColumns.getPropAt(n)
+    if itemNr > numItems then
+      exit repeat
+    end if
+    tmp = m_infoColumns[n]
+    if tmp.count = 0 then
+      next repeat
+    end if
+    prop = tmp.getPropAt(1)
+    propInfo = tmp[1]
+    val = convStrToType(argLine.item[itemNr], propInfo[#format], propInfo[#default])
+    Info.setaProp(prop, val)
+  end repeat
+  return Info
+end
+
+on getPropInfo me, argPropPath, argInfoProp
+  lst = descendIntoList(m_data, argPropPath)
+  if not listp(lst) then
+    return VOID
+  end if
+  return me.getPropInfoFromThisList(lst, argInfoProp)
+end
+
+on getPropInfoFromThisList me, argList, argInfoProp
+  lst = argList.getaProp(0)
+  if not listp(lst) then
+    lst = argList
+  end if
+  if voidp(argInfoProp) then
+    return lst
+  end if
+  return lst[argInfoProp]
+end
+
+on getPropsWithInfoCriteria me, argBasePropPath, argInfoCriteria
+  returnList = [:]
+  lst = descendIntoList(m_data, argBasePropPath)
+  if not listp(lst) then
+    return returnList
+  end if
+  if voidp(argInfoCriteria) then
+    argInfoCriteria = [:]
+  end if
+  me.recurseGetPropsWithInfoCriteria(lst, argInfoCriteria, returnList)
+  return returnList
+end
+
+on recurseGetPropsWithInfoCriteria me, argPropList, argInfoCriteria, argReturnList
+  repeat with n = 1 to argPropList.count()
+    prop = argPropList.getPropAt(n)
+    if symbolp(prop) then
+      tmp = argPropList[n]
+      if tmp.count > 1 then
+        subReturnList = [:]
+        subPropList = argPropList[n]
+        me.recurseGetPropsWithInfoCriteria(subPropList, argInfoCriteria, subReturnList)
+        if subReturnList.count then
+          argReturnList.addProp(prop, subReturnList)
+        end if
+        next repeat
+      end if
+      Info = me.getPropInfoFromThisList(argPropList[n])
+      tmpOK = 1
+      repeat with m = 1 to argInfoCriteria.count
+        if Info.getaProp(argInfoCriteria.getPropAt(m)) <> argInfoCriteria[m] then
+          tmpOK = 0
+          exit repeat
+        end if
+      end repeat
+      if tmpOK then
+        argReturnList.addProp(prop, 0)
+      end if
+    end if
+  end repeat
+end
+
+on getStandardSwitchVal me, argSwitch
+  tmp = m_switches.getaProp(argSwitch)
+  if not listp(tmp) then
+    return VOID
+  end if
+  return tmp.getaProp(#default)
+end
+
+on makeStringFromHierarchyData me, argData
+  multiDim = script("MultiDimArrayScript").new()
+  multiDim.setPos([1, 1])
+  repeat with n = 1 to m_switches.count
+    switch = m_switches.getPropAt(n)
+    Info = m_switches[n]
+    column = Info[#column]
+    multiDim.setPos([1, column])
+    multiDim.setAtCurrent(string(switch) & " " & string(Info))
+  end repeat
+  multiDim.setPos([2, 1])
+  repeat with classNr = 1 to argData.count
+    className = argData.getPropAt(classNr)
+    Info = argData[classNr]
+    multiDim.setAtCurrent(className)
+    multiDim.movePos([0, 1])
+    me.XXX(Info, multiDim)
+    multiDim.movePos([2, -1])
+  end repeat
+  str = multiDim.convToStr()
+  str = assertPCNewLine(str)
+  writeFile(the moviePath & "ClassPropsSwitches.txt", str)
+  pott("Done!")
+end
+
+on XXX me, argList, argMultiDim
+  Info = argList.getaProp(0)
+  if listp(Info) then
+    repeat with n = 1 to Info.count
+      prop = Info.getPropAt(n)
+      switchInfo = m_switches.getaProp(prop)
+      column = switchInfo.getaProp(#column)
+      val = Info[n]
+      tmpLoc = [argMultiDim.m_currentLoc[1], column]
+      argMultiDim[tmpLoc] = val
+    end repeat
+    start = 2
+  else
+    start = 1
+  end if
+  repeat with n = start to argList.count
+    argMultiDim.movePos([1, 0])
+    prop = argList.getPropAt(n)
+    argMultiDim.setAtCurrent(prop)
+    sublist = argList[n]
+    argMultiDim.movePos([0, 1])
+    me.XXX(sublist, argMultiDim)
+    argMultiDim.movePos([0, -1])
+  end repeat
+end

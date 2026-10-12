@@ -1,0 +1,46 @@
+property m_shortCutKeyObj, m_SP, m_objMouse, m_objMaster
+global gDir
+
+on new me, argObjMaster, argAllowUserInteraction
+  if argAllowUserInteraction <> 0 then
+    m_shortCutKeyObj = script("KeyObject").new(me, "Esc", [#CodeType: #user, #ID: #Shortcut, #prio: 1])
+  end if
+  m_SP = sprite(argObjMaster.m_spriteList[#MainMenuText])
+  m_SP.loc = point(400, 300)
+  tmpRect = rect(33, 20, 134, 114)
+  m_objMouse = script("MouseObject").new(me, tmpRect, [#layer: 10])
+  m_objMaster = argObjMaster
+  return me
+end
+
+on kill me
+  if objectp(m_objMouse) then
+    m_objMouse = m_objMouse.kill()
+  end if
+  if objectp(m_shortCutKeyObj) then
+    m_shortCutKeyObj = m_shortCutKeyObj.kill()
+  end if
+  m_objMaster = 0
+  return 0
+end
+
+on key me, argWhich, argWhat
+  if argWhat <> #down then
+    exit
+  end if
+  gDir.m_objDialogsMaster.openDialog(#MainMenu)
+end
+
+on mouse me, argObj, argWhat
+  if argWhat = #click then
+    gDir.m_objDialogsMaster.openDialog(#MainMenu)
+  else
+    if argWhat = #enter then
+      m_SP.member = member("interface main menu icon01")
+    else
+      if argWhat = #Leave then
+        m_SP.member = member("Dummy")
+      end if
+    end if
+  end if
+end

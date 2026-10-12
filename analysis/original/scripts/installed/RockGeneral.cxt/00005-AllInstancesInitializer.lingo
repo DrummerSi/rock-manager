@@ -1,0 +1,139 @@
+property m_objsByClass, m_classesVars, m_classMasterObj, m_firstDataItemNr, m_tuneTotalTimeScanning, m_tuneTotalTimeSettingProps
+
+on new me, argFilesToRead, argClassesVars, argClassMasterObj, argExceptionList
+  m_classMasterObj = argClassMasterObj
+  m_classesVars = argClassesVars
+  m_objsByClass = [:]
+  xProgress = script("FakeDlgProgressBarScript").new()
+  m_tuneTotalTimeScanning = 0
+  m_tuneTotalTimeSettingProps = 0
+  the itemDelimiter = numToChar(9)
+  repeat with n = 1 to argFilesToRead.count
+    fileName = argFilesToRead[n]
+    tmpObjs = me.initObjsFromFile(fileName, argExceptionList)
+    tmpPartRead = float(n) / argFilesToRead.count
+    xProgress.progressReport(tmpPartRead)
+  end repeat
+  pott("Scanning", m_tuneTotalTimeScanning, "Setting props", m_tuneTotalTimeSettingProps)
+  xProgress.kill()
+  return me
+end
+
+on kill me
+  return 0
+end
+
+on initObjsFromFile me, argFileName, argExceptionList
+  if voidp(argExceptionList) then
+    argExceptionList = [:]
+  end if
+  X = the milliSeconds
+  lst = readRockDataFile(argFileName)
+  m_tuneTotalTimeScanning = m_tuneTotalTimeScanning + the milliSeconds - X
+  X = the milliSeconds
+  tmpExceptClassList = argExceptionList[#class]
+  if voidp(tmpExceptClassList) then
+    tmpExceptClassList = []
+  end if
+  allClassesObjs = [:]
+  repeat with n = 1 to lst.count
+    className = symbol(lst.getPropAt(n))
+    if tmpExceptClassList.getPos(className) then
+      next repeat
+    end if
+    thisClassInstances = m_objsByClass.getaProp(className)
+    if voidp(thisClassInstances) then
+      thisClassInstances = []
+      m_objsByClass.setaProp(className, thisClassInstances)
+    end if
+    scriptName = "Class" & lst.getPropAt(n) & "Script"
+    if member(scriptName).number < 1 then
+      pott(scriptName & " was not found!", argFileName)
+    else
+      subLst = lst[n]
+      tmp = subLst[1]
+      tmpNumInstances = tmp.count()
+      objs = []
+      repeat with tmpInstanceNr = 1 to tmpNumInstances
+        obj = script(scriptName).new()
+        objs.add(obj)
+        thisClassInstances.add(obj)
+      end repeat
+      me.recurseInit(objs, subLst, className, [])
+    end if
+    allClassesObjs.addProp(className, objs)
+  end repeat
+  m_tuneTotalTimeSettingProps = m_tuneTotalTimeSettingProps + the milliSeconds - X
+  return allClassesObjs
+end
+
+on recurseInit me, argObjs, argValList, argClassName, argOverClasses, argAdditionalBaseClasses, argBelongsToClass
+  repeat with n = 1 to argValList.count()
+    propName = symbol(argValList.getPropAt(n))
+    if voidp(propName) then
+      pott("er. Not good", argValList.getPropAt(n), argValList, n)
+      next repeat
+    end if
+    valList = argValList[n]
+    if valList.count = 0 then
+      next repeat
+    end if
+    varInfo = m_classMasterObj.getVarInfo(argClassName, propName)
+    if voidp(varInfo) then
+      pott(propName, "does not exist in", argClassName)
+      if argObjs.count then
+        pott(argObjs[1])
+      end if
+      next repeat
+    end if
+    varType = varInfo[1]
+    if m_classMasterObj.isStdType(varType) then
+      tmpBaseClasses = varInfo[3].duplicate()
+      if symbolp(argBelongsToClass) then
+        tmpWhichBaseClass = argBelongsToClass
+      else
+        tmpWhichBaseClass = varInfo[2]
+      end if
+      if listp(argAdditionalBaseClasses) then
+        if voidp(argBelongsToClass) then
+          if argAdditionalBaseClasses.count then
+            tmpWhichBaseClass = argAdditionalBaseClasses[argAdditionalBaseClasses.count()]
+          end if
+        end if
+        mergeLists(tmpBaseClasses, argAdditionalBaseClasses)
+      end if
+      tmpWhichNum = tmpBaseClasses.getPos(tmpWhichBaseClass)
+      if tmpWhichNum < 1 then
+        tmpWhichNum = 1
+      end if
+      repeat with m = 1 to argObjs.count
+        if m > valList.count then
+          exit repeat
+        else
+          val = valList[m]
+        end if
+        if val = EMPTY then
+          next repeat
+        end if
+        tmpObj = argObjs[m]
+        repeat with i = tmpBaseClasses.count() down to tmpWhichNum
+          tmpObj = tmpObj.ancestor
+        end repeat
+        repeat with i = 1 to argOverClasses.count()
+          tmpObj = tmpObj.getaProp(argOverClasses[i])
+        end repeat
+        val = convStrToType(val, varType)
+        if not voidp(val) then
+          tmpObj.setaProp(propName, val)
+        end if
+      end repeat
+      next repeat
+    end if
+    if ilk(valList) = #propList then
+      tmp = argOverClasses.duplicate()
+      tmp.add(propName)
+      me.recurseInit(argObjs, valList, varType, tmp, varInfo[3], varInfo[2])
+      next repeat
+    end if
+  end repeat
+end

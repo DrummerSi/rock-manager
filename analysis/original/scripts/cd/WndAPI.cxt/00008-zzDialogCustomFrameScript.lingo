@@ -1,0 +1,221 @@
+property ancestor, child, type, windowStyleMemberName, myImage, winSettings, imageMember, renderMemberName, storeMyOwnImage
+
+on new me, argMasterObj, argChild, argList
+  type = #CustomFrame
+  if not objectp(argChild) then
+    argChild = me
+  end if
+  child = argChild
+  storeMyOwnImage = 0
+  ancestor = new(script("DialogAncestorScript"), argMasterObj, child, argList)
+  windowStyleMemberName = "DefaultWindowStyle"
+  winSettings = member(windowStyleMemberName).text.value
+  return me
+end
+
+on init me
+  ancestor.init()
+  tmp = me.getMyProps()
+  repeat with n = 1 to tmp.count()
+    tmpProp = tmp.getPropAt(n)
+    tmpVal = ancestor.temporaryArgs.getaProp(tmpProp)
+    if not voidp(tmpVal) then
+      me.setaProp(tmpProp, ancestor.temporaryArgs.getaProp(tmpProp))
+    end if
+  end repeat
+  if storeMyOwnImage then
+    if ancestor.removeAlpha = 1 then
+      myImage = image(1, 1, 24)
+    else
+      myImage = image(1, 1, 24, 8)
+    end if
+  end if
+  ancestor.zoomFacts = [1, 1]
+end
+
+on finalInitsBeforeCalc me
+  ancestor.finalInitsBeforeCalc()
+  if ancestor.masterObj.editing then
+    tmp = getRectSize(ancestor.inOffsetRect)
+    if (tmp[1] = 0) and (tmp[2] = 0) then
+      if (ancestor.rel[3] = #Auto) and (ancestor.rel[4] = #Auto) then
+        ancestor.inOffsetRect = [0, 0, 100, 100]
+      end if
+    end if
+  end if
+  me.setOneProp(#inOffsetRect, ancestor.inOffsetRect)
+  me.setOneProp(#rel, ancestor.rel)
+  if not voidp(renderMemberName) then
+    me.setOneProp(#renderMemberName, renderMemberName)
+  end if
+  if not voidp(windowStyleMemberName) then
+    winSettings = member(windowStyleMemberName).text.value
+  end if
+end
+
+on kill me
+  ancestor = ancestor.kill()
+  return 0
+end
+
+on getMyProps me
+  return [#windowStyleMemberName: [#comment: "Window style memberName", #format: #string, #default: windowStyleMemberName], #renderMemberName: [#comment: "Render to member (name)", #format: #string, #default: renderMemberName]]
+end
+
+on getProps me
+  tmpList = me.getMyProps()
+  tmpList2 = ancestor.getProps()
+  repeat with n = 1 to tmpList.count()
+    tmpList2.setaProp(tmpList.getPropAt(n), tmpList[n])
+  end repeat
+  return tmpList2
+end
+
+on getEditProps me
+  tmp = [:]
+  tmp.addProp(me.type, me.getMyProps())
+  mergeLists(tmp, ancestor.getEditProps())
+  return tmp
+end
+
+on getOneProp me, argProp
+  tmpList = me.getMyProps()
+  if voidp(tmpList.getaProp(argProp)) then
+    return ancestor.getOneProp(argProp)
+  end if
+  return me.getaProp(argProp)
+end
+
+on setOneProp me, argProp, argVal
+  if argProp = #rel then
+    if voidp(argVal) then
+      argVal = [0, 0, 0, 0]
+    end if
+    repeat with n = 1 to argVal.count()
+      if argVal[n] = #Auto then
+        argVal[n] = 0
+      end if
+    end repeat
+  else
+    if argProp = #inOffsetRect then
+      if voidp(argVal) then
+        argVal = [0, 0, 100, 100]
+      end if
+    end if
+  end if
+  tmpList = me.getMyProps()
+  if voidp(tmpList.getaProp(argProp)) then
+    ancestor.setOneProp(argProp, argVal)
+  else
+    if ancestor.ImUpAndRunningAlready = 0 then
+      me.setaProp(argProp, argVal)
+      exit
+    end if
+    if argProp = #renderMemberName then
+      if voidp(argVal) or (argVal = EMPTY) then
+        imageMember = 0
+        exit
+      end if
+      imageMember = member(argVal)
+      if imageMember.number < 1 then
+        if ancestor.blit = 1 then
+          imageMember = 0
+        else
+          put "Memb no exist", argVal
+          ancestor.blit = 1
+          imageMember = 0
+        end if
+      end if
+    else
+      if argProp = #windowStyleMemberName then
+        if voidp(argVal) then
+          argVal = "DefaultWindowStyle"
+        end if
+        winSettings = member(argVal).text.value
+        ancestor.masterObj.invalidateRect(ancestor.calcRect)
+        if storeMyOwnImage then
+          __debug(#WndOpt, "Image already?")
+          tmpDstRect = ancestor.calcRect
+          tmpSize = getRectSize(tmpDstRect)
+          myImage = me.myOwnCreateWnd([#image: #create, #StyleList: winSettings, #size: tmpSize, #depth: 24, #alpha: winSettings[#alpha]])
+          if objectp(imageMember) then
+            imageMember.image = myImage
+          end if
+        end if
+      end if
+    end if
+  end if
+  me.setaProp(argProp, argVal)
+end
+
+on calcRectDone me
+  ancestor.calcRectDone()
+  if ancestor.lastCalcRect <> ancestor.calcRect then
+    ancestor.masterObj.invalidateRect(ancestor.lastCalcRect)
+    ancestor.masterObj.invalidateRect(ancestor.calcRect)
+    if storeMyOwnImage then
+      tmpDstRect = ancestor.calcRect
+      tmpSize = getRectSize(tmpDstRect)
+      if (tmpSize[1] < 1) or (tmpSize[2] < 1) then
+      else
+        if storeMyOwnImage then
+          myImage = me.myOwnCreateWnd([#image: #create, #StyleList: winSettings, #size: tmpSize, #depth: 24, #alpha: winSettings[#alpha]])
+        end if
+      end if
+    end if
+  end if
+end
+
+on paint me, argDstRect
+  if not storeMyOwnImage then
+    if 1 then
+      me.myOwnCreateWnd([#image: #create, #StyleList: winSettings, #size: getRectSize(ancestor.calcRect), #depth: winSettings[#depth], #alpha: winSettings[#alpha]], #PaintDirectly, argDstRect)
+    else
+      myImage = me.myOwnCreateWnd([#image: #create, #StyleList: winSettings, #size: getRectSize(ancestor.calcRect), #depth: winSettings[#depth], #alpha: winSettings[#alpha]])
+      ancestor.paintThis(argDstRect, myImage)
+      myImage = 0
+    end if
+  else
+    ancestor.paintThis(argDstRect, myImage)
+  end if
+end
+
+on setLayer me, argLayerNum, argLayerPtr
+  ancestor.setLayer(argLayerNum, argLayerPtr)
+  if ancestor.blit = 1 then
+    exit
+  end if
+  ancestor.reserveSprite()
+end
+
+on render me, argOffsetRect
+  ancestor.render(argOffsetRect)
+  if ancestor.blit = 1 then
+    exit
+  end if
+  tmpSPNum = ancestor.getSprite()
+  if tmpSPNum then
+    imageMember.image = myImage
+    sprite(tmpSPNum).member = imageMember
+    sprite(tmpSPNum).rect = ancestor.onStageRect
+  end if
+end
+
+on getNumSprites me
+  if ancestor.blit then
+    return 0
+  end if
+  return 1
+end
+
+on myOwnCreateWnd me, argSettings, argMode, argDstRect
+  if argMode = #PaintDirectly then
+    tmpOffRect = rect(ancestor.masterObj.blitLocOffset, ancestor.masterObj.blitLocOffset)
+    argSettings[#image] = ancestor.masterObj.myImagePtr[1]
+    argSettings[#wndRect] = ancestor.calcRect + tmpOffRect
+    argSettings[#rect] = argDstRect + tmpOffRect
+    argSettings.deleteProp(#size)
+  end if
+  __debug(#WndOpt, "Here we go with frame!")
+  return createWnd(argSettings)
+end

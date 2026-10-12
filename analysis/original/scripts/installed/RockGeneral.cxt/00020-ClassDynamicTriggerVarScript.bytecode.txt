@@ -1,0 +1,662 @@
+property ancestor, child, className, belongsTo, _killed, normal, Current, min, max, GainFact, LoseFact, ValTriggers, mode, DefaultNotify, LastTriggerListPos, SuspendedVal, IsSuspended, nearestTriggers, onlyReportMostExtremeTrigger, isSorted
+global gRock
+
+on new me, argChild, argBelongsTo
+  [  0] getparam 8 .............................. <argChild>
+  [  2] pusharglist 1 ........................... <argChild>
+  [  4] extcall 8 ............................... <objectp(argChild)>
+  [  6] jmpifz [ 17] ............................ if objectp(argChild) then / else
+  [  9] getparam 8 .............................. <argChild>
+  [ 11] setprop 496 ............................. child = argChild
+  [ 14] jmp [ 22]
+  [ 17] getparam 0 .............................. <me>
+  [ 19] setprop 496 ............................. child = me
+  [ 22] getparam 16 ............................. <argBelongsTo>
+  [ 24] setprop 208 ............................. belongsTo = argBelongsTo
+  [ 27] pushsymb 742 ............................ <#DynamicTriggerVar>
+  [ 30] setprop 224 ............................. className = #DynamicTriggerVar
+  [ 33] pushzero ................................ <0>
+  [ 34] setprop 498 ............................. normal = 0
+  [ 37] pushzero ................................ <0>
+  [ 38] setprop 499 ............................. Current = 0
+  [ 41] pushzero ................................ <0>
+  [ 42] setprop 500 ............................. min = 0
+  [ 45] pushint8 1 .............................. <1>
+  [ 48] setprop 501 ............................. max = 1
+  [ 51] pushzero ................................ <0>
+  [ 52] setprop 502 ............................. GainFact = 0
+  [ 55] pushzero ................................ <0>
+  [ 56] setprop 503 ............................. LoseFact = 0
+  [ 59] pusharglist 0 ........................... <[:]>
+  [ 61] pushproplist ............................ <[:]>
+  [ 62] setprop 743 ............................. ValTriggers = [:]
+  [ 65] pushsymb 268 ............................ <#none>
+  [ 68] setprop 744 ............................. mode = #none
+  [ 71] pushsymb 268 ............................ <#none>
+  [ 74] setprop 745 ............................. DefaultNotify = #none
+  [ 77] pushzero ................................ <0>
+  [ 78] setprop 746 ............................. LastTriggerListPos = 0
+  [ 81] pushzero ................................ <0>
+  [ 82] setprop 747 ............................. SuspendedVal = 0
+  [ 85] pushzero ................................ <0>
+  [ 86] setprop 748 ............................. IsSuspended = 0
+  [ 89] pushint8 1 .............................. <1>
+  [ 92] inv ..................................... <-1>
+  [ 93] setprop 746 ............................. LastTriggerListPos = -1
+  [ 96] pusharglist 0 ........................... <[]>
+  [ 98] pushlist ................................ <[]>
+  [ 99] setprop 749 ............................. nearestTriggers = []
+  [102] pushint8 1 .............................. <1>
+  [105] setprop 750 ............................. onlyReportMostExtremeTrigger = 1
+  [108] pushzero ................................ <0>
+  [109] setprop 751 ............................. isSorted = 0
+  [112] getparam 0 .............................. <me>
+  [114] pusharglistnoret 1 ...................... <me>
+  [116] extcall 69 .............................. return me
+  [119] ret
+end
+
+on kill me
+  [  0] pushint8 1 .............................. <1>
+  [  3] setprop 506 ............................. _killed = 1
+  [  6] getglobal 23 ............................ <gRock>
+  [  8] getobjprop 64 ........................... <gRock.m_gameTimer>
+  [ 11] getparam 0 .............................. <me>
+  [ 13] pusharglistnoret 2 ...................... <gRock.m_gameTimer, me>
+  [ 15] objcall 280 ............................. gRock.m_gameTimer.deleteObject(me)
+  [ 18] getprop 347 ............................. <ancestor>
+  [ 21] pusharglist 1 ........................... <ancestor>
+  [ 23] extcall 8 ............................... <objectp(ancestor)>
+  [ 25] jmpifz [ 38] ............................ if objectp(ancestor) then
+  [ 28] getprop 347 ............................. <ancestor>
+  [ 31] pusharglist 1 ........................... <ancestor>
+  [ 33] objcall 31 .............................. <ancestor.kill()>
+  [ 35] setprop 347 ............................. ancestor = ancestor.kill()
+  [ 38] pushzero ................................ <0>
+  [ 39] setprop 496 ............................. child = 0
+  [ 42] pushzero ................................ <0>
+  [ 43] setprop 208 ............................. belongsTo = 0
+  [ 46] pushzero ................................ <0>
+  [ 47] pusharglistnoret 1 ...................... <0>
+  [ 49] extcall 69 .............................. return 0
+  [ 52] ret
+end
+
+on init me
+  [  0] getprop 743 ............................. <ValTriggers>
+  [  3] pusharglistnoret 1 ...................... <ValTriggers>
+  [  5] objcall 609 ............................. ValTriggers.sort()
+  [  8] pushint8 1 .............................. <1>
+  [ 11] setprop 751 ............................. isSorted = 1
+  [ 14] ret
+end
+
+on setActiveState me, argState
+  [  0] getparam 0 .............................. <me>
+  [  2] getparam 8 .............................. <argState>
+  [  4] pusharglistnoret 2 ...................... <me, argState>
+  [  6] objcall 169 ............................. me.activate(argState)
+  [  9] ret
+end
+
+on activate me, argIsTRUE
+  [  0] getparam 8 .............................. <argIsTRUE>
+  [  2] jmpifz [ 54] ............................ if argIsTRUE then / else
+  [  5] getprop 744 ............................. <mode>
+  [  8] pushsymb 753 ............................ <#AutoNormalize>
+  [ 11] eq ...................................... <mode = #AutoNormalize>
+  [ 12] getprop 744 ............................. <mode>
+  [ 15] pushsymb 754 ............................ <#AutoGain>
+  [ 18] eq ...................................... <mode = #AutoGain>
+  [ 19] or ...................................... <(mode = #AutoNormalize) or (mode = #AutoGain)>
+  [ 20] getprop 744 ............................. <mode>
+  [ 23] pushsymb 755 ............................ <#AutoLose>
+  [ 26] eq ...................................... <mode = #AutoLose>
+  [ 27] or ...................................... <(mode = #AutoNormalize) or (mode = #AutoGain) or (mode = #AutoLose)>
+  [ 28] getprop 744 ............................. <mode>
+  [ 31] pushsymb 756 ............................ <#AutoXGain>
+  [ 34] eq ...................................... <mode = #AutoXGain>
+  [ 35] or ...................................... <(mode = #AutoNormalize) or (mode = #AutoGain) or (mode = #AutoLose) or (mode = #AutoXGain)>
+  [ 36] jmpifz [ 51] ............................ if (mode = #AutoNormalize) or (mode = #AutoGain) or (mode = #AutoLose) or (mode = #AutoXGain) then
+  [ 39] getglobal 23 ............................ <gRock>
+  [ 41] getobjprop 64 ........................... <gRock.m_gameTimer>
+  [ 44] getparam 0 .............................. <me>
+  [ 46] pusharglistnoret 2 ...................... <gRock.m_gameTimer, me>
+  [ 48] objcall 282 ............................. gRock.m_gameTimer.addObject(me)
+  [ 51] jmp [ 66]
+  [ 54] getglobal 23 ............................ <gRock>
+  [ 56] getobjprop 64 ........................... <gRock.m_gameTimer>
+  [ 59] getparam 0 .............................. <me>
+  [ 61] pusharglistnoret 2 ...................... <gRock.m_gameTimer, me>
+  [ 63] objcall 280 ............................. gRock.m_gameTimer.deleteObject(me)
+  [ 66] ret
+end
+
+on timeTick me
+  [  0] getprop 751 ............................. <isSorted>
+  [  3] pushzero ................................ <0>
+  [  4] eq ...................................... <isSorted = 0>
+  [  5] jmpifz [ 22] ............................ if isSorted = 0 then
+  [  8] getprop 743 ............................. <ValTriggers>
+  [ 11] pusharglistnoret 1 ...................... <ValTriggers>
+  [ 13] objcall 609 ............................. ValTriggers.sort()
+  [ 16] pushint8 1 .............................. <1>
+  [ 19] setprop 751 ............................. isSorted = 1
+  [ 22] getprop 499 ............................. <Current>
+  [ 25] setlocal 0 .............................. tmpOldCurrent = Current
+  [ 27] getprop 744 ............................. <mode>
+  [ 30] pushsymb 754 ............................ <#AutoGain>
+  [ 33] eq ...................................... <mode = #AutoGain>
+  [ 34] jmpifz [ 50] ............................ if mode = #AutoGain then / else
+  [ 37] getprop 499 ............................. <Current>
+  [ 40] getprop 502 ............................. <GainFact>
+  [ 43] add ..................................... <Current + GainFact>
+  [ 44] setprop 499 ............................. Current = Current + GainFact
+  [ 47] jmp [192]
+  [ 50] getprop 744 ............................. <mode>
+  [ 53] pushsymb 756 ............................ <#AutoXGain>
+  [ 56] eq ...................................... <mode = #AutoXGain>
+  [ 57] jmpifz [ 84] ............................ if mode = #AutoXGain then / else
+  [ 60] getprop 499 ............................. <Current>
+  [ 63] getprop 502 ............................. <GainFact>
+  [ 66] pushcons 0 .............................. <1.0>
+  [ 68] getprop 499 ............................. <Current>
+  [ 71] getprop 501 ............................. <max>
+  [ 74] div ..................................... <Current / max>
+  [ 75] sub ..................................... <1.0 - (Current / max)>
+  [ 76] mul ..................................... <GainFact * (1.0 - (Current / max))>
+  [ 77] add ..................................... <Current + (GainFact * (1.0 - (Current / max)))>
+  [ 78] setprop 499 ............................. Current = Current + (GainFact * (1.0 - (Current / max)))
+  [ 81] jmp [192]
+  [ 84] getprop 744 ............................. <mode>
+  [ 87] pushsymb 755 ............................ <#AutoLose>
+  [ 90] eq ...................................... <mode = #AutoLose>
+  [ 91] jmpifz [107] ............................ if mode = #AutoLose then / else
+  [ 94] getprop 499 ............................. <Current>
+  [ 97] getprop 503 ............................. <LoseFact>
+  [100] sub ..................................... <Current - LoseFact>
+  [101] setprop 499 ............................. Current = Current - LoseFact
+  [104] jmp [192]
+  [107] getprop 744 ............................. <mode>
+  [110] pushsymb 753 ............................ <#AutoNormalize>
+  [113] eq ...................................... <mode = #AutoNormalize>
+  [114] jmpifz [192] ............................ if mode = #AutoNormalize then
+  [117] getprop 499 ............................. <Current>
+  [120] getprop 498 ............................. <normal>
+  [123] lt ...................................... <Current < normal>
+  [124] jmpifz [156] ............................ if Current < normal then / else
+  [127] getprop 499 ............................. <Current>
+  [130] getprop 502 ............................. <GainFact>
+  [133] add ..................................... <Current + GainFact>
+  [134] setprop 499 ............................. Current = Current + GainFact
+  [137] getprop 499 ............................. <Current>
+  [140] getprop 498 ............................. <normal>
+  [143] gt ...................................... <Current > normal>
+  [144] jmpifz [153] ............................ if Current > normal then
+  [147] getprop 498 ............................. <normal>
+  [150] setprop 499 ............................. Current = normal
+  [153] jmp [192]
+  [156] getprop 499 ............................. <Current>
+  [159] getprop 498 ............................. <normal>
+  [162] gt ...................................... <Current > normal>
+  [163] jmpifz [192] ............................ if Current > normal then
+  [166] getprop 499 ............................. <Current>
+  [169] getprop 503 ............................. <LoseFact>
+  [172] sub ..................................... <Current - LoseFact>
+  [173] setprop 499 ............................. Current = Current - LoseFact
+  [176] getprop 499 ............................. <Current>
+  [179] getprop 498 ............................. <normal>
+  [182] lt ...................................... <Current < normal>
+  [183] jmpifz [192] ............................ if Current < normal then
+  [186] getprop 498 ............................. <normal>
+  [189] setprop 499 ............................. Current = normal
+  [192] getprop 499 ............................. <Current>
+  [195] getlocal 0 .............................. <tmpOldCurrent>
+  [197] nteq .................................... <Current <> tmpOldCurrent>
+  [198] jmpifz [213] ............................ if Current <> tmpOldCurrent then
+  [201] getparam 0 .............................. <me>
+  [203] getlocal 0 .............................. <tmpOldCurrent>
+  [205] getprop 499 ............................. <Current>
+  [208] pusharglistnoret 3 ...................... <me, tmpOldCurrent, Current>
+  [210] objcall 734 ............................. me.checkAndTrig(tmpOldCurrent, Current)
+  [213] ret
+end
+
+on addTriggerVal me
+  [  0] ret
+end
+
+on checkAndTrig me, argFromVal, argToVal
+  [  0] getprop 748 ............................. <IsSuspended>
+  [  3] jmpifz [  7] ............................ if IsSuspended then
+  [  6] ret ..................................... exit
+  [  7] getparam 0 .............................. <me>
+  [  9] getparam 8 .............................. <argFromVal>
+  [ 11] getparam 16 ............................. <argToVal>
+  [ 13] getprop 743 ............................. <ValTriggers>
+  [ 16] pusharglist 4 ........................... <me, argFromVal, argToVal, ValTriggers>
+  [ 18] objcall 735 ............................. <me.checkTriggerVals(argFromVal, argToVal, ValTriggers)>
+  [ 21] setlocal 0 .............................. tmpPassedTriggers = me.checkTriggerVals(argFromVal, argToVal, ValTriggers)
+  [ 23] getlocal 0 .............................. <tmpPassedTriggers>
+  [ 25] getobjprop 156 .......................... <tmpPassedTriggers.count>
+  [ 28] setlocal 8 .............................. cnt = tmpPassedTriggers.count
+  [ 30] getlocal 8 .............................. <cnt>
+  [ 32] pushint8 1 .............................. <1>
+  [ 35] gt ...................................... <cnt > 1>
+  [ 36] jmpifz [ 76] ............................ if cnt > 1 then
+  [ 39] getprop 750 ............................. <onlyReportMostExtremeTrigger>
+  [ 42] jmpifz [ 76] ............................ if onlyReportMostExtremeTrigger then
+  [ 45] getparam 0 .............................. <me>
+  [ 47] getlocal 0 .............................. <tmpPassedTriggers>
+  [ 49] getlocal 8 .............................. <cnt>
+  [ 51] pusharglist 2 ........................... <tmpPassedTriggers, cnt>
+  [ 53] objcall 295 ............................. <tmpPassedTriggers.getPropAt(cnt)>
+  [ 56] getlocal 0 .............................. <tmpPassedTriggers>
+  [ 58] getlocal 8 .............................. <cnt>
+  [ 60] pusharglist 2 ........................... <tmpPassedTriggers, cnt>
+  [ 62] objcall 119 ............................. <tmpPassedTriggers[cnt]>
+  [ 65] getparam 16 ............................. <argToVal>
+  [ 67] getparam 8 .............................. <argFromVal>
+  [ 69] sub ..................................... <argToVal - argFromVal>
+  [ 70] pusharglistnoret 4 ...................... <me, tmpPassedTriggers.getPropAt(cnt), tmpPassedTriggers[cnt], argToVal - argFromVal>
+  [ 72] objcall 736 ............................. me.passedTriggerVal(tmpPassedTriggers.getPropAt(cnt), tmpPassedTriggers[cnt], argToVal - argFromVal)
+  [ 75] ret ..................................... exit
+  [ 76] pushint8 1 .............................. <1>
+  [ 79] setlocal 16
+  [ 81] getlocal 16
+  [ 83] getlocal 8 .............................. <cnt>
+  [ 85] lteq
+  [ 86] jmpifz [130] ............................ repeat with n = 1 to cnt
+  [ 89] getparam 0 .............................. <me>
+  [ 91] getlocal 0 .............................. <tmpPassedTriggers>
+  [ 93] getlocal 16 ............................. <n>
+  [ 95] pusharglist 2 ........................... <tmpPassedTriggers, n>
+  [ 97] objcall 295 ............................. <tmpPassedTriggers.getPropAt(n)>
+  [100] getlocal 0 .............................. <tmpPassedTriggers>
+  [102] getlocal 16 ............................. <n>
+  [104] pusharglist 2 ........................... <tmpPassedTriggers, n>
+  [106] objcall 119 ............................. <tmpPassedTriggers[n]>
+  [109] getparam 16 ............................. <argToVal>
+  [111] getparam 8 .............................. <argFromVal>
+  [113] sub ..................................... <argToVal - argFromVal>
+  [114] pusharglistnoret 4 ...................... <me, tmpPassedTriggers.getPropAt(n), tmpPassedTriggers[n], argToVal - argFromVal>
+  [116] objcall 736 ............................. me.passedTriggerVal(tmpPassedTriggers.getPropAt(n), tmpPassedTriggers[n], argToVal - argFromVal)
+  [119] pushint8 1
+  [122] getlocal 16
+  [124] add
+  [125] setlocal 16
+  [127] endrepeat [ 81]
+  [130] ret
+end
+
+on checkTriggerVals me, argFromVal, argToVal, argTriggerValSortedList
+  [  0] getparam 24 ............................. <argTriggerValSortedList>
+  [  2] pusharglist 1 ........................... <argTriggerValSortedList>
+  [  4] extcall 61 .............................. <voidp(argTriggerValSortedList)>
+  [  7] jmpifz [ 15] ............................ if voidp(argTriggerValSortedList) then
+  [ 10] getprop 743 ............................. <ValTriggers>
+  [ 13] setparam 24 ............................. argTriggerValSortedList = ValTriggers
+  [ 15] getparam 8 .............................. <argFromVal>
+  [ 17] getparam 24 ............................. <argTriggerValSortedList>
+  [ 19] pusharglist 2 ........................... <argFromVal, argTriggerValSortedList>
+  [ 21] extcall 762 ............................. <comesBeforePosInList(argFromVal, argTriggerValSortedList)>
+  [ 24] setlocal 0 .............................. tmpOldPos = comesBeforePosInList(argFromVal, argTriggerValSortedList)
+  [ 26] getparam 16 ............................. <argToVal>
+  [ 28] getparam 24 ............................. <argTriggerValSortedList>
+  [ 30] pusharglist 2 ........................... <argToVal, argTriggerValSortedList>
+  [ 32] extcall 762 ............................. <comesBeforePosInList(argToVal, argTriggerValSortedList)>
+  [ 35] setlocal 8 .............................. tmpNewPos = comesBeforePosInList(argToVal, argTriggerValSortedList)
+  [ 37] pusharglist 0 ........................... <[:]>
+  [ 39] pushproplist ............................ <[:]>
+  [ 40] setlocal 16 ............................. tmpPassedTriggers = [:]
+  [ 42] getlocal 0 .............................. <tmpOldPos>
+  [ 44] getlocal 8 .............................. <tmpNewPos>
+  [ 46] lt ...................................... <tmpOldPos < tmpNewPos>
+  [ 47] jmpifz [140] ............................ if tmpOldPos < tmpNewPos then / else
+  [ 50] getlocal 0 .............................. <tmpOldPos>
+  [ 52] setlocal 24
+  [ 54] getlocal 24
+  [ 56] getlocal 8 .............................. <tmpNewPos>
+  [ 58] pushint8 1 .............................. <1>
+  [ 61] sub ..................................... <tmpNewPos - 1>
+  [ 62] lteq
+  [ 63] jmpifz [137] ............................ repeat with n = tmpOldPos to tmpNewPos - 1
+  [ 66] getparam 24 ............................. <argTriggerValSortedList>
+  [ 68] getlocal 24 ............................. <n>
+  [ 70] pusharglist 2 ........................... <argTriggerValSortedList, n>
+  [ 72] objcall 119 ............................. <argTriggerValSortedList[n]>
+  [ 75] setlocal 32 ............................. tmpDoWhatList = argTriggerValSortedList[n]
+  [ 77] getlocal 32 ............................. <tmpDoWhatList>
+  [ 79] pusharglist 1 ........................... <tmpDoWhatList>
+  [ 81] extcall 115 ............................. <listp(tmpDoWhatList)>
+  [ 84] jmpifz [108] ............................ if listp(tmpDoWhatList) then
+  [ 87] getlocal 32 ............................. <tmpDoWhatList>
+  [ 89] pushsymb 763 ............................ <#direction>
+  [ 92] pusharglist 2 ........................... <tmpDoWhatList, #direction>
+  [ 94] objcall 119 ............................. <tmpDoWhatList[#direction]>
+  [ 97] pushint8 1 .............................. <1>
+  [100] inv ..................................... <-1>
+  [101] eq ...................................... <tmpDoWhatList[#direction] = -1>
+  [102] jmpifz [108] ............................ if tmpDoWhatList[#direction] = -1 then
+  [105] jmp [126] ............................... next repeat
+  [108] getlocal 16 ............................. <tmpPassedTriggers>
+  [110] getparam 24 ............................. <argTriggerValSortedList>
+  [112] getlocal 24 ............................. <n>
+  [114] pusharglist 2 ........................... <argTriggerValSortedList, n>
+  [116] objcall 295 ............................. <argTriggerValSortedList.getPropAt(n)>
+  [119] getlocal 32 ............................. <tmpDoWhatList>
+  [121] pusharglistnoret 3 ...................... <tmpPassedTriggers, argTriggerValSortedList.getPropAt(n), tmpDoWhatList>
+  [123] objcall 309 ............................. tmpPassedTriggers.addProp(argTriggerValSortedList.getPropAt(n), tmpDoWhatList)
+  [126] pushint8 1
+  [129] getlocal 24
+  [131] add
+  [132] setlocal 24
+  [134] endrepeat [ 54]
+  [137] jmp [234]
+  [140] getlocal 0 .............................. <tmpOldPos>
+  [142] getlocal 8 .............................. <tmpNewPos>
+  [144] gt ...................................... <tmpOldPos > tmpNewPos>
+  [145] jmpifz [234] ............................ if tmpOldPos > tmpNewPos then
+  [148] getlocal 0 .............................. <tmpOldPos>
+  [150] pushint8 1 .............................. <1>
+  [153] sub ..................................... <tmpOldPos - 1>
+  [154] setlocal 24
+  [156] getlocal 24
+  [158] getlocal 8 .............................. <tmpNewPos>
+  [160] gteq
+  [161] jmpifz [234] ............................ repeat with n = tmpOldPos - 1 down to tmpNewPos
+  [164] getparam 24 ............................. <argTriggerValSortedList>
+  [166] getlocal 24 ............................. <n>
+  [168] pusharglist 2 ........................... <argTriggerValSortedList, n>
+  [170] objcall 119 ............................. <argTriggerValSortedList[n]>
+  [173] setlocal 32 ............................. tmpDoWhatList = argTriggerValSortedList[n]
+  [175] getlocal 32 ............................. <tmpDoWhatList>
+  [177] pusharglist 1 ........................... <tmpDoWhatList>
+  [179] extcall 115 ............................. <listp(tmpDoWhatList)>
+  [182] jmpifz [205] ............................ if listp(tmpDoWhatList) then
+  [185] getlocal 32 ............................. <tmpDoWhatList>
+  [187] pushsymb 763 ............................ <#direction>
+  [190] pusharglist 2 ........................... <tmpDoWhatList, #direction>
+  [192] objcall 119 ............................. <tmpDoWhatList[#direction]>
+  [195] pushint8 1 .............................. <1>
+  [198] eq ...................................... <tmpDoWhatList[#direction] = 1>
+  [199] jmpifz [205] ............................ if tmpDoWhatList[#direction] = 1 then
+  [202] jmp [223] ............................... next repeat
+  [205] getlocal 16 ............................. <tmpPassedTriggers>
+  [207] getparam 24 ............................. <argTriggerValSortedList>
+  [209] getlocal 24 ............................. <n>
+  [211] pusharglist 2 ........................... <argTriggerValSortedList, n>
+  [213] objcall 295 ............................. <argTriggerValSortedList.getPropAt(n)>
+  [216] getlocal 32 ............................. <tmpDoWhatList>
+  [218] pusharglistnoret 3 ...................... <tmpPassedTriggers, argTriggerValSortedList.getPropAt(n), tmpDoWhatList>
+  [220] objcall 309 ............................. tmpPassedTriggers.addProp(argTriggerValSortedList.getPropAt(n), tmpDoWhatList)
+  [223] pushint8 -1
+  [226] getlocal 24
+  [228] add
+  [229] setlocal 24
+  [231] endrepeat [156]
+  [234] getlocal 8 .............................. <tmpNewPos>
+  [236] setprop 746 ............................. LastTriggerListPos = tmpNewPos
+  [239] getlocal 16 ............................. <tmpPassedTriggers>
+  [241] pusharglistnoret 1 ...................... <tmpPassedTriggers>
+  [243] extcall 69 .............................. return tmpPassedTriggers
+  [246] ret
+end
+
+on passedTriggerVal me, argVal, argDoWhatList, argChange
+  [  0] getparam 16 ............................. <argDoWhatList>
+  [  2] pusharglist 1 ........................... <argDoWhatList>
+  [  4] extcall 115 ............................. <listp(argDoWhatList)>
+  [  7] not ..................................... <not listp(argDoWhatList)>
+  [  8] jmpifz [ 27] ............................ if not listp(argDoWhatList) then
+  [ 11] pushsymb 768 ............................ <#notify>
+  [ 14] getprop 208 ............................. <belongsTo>
+  [ 17] pushsymb 621 ............................ <#msg>
+  [ 20] getparam 16 ............................. <argDoWhatList>
+  [ 22] pusharglist 4 ........................... <[#notify: belongsTo, #msg: argDoWhatList]>
+  [ 24] pushproplist ............................ <[#notify: belongsTo, #msg: argDoWhatList]>
+  [ 25] setparam 16 ............................. argDoWhatList = [#notify: belongsTo, #msg: argDoWhatList]
+  [ 27] getparam 16 ............................. <argDoWhatList>
+  [ 29] pushsymb 358 ............................ <#Info>
+  [ 32] pusharglist 2 ........................... <argDoWhatList, #Info>
+  [ 34] objcall 119 ............................. <argDoWhatList[#Info]>
+  [ 37] pusharglist 1 ........................... <argDoWhatList[#Info]>
+  [ 39] extcall 61 .............................. <voidp(argDoWhatList[#Info])>
+  [ 42] jmpifz [ 58] ............................ if voidp(argDoWhatList[#Info]) then
+  [ 45] getparam 16 ............................. <argDoWhatList>
+  [ 47] pushsymb 358 ............................ <#Info>
+  [ 50] pusharglist 0 ........................... <[:]>
+  [ 52] pushproplist ............................ <[:]>
+  [ 53] pusharglistnoret 3 ...................... <argDoWhatList, #Info, [:]>
+  [ 55] objcall 353 ............................. argDoWhatList[#Info] = [:]
+  [ 58] getparam 16 ............................. <argDoWhatList>
+  [ 60] pushsymb 358 ............................ <#Info>
+  [ 63] pusharglist 2 ........................... <argDoWhatList, #Info>
+  [ 65] objcall 119 ............................. <argDoWhatList[#Info]>
+  [ 68] pushsymb 769 ............................ <#Change>
+  [ 71] getparam 24 ............................. <argChange>
+  [ 73] pusharglistnoret 3 ...................... <argDoWhatList[#Info], #Change, argChange>
+  [ 75] objcall 353 ............................. argDoWhatList[#Info][#Change] = argChange
+  [ 78] getparam 16 ............................. <argDoWhatList>
+  [ 80] pushsymb 358 ............................ <#Info>
+  [ 83] pusharglist 2 ........................... <argDoWhatList, #Info>
+  [ 85] objcall 119 ............................. <argDoWhatList[#Info]>
+  [ 88] pushsymb 770 ............................ <#TriggerVal>
+  [ 91] getparam 8 .............................. <argVal>
+  [ 93] pusharglistnoret 3 ...................... <argDoWhatList[#Info], #TriggerVal, argVal>
+  [ 95] objcall 353 ............................. argDoWhatList[#Info][#TriggerVal] = argVal
+  [ 98] getparam 16 ............................. <argDoWhatList>
+  [100] pushsymb 768 ............................ <#notify>
+  [103] pusharglist 2 ........................... <argDoWhatList, #notify>
+  [105] objcall 119 ............................. <argDoWhatList[#notify]>
+  [108] setlocal 0 .............................. tmpNotify = argDoWhatList[#notify]
+  [110] getlocal 0 .............................. <tmpNotify>
+  [112] pusharglist 1 ........................... <tmpNotify>
+  [114] extcall 61 .............................. <voidp(tmpNotify)>
+  [117] jmpifz [143] ............................ if voidp(tmpNotify) then
+  [120] getprop 745 ............................. <DefaultNotify>
+  [123] pushsymb 268 ............................ <#none>
+  [126] eq ...................................... <DefaultNotify = #none>
+  [127] jmpifz [138] ............................ if DefaultNotify = #none then / else
+  [130] getprop 208 ............................. <belongsTo>
+  [133] setlocal 0 .............................. tmpNotify = belongsTo
+  [135] jmp [143]
+  [138] getprop 745 ............................. <DefaultNotify>
+  [141] setlocal 0 .............................. tmpNotify = DefaultNotify
+  [143] getlocal 0 .............................. <tmpNotify>
+  [145] pusharglist 1 ........................... <tmpNotify>
+  [147] extcall 96 .............................. <symbolp(tmpNotify)>
+  [150] jmpifz [202] ............................ if symbolp(tmpNotify) then
+  [153] getlocal 0 .............................. <tmpNotify>
+  [155] pushsymb 621 ............................ <#msg>
+  [158] eq ...................................... <tmpNotify = #msg>
+  [159] jmpifz [188] ............................ if tmpNotify = #msg then / else
+  [162] getglobal 23 ............................ <gRock>
+  [164] getobjprop 77 ........................... <gRock.m_msgManager>
+  [167] getparam 16 ............................. <argDoWhatList>
+  [169] pushsymb 621 ............................ <#msg>
+  [172] pusharglist 2 ........................... <argDoWhatList, #msg>
+  [174] objcall 119 ............................. <argDoWhatList[#msg]>
+  [177] getparam 0 .............................. <me>
+  [179] pusharglistnoret 3 ...................... <gRock.m_msgManager, argDoWhatList[#msg], me>
+  [181] objcall 621 ............................. gRock.m_msgManager.msg(argDoWhatList[#msg], me)
+  [184] ret ..................................... exit
+  [185] jmp [202]
+  [188] getglobal 23 ............................ <gRock>
+  [190] getobjprop 82 ........................... <gRock.m_classManager>
+  [193] getlocal 0 .............................. <tmpNotify>
+  [195] pusharglist 2 ........................... <gRock.m_classManager, tmpNotify>
+  [197] objcall 238 ............................. <gRock.m_classManager.getObjByID(tmpNotify)>
+  [200] setlocal 0 .............................. tmpNotify = gRock.m_classManager.getObjByID(tmpNotify)
+  [202] getlocal 0 .............................. <tmpNotify>
+  [204] pusharglist 1 ........................... <tmpNotify>
+  [206] extcall 8 ............................... <objectp(tmpNotify)>
+  [208] jmpifz [269] ............................ if objectp(tmpNotify) then
+  [211] getparam 16 ............................. <argDoWhatList>
+  [213] pushsymb 180 ............................ <#handler>
+  [216] pusharglist 2 ........................... <argDoWhatList, #handler>
+  [218] objcall 119 ............................. <argDoWhatList[#handler]>
+  [221] setlocal 8 .............................. tmpHandler = argDoWhatList[#handler]
+  [223] getlocal 8 .............................. <tmpHandler>
+  [225] pusharglist 1 ........................... <tmpHandler>
+  [227] extcall 61 .............................. <voidp(tmpHandler)>
+  [230] jmpifz [238] ............................ if voidp(tmpHandler) then
+  [233] pushsymb 771 ............................ <#Report>
+  [236] setlocal 8 .............................. tmpHandler = #Report
+  [238] getlocal 8 .............................. <tmpHandler>
+  [240] getlocal 0 .............................. <tmpNotify>
+  [242] getparam 0 .............................. <me>
+  [244] getparam 16 ............................. <argDoWhatList>
+  [246] pushsymb 621 ............................ <#msg>
+  [249] pusharglist 2 ........................... <argDoWhatList, #msg>
+  [251] objcall 119 ............................. <argDoWhatList[#msg]>
+  [254] getparam 16 ............................. <argDoWhatList>
+  [256] pushsymb 358 ............................ <#Info>
+  [259] pusharglist 2 ........................... <argDoWhatList, #Info>
+  [261] objcall 119 ............................. <argDoWhatList[#Info]>
+  [264] pusharglistnoret 5 ...................... <tmpHandler, tmpNotify, me, argDoWhatList[#msg], argDoWhatList[#Info]>
+  [266] extcall 305 ............................. call(tmpHandler, tmpNotify, me, argDoWhatList[#msg], argDoWhatList[#Info])
+  [269] ret
+end
+
+on setOneProp me, argProp, argVal
+  [  0] getparam 8 .............................. <argProp>
+  [  2] pusharglist 1 ........................... <argProp>
+  [  4] extcall 61 .............................. <voidp(argProp)>
+  [  7] jmpifz [ 15] ............................ if voidp(argProp) then
+  [ 10] pushsymb 499 ............................ <#Current>
+  [ 13] setparam 8 .............................. argProp = #Current
+  [ 15] getparam 0 .............................. <me>
+  [ 17] getparam 8 .............................. <argProp>
+  [ 19] getparam 16 ............................. <argVal>
+  [ 21] pusharglistnoret 3 ...................... <me, argProp, argVal>
+  [ 23] objcall 296 ............................. me.setaProp(argProp, argVal)
+  [ 26] ret
+end
+
+on getOneProp me, argProp
+  [  0] getparam 8 .............................. <argProp>
+  [  2] pusharglist 1 ........................... <argProp>
+  [  4] extcall 61 .............................. <voidp(argProp)>
+  [  7] jmpifz [ 15] ............................ if voidp(argProp) then
+  [ 10] pushsymb 499 ............................ <#Current>
+  [ 13] setparam 8 .............................. argProp = #Current
+  [ 15] getparam 0 .............................. <me>
+  [ 17] getparam 8 .............................. <argProp>
+  [ 19] pusharglist 2 ........................... <me, argProp>
+  [ 21] objcall 183 ............................. <me.getaProp(argProp)>
+  [ 24] pusharglistnoret 1 ...................... <me.getaProp(argProp)>
+  [ 26] extcall 69 .............................. return me.getaProp(argProp)
+  [ 29] ret
+end
+
+on changeVal me, argNewVal
+  [  0] getprop 499 ............................. <Current>
+  [  3] setlocal 0 .............................. tmpOld = Current
+  [  5] getparam 8 .............................. <argNewVal>
+  [  7] setprop 499 ............................. Current = argNewVal
+  [ 10] getparam 0 .............................. <me>
+  [ 12] getlocal 0 .............................. <tmpOld>
+  [ 14] getprop 499 ............................. <Current>
+  [ 17] pusharglistnoret 3 ...................... <me, tmpOld, Current>
+  [ 19] objcall 734 ............................. me.checkAndTrig(tmpOld, Current)
+  [ 22] ret
+end
+
+on getCurrentTriggerProp me
+  [  0] getprop 748 ............................. <IsSuspended>
+  [  3] jmpifz [ 22] ............................ if IsSuspended then
+  [  6] getprop 499 ............................. <Current>
+  [  9] getprop 743 ............................. <ValTriggers>
+  [ 12] pusharglist 2 ........................... <Current, ValTriggers>
+  [ 14] extcall 778 ............................. <comesBeforeValInList(Current, ValTriggers)>
+  [ 17] pusharglistnoret 1 ...................... <comesBeforeValInList(Current, ValTriggers)>
+  [ 19] extcall 69 .............................. return comesBeforeValInList(Current, ValTriggers)
+  [ 22] getprop 746 ............................. <LastTriggerListPos>
+  [ 25] pushint8 1 .............................. <1>
+  [ 28] lt ...................................... <LastTriggerListPos < 1>
+  [ 29] jmpifz [ 85] ............................ if LastTriggerListPos < 1 then
+  [ 32] getprop 751 ............................. <isSorted>
+  [ 35] pushzero ................................ <0>
+  [ 36] eq ...................................... <isSorted = 0>
+  [ 37] jmpifz [ 54] ............................ if isSorted = 0 then
+  [ 40] getprop 743 ............................. <ValTriggers>
+  [ 43] pusharglistnoret 1 ...................... <ValTriggers>
+  [ 45] objcall 609 ............................. ValTriggers.sort()
+  [ 48] pushint8 1 .............................. <1>
+  [ 51] setprop 751 ............................. isSorted = 1
+  [ 54] getprop 499 ............................. <Current>
+  [ 57] getprop 743 ............................. <ValTriggers>
+  [ 60] pusharglist 2 ........................... <Current, ValTriggers>
+  [ 62] extcall 762 ............................. <comesBeforePosInList(Current, ValTriggers)>
+  [ 65] setprop 746 ............................. LastTriggerListPos = comesBeforePosInList(Current, ValTriggers)
+  [ 68] getprop 746 ............................. <LastTriggerListPos>
+  [ 71] pushint8 8 .............................. <8>
+  [ 74] eq ...................................... <LastTriggerListPos = 8>
+  [ 75] jmpifz [ 85] ............................ if LastTriggerListPos = 8 then
+  [ 78] pushcons 8 .............................. <"sass">
+  [ 80] pusharglistnoret 1 ...................... <"sass">
+  [ 82] extcall 122 ............................. pott("sass")
+  [ 85] getprop 746 ............................. <LastTriggerListPos>
+  [ 88] pushzero ................................ <0>
+  [ 89] gt ...................................... <LastTriggerListPos > 0>
+  [ 90] getprop 746 ............................. <LastTriggerListPos>
+  [ 93] getprop 743 ............................. <ValTriggers>
+  [ 96] getobjprop 156 .......................... <ValTriggers.count>
+  [ 99] lteq .................................... <LastTriggerListPos <= ValTriggers.count>
+  [100] and ..................................... <(LastTriggerListPos > 0) and (LastTriggerListPos <= ValTriggers.count)>
+  [101] jmpifz [120] ............................ if (LastTriggerListPos > 0) and (LastTriggerListPos <= ValTriggers.count) then
+  [104] getprop 743 ............................. <ValTriggers>
+  [107] getprop 746 ............................. <LastTriggerListPos>
+  [110] pusharglist 2 ........................... <ValTriggers, LastTriggerListPos>
+  [112] objcall 119 ............................. <ValTriggers[LastTriggerListPos]>
+  [115] pusharglistnoret 1 ...................... <ValTriggers[LastTriggerListPos]>
+  [117] extcall 69 .............................. return ValTriggers[LastTriggerListPos]
+  [120] getprop 743 ............................. <ValTriggers>
+  [123] getobjprop 156 .......................... <ValTriggers.count>
+  [126] jmpifz [145] ............................ if ValTriggers.count then
+  [129] getprop 743 ............................. <ValTriggers>
+  [132] pushint8 1 .............................. <1>
+  [135] pusharglist 2 ........................... <ValTriggers, 1>
+  [137] objcall 119 ............................. <ValTriggers[1]>
+  [140] pusharglistnoret 1 ...................... <ValTriggers[1]>
+  [142] extcall 69 .............................. return ValTriggers[1]
+  [145] pusharglist 0 ........................... <>
+  [147] extcall 151 ............................. <VOID>
+  [150] pusharglistnoret 1 ...................... <VOID>
+  [152] extcall 69 .............................. return VOID
+  [155] ret
+end
+
+on getTriggerPropPos me, argTriggerProp
+  [  0] getprop 743 ............................. <ValTriggers>
+  [  3] getparam 8 .............................. <argTriggerProp>
+  [  5] pusharglist 2 ........................... <ValTriggers, argTriggerProp>
+  [  7] objcall 337 ............................. <ValTriggers.getPos(argTriggerProp)>
+  [ 10] pusharglistnoret 1 ...................... <ValTriggers.getPos(argTriggerProp)>
+  [ 12] extcall 69 .............................. return ValTriggers.getPos(argTriggerProp)
+  [ 15] ret
+end
+
+on suspend me, argIsTRUE
+  [  0] getparam 8 .............................. <argIsTRUE>
+  [  2] setprop 748 ............................. IsSuspended = argIsTRUE
+  [  5] getparam 8 .............................. <argIsTRUE>
+  [  7] jmpifz [ 19] ............................ if argIsTRUE then / else
+  [ 10] getprop 499 ............................. <Current>
+  [ 13] setprop 747 ............................. SuspendedVal = Current
+  [ 16] jmp [ 32]
+  [ 19] getparam 0 .............................. <me>
+  [ 21] getprop 747 ............................. <SuspendedVal>
+  [ 24] getprop 499 ............................. <Current>
+  [ 27] pusharglistnoret 3 ...................... <me, SuspendedVal, Current>
+  [ 29] objcall 734 ............................. me.checkAndTrig(SuspendedVal, Current)
+  [ 32] ret
+end
+
+on getIsSuspended me
+  [  0] getprop 748 ............................. <IsSuspended>
+  [  3] pusharglistnoret 1 ...................... <IsSuspended>
+  [  5] extcall 69 .............................. return IsSuspended
+  [  8] ret
+end

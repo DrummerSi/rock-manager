@@ -1,0 +1,121 @@
+property m_objCity, m_bVisible, m_SP, m_rectOrgClick, m_objMouse, m_ID, m_place, m_cityAnim, m_currentMembers
+global gUseful, gDir, gRock
+
+on new me, argObjCity, argID, argSPNum, argPlaceObj, argHotspot
+  m_objCity = argObjCity
+  m_ID = argID
+  strId = string(m_ID)
+  m_place = argPlaceObj
+  if not objectp(m_place) then
+    pott("No place", argID)
+  end if
+  baseMember = member(strId, "city01")
+  if baseMember.number < 1 then
+    pott("Err city memb", strId)
+  end if
+  m_rectOrgClick = argHotspot
+  if listp(m_rectOrgClick) then
+  else
+    m_rectOrgClick = getMemberRect(baseMember)
+  end if
+  m_bVisible = argPlaceObj.Available
+  m_SP = sprite(argSPNum)
+  m_currentMembers = [baseMember]
+  m_objMouse = script("MouseObject").new(me, m_rectOrgClick, [#layer: 10, #cursorRoll: #go])
+  tmpMaybeAnimMember = member(baseMember.number + 1)
+  if offset(strId, tmpMaybeAnimMember.name) then
+    m_cityAnim = script("CityAnimScript").new(me, tmpMaybeAnimMember.name, argSPNum + 1)
+    m_currentMembers[2] = baseMember
+  end if
+  return me
+end
+
+on kill me
+  m_objCity = 0
+  m_place = 0
+  if objectp(m_cityAnim) then
+    m_cityAnim = m_cityAnim.kill()
+  end if
+  if objectp(m_objMouse) then
+    m_objMouse = m_objMouse.kill()
+  end if
+  return 0
+end
+
+on GetSPNeed me
+  return m_currentMembers.count
+end
+
+on redraw me, argLoc, argMember
+  if m_bVisible then
+    if voidp(argLoc) then
+      argLoc = m_objCity.m_locOrg + m_objCity.m_locScroll
+    end if
+    repeat with n = 1 to m_currentMembers.count
+      sprite(m_SP.spriteNum + n - 1).member = m_currentMembers[n]
+      sprite(m_SP.spriteNum + n - 1).loc = argLoc
+    end repeat
+    if objectp(m_objMouse) then
+      m_objMouse.myRect = rect(argLoc, argLoc) + m_rectOrgClick
+    end if
+  end if
+end
+
+on getIsVisible me
+  return m_bVisible
+end
+
+on show me, argIsTRUE
+  if voidp(argIsTRUE) then
+    argIsTRUE = m_bVisible
+  end if
+  if objectp(m_cityAnim) then
+    m_cityAnim.show(argIsTRUE)
+  end if
+  m_bVisible = argIsTRUE
+  m_objMouse.activate(m_bVisible)
+  if not m_bVisible then
+    m_SP.member = member("Dummy")
+  else
+    me.redraw()
+  end if
+end
+
+on timeTick me
+  if m_bVisible then
+    if not objectp(m_cityAnim) then
+      me.redraw()
+    else
+      m_cityAnim.timeTick()
+    end if
+  end if
+end
+
+on mouse me, argObj, argWhat
+  if argWhat = #click then
+    if gDir.m_objDialogsMaster.getNumOpen() = 0 then
+      gDir.m_objDialogsMaster.openDialog(m_ID)
+    end if
+  else
+    if argWhat = #enter then
+    else
+      if argWhat = #Leave then
+      end if
+    end if
+  end if
+end
+
+on Report me, argObj, argWhat, argOption
+  if argObj = m_cityAnim then
+    if argWhat = #draw then
+      m_currentMembers[m_currentMembers.count] = member(argOption)
+      me.redraw()
+    end if
+  end if
+end
+
+on pause me, argIsTRUE
+  if objectp(m_cityAnim) then
+    m_cityAnim.activate(not argIsTRUE)
+  end if
+end

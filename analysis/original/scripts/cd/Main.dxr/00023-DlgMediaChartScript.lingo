@@ -1,0 +1,139 @@
+property ancestor, m_songs_r, m_currentlyOver, m_timerObj, m_SPNumRoll, m_dlgRoll, m_chart
+global gDir, gRock
+
+on new me, argOptions
+  global gDir
+  ID = argOptions[#ID]
+  argOptions.setaProp(#ReportTo, me)
+  argOptions.setaProp(#child, me)
+  dialog_r = gRock.m_classManager.getObjByIDAndClass(#DlgMediaChart, #Dialog)
+  dialog_r.dataMemberName = "DlgMediaChartData"
+  argOptions[#DlgInfoObj] = dialog_r
+  ancestor = script("DlgRockAncestorScript").new(argOptions)
+  place_r = gRock.m_classManager.getObjByIDAndClass(argOptions[#MediaID], #media)
+  m_chart = place_r.getChart()
+  ChartHeadline = rgetProp(place_r, #ChartHeadline)
+  if not stringp(ChartHeadline) then
+    ChartHeadline = "Billboard"
+  end if
+  itemObj = ancestor.m_objDlg.getItem(#ChartHeadline)
+  itemObj.setOneProp(#Pic, rFormatText([ChartHeadline], "MediaChartHeadlineFormatting"))
+  itemObj = ancestor.m_objDlg.getItem(#ChartText)
+  itemObj.setOneProp(#Pic, "Dummy")
+  itemObj = ancestor.m_objDlg.getItem(#Pic)
+  itemObj.setOneProp(#Pic, place_r.ChartPic)
+  m_songs_r = [:]
+  tmpTotNum = m_chart.count
+  if tmpTotNum > 10 then
+    tmpTotNum = 10
+  end if
+  repeat with n = 1 to tmpTotNum
+    songInfo = m_chart[n]
+    song_r = gRock.m_classManager.getObjByIDAndClass(songInfo[#ID], songInfo[#class])
+    tmpID = symbol("ListItem" & string(n))
+    m_songs_r.addProp(tmpID, song_r)
+    lst = [#ID: tmpID, #type: #Pic, #Pic: EMPTY, #inOffsetRect: rect(0, (n - 1) * 18, 0, 0), #rel: [[#ChartText, 1], [#ChartText, 2], #Auto, #Auto], #ch: 5, #blit: 1, #usingMouse: 1]
+    itemObj = ancestor.m_objDlg.addItem(lst)
+    itemObj.scriptInstanceList.add(me)
+    if songInfo[#LastWeekPos] > 0 then
+      tmpLastWeekStr = string(songInfo[#LastWeekPos])
+    else
+      tmpLastWeekStr = "-"
+    end if
+    itemObj.setOneProp(#Pic, rFormatText([song_r.name, tmpLastWeekStr], "MediaChartFormatting"))
+    if songInfo[#class] <> #ChartSong then
+      lst = [#ID: #marker, #type: #Pic, #Pic: "playlist01_highlight", #inOffsetRect: rect(-18, ((n - 1) * 18) + 7, 0, 0), #rel: [[#ChartText, 1], [#ChartText, 2], #Auto, #Auto], #topLeftMeansWhat: [#Mid, #Mid], #ch: 7, #blit: 1, #usingMouse: 0]
+      ancestor.m_objDlg.addItem(lst)
+    end if
+  end repeat
+  m_SPNumRoll = 0
+  if objectp(gDir) then
+    m_SPNumRoll = gDir.m_spriteList[#rollover]
+  end if
+  ancestor.render()
+  return me
+end
+
+on kill me
+  (the timeOutList).deleteOne(m_timerObj)
+  if objectp(m_timerObj) then
+    m_timerObj = 0
+  end if
+  sprite(m_SPNumRoll).member = member("Dummy")
+  if objectp(m_dlgRoll) then
+    m_dlgRoll = m_dlgRoll.kill()
+  end if
+  ancestor.kill()
+  return 0
+end
+
+on Report me, argObj, argWhat
+end
+
+on mouse me, argObj, argWhat, argOption
+  if objectp(argOption) then
+    ID = argOption.getOneProp(#ID)
+    if argWhat = #click then
+      if ID = #ButtonOK then
+        ancestor.mouse(argObj, argWhat, argOption)
+        exit
+      end if
+    else
+      IDStr = string(ID)
+      if offset("ListItem", IDStr) then
+        if argWhat = #enter then
+          if m_currentlyOver <> ID then
+            m_currentlyOver = 0
+            me.showRollOver()
+            m_timerObj = timeout("RollOver").new(integer(0.5 * 1000), #showRollOver, me)
+            m_currentlyOver = ID
+          end if
+        else
+          if argWhat = #Leave then
+            if m_currentlyOver = ID then
+              m_currentlyOver = 0
+              me.showRollOver()
+            end if
+          end if
+        end if
+      end if
+    end if
+  end if
+end
+
+on showRollOver me
+  (the timeOutList).deleteOne(m_timerObj)
+  m_timerObj = 0
+  if not m_SPNumRoll then
+    exit
+  end if
+  SP = sprite(m_SPNumRoll)
+  if not symbolp(m_currentlyOver) then
+    SP.member = member("Dummy")
+    exit
+  end if
+  song_r = m_songs_r.getaProp(m_currentlyOver)
+  if song_r.className = #album then
+    tmpTitle = song_r.name
+    band_r = gRock.m_context.getFocus(#Band)
+    tmpBandName = band_r.name
+    tmpStyle = rgetProp(song_r, #Genre)
+    if not stringp(tmpStyle) then
+      tmpStyle = EMPTY
+    end if
+  else
+    tmpTitle = song_r.name
+    tmpBandName = song_r.BandName
+    tmpStyle = song_r.Genre
+  end if
+  if objectp(m_dlgRoll) then
+    m_dlgRoll = m_dlgRoll.kill()
+  end if
+  m_dlgRoll = script("Dialog").new([#AttachImageToMember: #temp, #StartSpriteNum: m_SPNumRoll, #NumSprites: 1])
+  m_dlgRoll.rawCreate(member("DlgChartRollOverData").text.value)
+  memb = rFormatText([#szidSongTitle, tmpTitle, #szidArtist, tmpBandName, #szidGenre, tmpStyle], "MediaChartRollFormatting", [#shadow: 1])
+  itemObj = m_dlgRoll.getItem(#Info)
+  itemObj.setOneProp(#Pic, memb)
+  sprite(m_SPNumRoll).stretch = 0
+  m_dlgRoll.renderAtLoc(the mouseLoc + point(15, -20))
+end

@@ -1,0 +1,235 @@
+property ancestor, child, type, mouseObj, Toggle, PicOver, PicDown, PicDim, PicOverName, PicDownName, PicDimName, isDown, statePics, State, myImage
+
+on new me, argMasterObj, argChild, argList
+  type = #button
+  if not objectp(argChild) then
+    argChild = me
+  end if
+  child = argChild
+  ancestor = new(script("DialogPicScript"), argMasterObj, child, argList)
+  Toggle = 0
+  statePics = [:]
+  State = #normal
+  isDown = 0
+  return me
+end
+
+on init me
+  ancestor.init()
+  tmp = me.getMyProps()
+  repeat with n = 1 to tmp.count()
+    tmpProp = tmp.getPropAt(n)
+    tmpVal = ancestor.temporaryArgs.getaProp(tmpProp)
+    if not voidp(tmpVal) then
+      me.setaProp(tmpProp, ancestor.temporaryArgs.getaProp(tmpProp))
+    end if
+  end repeat
+  tmp = ancestor.temporaryArgs[#editData]
+  if not voidp(tmp) then
+    isDown = tmp
+    if isDown then
+      me.setState(#PicDown)
+    end if
+  end if
+end
+
+on finalInitsBeforeCalc me
+  ancestor.finalInitsBeforeCalc()
+  if stringp(PicOverName) then
+    me.setOneProp(#PicOverName, PicOverName)
+  end if
+  if stringp(PicDownName) then
+    me.setOneProp(#PicDownName, PicDownName)
+  end if
+  if stringp(PicDimName) then
+    me.setOneProp(#PicDimName, PicDimName)
+  end if
+  statePics[#normal] = ancestor.memberOrImage
+  if isDown then
+    me.setState(#PicDown)
+  end if
+end
+
+on kill me
+  ancestor = ancestor.kill()
+  return 0
+end
+
+on getMyProps me
+  return [#Toggle: [#comment: "Is toggle button", #format: #boolean, #default: Toggle], #PicOverName: [#comment: "Rollover pic", #format: #string, #default: PicOverName], #PicDownName: [#comment: "Pushed pic", #format: #string, #default: PicDownName], #PicDimName: [#comment: "Dimmed pic", #format: #string, #default: PicDimName]]
+end
+
+on getProps me
+  tmpList = me.getMyProps()
+  tmpList2 = ancestor.getProps()
+  repeat with n = 1 to tmpList.count()
+    tmpList2.setaProp(tmpList.getPropAt(n), tmpList[n])
+  end repeat
+  return tmpList2
+end
+
+on getEditProps me
+  tmp = [:]
+  tmp.addProp(me.type, me.getMyProps())
+  mergeLists(tmp, ancestor.getEditProps())
+  return tmp
+end
+
+on getOneProp me, argProp
+  tmpList = me.getMyProps()
+  if voidp(tmpList.getaProp(argProp)) then
+    return ancestor.getOneProp(argProp)
+  end if
+  return me.getaProp(argProp)
+end
+
+on setOneProp me, argProp, argVal
+  tmpList = me.getMyProps()
+  if voidp(tmpList.getaProp(argProp)) then
+    ancestor.setOneProp(argProp, argVal)
+  else
+    if ancestor.ImUpAndRunningAlready = 0 then
+      ancestor.setOneProp(argProp, argVal)
+      exit
+    end if
+    if (argProp = #PicOverName) or (argProp = #PicDownName) or (argProp = #PicDimName) then
+      if voidp(argVal) then
+        argVal = EMPTY
+      end if
+      if argVal.length > 0 then
+        tmpIsNumerical = 1
+        repeat with n = 1 to argVal.length
+          tmpCh = charToNum(argVal.char[n])
+          if tmpCh > 57 then
+            tmpIsNumerical = 0
+            exit repeat
+          end if
+        end repeat
+        if tmpIsNumerical then
+          tmpMemb = member(value(argVal) + ancestor.memberOrImage.number)
+        else
+          tmpMemb = member(argVal)
+        end if
+        tmpProp = string(argProp)
+        tmpProp = tmpProp.char[1..tmpProp.length - 4]
+        tmpProp = symbol(tmpProp)
+        statePics.setaProp(tmpProp, tmpMemb)
+      end if
+    end if
+    me.setaProp(argProp, argVal)
+  end if
+end
+
+on paint me, argDstRect
+  if State = #normal then
+    ancestor.paint(argDstRect)
+  else
+    ancestor.paintThis(argDstRect, myImage)
+  end if
+end
+
+on render me, argOffsetRect
+  ancestor.render(argOffsetRect)
+end
+
+on getNumSprites me
+  if ancestor.blit then
+    return #Temporary
+  end if
+  return 1
+end
+
+on mouse me, argObj, argWhat
+  if argWhat = #DownOnOther then
+    exit
+  end if
+  if argWhat = #down then
+    me.setState(#PicDown)
+  else
+    if argWhat = #click then
+      if Toggle then
+        isDown = not isDown
+        if isDown then
+          me.setState(#PicDown)
+        else
+          me.setState(#normal)
+        end if
+      else
+        me.setState(#normal)
+      end if
+    else
+      if argWhat = #enter then
+        if Toggle then
+        else
+          me.setState(#PicOver)
+        end if
+      else
+        if argWhat = #Leave then
+          if Toggle then
+          else
+            me.setState(#normal)
+          end if
+        end if
+      end if
+    end if
+  end if
+  ancestor.mouse(argObj, argWhat)
+end
+
+on setState me, argState
+  if argState = State then
+    exit
+  end if
+  if argState = #normal then
+    State = argState
+    if ancestor.blit then
+      ancestor.setOneProp(#Pic, statePics[#normal])
+    else
+      tmpSPNum = ancestor.getSprite()
+      if not tmpSPNum then
+        ancestor.reserveSprite()
+        tmpSPNum = ancestor.getSprite()
+      end if
+      if not tmpSPNum then
+        exit
+      end if
+      sprite(tmpSPNum).member = member("Dummy")
+      ancestor.returnSprite()
+    end if
+  else
+    tmp = statePics.getaProp(argState)
+    if not voidp(tmp) then
+      State = argState
+      if ancestor.blit then
+        if ilk(tmp) = #member then
+          myImage = tmp.image
+        else
+          if ilk(tmp) = #image then
+            myImage = tmp
+          end if
+        end if
+        ancestor.setOneProp(#Pic, tmp)
+      else
+        tmpSPNum = ancestor.getSprite()
+        if not tmpSPNum then
+          ancestor.reserveSprite()
+          tmpSPNum = ancestor.getSprite()
+        end if
+        if not tmpSPNum then
+          exit
+        end if
+        sprite(tmpSPNum).member = tmp
+        sprite(tmpSPNum).rect = ancestor.onStageRect
+      end if
+    end if
+  end if
+end
+
+on dim me, argIsTRUE
+  if argIsTRUE then
+    me.setState(#PicDim)
+  else
+    me.setState(#normal)
+  end if
+  ancestor.ancestor.mouseObj.activate(not argIsTRUE)
+end

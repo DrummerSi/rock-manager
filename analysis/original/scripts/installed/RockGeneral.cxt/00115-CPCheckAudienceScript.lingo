@@ -1,0 +1,98 @@
+property m_image, m_totalPeople, m_dlg, m_keyObj, m_lastVals, m_soldLastTick
+global gRock, gUseful, gDir
+
+on new me
+  m_keyObj = script("KeyObject").new(me, "1", [#prio: 10])
+  m_image = image(500, 200, 8)
+  m_lastVals = [:]
+  m_totalPeople = 0
+  groups = gRock.m_classManager.getObjsOfClass(#Group)
+  repeat with Group in groups
+    m_totalPeople = m_totalPeople + Group.size
+  end repeat
+  gRock.m_gameTimer.addObject(me)
+  return me
+end
+
+on kill me
+  if objectp(m_dlg) then
+    m_dlg = m_dlg.kill()
+  end if
+  if objectp(m_keyObj) then
+    m_keyObj = m_keyObj.kill()
+  end if
+  gRock.m_gameTimer.deleteObject(me)
+  m_image = 0
+  return 0
+end
+
+on timeTick me
+  me.calcSold()
+end
+
+on key me, argObj, argWhat, argWhich
+  if argWhat = #down then
+    if objectp(m_dlg) then
+      m_dlg = m_dlg.kill()
+    else
+      SPNum = gDir.m_spriteList[#Diagram]
+      sprite(SPNum).ink = 0
+      m_dlg = script("Dialog").new([#AttachImageToMember: #temp, #StartSpriteNum: SPNum, #NumSprites: 2, #OKtoResize: 1, #ID: #WatcherDlg])
+      tmpList = member("DlgDefaultData").text.value
+      tmpList.add([#ID: #Pic, #type: #Pic, #Pic: m_image, #ch: 10, #rect: [0, 20, 0, 20], #rel: [0, 0, #Auto, #Auto], #blit: 1])
+      m_dlg.create(tmpList)
+      lst = m_dlg.getItemsByType(#button)
+      repeat with obj in lst
+        obj.scriptInstanceList.add(me)
+      end repeat
+      m_dlg.renderAtLoc(point(100, 100))
+    end if
+  end if
+end
+
+on Report me
+end
+
+on mouse me, argObj, argWhat
+  if argWhat = #click then
+    if argObj.ID = #close then
+      m_dlg = m_dlg.kill()
+    end if
+  end if
+end
+
+on calcSold me
+  album = gRock.m_context.getFocus(#album)
+  if voidp(album) then
+    return 0
+  end if
+  totNumSold = album.Sales
+  today = gRock.m_date.getDateInt()
+  daysSinceRelease = today - album.ReleaseDate
+  me.drawNewVals(daysSinceRelease, [#SoldSince: (totNumSold - m_soldLastTick) / float(m_totalPeople), #TotalSold: totNumSold / float(m_totalPeople), #Hype: album.Hype / 2.0])
+  if objectp(m_dlg) then
+    m_dlg.invalidateRect()
+  end if
+  m_soldLastTick = totNumSold
+  return totNumSold
+end
+
+on drawNewVals me, argX, argList
+  colors = [rgb(0, 0, 0), rgb(0, 90, 255), rgb(120, 120, 120), rgb(255, 0, 0)]
+  repeat with n = 1 to argList.count()
+    prop = argList.getPropAt(n)
+    lastVal = m_lastVals.getaProp(prop)
+    if voidp(lastVal) then
+      lastVal = 0
+    end if
+    tmpLastPoint = point(argX - 1, (m_image.height * (1.0 - lastVal)) - 1)
+    val = argList[n]
+    if n > colors.count() then
+      clr = rgb(90, 90, 90)
+    else
+      clr = colors[n]
+    end if
+    m_image.draw(tmpLastPoint, point(argX, (m_image.height * (1.0 - val)) - 1), clr)
+  end repeat
+  m_lastVals = argList
+end

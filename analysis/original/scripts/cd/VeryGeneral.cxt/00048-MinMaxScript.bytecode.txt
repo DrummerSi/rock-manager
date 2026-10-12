@@ -1,0 +1,141 @@
+property outMin, outMax, outDiff, outStep, inMin, inMax, inDiff
+
+on new me, argOutMin, argOutMax, argOutStep, argInMin, argInMax
+  [  0] getparam 32 ............................. <argInMin>
+  [  2] pusharglist 1 ........................... <argInMin>
+  [  4] extcall 104 ............................. <voidp(argInMin)>
+  [  7] jmpifz [ 13] ............................ if voidp(argInMin) then
+  [ 10] pushzero ................................ <0>
+  [ 11] setparam 32 ............................. argInMin = 0
+  [ 13] getparam 40 ............................. <argInMax>
+  [ 15] pusharglist 1 ........................... <argInMax>
+  [ 17] extcall 104 ............................. <voidp(argInMax)>
+  [ 20] jmpifz [ 28] ............................ if voidp(argInMax) then
+  [ 23] pushint8 1 .............................. <1>
+  [ 26] setparam 40 ............................. argInMax = 1
+  [ 28] getparam 0 .............................. <me>
+  [ 30] getparam 8 .............................. <argOutMin>
+  [ 32] getparam 16 ............................. <argOutMax>
+  [ 34] getparam 24 ............................. <argOutStep>
+  [ 36] getparam 32 ............................. <argInMin>
+  [ 38] getparam 40 ............................. <argInMax>
+  [ 40] pusharglistnoret 6 ...................... <me, argOutMin, argOutMax, argOutStep, argInMin, argInMax>
+  [ 42] objcall 1010 ............................ me.setParams(argOutMin, argOutMax, argOutStep, argInMin, argInMax)
+  [ 45] getparam 0 .............................. <me>
+  [ 47] pusharglistnoret 1 ...................... <me>
+  [ 49] extcall 32 .............................. return me
+  [ 52] ret
+end
+
+on kill me
+  [  0] pushzero ................................ <0>
+  [  1] pusharglistnoret 1 ...................... <0>
+  [  3] extcall 32 .............................. return 0
+  [  6] ret
+end
+
+on setParams me, argOutMin, argOutMax, argOutStep, argInMin, argInMax
+  [  0] getparam 32 ............................. <argInMin>
+  [  2] pusharglist 1 ........................... <argInMin>
+  [  4] extcall 104 ............................. <voidp(argInMin)>
+  [  7] not ..................................... <not voidp(argInMin)>
+  [  8] jmpifz [ 16] ............................ if not voidp(argInMin) then
+  [ 11] getparam 32 ............................. <argInMin>
+  [ 13] setprop 1017 ............................ inMin = argInMin
+  [ 16] getparam 40 ............................. <argInMax>
+  [ 18] pusharglist 1 ........................... <argInMax>
+  [ 20] extcall 104 ............................. <voidp(argInMax)>
+  [ 23] not ..................................... <not voidp(argInMax)>
+  [ 24] jmpifz [ 32] ............................ if not voidp(argInMax) then
+  [ 27] getparam 40 ............................. <argInMax>
+  [ 29] setprop 1018 ............................ inMax = argInMax
+  [ 32] getprop 1018 ............................ <inMax>
+  [ 35] getprop 1017 ............................ <inMin>
+  [ 38] sub ..................................... <inMax - inMin>
+  [ 39] pusharglist 1 ........................... <inMax - inMin>
+  [ 41] extcall 92 .............................. <float(inMax - inMin)>
+  [ 44] setprop 1019 ............................ inDiff = float(inMax - inMin)
+  [ 47] getparam 24 ............................. <argOutStep>
+  [ 49] pusharglist 1 ........................... <argOutStep>
+  [ 51] extcall 104 ............................. <voidp(argOutStep)>
+  [ 54] not ..................................... <not voidp(argOutStep)>
+  [ 55] jmpifz [ 63] ............................ if not voidp(argOutStep) then
+  [ 58] getparam 24 ............................. <argOutStep>
+  [ 60] setprop 1020 ............................ outStep = argOutStep
+  [ 63] getparam 8 .............................. <argOutMin>
+  [ 65] pusharglist 1 ........................... <argOutMin>
+  [ 67] extcall 104 ............................. <voidp(argOutMin)>
+  [ 70] not ..................................... <not voidp(argOutMin)>
+  [ 71] jmpifz [ 79] ............................ if not voidp(argOutMin) then
+  [ 74] getparam 8 .............................. <argOutMin>
+  [ 76] setprop 1021 ............................ outMin = argOutMin
+  [ 79] getparam 16 ............................. <argOutMax>
+  [ 81] pusharglist 1 ........................... <argOutMax>
+  [ 83] extcall 104 ............................. <voidp(argOutMax)>
+  [ 86] not ..................................... <not voidp(argOutMax)>
+  [ 87] jmpifz [ 95] ............................ if not voidp(argOutMax) then
+  [ 90] getparam 16 ............................. <argOutMax>
+  [ 92] setprop 1022 ............................ outMax = argOutMax
+  [ 95] getprop 1022 ............................ <outMax>
+  [ 98] getprop 1021 ............................ <outMin>
+  [101] sub ..................................... <outMax - outMin>
+  [102] setprop 1023 ............................ outDiff = outMax - outMin
+  [105] ret
+end
+
+on conv me, argVal
+  [  0] getparam 8 .............................. <argVal>
+  [  2] getprop 1017 ............................ <inMin>
+  [  5] sub ..................................... <argVal - inMin>
+  [  6] getprop 1019 ............................ <inDiff>
+  [  9] div ..................................... <(argVal - inMin) / inDiff>
+  [ 10] setparam 8 .............................. argVal = (argVal - inMin) / inDiff
+  [ 12] getparam 8 .............................. <argVal>
+  [ 14] pushzero ................................ <0>
+  [ 15] lt ...................................... <argVal < 0>
+  [ 16] jmpifz [ 22] ............................ if argVal < 0 then
+  [ 19] pushzero ................................ <0>
+  [ 20] setparam 8 .............................. argVal = 0
+  [ 22] getparam 8 .............................. <argVal>
+  [ 24] pushint8 1 .............................. <1>
+  [ 27] gt ...................................... <argVal > 1>
+  [ 28] jmpifz [ 36] ............................ if argVal > 1 then
+  [ 31] pushint8 1 .............................. <1>
+  [ 34] setparam 8 .............................. argVal = 1
+  [ 36] getparam 8 .............................. <argVal>
+  [ 38] getprop 1023 ............................ <outDiff>
+  [ 41] mul ..................................... <argVal * outDiff>
+  [ 42] setparam 8 .............................. argVal = argVal * outDiff
+  [ 44] getprop 1020 ............................ <outStep>
+  [ 47] jmpifz [ 80] ............................ if outStep then
+  [ 50] getparam 8 .............................. <argVal>
+  [ 52] getprop 1020 ............................ <outStep>
+  [ 55] pusharglist 1 ........................... <outStep>
+  [ 57] extcall 92 .............................. <float(outStep)>
+  [ 60] div ..................................... <argVal / float(outStep)>
+  [ 61] setlocal 0 .............................. tmp = argVal / float(outStep)
+  [ 63] getlocal 0 .............................. <tmp>
+  [ 65] pusharglist 1 ........................... <tmp>
+  [ 67] extcall 95 .............................. <integer(tmp)>
+  [ 70] setlocal 0 .............................. tmp = integer(tmp)
+  [ 72] getlocal 0 .............................. <tmp>
+  [ 74] getprop 1020 ............................ <outStep>
+  [ 77] mul ..................................... <tmp * outStep>
+  [ 78] setlocal 0 .............................. tmp = tmp * outStep
+  [ 80] getparam 8 .............................. <argVal>
+  [ 82] getprop 1021 ............................ <outMin>
+  [ 85] add ..................................... <argVal + outMin>
+  [ 86] setlocal 0 .............................. tmp = argVal + outMin
+  [ 88] getprop 1021 ............................ <outMin>
+  [ 91] pusharglist 1 ........................... <outMin>
+  [ 93] extcall 94 .............................. <integerp(outMin)>
+  [ 96] jmpifz [108] ............................ if integerp(outMin) then
+  [ 99] getlocal 0 .............................. <tmp>
+  [101] pusharglist 1 ........................... <tmp>
+  [103] extcall 95 .............................. <integer(tmp)>
+  [106] setlocal 0 .............................. tmp = integer(tmp)
+  [108] getlocal 0 .............................. <tmp>
+  [110] pusharglistnoret 1 ...................... <tmp>
+  [112] extcall 32 .............................. return tmp
+  [115] ret
+end

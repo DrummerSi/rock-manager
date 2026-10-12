@@ -1,0 +1,63 @@
+property nrOfFrames, firstFrame, SP, speedPerFrame, maxVal
+
+on new me, argSP, argMaxVal, argFirstFrame, argNrOfFrames
+  [  0] getparam 16 ............................. <argMaxVal>
+  [  2] setprop 659 ............................. maxVal = argMaxVal
+  [  5] getparam 32 ............................. <argNrOfFrames>
+  [  7] setprop 660 ............................. nrOfFrames = argNrOfFrames
+  [ 10] getprop 660 ............................. <nrOfFrames>
+  [ 13] pusharglist 1 ........................... <nrOfFrames>
+  [ 15] extcall 104 ............................. <voidp(nrOfFrames)>
+  [ 18] jmpifz [ 27] ............................ if voidp(nrOfFrames) then
+  [ 21] pushint8 17 ............................. <17>
+  [ 24] setprop 660 ............................. nrOfFrames = 17
+  [ 27] getprop 660 ............................. <nrOfFrames>
+  [ 30] pushint8 1 .............................. <1>
+  [ 33] sub ..................................... <nrOfFrames - 1>
+  [ 34] setprop 660 ............................. nrOfFrames = nrOfFrames - 1
+  [ 37] getprop 659 ............................. <maxVal>
+  [ 40] getprop 660 ............................. <nrOfFrames>
+  [ 43] div ..................................... <maxVal / nrOfFrames>
+  [ 44] setprop 661 ............................. speedPerFrame = maxVal / nrOfFrames
+  [ 47] getparam 24 ............................. <argFirstFrame>
+  [ 49] pusharglist 1 ........................... <argFirstFrame>
+  [ 51] extcall 309 ............................. <getMemberNum(argFirstFrame)>
+  [ 54] setprop 315 ............................. firstFrame = getMemberNum(argFirstFrame)
+  [ 57] getparam 8 .............................. <argSP>
+  [ 59] setprop 294 ............................. SP = argSP
+  [ 62] getparam 0 .............................. <me>
+  [ 64] pusharglistnoret 1 ...................... <me>
+  [ 66] extcall 32 .............................. return me
+  [ 69] ret
+end
+
+on kill me
+  [  0] pushzero ................................ <0>
+  [  1] pusharglistnoret 1 ...................... <0>
+  [  3] extcall 32 .............................. return 0
+  [  6] ret
+end
+
+on show me, argSpeed
+  [  0] getprop 660 ............................. <nrOfFrames>
+  [  3] getparam 8 .............................. <argSpeed>
+  [  5] mul ..................................... <nrOfFrames * argSpeed>
+  [  6] getprop 659 ............................. <maxVal>
+  [  9] div ..................................... <nrOfFrames * argSpeed / maxVal>
+  [ 10] setlocal 0 .............................. tmpFrame = nrOfFrames * argSpeed / maxVal
+  [ 12] getlocal 0 .............................. <tmpFrame>
+  [ 14] getprop 660 ............................. <nrOfFrames>
+  [ 17] gt ...................................... <tmpFrame > nrOfFrames>
+  [ 18] jmpifz [ 26] ............................ if tmpFrame > nrOfFrames then
+  [ 21] getprop 660 ............................. <nrOfFrames>
+  [ 24] setlocal 0 .............................. tmpFrame = nrOfFrames
+  [ 26] getprop 294 ............................. <SP>
+  [ 29] getprop 315 ............................. <firstFrame>
+  [ 32] getlocal 0 .............................. <tmpFrame>
+  [ 34] add ..................................... <firstFrame + tmpFrame>
+  [ 35] pusharglist 1 ........................... <firstFrame + tmpFrame>
+  [ 37] extcall 307 ............................. <member(firstFrame + tmpFrame)>
+  [ 40] pushint8 37 ............................. <37>
+  [ 43] set 6 ................................... set the member of sprite SP to member(firstFrame + tmpFrame)
+  [ 45] ret
+end

@@ -1,0 +1,104 @@
+property m_mediaID, m_paperAnimObj, m_dlgEventCardObj, m_SP
+
+on new me, argDlgEventCardObj, argMediaID, argSPNum
+  m_dlgEventCardObj = argDlgEventCardObj
+  m_mediaID = argMediaID
+  m_SP = sprite(argSPNum)
+  itemObj = m_dlgEventCardObj.m_objDlg.getItem(#Pic)
+  if objectp(itemObj) then
+    itemObj.setOneProp(#Pic, "Dummy")
+  end if
+  itemObj = m_dlgEventCardObj.m_objDlg.getItem(#Paper)
+  if objectp(itemObj) then
+    itemObj.setOneProp(#Pic, "Dummy")
+  end if
+  itemObj = m_dlgEventCardObj.m_objDlg.getItem(#Headline)
+  if objectp(itemObj) then
+    itemObj.setOneProp(#Pic, "Dummy")
+  end if
+  itemObj = m_dlgEventCardObj.m_objDlg.getItem(#Caption)
+  if objectp(itemObj) then
+    itemObj.setOneProp(#Pic, "Dummy")
+  end if
+  itemObj = m_dlgEventCardObj.m_objDlg.getItem(#Info)
+  if objectp(itemObj) then
+    itemObj.setOneProp(#Pic, rFormatText([m_dlgEventCardObj.m_eventCard_r.Headline, m_dlgEventCardObj.m_eventCard_r.comment, m_dlgEventCardObj.m_eventCard_r.question], "EventCardPressFormatting", [#shadow: 1]))
+  end if
+  m_dlgEventCardObj.m_eventCardOptions[#DontResolveGraphics] = 1
+  m_dlgEventCardObj.m_eventCardOptions[#DontSetAndGfx] = 1
+  return me
+end
+
+on kill me
+  m_dlgEventCardObj = 0
+  if objectp(m_paperAnimObj) then
+    m_paperAnimObj = m_paperAnimObj.kill()
+  end if
+  return 0
+end
+
+on finishingUp me, argTopLeftLoc
+  if voidp(argTopLeftLoc) then
+    argTopLeftLoc = m_dlgEventCardObj.m_objDlg.myLoc
+  end if
+  if m_mediaID = #Media03 then
+    m_SP.loc = argTopLeftLoc + point(187, 146)
+    first = "newsintro01_0000"
+    m_paperAnimObj = script("SimpleAnimScript").new(me, m_SP.spriteNum, first, [#numFrames: 9, #StopWhenDone: 1])
+  else
+    if m_mediaID = #Media04 then
+      m_SP.loc = argTopLeftLoc + point(188, 145)
+      first = "magazineintro01_0000"
+      m_paperAnimObj = script("SimpleAnimScript").new(me, m_SP.spriteNum, first, [#numFrames: 9, #StopWhenDone: 1])
+    end if
+  end if
+end
+
+on Report me, argObj, argWhat
+  if argObj = m_paperAnimObj then
+    if argWhat = #done then
+      itemObj = m_dlgEventCardObj.m_objDlg.getItem(#Paper)
+      if objectp(itemObj) then
+        itemObj.setOneProp(#Pic, m_paperAnimObj.getCurrentMember())
+      end if
+      itemObj = m_dlgEventCardObj.m_objDlg.getItem(#Pic)
+      if objectp(itemObj) then
+        useGfx = m_dlgEventCardObj.resolveGraphics()
+        if ilk(useGfx) = #instance then
+          if symbolp(rgetProp(useGfx, #className)) then
+            if useGfx.className = #RealMusician then
+              useGfx = "Portrait_" & useGfx.Gfx & "_Normal_Large"
+            end if
+          end if
+          if objectp(useGfx) then
+            useGfx = VOID
+          end if
+        end if
+        if ilk(useGfx) = #string then
+          if member(useGfx).type = #bitmap then
+            useGfx = member(useGfx).image
+          end if
+        end if
+        if ilk(useGfx) <> #image then
+          itemObj.setOneProp(#Pic, "Dummy")
+        else
+          if m_mediaID = #Media03 then
+            useGfx = makeGrayscale(useGfx)
+            itemObj.setOneProp(#ink, 39)
+          end if
+          itemObj.setOneProp(#Pic, useGfx)
+        end if
+      end if
+      tmpPrefix = "EventCardPress" & string(m_mediaID)
+      itemObj = m_dlgEventCardObj.m_objDlg.getItem(#Headline)
+      if objectp(itemObj) then
+        itemObj.setOneProp(#Pic, rFormatText([m_dlgEventCardObj.m_eventCard_r.Caption], tmpPrefix & "HeadlineFormatting"))
+      end if
+      m_dlgEventCardObj.render()
+      m_paperAnimObj = m_paperAnimObj.kill()
+    end if
+  end if
+end
+
+on createFinalImage me
+end

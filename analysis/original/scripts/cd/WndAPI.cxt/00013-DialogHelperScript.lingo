@@ -1,0 +1,83 @@
+property dialogData
+
+on new me
+  dialogData = []
+  return me
+end
+
+on kill me
+  return 0
+end
+
+on createPropDialog me, argList, argLocOffset, argMaxPropNameWidth
+  if voidp(argList) then
+    argList = [#Nr1: [#comment: "Load member", #format: #string, #default: "<no name>"], #Nr2: [#comment: "Dialog item type", #format: #integer, #default: 10], #Nr3: [#comment: "Castlib", #format: #string, #default: "<Internal>"]]
+  end if
+  tmpUsePasting = 1
+  tmpVSpace = 20
+  dialogData = []
+  tmpTextFieldName = "TextField1"
+  tmpEnterFieldName = "EnterField1"
+  tmpFieldFormatting = [#font: "Arial", #fontSize: 12, #fontStyle: [#plain], #antialias: 0, #alignment: #left]
+  formatTextMember(member(tmpEnterFieldName), tmpFieldFormatting)
+  member(tmpEnterFieldName).width = 200
+  member(tmpEnterFieldName).height = 16
+  tmpTextFormatting = [#font: "Arial", #fontSize: 12, #fontStyle: [#plain], #antialias: 0, #alignment: #right]
+  formatTextMember(member(tmpTextFieldName), tmpTextFormatting)
+  member(tmpTextFieldName).width = 100
+  if voidp(argLocOffset) then
+    argLocOffset = point(0, 0)
+  end if
+  tmpLocV = 0 + argLocOffset[2] - tmpVSpace
+  tmpMidH = 60 + argLocOffset[1]
+  repeat with n = 1 to argList.count()
+    tmpID = argList.getPropAt(n)
+    tmpList = argList[n]
+    tmpVisibility = tmpList[#EditVisibility]
+    if voidp(tmpVisibility) then
+      tmpVisibility = 1
+    end if
+    if tmpVisibility = 0 then
+      next repeat
+    end if
+    tmpLocV = tmpLocV + tmpVSpace
+    if objectp(tmpList[#object]) then
+      tmpEditData = getPropFromObjOrAncestor(tmpList[#object], tmpID)
+    else
+      tmpEditData = tmpList[#default]
+    end if
+    member(tmpTextFieldName).text = tmpList[#comment]
+    tmpImg = member(tmpTextFieldName).image.duplicate()
+    member(tmpEnterFieldName).text = string(tmpList[#default])
+    dialogData.add([#ID: n, #type: #Pic, #Pic: tmpImg, #inOffsetRect: [0, tmpLocV, tmpMidH - 5, 0], #rel: [#Auto, 0, 0, #Auto], #blit: tmpUsePasting, #usingMouse: 0])
+    tmpFormat = tmpList[#format]
+    tmpEditID = symbol("Edit" & string(n))
+    if tmpFormat = #boolean then
+      dialogData.add([#ID: tmpEditID, #type: #button, #editData: tmpEditData, #inOffsetRect: [tmpMidH + 5, tmpLocV, 0, 0], #rel: [0, 0, #Auto, #Auto], #blit: tmpUsePasting, #ch: 5, #Toggle: 1, #Pic: "CheckButtonPic", #PicDownName: "1", #storeThisForMe: tmpID])
+      next repeat
+    end if
+    if tmpVisibility = #Dimmed then
+      tmpInk = 2
+    else
+      tmpInk = 0
+    end if
+    tmpFieldData = [#ID: tmpEditID, #type: #EnterField, #fieldName: tmpEnterFieldName, #editData: tmpEditData, #inOffsetRect: [tmpMidH + 5, tmpLocV, 0, 0], #rel: [0, 0, #Auto, #Auto], #format: tmpList[#format], #blit: tmpUsePasting, #ch: 5, #ink: tmpInk, #storeThisForMe: tmpID]
+    mergeLists(tmpFieldData, tmpFieldFormatting)
+    dialogData.add(tmpFieldData)
+  end repeat
+  return dialogData
+end
+
+on addBG me, argAddToList
+  if voidp(argAddToList) then
+    argAddToList = dialogData
+  end if
+  tmpUsePasting = 1
+  argAddToList.add([#ID: #BG, #type: #CustomFrame, #inOffsetRect: rect(-10, -30, 10, 10), #rel: [[#ZYXSrnd, 1], [#ZYXSrnd, 2], [#ZYXSrnd, 3], [#ZYXSrnd, 4]], #ch: 0, #blit: tmpUsePasting, #windowStyleMemberName: "DefaultWindowStyle", #removeAlpha: 0])
+  argAddToList.add([#ID: #DragBar, #type: #Pic, #Pic: "WindowDragBar", #ch: 1, #rect: [3, 2, -3, 22], #rel: [[#BG, 1], [#BG, 2], [#BG, 3], [#BG, 2]], #blit: tmpUsePasting, #ScriptNames: "DialogDragDialogBH"])
+  argAddToList.add([#ID: #close, #type: #button, #inOffsetRect: rect(0, 3, -3, 0), #rel: [#Auto, [#DragBar, 2], [#DragBar, 3], #Auto], #ch: 3, #blit: 1, #Pic: "WindowCloseIcon", #Toggle: 0, #PicOverName: EMPTY, #PicDownName: "1", #PicDimName: EMPTY])
+end
+
+on getList me
+  return dialogData
+end

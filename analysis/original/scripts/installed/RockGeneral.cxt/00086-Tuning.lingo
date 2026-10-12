@@ -1,0 +1,202 @@
+global gRock
+
+on tuneCheckAudience
+  album_r = gRock.m_context.getFocus(#album)
+  sortThese = [#Expo, #Hype, #Likes]
+  sortedInfoLists = [:]
+  repeat with n = 1 to sortThese.count
+    tmpSorted = [:]
+    tmpSorted.sort()
+    sortedInfoLists.addProp(sortThese[n], [#sorted: tmpSorted, #Total: 0.0])
+  end repeat
+  sizeTot = 0
+  groups_r = gRock.m_classManager.getObjsOfClass(#Group)
+  if objectp(album_r) then
+    repeat with group_r in groups_r
+      sizeTot = sizeTot + group_r.size
+      repeat with n = 1 to sortedInfoLists.count
+        prop = sortedInfoLists.getPropAt(n)
+        Info = sortedInfoLists[n]
+        val = group_r.Attitudes.getAttitude([album_r.ID, prop])
+        Info[#sorted].addProp(val, group_r)
+        Info[#Total] = Info[#Total] + (val * group_r.size)
+      end repeat
+    end repeat
+  else
+    exit
+  end if
+  str = "Avgs: "
+  repeat with n = 1 to sortedInfoLists.count
+    str = str & " " & string(sortedInfoLists.getPropAt(n)) & ":" & string(sortedInfoLists[n][#Total] / float(sizeTot))
+  end repeat
+  pott(str)
+  str = "Top 5: "
+  repeat with n = 1 to sortedInfoLists.count
+    str = str & string(sortedInfoLists.getPropAt(n))
+    tmp = sortedInfoLists[n]
+    repeat with m = 1 to 5
+      tmpIndex = tmp[#sorted].count - m + 1
+      str = str & " " & string(tmp[#sorted].getPropAt(tmpIndex)) & ":" & string(tmp[#sorted][tmpIndex].ID)
+    end repeat
+    str = str & RETURN
+  end repeat
+  pott(str)
+  str = "Bottom 5: "
+  repeat with n = 1 to sortedInfoLists.count
+    str = str & string(sortedInfoLists.getPropAt(n))
+    tmp = sortedInfoLists[n]
+    repeat with m = 1 to 5
+      tmpIndex = m
+      str = str & " " & string(tmp[#sorted].getPropAt(tmpIndex)) & ":" & string(tmp[#sorted][tmpIndex].ID)
+    end repeat
+    str = str & RETURN
+  end repeat
+  pott(str)
+end
+
+on tuneDebug arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12
+  str = "tune: "
+  if not voidp(arg1) then
+    str = str & arg1
+  end if
+  if not voidp(arg2) then
+    str = str & " " & arg2
+  end if
+  if not voidp(arg3) then
+    str = str & " " & arg3
+  end if
+  if not voidp(arg4) then
+    str = str & " " & arg4
+  end if
+  if not voidp(arg5) then
+    str = str & " " & arg5
+  end if
+  if not voidp(arg6) then
+    str = str & " " & arg6
+  end if
+  if not voidp(arg7) then
+    str = str & " " & arg7
+  end if
+  if not voidp(arg8) then
+    str = str & " " & arg8
+  end if
+  if not voidp(arg9) then
+    str = str & " " & arg9
+  end if
+  if not voidp(arg10) then
+    str = str & " " & arg10
+  end if
+  if not voidp(arg11) then
+    str = str & " " & arg11
+  end if
+  if not voidp(arg12) then
+    str = str & " " & arg12
+  end if
+  pott(str)
+end
+
+on tuneDebugObject argObj, argDescription
+  str = EMPTY
+  tmpProps = gRock.m_classManager.getPropsInClass(argObj.className)
+  repeat with n = 1 to tmpProps.count
+    tmpProp = tmpProps.getPropAt(n)
+    tmpVal = rgetProp(argObj, tmpProp)
+    str = str & string(tmpProp) & ":" & string(tmpVal) & RETURN
+  end repeat
+  tuneDebug(argDescription & RETURN & str)
+end
+
+on tuneCheckGroup argGroupID
+  group_r = gRock.m_classManager.getObjByIDAndClass(argGroupID, #Group)
+  album_r = gRock.m_context.getFocus(#album)
+  tuneDebug("Attitudes", group_r.Attitudes.getAttitude([album_r.ID]))
+  tuneDebug(rDefLikesAlbum(group_r, VOID, [#music: 1, #image: 1, #SongType: 1, #quality: 1, #Freshness: 0.29999999999999999], #ExtraInfo))
+end
+
+on tuneShowReaches argClasses
+  if symbolp(argClasses) then
+    if not listp(gRock.m_classManager.getObjsOfClass(argClasses)) then
+      obj = gRock.m_classManager.getObjByID(argClasses)
+      if not objectp(obj) then
+        exit
+      end if
+      argClasses = obj.className
+    end if
+    argClasses = [argClasses]
+  end if
+  if voidp(argClasses) then
+    argClasses = [#media, #Live, #TourCity]
+  end if
+  repeat with class in argClasses
+    pott(class)
+    objs = gRock.m_classManager.getObjsOfClass(class)
+    repeat with obj in objs
+      pott(obj.ID)
+      ReachesGroups = rgetProp(obj, #ReachesGroups)
+      tmpOK = listp(ReachesGroups)
+      if tmpOK then
+        tmpOK = ReachesGroups.count
+      end if
+      if not tmpOK then
+        ReachesGroups = [:]
+        repeat with n = 1 to obj.MediaTargets.count
+          target_r = gRock.m_classManager.getObjByIDAndClass(obj.MediaTargets[n], #MediaTarget)
+          tmpReachesGroups = target_r.calcReach()
+          repeat with m = 1 to tmpReachesGroups.count
+            tmpGrpID = tmpReachesGroups.getPropAt(m)
+            if tmpReachesGroups[m] > ReachesGroups.getaProp(tmpGrpID) then
+              ReachesGroups[tmpGrpID] = tmpReachesGroups[m]
+            end if
+          end repeat
+        end repeat
+      end if
+      pott(ReachesGroups)
+    end repeat
+  end repeat
+end
+
+on tuneModifyingID argID
+  mods = gRock.m_modifiersManager.findModifiers([#ModifiedID: argID])
+  repeat with obj in mods
+    pott(obj.ID, obj.getModifiedValsAndProps())
+  end repeat
+end
+
+on tuneActiveTriggers
+  triggers_r = gRock.m_classManager.getObjsOfClass(#Trigger)
+  repeat with trigger_r in triggers_r
+    if trigger_r.Active then
+      pott(trigger_r.ID)
+    end if
+  end repeat
+  if triggers_r.count = 0 then
+    pott("No active triggers!")
+  end if
+end
+
+on polandPott arg1, arg2, arg3, arg4, arg5
+end
+
+on tuneExpoEvents argDate, argNumDays
+  if voidp(argDate) then
+    argDate = gRock.m_date.getDateInt()
+  end if
+  if voidp(argNumDays) then
+    argNumDays = 1
+  end if
+  events_r = gRock.m_eventsManager.getOngoingEventsBetweenDates(argDate, argDate + argNumDays)
+  repeat with n = 1 to events_r.count
+    event_r = events_r[n]
+    if gRock.m_classManager.hasBaseClass(event_r, #AudienceExposure) or (event_r.className = #AudienceExposure) then
+      str = string(event_r.className) && string(event_r.StartDate) & "," & string(event_r.duration)
+      str = str & ": I:" & string(event_r.Intensity) & "AvgI:" & string(event_r.getAverageIntensity()) & " I/G:" & string(event_r.IntensityPerGroup)
+      str = str & " Q:" & string(event_r.quality) & "AvgQ:" & string(event_r.getAverageQuality()) & " Q/G:" & string(event_r.QualityPerGroup)
+      str = str & " " & string(event_r.InfluenceWhat)
+      MediaID = rgetProp(event_r, #MediaID)
+      if not voidp(MediaID) and (MediaID <> #none) then
+        str = str & "  " & string(rgetProp(event_r, #MediaID))
+      end if
+      pott(str)
+    end if
+  end repeat
+end

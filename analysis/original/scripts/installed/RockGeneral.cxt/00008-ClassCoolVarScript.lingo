@@ -1,0 +1,55 @@
+property ancestor, child, className, belongsTo, _killed, NotifyList
+
+on new me, argChild, argBelongsTo
+  if objectp(argChild) then
+    child = argChild
+  else
+    child = me
+  end if
+  belongsTo = argBelongsTo
+  className = #CoolVar
+  NotifyList = []
+  return me
+end
+
+on kill me
+  _killed = 1
+  if objectp(ancestor) then
+    ancestor = ancestor.kill()
+  end if
+  NotifyList = []
+  child = 0
+  belongsTo = 0
+  return 0
+end
+
+on setVal me, argVal
+  child.val = argVal
+  me.notifyThem(#setVal)
+end
+
+on getVal me
+  return child.val
+end
+
+on notifyThem me, argWhat
+  repeat with obj in NotifyList
+    obj.notification(child, argWhat)
+  end repeat
+end
+
+on notifyMe me, argObj, argWhat
+  if (argWhat = #Remove) or (argWhat = 0) then
+    NotifyList.deleteOne(argObj)
+  else
+    NotifyList.add(argObj)
+  end if
+end
+
+on setOneProp me, argProp, argVal
+  me.setVal(argVal)
+end
+
+on getOneProp me, argProp
+  me.getVal()
+end

@@ -1,0 +1,35 @@
+property m_orgMembers, m_freeMembers, m_maxSounds
+global gDir
+
+on new me, argFileName
+  m_maxSounds = 8
+  m_freeMembers = []
+  repeat with n = 1 to m_maxSounds
+    m_freeMembers.add(member("LinkedAudio" & convItoS(n, 2)))
+  end repeat
+  m_orgMembers = m_freeMembers.duplicate()
+  return me
+end
+
+on kill me
+  repeat with memb in m_orgMembers
+    memb.fileName = the moviePath & "Wav.wav"
+  end repeat
+  return 0
+end
+
+on getFreeMember me, argFileName
+  if m_freeMembers.count then
+    memb = m_freeMembers[1]
+    m_freeMembers.deleteAt(1)
+    memb.fileName = argFileName
+    return m_freeMembers
+  end if
+  return 0
+end
+
+on returnMember me, argMember
+  if m_freeMembers.getPos(argMember) = 0 then
+    m_freeMembers.add(argMember)
+  end if
+end

@@ -1,0 +1,254 @@
+on mixProgress arg
+  global gDir
+  if not objectp(gDir) then
+    exit
+  end if
+  if not gDir.handler(#progressReport) then
+    exit
+  end if
+  gDir.progressReport(arg)
+end
+
+on mixPrepareDll argDllName, argFuncName, argReturnType, argParamsString, argSetDllProps
+  global gRock
+  GLURegister("R100-71-52600248")
+  dll = xtra("GLU32").new()
+  if objectp(gRock) then
+    dllPath = gRock.m_paths.getPath(#RockWave)
+  else
+    dllPath = "D:\Dok\Rock\Music\"
+  end if
+  dllPath = dllPath & argDllName
+  if voidp(argSetDllProps) then
+    argSetDllProps = [:]
+  end if
+  if voidp(argSetDllProps.getaProp("MAXSTRINGSIZE")) then
+    argSetDllProps.setaProp("MAXSTRINGSIZE", 1024)
+  end if
+  repeat with n = 1 to argSetDllProps.count
+    dll.GLUSetProp(argSetDllProps.getPropAt(n), argSetDllProps[n])
+  end repeat
+  err = dll.GLUNew(dllPath, argFuncName, argReturnType, argParamsString, 0, 1)
+  if err <> 0 then
+    pott("Error, GLUNew", err, dll.GLUGetErrorString(dll.GLUGetLastError()), dllPath)
+    dll.GLUDispose()
+    dll = 0
+    return 0
+  end if
+  return dll
+end
+
+on mixtest
+  dll = mixPrepareDll("dlltest2.dll", "testfunc2", "I", "#S", ["MAXSTRINGSIZE": 8 * 512])
+  if not objectp(dll) then
+    return 0
+  end if
+  tmp = [EMPTY, EMPTY]
+  callResult = dll.GLUCall(tmp)
+  pott("xa", dll.GLUGetErrorString(dll.GLUGetLastError()))
+  pott("Result", callResult, "Args", dll.GLUGetResults())
+  dll.GLUDispose()
+end
+
+on mixMixDown argMixInfo, argNumSeconds, argOutFile
+  if not listp(argMixInfo) then
+    argMixInfo = [[#file: "D:\Dok\Rock\Music\Rendered\Gt1mrg.wav", #vol: 0.5], [#file: "D:\Dok\Rock\Music\Rendered\Kb1mrg.wav", #vol: 0.5], [#file: "D:\Dok\Rock\Music\Rendered\Dr1mrg.wav", #vol: 0.5], [#file: "D:\Dok\Rock\Music\Rendered\Bs1mrg.wav", #vol: 0.5]]
+  end if
+  tmpStrLen = 512
+  tmpMaxStrs = argMixInfo.count
+  dll = mixPrepareDll("dlltest2.dll", "mixDown", "V", "@S@SIID@S", ["MAXSTRINGSIZE": tmpMaxStrs * tmpStrLen])
+  if not objectp(dll) then
+    return 0
+  end if
+  tmpLongStr = EMPTY
+  repeat with tmpInfo in argMixInfo
+    tmp = "in:" & tmpInfo[#file] & ", VOL:" & tmpInfo[#vol] & " ?"
+    tmpLongStr = tmpLongStr & tmp
+  end repeat
+  if voidp(argNumSeconds) then
+    argNumSeconds = 8.5
+  end if
+  if voidp(argOutFile) then
+    argOutFile = "D:\_testout.wav"
+  end if
+  callResult = dll.GLUCall(argOutFile, tmpLongStr, argMixInfo.count, tmpStrLen, argNumSeconds, EMPTY)
+  dll.GLUDispose()
+  dll = 0
+end
+
+on mixDecodeFiles argFiles, argFormat
+  global gRock
+  if not listp(argFiles) then
+    exit
+  end if
+  if voidp(argFormat) then
+    argFormat = "ogg"
+  end if
+  if argFormat = "mp3" then
+    if objectp(gRock) then
+      programPath = gRock.m_paths.getPath(#RockWave) & "lame.exe"
+    else
+      programPath = "D:\Dok\Rock\Music\lame.exe"
+    end if
+    repeat with n = 1 to argFiles.count
+      tmp = argFiles[n]
+      open(programPath & " --decode " & tmp[#in] & " " & tmp[#Out])
+    end repeat
+  else
+    if argFormat = "ogg" then
+      dll = mixPrepareDll("decdll.dll", "decode", "I", "SS", ["MAXSTRINGSIZE": 2 * 512])
+      if not objectp(dll) then
+        return 0
+      end if
+      repeat with n = 1 to argFiles.count
+        tmp = argFiles[n]
+        callResult = dll.GLUCall(tmp[#in], tmp[#Out])
+        mixProgress()
+      end repeat
+      dll.GLUDispose()
+      dll = 0
+    end if
+  end if
+end
+
+on mixCallRockWave argArgStrList
+  dll = mixPrepareDll("dlltest2.dll", "cp", "V", "@S@S")
+  if not objectp(dll) then
+    return 0
+  end if
+  if voidp(argArgStrList) then
+    tmpSnd = "15Gt1"
+    tmpInPath = "D:\Dok\Rock\Sound\Music\Sliced\"
+    tmpOutPath = "D:\Dok\Rock\Music\Rendered\"
+    tmpIn = tmpInPath & tmpSnd
+    tmpOut = tmpOutPath & "test.wav"
+    argArgStrList = " In:" & tmpIn & "\*.*" & ", out:" & tmpOut & ", rnd:0.0, rndCenter:0.0, speed:1.0 "
+  end if
+  if stringp(argArgStrList) then
+    argArgStrList = [argArgStrList]
+  end if
+  repeat with tmpArgStr in argArgStrList
+    if 1 then
+      tmpOff = offset("cues:", tmpArgStr)
+      if tmpOff < 1 then
+        tmpInStart = offset("in:", tmpArgStr)
+        if tmpInStart then
+          tmpStr = tmpArgStr.char[tmpInStart..tmpArgStr.length]
+          tmpOff = offset(",", tmpStr)
+          if tmpOff then
+            tmpStr = tmpStr.char[1..tmpOff - 1]
+          end if
+          tmpInEnd = tmpInStart + tmpStr.length - 1
+          tmpStr = tmpStr.char[4..tmpStr.length]
+          tmpPath = fileExtractPath(tmpStr)
+          tmpPath = tmpPath.char[1..tmpPath.length - 1]
+          tmpIn = "in:" & tmpPath & ".wa*"
+          tmpCues = "cues:" & tmpPath & ".txt"
+          put tmpIn into dll.char[tmpInStart..tmpInEnd]
+          tmpArgStr = tmpCues & ", " & tmpArgStr
+        end if
+      end if
+    end if
+    result = dll.GLUCall(tmpArgStr, EMPTY)
+    mixProgress()
+  end repeat
+  dll.GLUDispose()
+  dll = 0
+end
+
+on mixGenFXStr FX, argExeType
+  set the floatPrecision to 4
+  if argExeType = #dll then
+    affixes = [#Pre: EMPTY, #in: ":", #Post: ", "]
+  else
+    if argExeType = #xtra then
+      return FX
+    else
+      if (argExeType = #Exe) or voidp(argExeType) then
+        affixes = [#Pre: "/", #in: ":", #Post: " "]
+      end if
+    end if
+  end if
+  strPtr = [EMPTY]
+  mixAddParam(strPtr, "in", FX[#in], "D:\Dok\test*.*", affixes)
+  mixAddParam(strPtr, "out", FX[#Out], "D:\Dok\_A.wav", affixes)
+  if listp(FX[#delay]) then
+    if stringp(FX[#delay][#time]) then
+      tmpStr = FX[#delay][#time]
+      tmpOff = offset("T", tmpStr)
+      if tmpOff then
+        delete affixes.char[tmpOff]
+        FX[#delay][#time] = 3.0 * float(tmpStr.value) / 2.0
+      else
+        FX[#delay][#time] = float(tmpStr.value)
+      end if
+      mixAddParam(strPtr, "dlysync", 1.0, 1.0, affixes)
+    else
+      mixAddParam(strPtr, "dlysync", FX[#delay][#Sync], 1.0, affixes)
+    end if
+    mixAddParam(strPtr, "dlytime", FX[#delay][#time], 0.0, affixes)
+    mixAddParam(strPtr, "dlydecay", FX[#delay][#Decay], 0.29999999999999999, affixes)
+    mixAddParam(strPtr, "dlyMix", FX[#delay][#Mix], 0.0, affixes)
+  end if
+  if listp(FX[#phaser]) then
+    mixAddParam(strPtr, "phaserFreq", FX[#phaser][#freq], 0.40000000000000002, affixes)
+    mixAddParam(strPtr, "phaserdepth", FX[#phaser][#depth], 2.0, affixes)
+    mixAddParam(strPtr, "phaserMix", FX[#phaser][#Mix], 0.5, affixes)
+  end if
+  if listp(FX[#Chorus]) then
+    mixAddParam(strPtr, "chorFreq", FX[#Chorus][#freq], 0.40000000000000002, affixes)
+    mixAddParam(strPtr, "chordepth", FX[#Chorus][#depth], 2.0, affixes)
+    mixAddParam(strPtr, "chorMix", FX[#Chorus][#Mix], 0.5, affixes)
+  end if
+  if listp(FX[#reverb]) then
+    mixAddParam(strPtr, "RvbWave", FX[#reverb][#wave], "d:\user\beat\Hallway2.wav", affixes)
+    mixAddParam(strPtr, "RvbTime", FX[#reverb][#time], 0.0, affixes)
+    mixAddParam(strPtr, "RvbMix", FX[#reverb][#Mix], 0.5, affixes)
+  end if
+  if listp(FX[#tempo]) then
+    mixAddParam(strPtr, "Bars", FX[#tempo][#Bars], 1, affixes)
+    mixAddParam(strPtr, "timesig", FX[#tempo][#TimeSig], "04/04", affixes)
+    mixAddParam(strPtr, "speed", FX[#tempo][#factor], VOID, affixes)
+    mixAddParam(strPtr, "bpm", FX[#tempo][#BPM], VOID, affixes)
+  end if
+  if listp(FX[#random]) then
+    mixAddParam(strPtr, "rnd", FX[#random][#max], 0.10000000000000001, affixes)
+    mixAddParam(strPtr, "rndcenter", FX[#random][#center], 0.0, affixes)
+  end if
+  mixAddParam(strPtr, VOID, VOID, VOID, affixes, #RemovePostfix)
+  return strPtr[1]
+end
+
+on mixAddParam argStrPtr, argProp, argVal, argDefaultVal, argAffixes, argMode
+  Prefix = argAffixes[#Pre]
+  postfix = argAffixes[#Post]
+  infix = argAffixes[#in]
+  if argMode = #RemovePostfix then
+    str = argStrPtr[1]
+    len = str.length
+    delete Prefix.char[len - postfix.length + 1..len]
+    argStrPtr[1] = str & " "
+    exit
+  end if
+  if voidp(argVal) then
+    argVal = argDefaultVal
+  end if
+  if voidp(argVal) then
+    exit
+  end if
+  argStrPtr[1] = argStrPtr[1] & Prefix & argProp & infix & argVal & postfix
+end
+
+on xxxMixRW
+  tmpIn = "StraightDiddley101-1dr"
+  tmpIn = "Seattle116dr"
+  tmpIn = "Madonna_100bs"
+  tmpIn = "D:\Dok\Rock\Sound\Music\Sliced\" & tmpIn & "\*.*"
+  tmpOut = "D:\Dok\_Atest.wav"
+  inOut = [#in: tmpIn, #Out: tmpOut]
+  FX = [#delay: [#time: 0, #Decay: 0.5], #phaser: [#freq: 0.0, #depth: 2.0], #reverb: [#wave: "D:\Dok\Rock\Sound\Music\Hallway2.wav"], #random: [#max: 0.0, #center: 0.0], #tempo: [#BPM: 100.0, #Bars: 2, #TimeSig: "04/04"]]
+  FX = [#tempo: [#speed: 1.0, #Bars: 1, #TimeSig: "4/4"]]
+  mergeLists(FX, inOut)
+  fxStr = mixGenFXStr(FX)
+  mixCallRockWave(fxStr)
+end

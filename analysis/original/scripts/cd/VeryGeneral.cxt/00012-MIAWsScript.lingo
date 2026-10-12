@@ -1,0 +1,101 @@
+property MIAWs, justStartedMIAW
+
+on new me
+  MIAWs = [:]
+  justStartedMIAW = 0
+  return me
+end
+
+on kill me
+  repeat with n = count(MIAWs) down to 1
+    closeMIAW(me, getPropAt(MIAWs, n))
+  end repeat
+  repeat with tmpMIAW in the windowList
+    close(tmpMIAW)
+  end repeat
+  the windowList = []
+  MIAWs = [:]
+  return 0
+end
+
+on openMIAW me, argFileName, argSize, argLoc, argID
+  tmpMIAW = window(argFileName)
+  tmpRect = (the stage).rect
+  tmpLoc = point(getAt(tmpRect, 1), getAt(tmpRect, 2))
+  tmpLoc = tmpLoc + argLoc
+  tmpRect = rect(tmpLoc, tmpLoc + argSize)
+  tmpMIAW.rect = tmpRect
+  tmpMIAW.fileName = argFileName
+  tmpMIAW.titleVisible = 0
+  tmpMIAW.windowType = 2
+  open(tmpMIAW)
+  justStartedMIAW = 1
+  tmpInfo = [#file: fileStripName(argFileName), #rect: tmpMIAW.rect, #size: argSize, #ID: argID]
+  addProp(MIAWs, tmpMIAW, tmpInfo)
+  return tmpMIAW
+end
+
+on closeMIAW me, argMIAW
+  tmp = argMIAW
+  if symbolp(argMIAW) then
+    argMIAW = getByID(me, argMIAW)
+  else
+    if stringp(argMIAW) then
+      argMIAW = getByFileName(me, argMIAW)
+    end if
+  end if
+  if not objectp(argMIAW) then
+    put "Not valid MIAW!", tmp
+    exit
+  end if
+  tell argMIAW
+    stopMovie()
+  end tell
+  close(argMIAW)
+  deleteOne(the windowList, argMIAW)
+  deleteProp(MIAWs, argMIAW)
+end
+
+on getByID me, argID
+  repeat with n = 1 to count(MIAWs)
+    if getProp(getAt(MIAWs, n), #ID) = argID then
+      return getPropAt(MIAWs, n)
+    end if
+  end repeat
+  return 0
+end
+
+on getByFileName me, argName
+  argName = fileStripName(argName)
+  repeat with n = 1 to count(MIAWs)
+    if getProp(getAt(MIAWs, n), #file) = argName then
+      return getPropAt(MIAWs, n)
+    end if
+  end repeat
+  return 0
+end
+
+on getActiveMovie me
+  tmp = the activeMovie
+  return tmp
+end
+
+on getRect me, argMIAW, argOffset
+  tmpList = getaProp(MIAWs, argMIAW)
+  if listp(tmpList) then
+    tmpRect = getaProp(tmpList, #rect)
+  else
+    tmpRect = (the stage).rect
+  end if
+  if argOffset = #stage then
+    tmpStageRect = (the stage).rect
+    tmpTop = point(getAt(tmpRect, 1), getAt(tmpRect, 2))
+    return tmpRect - rect(tmpTop, tmpTop)
+  else
+    return tmpRect
+  end if
+end
+
+on isRunningAsMIAW me, argFileName
+  return objectp(getByFileName(me, argFileName))
+end

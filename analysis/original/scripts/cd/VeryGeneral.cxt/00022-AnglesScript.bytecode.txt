@@ -1,0 +1,314 @@
+property lookup, nrOfDirs
+
+on new me, argNrOfDirs
+  [  0] getparam 8 .............................. <argNrOfDirs>
+  [  2] setprop 635 ............................. nrOfDirs = argNrOfDirs
+  [  5] pushzero ................................ <0>
+  [  6] setlocal 0 .............................. tmpMembNr = 0
+  [  8] getlocal 0 .............................. <tmpMembNr>
+  [ 10] pushzero ................................ <0>
+  [ 11] gt ...................................... <tmpMembNr > 0>
+  [ 12] jmpifz [ 36] ............................ if tmpMembNr > 0 then / else
+  [ 15] getlocal 0 .............................. <tmpMembNr>
+  [ 17] pusharglist 1 ........................... <tmpMembNr>
+  [ 19] extcall 307 ............................. <member(tmpMembNr)>
+  [ 22] getobjprop 310 .......................... <member(tmpMembNr).text>
+  [ 25] pusharglist 1 ........................... <member(tmpMembNr).text>
+  [ 27] extcall 67 .............................. <value(member(tmpMembNr).text)>
+  [ 30] setprop 636 ............................. lookup = value(member(tmpMembNr).text)
+  [ 33] jmp [ 96]
+  [ 36] pusharglist 0 ........................... <[]>
+  [ 38] pushlist ................................ <[]>
+  [ 39] setprop 636 ............................. lookup = []
+  [ 42] pushint8 1 .............................. <1>
+  [ 45] setlocal 8
+  [ 47] getlocal 8
+  [ 49] getprop 635 ............................. <nrOfDirs>
+  [ 52] lteq
+  [ 53] jmpifz [ 96] ............................ repeat with n = 1 to nrOfDirs
+  [ 56] getprop 636 ............................. <lookup>
+  [ 59] pushint8 2 .............................. <2>
+  [ 62] pusharglist 0 ........................... <>
+  [ 64] extcall 638 ............................. <PI>
+  [ 67] mul ..................................... <2 * PI>
+  [ 68] getlocal 8 .............................. <n>
+  [ 70] mul ..................................... <2 * PI * n>
+  [ 71] getprop 635 ............................. <nrOfDirs>
+  [ 74] div ..................................... <2 * PI * n / nrOfDirs>
+  [ 75] pusharglist 1 ........................... <2 * PI * n / nrOfDirs>
+  [ 77] extcall 637 ............................. <sin(2 * PI * n / nrOfDirs)>
+  [ 80] pusharglistnoret 2 ...................... <lookup, sin(2 * PI * n / nrOfDirs)>
+  [ 82] extcall 183 ............................. add(lookup, sin(2 * PI * n / nrOfDirs))
+  [ 85] pushint8 1
+  [ 88] getlocal 8
+  [ 90] add
+  [ 91] setlocal 8
+  [ 93] endrepeat [ 47]
+  [ 96] getparam 0 .............................. <me>
+  [ 98] pusharglistnoret 1 ...................... <me>
+  [100] extcall 32 .............................. return me
+  [103] ret
+end
+
+on kill me
+  [  0] pushzero ................................ <0>
+  [  1] pusharglistnoret 1 ...................... <0>
+  [  3] extcall 32 .............................. return 0
+  [  6] ret
+end
+
+on getCos me, argAng
+  [  0] getparam 0 .............................. <me>
+  [  2] getparam 8 .............................. <argAng>
+  [  4] getprop 635 ............................. <nrOfDirs>
+  [  7] pushint8 4 .............................. <4>
+  [ 10] div ..................................... <nrOfDirs / 4>
+  [ 11] add ..................................... <argAng + (nrOfDirs / 4)>
+  [ 12] pusharglist 2 ........................... <me, argAng + (nrOfDirs / 4)>
+  [ 14] localcall 6 ............................. <correctAngle(me, argAng + (nrOfDirs / 4))>
+  [ 16] setparam 8 .............................. argAng = correctAngle(me, argAng + (nrOfDirs / 4))
+  [ 18] getprop 636 ............................. <lookup>
+  [ 21] getparam 8 .............................. <argAng>
+  [ 23] pusharglist 2 ........................... <lookup, argAng>
+  [ 25] extcall 23 .............................. <getAt(lookup, argAng)>
+  [ 27] pusharglistnoret 1 ...................... <getAt(lookup, argAng)>
+  [ 29] extcall 32 .............................. return getAt(lookup, argAng)
+  [ 32] ret
+end
+
+on getSin me, argAng
+  [  0] getparam 0 .............................. <me>
+  [  2] getparam 8 .............................. <argAng>
+  [  4] pusharglist 2 ........................... <me, argAng>
+  [  6] localcall 6 ............................. <correctAngle(me, argAng)>
+  [  8] setparam 8 .............................. argAng = correctAngle(me, argAng)
+  [ 10] getprop 636 ............................. <lookup>
+  [ 13] getparam 8 .............................. <argAng>
+  [ 15] pusharglist 2 ........................... <lookup, argAng>
+  [ 17] extcall 23 .............................. <getAt(lookup, argAng)>
+  [ 19] pusharglistnoret 1 ...................... <getAt(lookup, argAng)>
+  [ 21] extcall 32 .............................. return getAt(lookup, argAng)
+  [ 24] ret
+end
+
+on angleToPoint me, argAng, argFact
+  [  0] getparam 16 ............................. <argFact>
+  [  2] getparam 0 .............................. <me>
+  [  4] getparam 8 .............................. <argAng>
+  [  6] pusharglist 2 ........................... <me, argAng>
+  [  8] localcall 3 ............................. <getSin(me, argAng)>
+  [ 10] mul ..................................... <argFact * getSin(me, argAng)>
+  [ 11] getparam 16 ............................. <argFact>
+  [ 13] inv ..................................... <-argFact>
+  [ 14] getparam 0 .............................. <me>
+  [ 16] getparam 8 .............................. <argAng>
+  [ 18] pusharglist 2 ........................... <me, argAng>
+  [ 20] localcall 2 ............................. <getCos(me, argAng)>
+  [ 22] mul ..................................... <-argFact * getCos(me, argAng)>
+  [ 23] pusharglist 2 ........................... <argFact * getSin(me, argAng), -argFact * getCos(me, argAng)>
+  [ 25] extcall 75 .............................. <point(argFact * getSin(me, argAng), -argFact * getCos(me, argAng))>
+  [ 28] pusharglistnoret 1 ...................... <point(argFact * getSin(me, argAng), -argFact * getCos(me, argAng))>
+  [ 30] extcall 32 .............................. return point(argFact * getSin(me, argAng), -argFact * getCos(me, argAng))
+  [ 33] ret
+end
+
+on pointToAngle me, argPoint, argPoint2
+  [  0] getparam 16 ............................. <argPoint2>
+  [  2] pusharglist 1 ........................... <argPoint2>
+  [  4] extcall 128 ............................. <listp(argPoint2)>
+  [  7] jmpifz [ 17] ............................ if listp(argPoint2) then
+  [ 10] getparam 8 .............................. <argPoint>
+  [ 12] getparam 16 ............................. <argPoint2>
+  [ 14] sub ..................................... <argPoint - argPoint2>
+  [ 15] setparam 8 .............................. argPoint = argPoint - argPoint2
+  [ 17] getparam 8 .............................. <argPoint>
+  [ 19] pushint8 1 .............................. <1>
+  [ 22] pusharglist 2 ........................... <argPoint, 1>
+  [ 24] extcall 23 .............................. <getAt(argPoint, 1)>
+  [ 26] inv ..................................... <-getAt(argPoint, 1)>
+  [ 27] setlocal 0 .............................. diffX = -getAt(argPoint, 1)
+  [ 29] getparam 8 .............................. <argPoint>
+  [ 31] pushint8 2 .............................. <2>
+  [ 34] pusharglist 2 ........................... <argPoint, 2>
+  [ 36] extcall 23 .............................. <getAt(argPoint, 2)>
+  [ 38] setlocal 8 .............................. diffY = getAt(argPoint, 2)
+  [ 40] getlocal 8 .............................. <diffY>
+  [ 42] pushzero ................................ <0>
+  [ 43] eq ...................................... <diffY = 0>
+  [ 44] jmpifz [ 86] ............................ if diffY = 0 then / else
+  [ 47] getlocal 0 .............................. <diffX>
+  [ 49] pushzero ................................ <0>
+  [ 50] lt ...................................... <diffX < 0>
+  [ 51] jmpifz [ 72] ............................ if diffX < 0 then / else
+  [ 54] pushint8 3 .............................. <3>
+  [ 57] pusharglist 0 ........................... <>
+  [ 59] extcall 638 ............................. <PI>
+  [ 62] mul ..................................... <3 * PI>
+  [ 63] pushint8 2 .............................. <2>
+  [ 66] div ..................................... <3 * PI / 2>
+  [ 67] setlocal 16 ............................. tempDirection = 3 * PI / 2
+  [ 69] jmp [ 83]
+  [ 72] pusharglist 0 ........................... <>
+  [ 74] extcall 638 ............................. <PI>
+  [ 77] pushint8 2 .............................. <2>
+  [ 80] div ..................................... <PI / 2>
+  [ 81] setlocal 16 ............................. tempDirection = PI / 2
+  [ 83] jmp [172]
+  [ 86] getlocal 0 .............................. <diffX>
+  [ 88] getlocal 8 .............................. <diffY>
+  [ 90] pusharglist 1 ........................... <diffY>
+  [ 92] extcall 92 .............................. <float(diffY)>
+  [ 95] div ..................................... <diffX / float(diffY)>
+  [ 96] pusharglist 1 ........................... <diffX / float(diffY)>
+  [ 98] extcall 643 ............................. <atan(diffX / float(diffY))>
+  [101] setlocal 16 ............................. tempDirection = atan(diffX / float(diffY))
+  [103] getlocal 0 .............................. <diffX>
+  [105] pushzero ................................ <0>
+  [106] gt ...................................... <diffX > 0>
+  [107] jmpifz [138] ............................ if diffX > 0 then / else
+  [110] getlocal 8 .............................. <diffY>
+  [112] pushzero ................................ <0>
+  [113] gt ...................................... <diffY > 0>
+  [114] jmpifz [125] ............................ if diffY > 0 then / else
+  [117] pusharglistnoret 0 ...................... <>
+  [119] extcall 510 ............................. nothing()
+  [122] jmp [135]
+  [125] getlocal 16 ............................. <tempDirection>
+  [127] pusharglist 0 ........................... <>
+  [129] extcall 638 ............................. <PI>
+  [132] add ..................................... <tempDirection + PI>
+  [133] setlocal 16 ............................. tempDirection = tempDirection + PI
+  [135] jmp [172]
+  [138] getlocal 8 .............................. <diffY>
+  [140] pushzero ................................ <0>
+  [141] gt ...................................... <diffY > 0>
+  [142] jmpifz [162] ............................ if diffY > 0 then / else
+  [145] getlocal 16 ............................. <tempDirection>
+  [147] pushint8 2 .............................. <2>
+  [150] pusharglist 0 ........................... <>
+  [152] extcall 638 ............................. <PI>
+  [155] mul ..................................... <2 * PI>
+  [156] add ..................................... <tempDirection + (2 * PI)>
+  [157] setlocal 16 ............................. tempDirection = tempDirection + (2 * PI)
+  [159] jmp [172]
+  [162] getlocal 16 ............................. <tempDirection>
+  [164] pusharglist 0 ........................... <>
+  [166] extcall 638 ............................. <PI>
+  [169] add ..................................... <tempDirection + PI>
+  [170] setlocal 16 ............................. tempDirection = tempDirection + PI
+  [172] getprop 635 ............................. <nrOfDirs>
+  [175] getlocal 16 ............................. <tempDirection>
+  [177] mul ..................................... <nrOfDirs * tempDirection>
+  [178] pusharglist 0 ........................... <>
+  [180] extcall 638 ............................. <PI>
+  [183] div ..................................... <nrOfDirs * tempDirection / PI>
+  [184] pushint8 2 .............................. <2>
+  [187] div ..................................... <nrOfDirs * tempDirection / PI / 2>
+  [188] pusharglist 1 ........................... <nrOfDirs * tempDirection / PI / 2>
+  [190] extcall 95 .............................. <integer(nrOfDirs * tempDirection / PI / 2)>
+  [193] setlocal 16 ............................. tempDirection = integer(nrOfDirs * tempDirection / PI / 2)
+  [195] getlocal 16 ............................. <tempDirection>
+  [197] pusharglistnoret 1 ...................... <tempDirection>
+  [199] extcall 32 .............................. return tempDirection
+  [202] ret
+end
+
+on correctAngle me, argAng, argNrOfDirs
+  [  0] getparam 16 ............................. <argNrOfDirs>
+  [  2] pusharglist 1 ........................... <argNrOfDirs>
+  [  4] extcall 104 ............................. <voidp(argNrOfDirs)>
+  [  7] jmpifz [ 15] ............................ if voidp(argNrOfDirs) then
+  [ 10] getprop 635 ............................. <nrOfDirs>
+  [ 13] setparam 16 ............................. argNrOfDirs = nrOfDirs
+  [ 15] getparam 8 .............................. <argAng>
+  [ 17] getparam 16 ............................. <argNrOfDirs>
+  [ 19] mod ..................................... <argAng mod argNrOfDirs>
+  [ 20] setparam 8 .............................. argAng = argAng mod argNrOfDirs
+  [ 22] getparam 8 .............................. <argAng>
+  [ 24] pushzero ................................ <0>
+  [ 25] eq ...................................... <argAng = 0>
+  [ 26] jmpifz [ 36] ............................ if argAng = 0 then
+  [ 29] getparam 16 ............................. <argNrOfDirs>
+  [ 31] pusharglistnoret 1 ...................... <argNrOfDirs>
+  [ 33] extcall 32 .............................. return argNrOfDirs
+  [ 36] getparam 8 .............................. <argAng>
+  [ 38] pushzero ................................ <0>
+  [ 39] gt ...................................... <argAng > 0>
+  [ 40] jmpifz [ 53] ............................ if argAng > 0 then / else
+  [ 43] getparam 8 .............................. <argAng>
+  [ 45] pusharglistnoret 1 ...................... <argAng>
+  [ 47] extcall 32 .............................. return argAng
+  [ 50] jmp [ 63]
+  [ 53] getparam 16 ............................. <argNrOfDirs>
+  [ 55] getparam 8 .............................. <argAng>
+  [ 57] add ..................................... <argNrOfDirs + argAng>
+  [ 58] pusharglistnoret 1 ...................... <argNrOfDirs + argAng>
+  [ 60] extcall 32 .............................. return argNrOfDirs + argAng
+  [ 63] ret
+end
+
+on getAngleDiff me, argAng
+  [  0] getparam 8 .............................. <argAng>
+  [  2] getprop 635 ............................. <nrOfDirs>
+  [  5] mod ..................................... <argAng mod nrOfDirs>
+  [  6] setparam 8 .............................. argAng = argAng mod nrOfDirs
+  [  8] getparam 8 .............................. <argAng>
+  [ 10] getprop 635 ............................. <nrOfDirs>
+  [ 13] gt ...................................... <argAng > nrOfDirs>
+  [ 14] jmpifz [ 32] ............................ if argAng > nrOfDirs then / else
+  [ 17] getprop 635 ............................. <nrOfDirs>
+  [ 20] inv ..................................... <-nrOfDirs>
+  [ 21] getparam 8 .............................. <argAng>
+  [ 23] add ..................................... <-nrOfDirs + argAng>
+  [ 24] pusharglistnoret 1 ...................... <-nrOfDirs + argAng>
+  [ 26] extcall 32 .............................. return -nrOfDirs + argAng
+  [ 29] jmp [ 57]
+  [ 32] getparam 8 .............................. <argAng>
+  [ 34] getprop 635 ............................. <nrOfDirs>
+  [ 37] inv ..................................... <-nrOfDirs>
+  [ 38] pushint8 2 .............................. <2>
+  [ 41] div ..................................... <-nrOfDirs / 2>
+  [ 42] lt ...................................... <argAng < (-nrOfDirs / 2)>
+  [ 43] jmpifz [ 57] ............................ if argAng < (-nrOfDirs / 2) then
+  [ 46] getprop 635 ............................. <nrOfDirs>
+  [ 49] getparam 8 .............................. <argAng>
+  [ 51] add ..................................... <nrOfDirs + argAng>
+  [ 52] pusharglistnoret 1 ...................... <nrOfDirs + argAng>
+  [ 54] extcall 32 .............................. return nrOfDirs + argAng
+  [ 57] getparam 8 .............................. <argAng>
+  [ 59] pusharglistnoret 1 ...................... <argAng>
+  [ 61] extcall 32 .............................. return argAng
+  [ 64] ret
+end
+
+on getAnglesDiff me, argAng1, argAng2
+  [  0] getparam 16 ............................. <argAng2>
+  [  2] getparam 8 .............................. <argAng1>
+  [  4] sub ..................................... <argAng2 - argAng1>
+  [  5] setlocal 0 .............................. tmpDiff = argAng2 - argAng1
+  [  7] getlocal 0 .............................. <tmpDiff>
+  [  9] pusharglist 1 ........................... <tmpDiff>
+  [ 11] extcall 345 ............................. <abs(tmpDiff)>
+  [ 14] getprop 635 ............................. <nrOfDirs>
+  [ 17] pushint8 2 .............................. <2>
+  [ 20] div ..................................... <nrOfDirs / 2>
+  [ 21] gt ...................................... <abs(tmpDiff) > (nrOfDirs / 2)>
+  [ 22] jmpifz [ 51] ............................ if abs(tmpDiff) > (nrOfDirs / 2) then
+  [ 25] getlocal 0 .............................. <tmpDiff>
+  [ 27] pushzero ................................ <0>
+  [ 28] lt ...................................... <tmpDiff < 0>
+  [ 29] jmpifz [ 43] ............................ if tmpDiff < 0 then / else
+  [ 32] getprop 635 ............................. <nrOfDirs>
+  [ 35] getlocal 0 .............................. <tmpDiff>
+  [ 37] add ..................................... <nrOfDirs + tmpDiff>
+  [ 38] setlocal 0 .............................. tmpDiff = nrOfDirs + tmpDiff
+  [ 40] jmp [ 51]
+  [ 43] getlocal 0 .............................. <tmpDiff>
+  [ 45] getprop 635 ............................. <nrOfDirs>
+  [ 48] sub ..................................... <tmpDiff - nrOfDirs>
+  [ 49] setlocal 0 .............................. tmpDiff = tmpDiff - nrOfDirs
+  [ 51] getlocal 0 .............................. <tmpDiff>
+  [ 53] pusharglistnoret 1 ...................... <tmpDiff>
+  [ 55] extcall 32 .............................. return tmpDiff
+  [ 58] ret
+end

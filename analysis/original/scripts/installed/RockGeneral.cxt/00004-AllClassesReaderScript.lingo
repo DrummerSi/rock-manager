@@ -1,0 +1,288 @@
+property m_cols, m_str, m_delim, m_currDepth, m_lineNr, m_numLines, m_scriptsCreatedThisTime, m_remmedLevel, m_hierarchy, m_classesVars, m_affix, m_stdTypes
+
+on new me, argFileName, argAffix, argStdTypes
+  if voidp(argFileName) then
+    argFileName = "C:\Documents and Settings\Administratr\Skrivbord\RockData\ClassDeclarations.txt"
+  end if
+  m_str = readFile(argFileName)
+  if not stringp(m_str) then
+    pott("Nothing in that file! ", m_str)
+    return 0
+  end if
+  m_affix = argAffix
+  m_stdTypes = argStdTypes
+  m_delim = numToChar(9)
+  the itemDelimiter = m_delim
+  m_cols = [#NameStart: 1]
+  tmp = [#format, #range, #default, #Const, #Translate, #comment]
+  repeat with tmpWhat in tmp
+    tmpOff = offset(string(tmpWhat), m_str)
+    m_cols.setaProp(tmpWhat, the number of items in m_str.char[1..tmpOff])
+  end repeat
+  m_cols.setaProp(#NameEnd, m_cols.getaProp(#format) - 1)
+  m_currDepth = 1
+  m_lineNr = 2
+  m_numLines = the number of lines in m_str
+  m_remmedLevel = 999
+  lst = [:]
+  me.scan(lst, 1)
+  m_hierarchy = [:]
+  m_fastHierarchy = [:]
+  m_classesVars = [:]
+  m_scriptsCreatedThisTime = []
+  me.X(lst, [], VOID, 1)
+  return me
+end
+
+on scan me, argList, argDepth
+  tmpVarOnHold = 0
+  repeat while m_lineNr <= m_numLines
+    currLine = m_str.line[m_lineNr]
+    word1 = currLine.word[1]
+    if word1.length > 0 then
+      tmpVar = word1
+      tmpOffset = offset(word1, currLine)
+      tmpDepth = the number of items in currLine.char[1..tmpOffset]
+      if (word1.char[1..2] = "##") or (word1.char[1..2] = "**") then
+        m_remmedLevel = tmpDepth
+      else
+        if tmpDepth > m_cols[#NameEnd] then
+        else
+          tmpFormat = currLine.item[m_cols[#format]]
+          tmpDefault = currLine.item[m_cols[#default]]
+          tmpConst = value(currLine.item[m_cols[#Const]])
+          if voidp(tmpConst) then
+            tmpConst = 1
+          end if
+          tmpTranslate = value(currLine.item[m_cols[#Translate]])
+          if voidp(tmpTranslate) then
+            tmpTranslate = 0
+          end if
+          if tmpDepth > argDepth then
+            if tmpDepth < m_remmedLevel then
+              sublist = [:]
+              me.scan(sublist, tmpDepth)
+              argList.addProp(tmpVarOnHold, sublist)
+            end if
+          else
+            if tmpDepth < argDepth then
+              if tmpDepth <= m_remmedLevel then
+                m_remmedLevel = 999
+              end if
+              m_lineNr = m_lineNr - 1
+              return argList
+            else
+              if tmpDepth <= m_remmedLevel then
+                m_remmedLevel = 999
+                if tmpFormat.length <= 1 then
+                  tmpVarOnHold = tmpVar
+                else
+                  argList.addProp(tmpVar, [symbol(tmpFormat), tmpDefault, tmpConst, tmpTranslate])
+                end if
+              end if
+            end if
+          end if
+        end if
+      end if
+    end if
+    m_lineNr = m_lineNr + 1
+  end repeat
+  return argList
+end
+
+on createScript me, argClassNameStr, argPropStr, argInitStr, argBaseClass
+  if the runMode <> "Author" then
+    exit
+  end if
+  argScriptName = m_affix[1] & argClassNameStr & m_affix[2]
+  insertStartStr = "--_AUTOGEN_START"
+  insertEndStr = "--_AUTOGEN_END"
+  ancestorScriptName = argBaseClass
+  ancestorStr = EMPTY
+  if ancestorScriptName.length > 0 then
+    ancestorScriptName = "Class" & ancestorScriptName & "Script"
+    ancestorStr = "  ancestor = (script " & QUOTE & ancestorScriptName & QUOTE & ").new(child)" & RETURN
+  end if
+  newStr = "on new me, argChild, argBelongsTo"
+  childStr = EMPTY
+  childStr = childStr & "  if (objectP(argChild)) then child = argChild" & RETURN
+  childStr = childStr & "  else child = me" & RETURN
+  childStr = childStr & "  belongsTo = argBelongsTo" & RETURN
+  argInitStr = "  className = #" & argClassNameStr & RETURN & argInitStr
+  argInitStr = "  " & insertStartStr & RETURN & argInitStr & "  " & insertEndStr & RETURN
+  argPropStr = insertStartStr & RETURN & "property ancestor, child, className, belongsTo, _killed" & RETURN & "property " & argPropStr & RETURN & insertEndStr & RETURN
+  strList = []
+  castName = "RockGeneral"
+  memb = member(argScriptName, castName)
+  if memb.number < 1 then
+    memb = newMember(#script, argScriptName, castName)
+    memb.scriptType = #parent
+    memb.name = argScriptName
+    bodyStr = member("DefaultScriptBody").text
+    childStr = "  " & insertStartStr & RETURN & childStr & "  " & insertEndStr & RETURN
+    strList.add(argPropStr)
+    bodyStr = RETURN & RETURN & newStr & RETURN & childStr & ancestorStr & argInitStr & bodyStr
+  else
+    bodyStr = memb.scriptText
+    tmpOff = offset(insertStartStr, bodyStr)
+    if tmpOff > 1 then
+      firstStr = bodyStr.char[1..tmpOff - 1]
+      delete insertStartStr.char[1..tmpOff - 1]
+    else
+      firstStr = EMPTY
+    end if
+    strList.add(firstStr)
+    tmpOff = offset(insertEndStr, bodyStr)
+    if tmpOff < 1 then
+      pott("ERR!")
+    else
+      delete insertStartStr.char[1..tmpOff + insertEndStr.length]
+    end if
+    strList.add(argPropStr)
+    tmpOff = offset(newStr, bodyStr)
+    if tmpOff = 0 then
+      pott("ERR")
+    else
+      tmpEnd = getEOL(bodyStr, tmpOff)
+      strList.add(bodyStr.char[1..tmpEnd])
+      delete insertStartStr.char[1..tmpEnd]
+    end if
+    tmpOff = offset(childStr, bodyStr)
+    if tmpOff = 0 then
+      pott("ERR")
+    else
+      tmpOff = offsetBackwards(insertStartStr, bodyStr, tmpOff)
+      tmpStartLine = getLineNrWithCharNr(bodyStr, tmpOff)
+      tmpEnd = offset(insertEndStr, bodyStr)
+      tmpEndLine = getLineNrWithCharNr(bodyStr, tmpEnd)
+      delete insertStartStr.line[tmpStartLine..tmpEndLine]
+      childStr = "  " & insertStartStr & RETURN & childStr & "  " & insertEndStr & RETURN
+      strList.add(childStr)
+    end if
+    tmpSearch = "ancestor = (script " & QUOTE
+    tmpOff = offset(tmpSearch, bodyStr)
+    if tmpOff then
+      if ancestorStr.length > 0 then
+        tmpOff = tmpOff + tmpSearch.length
+        repeat with n = tmpOff to bodyStr.length
+          if bodyStr.char[n] = QUOTE then
+            if bodyStr.char[tmpOff..n - 1] <> ancestorScriptName then
+              put ancestorScriptName into insertStartStr.char[tmpOff..n - 1]
+            end if
+            exit repeat
+          end if
+        end repeat
+      else
+      end if
+      tmpLineNr = getLineNrWithCharNr(bodyStr, tmpOff)
+      ancestorStr = line tmpLineNr of bodyStr & RETURN
+      delete insertStartStr.line[tmpLineNr]
+    else
+    end if
+    strList.add(ancestorStr)
+    tmpStart = offset(insertStartStr, bodyStr)
+    if tmpStart then
+      tmpStartLine = getLineNrWithCharNr(bodyStr, tmpStart)
+      tmpEnd = offset(insertEndStr, bodyStr)
+      tmpEndLine = getLineNrWithCharNr(bodyStr, tmpEnd)
+      delete insertStartStr.line[tmpStartLine..tmpEndLine]
+    end if
+    strList.add(argInitStr)
+  end if
+  strList.add(bodyStr)
+  tmpStr = EMPTY
+  repeat with tmp in strList
+    tmpStr = tmpStr & tmp
+  end repeat
+  if memb.scriptText <> tmpStr then
+    memb.scriptText = tmpStr
+  end if
+end
+
+on X me, argList, argBaseClassList, argScriptName, argDepth, argBaseClass
+  propStr = EMPTY
+  initStr = EMPTY
+  if voidp(argBaseClass) then
+    argBaseClass = EMPTY
+  end if
+  allVars = [:]
+  if argScriptName.length then
+    m_classesVars.addProp(symbol(argScriptName), allVars)
+  end if
+  repeat with n = 1 to argList.count()
+    var = argList.getPropAt(n)
+    if var.char[1] = ":" then
+      repeat with tmptmp = argBaseClassList.count() down to argDepth + 1
+        argBaseClassList.deleteAt(argDepth + 1)
+      end repeat
+      itsbaseClass = argBaseClassList[argDepth - 1]
+      delete propStr.char[1]
+      argBaseClassList[argDepth] = var
+      tmpSub = m_hierarchy
+      repeat with tmpClass in argBaseClassList
+        tmpClass = symbol(tmpClass)
+        tmpSubSub = tmpSub.getaProp(tmpClass)
+        if not listp(tmpSubSub) then
+          tmpSub.setaProp(tmpClass, [:])
+          tmpSub = tmpSub.getaProp(tmpClass)
+          next repeat
+        end if
+        tmpSub = tmpSubSub
+      end repeat
+      ImItsBaseClass = 1
+    else
+      itsbaseClass = EMPTY
+      ImItsBaseClass = 0
+    end if
+    argBaseClassList[argDepth] = var
+    lst = argList[n]
+    if ilk(lst) = #list then
+      format = lst[1]
+      formatStr = string(format)
+      defaultStr = lst[2]
+      Const = lst[3]
+      Translate = lst[4]
+    else
+      format = VOID
+      formatStr = 0
+      defaultStr = "VOID"
+      Const = 1
+      Translate = 0
+    end if
+    if not ImItsBaseClass then
+      propStr = propStr & string(var) & ", "
+      tmpDefaultStr = m_stdTypes.getaProp(format)
+      if listp(tmpDefaultStr) then
+        tmpDefaultStr = string(tmpDefaultStr[#defaultStr])
+      end if
+      if stringp(tmpDefaultStr) then
+        if defaultStr.length = 0 then
+          defaultStr = tmpDefaultStr
+        end if
+        initStr = initStr & "  " & var & " = " & defaultStr
+        allVars.setaProp(symbol(var), [format, defaultStr, Const, Translate])
+      else
+        if not stringp(formatStr) then
+          formatStr = var
+        end if
+        scriptName = formatStr
+        allVars.setaProp(symbol(var), [symbol(formatStr), defaultStr, Const, Translate])
+        tmpObjInitStr = "VOID, me"
+        initStr = initStr & "  " & var & " = script(" & QUOTE & m_affix[1] & scriptName & m_affix[2] & QUOTE & ").new(" & tmpObjInitStr & ")"
+      end if
+      initStr = initStr & RETURN
+    else
+      scriptName = var
+    end if
+    if ilk(lst) = #propList then
+      if m_scriptsCreatedThisTime.getPos(scriptName) = 0 then
+        m_scriptsCreatedThisTime.add(scriptName)
+        me.X(lst, argBaseClassList, scriptName, argDepth + 1, itsbaseClass)
+      end if
+    end if
+  end repeat
+  delete propStr.char[propStr.length - 1..propStr.length]
+  if stringp(argScriptName) then
+    me.createScript(argScriptName, propStr, initStr, argBaseClass)
+  end if
+end

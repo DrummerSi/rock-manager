@@ -1,0 +1,1943 @@
+property m_angle, m_equatorialRotation, m_roundedEquatorialRotation, m_radius, m_pointObjs, m_renderPoints, m_linePointLists, m_mouseObj, m_rotSpeed, m_image, m_placeImage, m_fadeImage, m_earthAnim, m_onStageLoc, m_selectedPointObj, m_placesMember, m_reportObj, m_active, m_pasteWhere, m_pasteIntoImage, m_SP, m_blitOffsetLoc, m_invalidated, m_currentRotationFactors
+global gUseful
+
+on new me, argReportObj, argCenterLoc, argPlaces, argSPNum, argUseMouseObj
+  [  0] getparam 8 .............................. <argReportObj>
+  [  2] setprop 1002 ............................ m_reportObj = argReportObj
+  [  5] getparam 16 ............................. <argCenterLoc>
+  [  7] setprop 1003 ............................ m_onStageLoc = argCenterLoc
+  [ 10] getprop 1003 ............................ <m_onStageLoc>
+  [ 13] pusharglist 1 ........................... <m_onStageLoc>
+  [ 15] extcall 68 .............................. <voidp(m_onStageLoc)>
+  [ 18] jmpifz [ 35] ............................ if voidp(m_onStageLoc) then
+  [ 21] pushint8 100 ............................ <100>
+  [ 24] pushint8 100 ............................ <100>
+  [ 27] pusharglist 2 ........................... <100, 100>
+  [ 29] extcall 568 ............................. <point(100, 100)>
+  [ 32] setprop 1003 ............................ m_onStageLoc = point(100, 100)
+  [ 35] pusharglist 0 ........................... <>
+  [ 37] extcall 1005 ............................ <PI>
+  [ 40] pushzero ................................ <0>
+  [ 41] pushzero ................................ <0>
+  [ 42] pushint8 19 ............................. <19>
+  [ 45] inv ..................................... <-19>
+  [ 46] pusharglist 3 ........................... <[0, 0, -19]>
+  [ 48] pushlist ................................ <[0, 0, -19]>
+  [ 49] mul ..................................... <PI * [0, 0, -19]>
+  [ 50] pushcons 0 .............................. <180.0>
+  [ 52] div ..................................... <PI * [0, 0, -19] / 180.0>
+  [ 53] setprop 1004 ............................ m_angle = PI * [0, 0, -19] / 180.0
+  [ 56] pushcons 8 .............................. <0.0>
+  [ 58] setprop 1006 ............................ m_equatorialRotation = 0.0
+  [ 61] pushcons 16 ............................. <0.0>
+  [ 63] setprop 1007 ............................ m_roundedEquatorialRotation = 0.0
+  [ 66] pushint8 252 ............................ <252>
+  [ 69] pushint8 2 .............................. <2>
+  [ 72] div ..................................... <252 / 2>
+  [ 73] setprop 1008 ............................ m_radius = 252 / 2
+  [ 76] pushcons 24 ............................. <"EarthAnimScript">
+  [ 78] pusharglist 1 ........................... <"EarthAnimScript">
+  [ 80] extcall 284 ............................. <script("EarthAnimScript")>
+  [ 83] pusharglist 1 ........................... <script("EarthAnimScript")>
+  [ 85] objcall 0 ............................... <script("EarthAnimScript").new()>
+  [ 87] setprop 1009 ............................ m_earthAnim = script("EarthAnimScript").new()
+  [ 90] getparam 32 ............................. <argSPNum>
+  [ 92] pusharglist 1 ........................... <argSPNum>
+  [ 94] extcall 365 ............................. <integerp(argSPNum)>
+  [ 97] jmpifz [279] ............................ if integerp(argSPNum) then / else
+  [100] getparam 32 ............................. <argSPNum>
+  [102] pusharglist 1 ........................... <argSPNum>
+  [104] extcall 540 ............................. <sprite(argSPNum)>
+  [107] setprop 1010 ............................ m_SP = sprite(argSPNum)
+  [110] pushcons 32 ............................. <"GlobePastePic">
+  [112] pusharglist 1 ........................... <"GlobePastePic">
+  [114] extcall 296 ............................. <member("GlobePastePic")>
+  [117] setprop 1011 ............................ m_pasteWhere = member("GlobePastePic")
+  [120] getprop 1009 ............................ <m_earthAnim>
+  [123] pushsymb 1012 ........................... <#m_images>
+  [126] pushint8 1 .............................. <1>
+  [129] pusharglist 3 ........................... <m_earthAnim, #m_images, 1>
+  [131] objcall 152 ............................. <m_earthAnim.m_images[1]>
+  [134] setlocal 0 .............................. tmp = m_earthAnim.m_images[1]
+  [136] getlocal 0 .............................. <tmp>
+  [138] pushsymb 555 ............................ <#rect>
+  [141] pushint8 3 .............................. <3>
+  [144] pusharglist 3 ........................... <tmp, #rect, 3>
+  [146] objcall 152 ............................. <tmp.rect[3]>
+  [149] getlocal 0 .............................. <tmp>
+  [151] pushsymb 555 ............................ <#rect>
+  [154] pushint8 4 .............................. <4>
+  [157] pusharglist 3 ........................... <tmp, #rect, 4>
+  [159] objcall 152 ............................. <tmp.rect[4]>
+  [162] pushint8 16 ............................. <16>
+  [165] pusharglist 3 ........................... <tmp.rect[3], tmp.rect[4], 16>
+  [167] extcall 1014 ............................ <image(tmp.rect[3], tmp.rect[4], 16)>
+  [170] setprop 1013 ............................ m_pasteIntoImage = image(tmp.rect[3], tmp.rect[4], 16)
+  [173] getprop 1013 ............................ <m_pasteIntoImage>
+  [176] getprop 1013 ............................ <m_pasteIntoImage>
+  [179] getobjprop 555 .......................... <m_pasteIntoImage.rect>
+  [182] pushint8 255 ............................ <255>
+  [185] pushint8 255 ............................ <255>
+  [188] pushint8 255 ............................ <255>
+  [191] pusharglist 3 ........................... <255, 255, 255>
+  [193] extcall 1015 ............................ <rgb(255, 255, 255)>
+  [196] pusharglistnoret 3 ...................... <m_pasteIntoImage, m_pasteIntoImage.rect, rgb(255, 255, 255)>
+  [198] objcall 1016 ............................ m_pasteIntoImage.fill(m_pasteIntoImage.rect, rgb(255, 255, 255))
+  [201] getprop 1011 ............................ <m_pasteWhere>
+  [204] getprop 1013 ............................ <m_pasteIntoImage>
+  [207] setobjprop 1014 ......................... m_pasteWhere.image = m_pasteIntoImage
+  [210] getprop 1010 ............................ <m_SP>
+  [213] getprop 1011 ............................ <m_pasteWhere>
+  [216] setobjprop 296 .......................... m_SP.member = m_pasteWhere
+  [219] getprop 1010 ............................ <m_SP>
+  [222] getprop 1003 ............................ <m_onStageLoc>
+  [225] getprop 1011 ............................ <m_pasteWhere>
+  [228] pushsymb 555 ............................ <#rect>
+  [231] pushint8 3 .............................. <3>
+  [234] pusharglist 3 ........................... <m_pasteWhere, #rect, 3>
+  [236] objcall 152 ............................. <m_pasteWhere.rect[3]>
+  [239] getprop 1011 ............................ <m_pasteWhere>
+  [242] pushsymb 555 ............................ <#rect>
+  [245] pushint8 4 .............................. <4>
+  [248] pusharglist 3 ........................... <m_pasteWhere, #rect, 4>
+  [250] objcall 152 ............................. <m_pasteWhere.rect[4]>
+  [253] pusharglist 2 ........................... <m_pasteWhere.rect[3], m_pasteWhere.rect[4]>
+  [255] extcall 568 ............................. <point(m_pasteWhere.rect[3], m_pasteWhere.rect[4])>
+  [258] pushint8 2 .............................. <2>
+  [261] div ..................................... <point(m_pasteWhere.rect[3], m_pasteWhere.rect[4]) / 2>
+  [262] add ..................................... <m_onStageLoc + (point(m_pasteWhere.rect[3], m_pasteWhere.rect[4]) / 2)>
+  [263] setobjprop 854 .......................... m_SP.loc = m_onStageLoc + (point(m_pasteWhere.rect[3], m_pasteWhere.rect[4]) / 2)
+  [266] pushzero ................................ <0>
+  [267] pushzero ................................ <0>
+  [268] pusharglist 2 ........................... <0, 0>
+  [270] extcall 568 ............................. <point(0, 0)>
+  [273] setprop 1017 ............................ m_blitOffsetLoc = point(0, 0)
+  [276] jmp [300]
+  [279] pushsymb 1018 ........................... <#stage>
+  [282] setprop 1011 ............................ m_pasteWhere = #stage
+  [285] getmovieprop 1018 ....................... <the stage>
+  [288] getobjprop 1014 ......................... <(the stage).image>
+  [291] setprop 1013 ............................ m_pasteIntoImage = (the stage).image
+  [294] getprop 1003 ............................ <m_onStageLoc>
+  [297] setprop 1017 ............................ m_blitOffsetLoc = m_onStageLoc
+  [300] pushcons 40 ............................. <"MapPlacesField">
+  [302] pusharglist 1 ........................... <"MapPlacesField">
+  [304] extcall 296 ............................. <member("MapPlacesField")>
+  [307] setprop 1019 ............................ m_placesMember = member("MapPlacesField")
+  [310] pusharglist 0 ........................... <[]>
+  [312] pushlist ................................ <[]>
+  [313] setprop 1020 ............................ m_renderPoints = []
+  [316] pusharglist 0 ........................... <[]>
+  [318] pushlist ................................ <[]>
+  [319] setprop 1021 ............................ m_pointObjs = []
+  [322] getparam 24 ............................. <argPlaces>
+  [324] pusharglist 1 ........................... <argPlaces>
+  [326] extcall 136 ............................. <listp(argPlaces)>
+  [329] jmpifz [344] ............................ if listp(argPlaces) then / else
+  [332] getparam 24 ............................. <argPlaces>
+  [334] pusharglist 1 ........................... <argPlaces>
+  [336] objcall 44 .............................. <argPlaces.duplicate()>
+  [339] setlocal 8 .............................. pnts = argPlaces.duplicate()
+  [341] jmp [355]
+  [344] getprop 1019 ............................ <m_placesMember>
+  [347] getobjprop 297 .......................... <m_placesMember.text>
+  [350] getobjprop 176 .......................... <m_placesMember.text.value>
+  [353] setlocal 8 .............................. pnts = m_placesMember.text.value
+  [355] getlocal 8 .............................. <pnts>
+  [357] pusharglist 1 ........................... <pnts>
+  [359] extcall 68 .............................. <voidp(pnts)>
+  [362] jmpifz [370] ............................ if voidp(pnts) then
+  [365] pusharglist 0 ........................... <[]>
+  [367] pushlist ................................ <[]>
+  [368] setlocal 8 .............................. pnts = []
+  [370] pushint8 1 .............................. <1>
+  [373] setlocal 16
+  [375] getlocal 16
+  [377] getlocal 8 .............................. <pnts>
+  [379] getobjprop 32 ........................... <pnts.count>
+  [382] lteq
+  [383] jmpifz [592] ............................ repeat with n = 1 to pnts.count
+  [386] getlocal 16 ............................. <n>
+  [388] getlocal 8 .............................. <pnts>
+  [390] getobjprop 32 ........................... <pnts.count>
+  [393] lteq .................................... <n <= pnts.count>
+  [394] jmpifz [473] ............................ if n <= pnts.count then / else
+  [397] getlocal 8 .............................. <pnts>
+  [399] getlocal 16 ............................. <n>
+  [401] pusharglist 2 ........................... <pnts, n>
+  [403] objcall 34 .............................. <pnts[n]>
+  [406] pushsymb 1022 ........................... <#map>
+  [409] pusharglist 2 ........................... <pnts[n], #map>
+  [411] objcall 34 .............................. <pnts[n][#map]>
+  [414] pushint8 1 .............................. <1>
+  [417] pusharglist 2 ........................... <pnts[n][#map], 1>
+  [419] objcall 34 .............................. <pnts[n][#map][1]>
+  [422] setlocal 24 ............................. longitude = pnts[n][#map][1]
+  [424] getlocal 8 .............................. <pnts>
+  [426] getlocal 16 ............................. <n>
+  [428] pusharglist 2 ........................... <pnts, n>
+  [430] objcall 34 .............................. <pnts[n]>
+  [433] pushsymb 1022 ........................... <#map>
+  [436] pusharglist 2 ........................... <pnts[n], #map>
+  [438] objcall 34 .............................. <pnts[n][#map]>
+  [441] pushint8 2 .............................. <2>
+  [444] pusharglist 2 ........................... <pnts[n][#map], 2>
+  [446] objcall 34 .............................. <pnts[n][#map][2]>
+  [449] setlocal 32 ............................. latitude = pnts[n][#map][2]
+  [451] getlocal 8 .............................. <pnts>
+  [453] getlocal 16 ............................. <n>
+  [455] pusharglist 2 ........................... <pnts, n>
+  [457] objcall 34 .............................. <pnts[n]>
+  [460] pushsymb 60 ............................. <#ID>
+  [463] pusharglist 2 ........................... <pnts[n], #ID>
+  [465] objcall 34 .............................. <pnts[n][#ID]>
+  [468] setlocal 40 ............................. ID = pnts[n][#ID]
+  [470] jmp [546]
+  [473] pusharglist 0 ........................... <>
+  [475] extcall 190 ............................. <VOID>
+  [478] setlocal 40 ............................. ID = VOID
+  [480] pushint8 180 ............................ <180>
+  [483] pusharglist 1 ........................... <180>
+  [485] extcall 192 ............................. <random(180)>
+  [488] pushint8 90 ............................. <90>
+  [491] sub ..................................... <random(180) - 90>
+  [492] pushint8 60 ............................. <60>
+  [495] pusharglist 1 ........................... <60>
+  [497] extcall 192 ............................. <random(60)>
+  [500] pushint8 60 ............................. <60>
+  [503] pusharglist 1 ........................... <60>
+  [505] extcall 192 ............................. <random(60)>
+  [508] pusharglist 3 ........................... <[random(180) - 90, random(60), random(60)]>
+  [510] pushlist ................................ <[random(180) - 90, random(60), random(60)]>
+  [511] setlocal 32 ............................. latitude = [random(180) - 90, random(60), random(60)]
+  [513] pushint8 360 ............................ <360>
+  [516] pusharglist 1 ........................... <360>
+  [518] extcall 192 ............................. <random(360)>
+  [521] pushint8 180 ............................ <180>
+  [524] sub ..................................... <random(360) - 180>
+  [525] pushint8 60 ............................. <60>
+  [528] pusharglist 1 ........................... <60>
+  [530] extcall 192 ............................. <random(60)>
+  [533] pushint8 60 ............................. <60>
+  [536] pusharglist 1 ........................... <60>
+  [538] extcall 192 ............................. <random(60)>
+  [541] pusharglist 3 ........................... <[random(360) - 180, random(60), random(60)]>
+  [543] pushlist ................................ <[random(360) - 180, random(60), random(60)]>
+  [544] setlocal 24 ............................. longitude = [random(360) - 180, random(60), random(60)]
+  [546] pushcons 48 ............................. <"MapPlaceScript">
+  [548] pusharglist 1 ........................... <"MapPlaceScript">
+  [550] extcall 284 ............................. <script("MapPlaceScript")>
+  [553] getlocal 24 ............................. <longitude>
+  [555] getlocal 32 ............................. <latitude>
+  [557] pusharglist 2 ........................... <[longitude, latitude]>
+  [559] pushlist ................................ <[longitude, latitude]>
+  [560] getprop 1008 ............................ <m_radius>
+  [563] getlocal 40 ............................. <ID>
+  [565] pusharglist 4 ........................... <script("MapPlaceScript"), [longitude, latitude], m_radius, ID>
+  [567] objcall 0 ............................... <script("MapPlaceScript").new([longitude, latitude], m_radius, ID)>
+  [569] setlocal 48 ............................. obj = script("MapPlaceScript").new([longitude, latitude], m_radius, ID)
+  [571] getprop 1021 ............................ <m_pointObjs>
+  [574] getlocal 48 ............................. <obj>
+  [576] pusharglistnoret 2 ...................... <m_pointObjs, obj>
+  [578] objcall 50 .............................. m_pointObjs.add(obj)
+  [581] pushint8 1
+  [584] getlocal 16
+  [586] add
+  [587] setlocal 16
+  [589] endrepeat [375]
+  [592] pushint8 1 .............................. <1>
+  [595] setlocal 16
+  [597] getlocal 16
+  [599] getprop 1021 ............................ <m_pointObjs>
+  [602] getobjprop 32 ........................... <m_pointObjs.count>
+  [605] lteq
+  [606] jmpifz [638] ............................ repeat with n = 1 to m_pointObjs.count
+  [609] getprop 1020 ............................ <m_renderPoints>
+  [612] getprop 1021 ............................ <m_pointObjs>
+  [615] getlocal 16 ............................. <n>
+  [617] pusharglist 2 ........................... <m_pointObjs, n>
+  [619] objcall 34 .............................. <m_pointObjs[n]>
+  [622] pusharglistnoret 2 ...................... <m_renderPoints, m_pointObjs[n]>
+  [624] objcall 50 .............................. m_renderPoints.add(m_pointObjs[n])
+  [627] pushint8 1
+  [630] getlocal 16
+  [632] add
+  [633] setlocal 16
+  [635] endrepeat [597]
+  [638] pusharglist 0 ........................... <[]>
+  [640] pushlist ................................ <[]>
+  [641] setprop 1023 ............................ m_linePointLists = []
+  [644] pushzero ................................ <0>
+  [645] jmpifz [775] ............................ if 0 then
+  [648] pusharglist 0 ........................... <[]>
+  [650] pushlist ................................ <[]>
+  [651] setlocal 56 ............................. tmpPairs = []
+  [653] pushint8 1 .............................. <1>
+  [656] setlocal 64
+  [658] getlocal 64
+  [660] getlocal 56 ............................. <tmpPairs>
+  [662] getobjprop 32 ........................... <tmpPairs.count>
+  [665] lteq
+  [666] jmpifz [775] ............................ repeat with m = 1 to tmpPairs.count
+  [669] getlocal 56 ............................. <tmpPairs>
+  [671] getlocal 64 ............................. <m>
+  [673] pusharglist 2 ........................... <tmpPairs, m>
+  [675] objcall 34 .............................. <tmpPairs[m]>
+  [678] setlocal 72 ............................. tmpPair = tmpPairs[m]
+  [680] getprop 1021 ............................ <m_pointObjs>
+  [683] getobjprop 32 ........................... <m_pointObjs.count>
+  [686] getlocal 72 ............................. <tmpPair>
+  [688] pushint8 1 .............................. <1>
+  [691] pusharglist 2 ........................... <tmpPair, 1>
+  [693] objcall 34 .............................. <tmpPair[1]>
+  [696] lt ...................................... <m_pointObjs.count < tmpPair[1]>
+  [697] getprop 1021 ............................ <m_pointObjs>
+  [700] getobjprop 32 ........................... <m_pointObjs.count>
+  [703] getlocal 72 ............................. <tmpPair>
+  [705] pushint8 2 .............................. <2>
+  [708] pusharglist 2 ........................... <tmpPair, 2>
+  [710] objcall 34 .............................. <tmpPair[2]>
+  [713] lt ...................................... <m_pointObjs.count < tmpPair[2]>
+  [714] or ...................................... <(m_pointObjs.count < tmpPair[1]) or (m_pointObjs.count < tmpPair[2])>
+  [715] jmpifz [721] ............................ if (m_pointObjs.count < tmpPair[1]) or (m_pointObjs.count < tmpPair[2]) then
+  [718] jmp [764] ............................... next repeat
+  [721] getparam 0 .............................. <me>
+  [723] getprop 1021 ............................ <m_pointObjs>
+  [726] getlocal 72 ............................. <tmpPair>
+  [728] pushint8 1 .............................. <1>
+  [731] pusharglist 2 ........................... <tmpPair, 1>
+  [733] objcall 34 .............................. <tmpPair[1]>
+  [736] pusharglist 2 ........................... <m_pointObjs, tmpPair[1]>
+  [738] objcall 34 .............................. <m_pointObjs[tmpPair[1]]>
+  [741] getprop 1021 ............................ <m_pointObjs>
+  [744] getlocal 72 ............................. <tmpPair>
+  [746] pushint8 2 .............................. <2>
+  [749] pusharglist 2 ........................... <tmpPair, 2>
+  [751] objcall 34 .............................. <tmpPair[2]>
+  [754] pusharglist 2 ........................... <m_pointObjs, tmpPair[2]>
+  [756] objcall 34 .............................. <m_pointObjs[tmpPair[2]]>
+  [759] pusharglistnoret 3 ...................... <me, m_pointObjs[tmpPair[1]], m_pointObjs[tmpPair[2]]>
+  [761] objcall 996 ............................. me.addConnection(m_pointObjs[tmpPair[1]], m_pointObjs[tmpPair[2]])
+  [764] pushint8 1
+  [767] getlocal 64
+  [769] add
+  [770] setlocal 64
+  [772] endrepeat [658]
+  [775] getglobal 23 ............................ <gUseful>
+  [777] getobjprop 24 ........................... <gUseful.frameTimer>
+  [779] getparam 0 .............................. <me>
+  [781] pusharglistnoret 2 ...................... <gUseful.frameTimer, me>
+  [783] objcall 56 .............................. gUseful.frameTimer.addObject(me)
+  [786] getparam 40 ............................. <argUseMouseObj>
+  [788] pushzero ................................ <0>
+  [789] nteq .................................... <argUseMouseObj <> 0>
+  [790] jmpifz [850] ............................ if argUseMouseObj <> 0 then
+  [793] pushcons 56 ............................. <"DragMouseScript">
+  [795] pusharglist 1 ........................... <"DragMouseScript">
+  [797] extcall 284 ............................. <script("DragMouseScript")>
+  [800] getparam 0 .............................. <me>
+  [802] getprop 1003 ............................ <m_onStageLoc>
+  [805] getprop 1003 ............................ <m_onStageLoc>
+  [808] pusharglist 2 ........................... <m_onStageLoc, m_onStageLoc>
+  [810] extcall 555 ............................. <rect(m_onStageLoc, m_onStageLoc)>
+  [813] pushzero ................................ <0>
+  [814] pushzero ................................ <0>
+  [815] getprop 1008 ............................ <m_radius>
+  [818] pushint8 2 .............................. <2>
+  [821] mul ..................................... <m_radius * 2>
+  [822] getprop 1008 ............................ <m_radius>
+  [825] pushint8 2 .............................. <2>
+  [828] mul ..................................... <m_radius * 2>
+  [829] pusharglist 4 ........................... <0, 0, m_radius * 2, m_radius * 2>
+  [831] extcall 555 ............................. <rect(0, 0, m_radius * 2, m_radius * 2)>
+  [834] add ..................................... <rect(m_onStageLoc, m_onStageLoc) + rect(0, 0, m_radius * 2, m_radius * 2)>
+  [835] pushsymb 393 ............................ <#layer>
+  [838] pushcons 64 ............................. <999999>
+  [840] pusharglist 2 ........................... <[#layer: 999999]>
+  [842] pushproplist ............................ <[#layer: 999999]>
+  [843] pusharglist 4 ........................... <script("DragMouseScript"), me, rect(m_onStageLoc, m_onStageLoc) + rect(0, 0, m_radius * 2, m_radius * 2), [#layer: 999999]>
+  [845] objcall 0 ............................... <script("DragMouseScript").new(me, rect(m_onStageLoc, m_onStageLoc) + rect(0, 0, m_radius * 2, m_radius * 2), [#layer: 999999])>
+  [847] setprop 874 ............................. m_mouseObj = script("DragMouseScript").new(me, rect(m_onStageLoc, m_onStageLoc) + rect(0, 0, m_radius * 2, m_radius * 2), [#layer: 999999])
+  [850] pushzero ................................ <0>
+  [851] setprop 1024 ............................ m_rotSpeed = 0
+  [854] getprop 1008 ............................ <m_radius>
+  [857] pushint8 2 .............................. <2>
+  [860] mul ..................................... <m_radius * 2>
+  [861] getprop 1008 ............................ <m_radius>
+  [864] pushint8 2 .............................. <2>
+  [867] mul ..................................... <m_radius * 2>
+  [868] pushint8 16 ............................. <16>
+  [871] pusharglist 3 ........................... <m_radius * 2, m_radius * 2, 16>
+  [873] extcall 1014 ............................ <image(m_radius * 2, m_radius * 2, 16)>
+  [876] setprop 1025 ............................ m_image = image(m_radius * 2, m_radius * 2, 16)
+  [879] getprop 1025 ............................ <m_image>
+  [882] pushsymb 555 ............................ <#rect>
+  [885] pushint8 3 .............................. <3>
+  [888] pusharglist 3 ........................... <m_image, #rect, 3>
+  [890] objcall 152 ............................. <m_image.rect[3]>
+  [893] getprop 1025 ............................ <m_image>
+  [896] pushsymb 555 ............................ <#rect>
+  [899] pushint8 4 .............................. <4>
+  [902] pusharglist 3 ........................... <m_image, #rect, 4>
+  [904] objcall 152 ............................. <m_image.rect[4]>
+  [907] pushint8 16 ............................. <16>
+  [910] pusharglist 3 ........................... <m_image.rect[3], m_image.rect[4], 16>
+  [912] extcall 1014 ............................ <image(m_image.rect[3], m_image.rect[4], 16)>
+  [915] setprop 1026 ............................ m_fadeImage = image(m_image.rect[3], m_image.rect[4], 16)
+  [918] pushcons 72 ............................. <"MapPlacePic">
+  [920] pusharglist 1 ........................... <"MapPlacePic">
+  [922] extcall 296 ............................. <member("MapPlacePic")>
+  [925] getobjprop 1014 ......................... <member("MapPlacePic").image>
+  [928] setprop 1027 ............................ m_placeImage = member("MapPlacePic").image
+  [931] pushint8 1 .............................. <1>
+  [934] setprop 1028 ............................ m_active = 1
+  [937] pushint8 1 .............................. <1>
+  [940] setprop 1029 ............................ m_invalidated = 1
+  [943] getparam 0 .............................. <me>
+  [945] pusharglistnoret 1 ...................... <me>
+  [947] extcall 21 .............................. return me
+  [949] ret
+end
+
+on kill me
+  [  0] getprop 1010 ............................ <m_SP>
+  [  3] pusharglist 1 ........................... <m_SP>
+  [  5] extcall 71 .............................. <objectp(m_SP)>
+  [  8] jmpifz [ 24] ............................ if objectp(m_SP) then
+  [ 11] getprop 1010 ............................ <m_SP>
+  [ 14] pushcons 80 ............................. <"Dummy">
+  [ 16] pusharglist 1 ........................... <"Dummy">
+  [ 18] extcall 296 ............................. <member("Dummy")>
+  [ 21] setobjprop 296 .......................... m_SP.member = member("Dummy")
+  [ 24] pusharglist 0 ........................... <[]>
+  [ 26] pushlist ................................ <[]>
+  [ 27] setprop 1021 ............................ m_pointObjs = []
+  [ 30] pusharglist 0 ........................... <[]>
+  [ 32] pushlist ................................ <[]>
+  [ 33] setprop 1020 ............................ m_renderPoints = []
+  [ 36] pusharglist 0 ........................... <[]>
+  [ 38] pushlist ................................ <[]>
+  [ 39] setprop 1023 ............................ m_linePointLists = []
+  [ 42] getglobal 23 ............................ <gUseful>
+  [ 44] getobjprop 24 ........................... <gUseful.frameTimer>
+  [ 46] getparam 0 .............................. <me>
+  [ 48] pusharglistnoret 2 ...................... <gUseful.frameTimer, me>
+  [ 50] objcall 25 .............................. gUseful.frameTimer.deleteObject(me)
+  [ 52] getprop 874 ............................. <m_mouseObj>
+  [ 55] pusharglist 1 ........................... <m_mouseObj>
+  [ 57] extcall 71 .............................. <objectp(m_mouseObj)>
+  [ 60] jmpifz [ 73] ............................ if objectp(m_mouseObj) then
+  [ 63] getprop 874 ............................. <m_mouseObj>
+  [ 66] pusharglist 1 ........................... <m_mouseObj>
+  [ 68] objcall 1 ............................... <m_mouseObj.kill()>
+  [ 70] setprop 874 ............................. m_mouseObj = m_mouseObj.kill()
+  [ 73] pushzero ................................ <0>
+  [ 74] setprop 1002 ............................ m_reportObj = 0
+  [ 77] pushzero ................................ <0>
+  [ 78] pusharglistnoret 1 ...................... <0>
+  [ 80] extcall 21 .............................. return 0
+  [ 82] ret
+end
+
+on activate me, argIsTRUE
+  [  0] getparam 8 .............................. <argIsTRUE>
+  [  2] setprop 1028 ............................ m_active = argIsTRUE
+  [  5] getprop 874 ............................. <m_mouseObj>
+  [  8] pusharglist 1 ........................... <m_mouseObj>
+  [ 10] extcall 71 .............................. <objectp(m_mouseObj)>
+  [ 13] jmpifz [ 27] ............................ if objectp(m_mouseObj) then
+  [ 16] getprop 874 ............................. <m_mouseObj>
+  [ 19] getprop 1028 ............................ <m_active>
+  [ 22] pusharglistnoret 2 ...................... <m_mouseObj, m_active>
+  [ 24] objcall 779 ............................. m_mouseObj.activate(m_active)
+  [ 27] ret
+end
+
+on getMapLocs me
+  [  0] pusharglist 0 ........................... <[]>
+  [  2] pushlist ................................ <[]>
+  [  3] setlocal 0 .............................. tmpList = []
+  [  5] pushint8 1 .............................. <1>
+  [  8] setlocal 8
+  [ 10] getlocal 8
+  [ 12] getprop 1020 ............................ <m_renderPoints>
+  [ 15] getobjprop 32 ........................... <m_renderPoints.count>
+  [ 18] lteq
+  [ 19] jmpifz [ 71] ............................ repeat with n = 1 to m_renderPoints.count
+  [ 22] getprop 1020 ............................ <m_renderPoints>
+  [ 25] getlocal 8 .............................. <n>
+  [ 27] pusharglist 2 ........................... <m_renderPoints, n>
+  [ 29] objcall 34 .............................. <m_renderPoints[n]>
+  [ 32] setlocal 16 ............................. obj = m_renderPoints[n]
+  [ 34] getlocal 0 .............................. <tmpList>
+  [ 36] pushsymb 1022 ........................... <#map>
+  [ 39] getlocal 16 ............................. <obj>
+  [ 41] getobjprop 1038 ......................... <obj.m_mapLoc>
+  [ 44] pushsymb 60 ............................. <#ID>
+  [ 47] getlocal 16 ............................. <obj>
+  [ 49] getobjprop 1039 ......................... <obj.m_ID>
+  [ 52] pusharglist 4 ........................... <[#map: obj.m_mapLoc, #ID: obj.m_ID]>
+  [ 54] pushproplist ............................ <[#map: obj.m_mapLoc, #ID: obj.m_ID]>
+  [ 55] pusharglistnoret 2 ...................... <tmpList, [#map: obj.m_mapLoc, #ID: obj.m_ID]>
+  [ 57] objcall 50 .............................. tmpList.add([#map: obj.m_mapLoc, #ID: obj.m_ID])
+  [ 60] pushint8 1
+  [ 63] getlocal 8
+  [ 65] add
+  [ 66] setlocal 8
+  [ 68] endrepeat [ 10]
+  [ 71] getprop 1019 ............................ <m_placesMember>
+  [ 74] getlocal 0 .............................. <tmpList>
+  [ 76] pusharglist 1 ........................... <tmpList>
+  [ 78] extcall 38 .............................. <string(tmpList)>
+  [ 81] setobjprop 297 .......................... m_placesMember.text = string(tmpList)
+  [ 84] ret
+end
+
+on getObjByID me, argID
+  [  0] pushint8 1 .............................. <1>
+  [  3] setlocal 0
+  [  5] getlocal 0
+  [  7] getprop 1021 ............................ <m_pointObjs>
+  [ 10] getobjprop 32 ........................... <m_pointObjs.count>
+  [ 13] lteq
+  [ 14] jmpifz [ 61] ............................ repeat with n = 1 to m_pointObjs.count
+  [ 17] getprop 1021 ............................ <m_pointObjs>
+  [ 20] getlocal 0 .............................. <n>
+  [ 22] pusharglist 2 ........................... <m_pointObjs, n>
+  [ 24] objcall 34 .............................. <m_pointObjs[n]>
+  [ 27] getobjprop 1039 ......................... <m_pointObjs[n].m_ID>
+  [ 30] getparam 8 .............................. <argID>
+  [ 32] eq ...................................... <m_pointObjs[n].m_ID = argID>
+  [ 33] jmpifz [ 50] ............................ if m_pointObjs[n].m_ID = argID then
+  [ 36] getprop 1021 ............................ <m_pointObjs>
+  [ 39] getlocal 0 .............................. <n>
+  [ 41] pusharglist 2 ........................... <m_pointObjs, n>
+  [ 43] objcall 34 .............................. <m_pointObjs[n]>
+  [ 46] pusharglistnoret 1 ...................... <m_pointObjs[n]>
+  [ 48] extcall 21 .............................. return m_pointObjs[n]
+  [ 50] pushint8 1
+  [ 53] getlocal 0
+  [ 55] add
+  [ 56] setlocal 0
+  [ 58] endrepeat [  5]
+  [ 61] pusharglist 0 ........................... <>
+  [ 63] extcall 190 ............................. <VOID>
+  [ 66] pusharglistnoret 1 ...................... <VOID>
+  [ 68] extcall 21 .............................. return VOID
+  [ 70] ret
+end
+
+on getIsPlaceConnected me, argObj
+  [  0] pushint8 1 .............................. <1>
+  [  3] setlocal 0
+  [  5] getlocal 0
+  [  7] getprop 1023 ............................ <m_linePointLists>
+  [ 10] getobjprop 32 ........................... <m_linePointLists.count>
+  [ 13] lteq
+  [ 14] jmpifz [ 79] ............................ repeat with n = 1 to m_linePointLists.count
+  [ 17] getprop 1023 ............................ <m_linePointLists>
+  [ 20] getlocal 0 .............................. <n>
+  [ 22] pusharglist 2 ........................... <m_linePointLists, n>
+  [ 24] objcall 34 .............................. <m_linePointLists[n]>
+  [ 27] setlocal 8 .............................. tmp = m_linePointLists[n]
+  [ 29] getlocal 8 .............................. <tmp>
+  [ 31] pushint8 1 .............................. <1>
+  [ 34] pusharglist 2 ........................... <tmp, 1>
+  [ 36] objcall 34 .............................. <tmp[1]>
+  [ 39] getparam 8 .............................. <argObj>
+  [ 41] eq ...................................... <tmp[1] = argObj>
+  [ 42] getlocal 8 .............................. <tmp>
+  [ 44] getlocal 8 .............................. <tmp>
+  [ 46] getobjprop 32 ........................... <tmp.count>
+  [ 49] pusharglist 2 ........................... <tmp, tmp.count>
+  [ 51] objcall 34 .............................. <tmp[tmp.count]>
+  [ 54] getparam 8 .............................. <argObj>
+  [ 56] eq ...................................... <tmp[tmp.count] = argObj>
+  [ 57] or ...................................... <(tmp[1] = argObj) or (tmp[tmp.count] = argObj)>
+  [ 58] jmpifz [ 68] ............................ if (tmp[1] = argObj) or (tmp[tmp.count] = argObj) then
+  [ 61] pushint8 1 .............................. <1>
+  [ 64] pusharglistnoret 1 ...................... <1>
+  [ 66] extcall 21 .............................. return 1
+  [ 68] pushint8 1
+  [ 71] getlocal 0
+  [ 73] add
+  [ 74] setlocal 0
+  [ 76] endrepeat [  5]
+  [ 79] pushzero ................................ <0>
+  [ 80] pusharglistnoret 1 ...................... <0>
+  [ 82] extcall 21 .............................. return 0
+  [ 84] ret
+end
+
+on getDistanceToNextPlace me, argToObj
+  [  0] getprop 1023 ............................ <m_linePointLists>
+  [  3] getobjprop 32 ........................... <m_linePointLists.count>
+  [  6] pushzero ................................ <0>
+  [  7] eq ...................................... <m_linePointLists.count = 0>
+  [  8] jmpifz [ 16] ............................ if m_linePointLists.count = 0 then
+  [ 11] pushzero ................................ <0>
+  [ 12] pusharglistnoret 1 ...................... <0>
+  [ 14] extcall 21 .............................. return 0
+  [ 16] getprop 1023 ............................ <m_linePointLists>
+  [ 19] getprop 1023 ............................ <m_linePointLists>
+  [ 22] getobjprop 32 ........................... <m_linePointLists.count>
+  [ 25] pusharglist 2 ........................... <m_linePointLists, m_linePointLists.count>
+  [ 27] objcall 34 .............................. <m_linePointLists[m_linePointLists.count]>
+  [ 30] setlocal 0 .............................. tmpList = m_linePointLists[m_linePointLists.count]
+  [ 32] getlocal 0 .............................. <tmpList>
+  [ 34] getobjprop 32 ........................... <tmpList.count>
+  [ 37] pushint8 1 .............................. <1>
+  [ 40] eq ...................................... <tmpList.count = 1>
+  [ 41] jmpifz [ 59] ............................ if tmpList.count = 1 then / else
+  [ 44] getlocal 0 .............................. <tmpList>
+  [ 46] pushint8 1 .............................. <1>
+  [ 49] pusharglist 2 ........................... <tmpList, 1>
+  [ 51] objcall 34 .............................. <tmpList[1]>
+  [ 54] setlocal 8 .............................. argFromObj = tmpList[1]
+  [ 56] jmp [ 73]
+  [ 59] getlocal 0 .............................. <tmpList>
+  [ 61] getlocal 0 .............................. <tmpList>
+  [ 63] getobjprop 32 ........................... <tmpList.count>
+  [ 66] pusharglist 2 ........................... <tmpList, tmpList.count>
+  [ 68] objcall 34 .............................. <tmpList[tmpList.count]>
+  [ 71] setlocal 8 .............................. argFromObj = tmpList[tmpList.count]
+  [ 73] getparam 0 .............................. <me>
+  [ 75] getlocal 8 .............................. <argFromObj>
+  [ 77] getparam 8 .............................. <argToObj>
+  [ 79] pusharglist 3 ........................... <me, argFromObj, argToObj>
+  [ 81] objcall 1000 ............................ <me.getDistanceBetween(argFromObj, argToObj)>
+  [ 84] pusharglistnoret 1 ...................... <me.getDistanceBetween(argFromObj, argToObj)>
+  [ 86] extcall 21 .............................. return me.getDistanceBetween(argFromObj, argToObj)
+  [ 88] ret
+end
+
+on addConnection me, argFromObj, argToObj, argAtPosInList
+  [  0] getparam 8 .............................. <argFromObj>
+  [  2] pusharglist 1 ........................... <argFromObj>
+  [  4] extcall 68 .............................. <voidp(argFromObj)>
+  [  7] jmpifz [108] ............................ if voidp(argFromObj) then
+  [ 10] getprop 1023 ............................ <m_linePointLists>
+  [ 13] getobjprop 32 ........................... <m_linePointLists.count>
+  [ 16] pushzero ................................ <0>
+  [ 17] eq ...................................... <m_linePointLists.count = 0>
+  [ 18] jmpifz [ 37] ............................ if m_linePointLists.count = 0 then / else
+  [ 21] getprop 1023 ............................ <m_linePointLists>
+  [ 24] getparam 16 ............................. <argToObj>
+  [ 26] pusharglist 1 ........................... <[argToObj]>
+  [ 28] pushlist ................................ <[argToObj]>
+  [ 29] pusharglistnoret 2 ...................... <m_linePointLists, [argToObj]>
+  [ 31] objcall 50 .............................. m_linePointLists.add([argToObj])
+  [ 34] jmp [108]
+  [ 37] getprop 1023 ............................ <m_linePointLists>
+  [ 40] getprop 1023 ............................ <m_linePointLists>
+  [ 43] getobjprop 32 ........................... <m_linePointLists.count>
+  [ 46] pusharglist 2 ........................... <m_linePointLists, m_linePointLists.count>
+  [ 48] objcall 34 .............................. <m_linePointLists[m_linePointLists.count]>
+  [ 51] setlocal 0 .............................. tmpList = m_linePointLists[m_linePointLists.count]
+  [ 53] getlocal 0 .............................. <tmpList>
+  [ 55] getobjprop 32 ........................... <tmpList.count>
+  [ 58] pushint8 1 .............................. <1>
+  [ 61] eq ...................................... <tmpList.count = 1>
+  [ 62] jmpifz [ 94] ............................ if tmpList.count = 1 then / else
+  [ 65] getlocal 0 .............................. <tmpList>
+  [ 67] pushint8 1 .............................. <1>
+  [ 70] pusharglist 2 ........................... <tmpList, 1>
+  [ 72] objcall 34 .............................. <tmpList[1]>
+  [ 75] setparam 8 .............................. argFromObj = tmpList[1]
+  [ 77] getprop 1023 ............................ <m_linePointLists>
+  [ 80] getprop 1023 ............................ <m_linePointLists>
+  [ 83] getobjprop 32 ........................... <m_linePointLists.count>
+  [ 86] pusharglistnoret 2 ...................... <m_linePointLists, m_linePointLists.count>
+  [ 88] objcall 100 ............................. m_linePointLists.deleteAt(m_linePointLists.count)
+  [ 91] jmp [108]
+  [ 94] getlocal 0 .............................. <tmpList>
+  [ 96] getlocal 0 .............................. <tmpList>
+  [ 98] getobjprop 32 ........................... <tmpList.count>
+  [101] pusharglist 2 ........................... <tmpList, tmpList.count>
+  [103] objcall 34 .............................. <tmpList[tmpList.count]>
+  [106] setparam 8 .............................. argFromObj = tmpList[tmpList.count]
+  [108] getparam 8 .............................. <argFromObj>
+  [110] pusharglist 1 ........................... <argFromObj>
+  [112] extcall 71 .............................. <objectp(argFromObj)>
+  [115] not ..................................... <not objectp(argFromObj)>
+  [116] jmpifz [120] ............................ if not objectp(argFromObj) then
+  [119] ret ..................................... exit
+  [120] getparam 0 .............................. <me>
+  [122] getparam 8 .............................. <argFromObj>
+  [124] getparam 16 ............................. <argToObj>
+  [126] pusharglist 3 ........................... <me, argFromObj, argToObj>
+  [128] objcall 1001 ............................ <me.createListOfMapPointsBetweenPoints(argFromObj, argToObj)>
+  [131] setlocal 0 .............................. tmpList = me.createListOfMapPointsBetweenPoints(argFromObj, argToObj)
+  [133] getlocal 0 .............................. <tmpList>
+  [135] peek 0
+  [137] pusharglist 1
+  [139] extcall 32
+  [142] pushint8 1
+  [144] peek 0
+  [146] peek 2
+  [148] lteq
+  [149] jmpifz [179] ............................ repeat with obj in tmpList
+  [152] peek 2
+  [154] peek 1
+  [156] pusharglist 2
+  [158] extcall 34
+  [161] setlocal 8
+  [163] getprop 1021 ............................ <m_pointObjs>
+  [166] getlocal 8 .............................. <obj>
+  [168] pusharglistnoret 2 ...................... <m_pointObjs, obj>
+  [170] objcall 50 .............................. m_pointObjs.add(obj)
+  [173] pushint8 1
+  [175] add
+  [176] endrepeat [144]
+  [179] pop 3
+  [181] getlocal 0 .............................. <tmpList>
+  [183] pushint8 1 .............................. <1>
+  [186] getparam 8 .............................. <argFromObj>
+  [188] pusharglistnoret 3 ...................... <tmpList, 1, argFromObj>
+  [190] objcall 439 ............................. tmpList.addAt(1, argFromObj)
+  [193] getlocal 0 .............................. <tmpList>
+  [195] getparam 16 ............................. <argToObj>
+  [197] pusharglistnoret 2 ...................... <tmpList, argToObj>
+  [199] objcall 50 .............................. tmpList.add(argToObj)
+  [202] getparam 24 ............................. <argAtPosInList>
+  [204] pusharglist 1 ........................... <argAtPosInList>
+  [206] extcall 365 ............................. <integerp(argAtPosInList)>
+  [209] jmpifz [227] ............................ if integerp(argAtPosInList) then / else
+  [212] getprop 1023 ............................ <m_linePointLists>
+  [215] getparam 24 ............................. <argAtPosInList>
+  [217] getlocal 0 .............................. <tmpList>
+  [219] pusharglistnoret 3 ...................... <m_linePointLists, argAtPosInList, tmpList>
+  [221] objcall 439 ............................. m_linePointLists.addAt(argAtPosInList, tmpList)
+  [224] jmp [237]
+  [227] getprop 1023 ............................ <m_linePointLists>
+  [230] getlocal 0 .............................. <tmpList>
+  [232] pusharglistnoret 2 ...................... <m_linePointLists, tmpList>
+  [234] objcall 50 .............................. m_linePointLists.add(tmpList)
+  [237] pushint8 1 .............................. <1>
+  [240] setprop 1029 ............................ m_invalidated = 1
+  [243] ret
+end
+
+on mouse me, argObj, argWhat
+  [  0] getparam 16 ............................. <argWhat>
+  [  2] pushsymb 870 ............................ <#stillDown>
+  [  5] eq ...................................... <argWhat = #stillDown>
+  [  6] jmpifz [102] ............................ if argWhat = #stillDown then / else
+  [  9] pushint8 1 .............................. <1>
+  [ 12] setprop 1029 ............................ m_invalidated = 1
+  [ 15] pusharglist 0 ........................... <>
+  [ 17] thebuiltin 1043 ......................... <the controlDown>
+  [ 20] jmpifz [ 55] ............................ if the controlDown then / else
+  [ 23] getprop 1024 ............................ <m_rotSpeed>
+  [ 26] getparam 8 .............................. <argObj>
+  [ 28] pushsymb 1044 ........................... <#deltaMove>
+  [ 31] pushint8 1 .............................. <1>
+  [ 34] pusharglist 3 ........................... <argObj, #deltaMove, 1>
+  [ 36] objcall 152 ............................. <argObj.deltaMove[1]>
+  [ 39] inv ..................................... <-argObj.deltaMove[1]>
+  [ 40] pusharglist 1 ........................... <-argObj.deltaMove[1]>
+  [ 42] extcall 175 ............................. <float(-argObj.deltaMove[1])>
+  [ 45] pushcons 88 ............................. <3000.0>
+  [ 47] div ..................................... <float(-argObj.deltaMove[1]) / 3000.0>
+  [ 48] add ..................................... <m_rotSpeed + (float(-argObj.deltaMove[1]) / 3000.0)>
+  [ 49] setprop 1024 ............................ m_rotSpeed = m_rotSpeed + (float(-argObj.deltaMove[1]) / 3000.0)
+  [ 52] jmp [ 99]
+  [ 55] pusharglist 0 ........................... <>
+  [ 57] thebuiltin 905 .......................... <the shiftDown>
+  [ 60] jmpifz [ 66] ............................ if the shiftDown then / else
+  [ 63] jmp [ 99]
+  [ 66] getprop 1006 ............................ <m_equatorialRotation>
+  [ 69] getparam 8 .............................. <argObj>
+  [ 71] pushsymb 1044 ........................... <#deltaMove>
+  [ 74] pushint8 1 .............................. <1>
+  [ 77] pusharglist 3 ........................... <argObj, #deltaMove, 1>
+  [ 79] objcall 152 ............................. <argObj.deltaMove[1]>
+  [ 82] inv ..................................... <-argObj.deltaMove[1]>
+  [ 83] pusharglist 1 ........................... <-argObj.deltaMove[1]>
+  [ 85] extcall 175 ............................. <float(-argObj.deltaMove[1])>
+  [ 88] pushcons 96 ............................. <100.0>
+  [ 90] div ..................................... <float(-argObj.deltaMove[1]) / 100.0>
+  [ 91] add ..................................... <m_equatorialRotation + (float(-argObj.deltaMove[1]) / 100.0)>
+  [ 92] setprop 1006 ............................ m_equatorialRotation = m_equatorialRotation + (float(-argObj.deltaMove[1]) / 100.0)
+  [ 95] pushzero ................................ <0>
+  [ 96] setprop 1024 ............................ m_rotSpeed = 0
+  [ 99] jmp [808]
+  [102] getparam 16 ............................. <argWhat>
+  [104] pushsymb 858 ............................ <#click>
+  [107] eq ...................................... <argWhat = #click>
+  [108] jmpifz [808] ............................ if argWhat = #click then
+  [111] getprop 1045 ............................ <m_selectedPointObj>
+  [114] pusharglist 1 ........................... <m_selectedPointObj>
+  [116] extcall 71 .............................. <objectp(m_selectedPointObj)>
+  [119] jmpifz [149] ............................ if objectp(m_selectedPointObj) then
+  [122] getprop 1002 ............................ <m_reportObj>
+  [125] pusharglist 1 ........................... <m_reportObj>
+  [127] extcall 71 .............................. <objectp(m_reportObj)>
+  [130] jmpifz [149] ............................ if objectp(m_reportObj) then
+  [133] getprop 1002 ............................ <m_reportObj>
+  [136] getparam 0 .............................. <me>
+  [138] pushsymb 1046 ........................... <#SelectCity>
+  [141] getprop 1045 ............................ <m_selectedPointObj>
+  [144] pusharglistnoret 4 ...................... <m_reportObj, me, #SelectCity, m_selectedPointObj>
+  [146] objcall 74 .............................. m_reportObj.Report(me, #SelectCity, m_selectedPointObj)
+  [149] pusharglist 0 ........................... <>
+  [151] thebuiltin 905 .......................... <the shiftDown>
+  [154] not ..................................... <not (the shiftDown)>
+  [155] getmovieprop 1047 ....................... <the runMode>
+  [158] pushcons 104 ............................ <"Author">
+  [160] nteq .................................... <the runMode <> "Author">
+  [161] or ...................................... <not (the shiftDown) or (the runMode <> "Author")>
+  [162] jmpifz [166] ............................ if not (the shiftDown) or (the runMode <> "Author") then
+  [165] ret ..................................... exit
+  [166] getmovieprop 815 ........................ <the mouseLoc>
+  [169] setlocal 0 .............................. tmp = the mouseLoc
+  [171] getprop 1003 ............................ <m_onStageLoc>
+  [174] getprop 1008 ............................ <m_radius>
+  [177] getprop 1008 ............................ <m_radius>
+  [180] pusharglist 2 ........................... <m_radius, m_radius>
+  [182] extcall 568 ............................. <point(m_radius, m_radius)>
+  [185] add ..................................... <m_onStageLoc + point(m_radius, m_radius)>
+  [186] setlocal 8 .............................. tmpMidLoc = m_onStageLoc + point(m_radius, m_radius)
+  [188] getlocal 0 .............................. <tmp>
+  [190] getlocal 8 .............................. <tmpMidLoc>
+  [192] sub ..................................... <tmp - tmpMidLoc>
+  [193] setlocal 0 .............................. tmp = tmp - tmpMidLoc
+  [195] getlocal 0 .............................. <tmp>
+  [197] pushint8 1 .............................. <1>
+  [200] pusharglist 2 ........................... <tmp, 1>
+  [202] objcall 34 .............................. <tmp[1]>
+  [205] getlocal 0 .............................. <tmp>
+  [207] pushint8 1 .............................. <1>
+  [210] pusharglist 2 ........................... <tmp, 1>
+  [212] objcall 34 .............................. <tmp[1]>
+  [215] mul ..................................... <tmp[1] * tmp[1]>
+  [216] getlocal 0 .............................. <tmp>
+  [218] pushint8 2 .............................. <2>
+  [221] pusharglist 2 ........................... <tmp, 2>
+  [223] objcall 34 .............................. <tmp[2]>
+  [226] getlocal 0 .............................. <tmp>
+  [228] pushint8 2 .............................. <2>
+  [231] pusharglist 2 ........................... <tmp, 2>
+  [233] objcall 34 .............................. <tmp[2]>
+  [236] mul ..................................... <tmp[2] * tmp[2]>
+  [237] add ..................................... <(tmp[1] * tmp[1]) + (tmp[2] * tmp[2])>
+  [238] pusharglist 1 ........................... <(tmp[1] * tmp[1]) + (tmp[2] * tmp[2])>
+  [240] extcall 1048 ............................ <sqrt((tmp[1] * tmp[1]) + (tmp[2] * tmp[2]))>
+  [243] setlocal 16 ............................. tmpHypo = sqrt((tmp[1] * tmp[1]) + (tmp[2] * tmp[2]))
+  [245] getlocal 16 ............................. <tmpHypo>
+  [247] getprop 1008 ............................ <m_radius>
+  [250] lteq .................................... <tmpHypo <= m_radius>
+  [251] jmpifz [808] ............................ if tmpHypo <= m_radius then
+  [254] getlocal 0 .............................. <tmp>
+  [256] pushint8 1 .............................. <1>
+  [259] pusharglist 2 ........................... <tmp, 1>
+  [261] objcall 34 .............................. <tmp[1]>
+  [264] pusharglist 1 ........................... <tmp[1]>
+  [266] extcall 175 ............................. <float(tmp[1])>
+  [269] getlocal 0 .............................. <tmp>
+  [271] pushint8 2 .............................. <2>
+  [274] pusharglist 2 ........................... <tmp, 2>
+  [276] objcall 34 .............................. <tmp[2]>
+  [279] pusharglist 1 ........................... <tmp[2]>
+  [281] extcall 175 ............................. <float(tmp[2])>
+  [284] getprop 1008 ............................ <m_radius>
+  [287] inv ..................................... <-m_radius>
+  [288] getlocal 16 ............................. <tmpHypo>
+  [290] getprop 1008 ............................ <m_radius>
+  [293] pusharglist 1 ........................... <m_radius>
+  [295] extcall 175 ............................. <float(m_radius)>
+  [298] div ..................................... <tmpHypo / float(m_radius)>
+  [299] pusharglist 0 ........................... <>
+  [301] extcall 1005 ............................ <PI>
+  [304] pushint8 2 .............................. <2>
+  [307] div ..................................... <PI / 2>
+  [308] mul ..................................... <tmpHypo / float(m_radius) * (PI / 2)>
+  [309] pusharglist 1 ........................... <tmpHypo / float(m_radius) * (PI / 2)>
+  [311] extcall 1049 ............................ <cos(tmpHypo / float(m_radius) * (PI / 2))>
+  [314] mul ..................................... <-m_radius * cos(tmpHypo / float(m_radius) * (PI / 2))>
+  [315] pusharglist 3 ........................... <[float(tmp[1]), float(tmp[2]), -m_radius * cos(tmpHypo / float(m_radius) * (PI / 2))]>
+  [317] pushlist ................................ <[float(tmp[1]), float(tmp[2]), -m_radius * cos(tmpHypo / float(m_radius) * (PI / 2))]>
+  [318] setlocal 24 ............................. tmp3DLoc = [float(tmp[1]), float(tmp[2]), -m_radius * cos(tmpHypo / float(m_radius) * (PI / 2))]
+  [320] pushcons 112 ............................ <"MapPlaceScript">
+  [322] pusharglist 1 ........................... <"MapPlaceScript">
+  [324] extcall 284 ............................. <script("MapPlaceScript")>
+  [327] pushzero ................................ <0>
+  [328] pushzero ................................ <0>
+  [329] pusharglist 2 ........................... <[0, 0]>
+  [331] pushlist ................................ <[0, 0]>
+  [332] getprop 1008 ............................ <m_radius>
+  [335] pushcons 120 ............................ <EMPTY>
+  [337] pusharglist 4 ........................... <script("MapPlaceScript"), [0, 0], m_radius, EMPTY>
+  [339] objcall 0 ............................... <script("MapPlaceScript").new([0, 0], m_radius, EMPTY)>
+  [341] setlocal 32 ............................. obj = script("MapPlaceScript").new([0, 0], m_radius, EMPTY)
+  [343] getlocal 32 ............................. <obj>
+  [345] getlocal 24 ............................. <tmp3DLoc>
+  [347] setobjprop 1050 ......................... obj.m_org3DLoc = tmp3DLoc
+  [350] getprop 1008 ............................ <m_radius>
+  [353] getprop 1008 ............................ <m_radius>
+  [356] mul ..................................... <m_radius * m_radius>
+  [357] pusharglist 1 ........................... <m_radius * m_radius>
+  [359] extcall 175 ............................. <float(m_radius * m_radius)>
+  [362] getlocal 0 .............................. <tmp>
+  [364] pushint8 1 .............................. <1>
+  [367] pusharglist 2 ........................... <tmp, 1>
+  [369] objcall 34 .............................. <tmp[1]>
+  [372] getlocal 0 .............................. <tmp>
+  [374] pushint8 1 .............................. <1>
+  [377] pusharglist 2 ........................... <tmp, 1>
+  [379] objcall 34 .............................. <tmp[1]>
+  [382] mul ..................................... <tmp[1] * tmp[1]>
+  [383] sub ..................................... <float(m_radius * m_radius) - (tmp[1] * tmp[1])>
+  [384] getlocal 0 .............................. <tmp>
+  [386] pushint8 2 .............................. <2>
+  [389] pusharglist 2 ........................... <tmp, 2>
+  [391] objcall 34 .............................. <tmp[2]>
+  [394] getlocal 0 .............................. <tmp>
+  [396] pushint8 2 .............................. <2>
+  [399] pusharglist 2 ........................... <tmp, 2>
+  [401] objcall 34 .............................. <tmp[2]>
+  [404] mul ..................................... <tmp[2] * tmp[2]>
+  [405] sub ..................................... <float(m_radius * m_radius) - (tmp[1] * tmp[1]) - (tmp[2] * tmp[2])>
+  [406] setlocal 40 ............................. tmpZ = float(m_radius * m_radius) - (tmp[1] * tmp[1]) - (tmp[2] * tmp[2])
+  [408] getlocal 40 ............................. <tmpZ>
+  [410] pusharglist 1 ........................... <tmpZ>
+  [412] extcall 1048 ............................ <sqrt(tmpZ)>
+  [415] setlocal 40 ............................. tmpZ = sqrt(tmpZ)
+  [417] getlocal 24 ............................. <tmp3DLoc>
+  [419] pushint8 3 .............................. <3>
+  [422] getlocal 40 ............................. <tmpZ>
+  [424] inv ..................................... <-tmpZ>
+  [425] pusharglistnoret 3 ...................... <tmp3DLoc, 3, -tmpZ>
+  [427] objcall 46 .............................. tmp3DLoc[3] = -tmpZ
+  [430] pushint8 2 .............................. <2>
+  [433] pushint8 1 .............................. <1>
+  [436] pushint8 3 .............................. <3>
+  [439] pusharglist 3 ........................... <[2, 1, 3]>
+  [441] pushlist ................................ <[2, 1, 3]>
+  [442] setlocal 48 ............................. rotateOrder = [2, 1, 3]
+  [444] pushzero ................................ <0>
+  [445] getprop 1007 ............................ <m_roundedEquatorialRotation>
+  [448] inv ..................................... <-m_roundedEquatorialRotation>
+  [449] pushzero ................................ <0>
+  [450] pusharglist 3 ........................... <[0, -m_roundedEquatorialRotation, 0]>
+  [452] pushlist ................................ <[0, -m_roundedEquatorialRotation, 0]>
+  [453] getprop 1004 ............................ <m_angle>
+  [456] sub ..................................... <[0, -m_roundedEquatorialRotation, 0] - m_angle>
+  [457] setlocal 56 ............................. rot = [0, -m_roundedEquatorialRotation, 0] - m_angle
+  [459] pusharglist 0 ........................... <[]>
+  [461] pushlist ................................ <[]>
+  [462] setlocal 64 ............................. sinCos = []
+  [464] pushint8 1 .............................. <1>
+  [467] setlocal 72
+  [469] getlocal 72
+  [471] getlocal 48 ............................. <rotateOrder>
+  [473] getobjprop 32 ........................... <rotateOrder.count>
+  [476] lteq
+  [477] jmpifz [529] ............................ repeat with n = 1 to rotateOrder.count
+  [480] getlocal 64 ............................. <sinCos>
+  [482] getlocal 56 ............................. <rot>
+  [484] getlocal 72 ............................. <n>
+  [486] pusharglist 2 ........................... <rot, n>
+  [488] objcall 34 .............................. <rot[n]>
+  [491] pusharglist 1 ........................... <rot[n]>
+  [493] extcall 1051 ............................ <sin(rot[n])>
+  [496] getlocal 56 ............................. <rot>
+  [498] getlocal 72 ............................. <n>
+  [500] pusharglist 2 ........................... <rot, n>
+  [502] objcall 34 .............................. <rot[n]>
+  [505] pusharglist 1 ........................... <rot[n]>
+  [507] extcall 1049 ............................ <cos(rot[n])>
+  [510] pusharglist 2 ........................... <[sin(rot[n]), cos(rot[n])]>
+  [512] pushlist ................................ <[sin(rot[n]), cos(rot[n])]>
+  [513] pusharglistnoret 2 ...................... <sinCos, [sin(rot[n]), cos(rot[n])]>
+  [515] objcall 50 .............................. sinCos.add([sin(rot[n]), cos(rot[n])])
+  [518] pushint8 1
+  [521] getlocal 72
+  [523] add
+  [524] setlocal 72
+  [526] endrepeat [469]
+  [529] getlocal 64 ............................. <sinCos>
+  [531] getobjprop 32 ........................... <sinCos.count>
+  [534] setlocal 80
+  [536] getlocal 80
+  [538] pushint8 1 .............................. <1>
+  [541] gteq
+  [542] jmpifz [587] ............................ repeat with i = sinCos.count down to 1
+  [545] getlocal 48 ............................. <rotateOrder>
+  [547] getlocal 80 ............................. <i>
+  [549] pusharglist 2 ........................... <rotateOrder, i>
+  [551] objcall 34 .............................. <rotateOrder[i]>
+  [554] setlocal 88 ............................. axis = rotateOrder[i]
+  [556] getlocal 24 ............................. <tmp3DLoc>
+  [558] getlocal 64 ............................. <sinCos>
+  [560] getlocal 88 ............................. <axis>
+  [562] pusharglist 2 ........................... <sinCos, axis>
+  [564] objcall 34 .............................. <sinCos[axis]>
+  [567] getlocal 88 ............................. <axis>
+  [569] pusharglist 3 ........................... <tmp3DLoc, sinCos[axis], axis>
+  [571] extcall 1052 ............................ <rotate3D(tmp3DLoc, sinCos[axis], axis)>
+  [574] setlocal 24 ............................. tmp3DLoc = rotate3D(tmp3DLoc, sinCos[axis], axis)
+  [576] pushint8 -1
+  [579] getlocal 80
+  [581] add
+  [582] setlocal 80
+  [584] endrepeat [536]
+  [587] getlocal 32 ............................. <obj>
+  [589] getlocal 24 ............................. <tmp3DLoc>
+  [591] setobjprop 1050 ......................... obj.m_org3DLoc = tmp3DLoc
+  [594] getlocal 32 ............................. <obj>
+  [596] pusharglistnoret 1 ...................... <obj>
+  [598] objcall 1053 ............................ obj.reset()
+  [601] getprop 1021 ............................ <m_pointObjs>
+  [604] getlocal 32 ............................. <obj>
+  [606] pusharglistnoret 2 ...................... <m_pointObjs, obj>
+  [608] objcall 50 .............................. m_pointObjs.add(obj)
+  [611] getprop 1020 ............................ <m_renderPoints>
+  [614] getlocal 32 ............................. <obj>
+  [616] pusharglistnoret 2 ...................... <m_renderPoints, obj>
+  [618] objcall 50 .............................. m_renderPoints.add(obj)
+  [621] pushzero ................................ <0>
+  [622] pushzero ................................ <0>
+  [623] pusharglist 2 ........................... <0, 0>
+  [625] extcall 568 ............................. <point(0, 0)>
+  [628] getlocal 32 ............................. <obj>
+  [630] pushsymb 1050 ........................... <#m_org3DLoc>
+  [633] pushint8 1 .............................. <1>
+  [636] pusharglist 3 ........................... <obj, #m_org3DLoc, 1>
+  [638] objcall 152 ............................. <obj.m_org3DLoc[1]>
+  [641] inv ..................................... <-obj.m_org3DLoc[1]>
+  [642] getlocal 32 ............................. <obj>
+  [644] pushsymb 1050 ........................... <#m_org3DLoc>
+  [647] pushint8 3 .............................. <3>
+  [650] pusharglist 3 ........................... <obj, #m_org3DLoc, 3>
+  [652] objcall 152 ............................. <obj.m_org3DLoc[3]>
+  [655] pusharglist 2 ........................... <-obj.m_org3DLoc[1], obj.m_org3DLoc[3]>
+  [657] extcall 568 ............................. <point(-obj.m_org3DLoc[1], obj.m_org3DLoc[3])>
+  [660] pushsymb 1055 ........................... <#radians>
+  [663] pusharglist 3 ........................... <point(0, 0), point(-obj.m_org3DLoc[1], obj.m_org3DLoc[3]), #radians>
+  [665] extcall 1054 ............................ <calcDirection(point(0, 0), point(-obj.m_org3DLoc[1], obj.m_org3DLoc[3]), #radians)>
+  [668] setlocal 96 ............................. tmpLat = calcDirection(point(0, 0), point(-obj.m_org3DLoc[1], obj.m_org3DLoc[3]), #radians)
+  [670] getlocal 96 ............................. <tmpLat>
+  [672] pusharglist 0 ........................... <>
+  [674] extcall 1005 ............................ <PI>
+  [677] gt ...................................... <tmpLat > PI>
+  [678] jmpifz [695] ............................ if tmpLat > PI then
+  [681] getlocal 96 ............................. <tmpLat>
+  [683] pushint8 2 .............................. <2>
+  [686] pusharglist 0 ........................... <>
+  [688] extcall 1005 ............................ <PI>
+  [691] mul ..................................... <2 * PI>
+  [692] sub ..................................... <tmpLat - (2 * PI)>
+  [693] setlocal 96 ............................. tmpLat = tmpLat - (2 * PI)
+  [695] getlocal 32 ............................. <obj>
+  [697] pushsymb 1050 ........................... <#m_org3DLoc>
+  [700] pushint8 2 .............................. <2>
+  [703] pusharglist 3 ........................... <obj, #m_org3DLoc, 2>
+  [705] objcall 152 ............................. <obj.m_org3DLoc[2]>
+  [708] getprop 1008 ............................ <m_radius>
+  [711] pusharglist 1 ........................... <m_radius>
+  [713] extcall 175 ............................. <float(m_radius)>
+  [716] div ..................................... <obj.m_org3DLoc[2] / float(m_radius)>
+  [717] setlocal 104 ............................ tmpY = obj.m_org3DLoc[2] / float(m_radius)
+  [719] pushcons 128 ............................ <1.0>
+  [721] getlocal 104 ............................ <tmpY>
+  [723] getlocal 104 ............................ <tmpY>
+  [725] mul ..................................... <tmpY * tmpY>
+  [726] sub ..................................... <1.0 - (tmpY * tmpY)>
+  [727] pusharglist 1 ........................... <1.0 - (tmpY * tmpY)>
+  [729] extcall 1048 ............................ <sqrt(1.0 - (tmpY * tmpY))>
+  [732] setlocal 112 ............................ tmpX = sqrt(1.0 - (tmpY * tmpY))
+  [734] pushzero ................................ <0>
+  [735] pushzero ................................ <0>
+  [736] pusharglist 2 ........................... <0, 0>
+  [738] extcall 568 ............................. <point(0, 0)>
+  [741] getlocal 112 ............................ <tmpX>
+  [743] getlocal 104 ............................ <tmpY>
+  [745] pusharglist 2 ........................... <tmpX, tmpY>
+  [747] extcall 568 ............................. <point(tmpX, tmpY)>
+  [750] pushsymb 1055 ........................... <#radians>
+  [753] pusharglist 3 ........................... <point(0, 0), point(tmpX, tmpY), #radians>
+  [755] extcall 1054 ............................ <calcDirection(point(0, 0), point(tmpX, tmpY), #radians)>
+  [758] setlocal 120 ............................ tmpLong = calcDirection(point(0, 0), point(tmpX, tmpY), #radians)
+  [760] getlocal 120 ............................ <tmpLong>
+  [762] pusharglist 0 ........................... <>
+  [764] extcall 1005 ............................ <PI>
+  [767] pushint8 2 .............................. <2>
+  [770] div ..................................... <PI / 2>
+  [771] sub ..................................... <tmpLong - (PI / 2)>
+  [772] setlocal 120 ............................ tmpLong = tmpLong - (PI / 2)
+  [774] getlocal 32 ............................. <obj>
+  [776] getlocal 96 ............................. <tmpLat>
+  [778] getlocal 120 ............................ <tmpLong>
+  [780] pusharglist 2 ........................... <[tmpLat, tmpLong]>
+  [782] pushlist ................................ <[tmpLat, tmpLong]>
+  [783] setobjprop 1038 ......................... obj.m_mapLoc = [tmpLat, tmpLong]
+  [786] getlocal 32 ............................. <obj>
+  [788] getobjprop 1038 ......................... <obj.m_mapLoc>
+  [791] pusharglistnoret 1 ...................... <obj.m_mapLoc>
+  [793] extcall 36 .............................. pott(obj.m_mapLoc)
+  [796] getlocal 32 ............................. <obj>
+  [798] getlocal 32 ............................. <obj>
+  [800] pusharglist 1 ........................... <obj>
+  [802] objcall 1056 ............................ <obj.longLatTo3D()>
+  [805] setobjprop 1050 ......................... obj.m_org3DLoc = obj.longLatTo3D()
+  [808] ret
+end
+
+on rotate me, argSteps
+  [  0] getprop 1006 ............................ <m_equatorialRotation>
+  [  3] getparam 8 .............................. <argSteps>
+  [  5] pusharglist 1 ........................... <argSteps>
+  [  7] extcall 175 ............................. <float(argSteps)>
+  [ 10] pushcons 136 ............................ <2.0>
+  [ 12] mul ..................................... <float(argSteps) * 2.0>
+  [ 13] pusharglist 0 ........................... <>
+  [ 15] extcall 1005 ............................ <PI>
+  [ 18] mul ..................................... <float(argSteps) * 2.0 * PI>
+  [ 19] pushint8 80 ............................. <80>
+  [ 22] div ..................................... <float(argSteps) * 2.0 * PI / 80>
+  [ 23] add ..................................... <m_equatorialRotation + (float(argSteps) * 2.0 * PI / 80)>
+  [ 24] setprop 1006 ............................ m_equatorialRotation = m_equatorialRotation + (float(argSteps) * 2.0 * PI / 80)
+  [ 27] pushint8 1 .............................. <1>
+  [ 30] setprop 1029 ............................ m_invalidated = 1
+  [ 33] ret
+end
+
+on rotate3DLocToCurrent me, arg3DLoc
+  [  0] pushint8 2 .............................. <2>
+  [  3] pushint8 1 .............................. <1>
+  [  6] pushint8 3 .............................. <3>
+  [  9] pusharglist 3 ........................... <[2, 1, 3]>
+  [ 11] pushlist ................................ <[2, 1, 3]>
+  [ 12] setlocal 0 .............................. rotateOrder = [2, 1, 3]
+  [ 14] getparam 8 .............................. <arg3DLoc>
+  [ 16] pusharglist 1 ........................... <arg3DLoc>
+  [ 18] objcall 44 .............................. <arg3DLoc.duplicate()>
+  [ 21] setlocal 8 .............................. tmp = arg3DLoc.duplicate()
+  [ 23] pushint8 1 .............................. <1>
+  [ 26] setlocal 16
+  [ 28] getlocal 16
+  [ 30] getprop 1071 ............................ <m_currentRotationFactors>
+  [ 33] getobjprop 32 ........................... <m_currentRotationFactors.count>
+  [ 36] lteq
+  [ 37] jmpifz [ 83] ............................ repeat with i = 1 to m_currentRotationFactors.count
+  [ 40] getlocal 0 .............................. <rotateOrder>
+  [ 42] getlocal 16 ............................. <i>
+  [ 44] pusharglist 2 ........................... <rotateOrder, i>
+  [ 46] objcall 34 .............................. <rotateOrder[i]>
+  [ 49] setlocal 24 ............................. axis = rotateOrder[i]
+  [ 51] getlocal 8 .............................. <tmp>
+  [ 53] getprop 1071 ............................ <m_currentRotationFactors>
+  [ 56] getlocal 24 ............................. <axis>
+  [ 58] pusharglist 2 ........................... <m_currentRotationFactors, axis>
+  [ 60] objcall 34 .............................. <m_currentRotationFactors[axis]>
+  [ 63] getlocal 24 ............................. <axis>
+  [ 65] pusharglist 3 ........................... <tmp, m_currentRotationFactors[axis], axis>
+  [ 67] extcall 1052 ............................ <rotate3D(tmp, m_currentRotationFactors[axis], axis)>
+  [ 70] setlocal 8 .............................. tmp = rotate3D(tmp, m_currentRotationFactors[axis], axis)
+  [ 72] pushint8 1
+  [ 75] getlocal 16
+  [ 77] add
+  [ 78] setlocal 16
+  [ 80] endrepeat [ 28]
+  [ 83] getlocal 8 .............................. <tmp>
+  [ 85] pusharglistnoret 1 ...................... <tmp>
+  [ 87] extcall 21 .............................. return tmp
+  [ 89] ret
+end
+
+on timeTick me
+  [  0] getprop 1028 ............................ <m_active>
+  [  3] not ..................................... <not m_active>
+  [  4] jmpifz [  8] ............................ if not m_active then
+  [  7] ret ..................................... exit
+  [  8] getprop 1006 ............................ <m_equatorialRotation>
+  [ 11] getprop 1024 ............................ <m_rotSpeed>
+  [ 14] add ..................................... <m_equatorialRotation + m_rotSpeed>
+  [ 15] setprop 1006 ............................ m_equatorialRotation = m_equatorialRotation + m_rotSpeed
+  [ 18] getprop 1006 ............................ <m_equatorialRotation>
+  [ 21] pusharglist 0 ........................... <>
+  [ 23] extcall 1005 ............................ <PI>
+  [ 26] pushint8 2 .............................. <2>
+  [ 29] mul ..................................... <PI * 2>
+  [ 30] gt ...................................... <m_equatorialRotation > (PI * 2)>
+  [ 31] jmpifz [ 53] ............................ if m_equatorialRotation > (PI * 2) then / else
+  [ 34] getprop 1006 ............................ <m_equatorialRotation>
+  [ 37] pusharglist 0 ........................... <>
+  [ 39] extcall 1005 ............................ <PI>
+  [ 42] pushint8 2 .............................. <2>
+  [ 45] mul ..................................... <PI * 2>
+  [ 46] sub ..................................... <m_equatorialRotation - (PI * 2)>
+  [ 47] setprop 1006 ............................ m_equatorialRotation = m_equatorialRotation - (PI * 2)
+  [ 50] jmp [ 77]
+  [ 53] getprop 1006 ............................ <m_equatorialRotation>
+  [ 56] pushzero ................................ <0>
+  [ 57] lt ...................................... <m_equatorialRotation < 0>
+  [ 58] jmpifz [ 77] ............................ if m_equatorialRotation < 0 then
+  [ 61] pusharglist 0 ........................... <>
+  [ 63] extcall 1005 ............................ <PI>
+  [ 66] pushint8 2 .............................. <2>
+  [ 69] mul ..................................... <PI * 2>
+  [ 70] getprop 1006 ............................ <m_equatorialRotation>
+  [ 73] add ..................................... <(PI * 2) + m_equatorialRotation>
+  [ 74] setprop 1006 ............................ m_equatorialRotation = (PI * 2) + m_equatorialRotation
+  [ 77] pushcons 144 ............................ <80.0>
+  [ 79] getprop 1006 ............................ <m_equatorialRotation>
+  [ 82] mul ..................................... <80.0 * m_equatorialRotation>
+  [ 83] pushint8 2 .............................. <2>
+  [ 86] pusharglist 0 ........................... <>
+  [ 88] extcall 1005 ............................ <PI>
+  [ 91] mul ..................................... <2 * PI>
+  [ 92] div ..................................... <80.0 * m_equatorialRotation / (2 * PI)>
+  [ 93] pusharglist 1 ........................... <80.0 * m_equatorialRotation / (2 * PI)>
+  [ 95] extcall 54 .............................. <integer(80.0 * m_equatorialRotation / (2 * PI))>
+  [ 98] pushcons 152 ............................ <80.0>
+  [100] div ..................................... <integer(80.0 * m_equatorialRotation / (2 * PI)) / 80.0>
+  [101] pushint8 2 .............................. <2>
+  [104] pusharglist 0 ........................... <>
+  [106] extcall 1005 ............................ <PI>
+  [109] mul ..................................... <2 * PI>
+  [110] mul ..................................... <integer(80.0 * m_equatorialRotation / (2 * PI)) / 80.0 * (2 * PI)>
+  [111] setprop 1007 ............................ m_roundedEquatorialRotation = integer(80.0 * m_equatorialRotation / (2 * PI)) / 80.0 * (2 * PI)
+  [114] pushint8 2 .............................. <2>
+  [117] pushint8 1 .............................. <1>
+  [120] pushint8 3 .............................. <3>
+  [123] pusharglist 3 ........................... <[2, 1, 3]>
+  [125] pushlist ................................ <[2, 1, 3]>
+  [126] setlocal 0 .............................. rotateOrder = [2, 1, 3]
+  [128] pushzero ................................ <0>
+  [129] getprop 1007 ............................ <m_roundedEquatorialRotation>
+  [132] pushzero ................................ <0>
+  [133] pusharglist 3 ........................... <[0, m_roundedEquatorialRotation, 0]>
+  [135] pushlist ................................ <[0, m_roundedEquatorialRotation, 0]>
+  [136] getprop 1004 ............................ <m_angle>
+  [139] add ..................................... <[0, m_roundedEquatorialRotation, 0] + m_angle>
+  [140] setlocal 8 .............................. rot = [0, m_roundedEquatorialRotation, 0] + m_angle
+  [142] pusharglist 0 ........................... <[]>
+  [144] pushlist ................................ <[]>
+  [145] setprop 1071 ............................ m_currentRotationFactors = []
+  [148] pushint8 1 .............................. <1>
+  [151] setlocal 16
+  [153] getlocal 16
+  [155] getlocal 0 .............................. <rotateOrder>
+  [157] getobjprop 32 ........................... <rotateOrder.count>
+  [160] lteq
+  [161] jmpifz [214] ............................ repeat with n = 1 to rotateOrder.count
+  [164] getprop 1071 ............................ <m_currentRotationFactors>
+  [167] getlocal 8 .............................. <rot>
+  [169] getlocal 16 ............................. <n>
+  [171] pusharglist 2 ........................... <rot, n>
+  [173] objcall 34 .............................. <rot[n]>
+  [176] pusharglist 1 ........................... <rot[n]>
+  [178] extcall 1051 ............................ <sin(rot[n])>
+  [181] getlocal 8 .............................. <rot>
+  [183] getlocal 16 ............................. <n>
+  [185] pusharglist 2 ........................... <rot, n>
+  [187] objcall 34 .............................. <rot[n]>
+  [190] pusharglist 1 ........................... <rot[n]>
+  [192] extcall 1049 ............................ <cos(rot[n])>
+  [195] pusharglist 2 ........................... <[sin(rot[n]), cos(rot[n])]>
+  [197] pushlist ................................ <[sin(rot[n]), cos(rot[n])]>
+  [198] pusharglistnoret 2 ...................... <m_currentRotationFactors, [sin(rot[n]), cos(rot[n])]>
+  [200] objcall 50 .............................. m_currentRotationFactors.add([sin(rot[n]), cos(rot[n])])
+  [203] pushint8 1
+  [206] getlocal 16
+  [208] add
+  [209] setlocal 16
+  [211] endrepeat [153]
+  [214] getprop 1025 ............................ <m_image>
+  [217] getprop 1026 ............................ <m_fadeImage>
+  [220] getprop 1025 ............................ <m_image>
+  [223] getobjprop 555 .......................... <m_image.rect>
+  [226] getprop 1025 ............................ <m_image>
+  [229] getobjprop 555 .......................... <m_image.rect>
+  [232] pushsymb 1073 ........................... <#ink>
+  [235] pushsymb 1074 ........................... <#copy>
+  [238] pusharglist 2 ........................... <[#ink: #copy]>
+  [240] pushproplist ............................ <[#ink: #copy]>
+  [241] pusharglistnoret 5 ...................... <m_image, m_fadeImage, m_image.rect, m_image.rect, [#ink: #copy]>
+  [243] objcall 1075 ............................ m_image.copyPixels(m_fadeImage, m_image.rect, m_image.rect, [#ink: #copy])
+  [246] pushint8 2 .............................. <2>
+  [249] setlocal 24 ............................. SPNum = 2
+  [251] getprop 1025 ............................ <m_image>
+  [254] getobjprop 555 .......................... <m_image.rect>
+  [257] pusharglist 1 ........................... <m_image.rect>
+  [259] extcall 1076 ............................ <getRectSize(m_image.rect)>
+  [262] pushint8 2 .............................. <2>
+  [265] div ..................................... <getRectSize(m_image.rect) / 2>
+  [266] setlocal 32 ............................. tmpImageOffset = getRectSize(m_image.rect) / 2
+  [268] pushint8 1 .............................. <1>
+  [271] setlocal 16
+  [273] getlocal 16
+  [275] getprop 1021 ............................ <m_pointObjs>
+  [278] getobjprop 32 ........................... <m_pointObjs.count>
+  [281] lteq
+  [282] jmpifz [332] ............................ repeat with n = 1 to m_pointObjs.count
+  [285] getprop 1021 ............................ <m_pointObjs>
+  [288] getlocal 16 ............................. <n>
+  [290] pusharglist 2 ........................... <m_pointObjs, n>
+  [292] objcall 34 .............................. <m_pointObjs[n]>
+  [295] setlocal 40 ............................. pntObj = m_pointObjs[n]
+  [297] getlocal 40 ............................. <pntObj>
+  [299] getobjprop 1050 ......................... <pntObj.m_org3DLoc>
+  [302] setlocal 48 ............................. pnt = pntObj.m_org3DLoc
+  [304] getlocal 40 ............................. <pntObj>
+  [306] getparam 0 .............................. <me>
+  [308] getlocal 40 ............................. <pntObj>
+  [310] getobjprop 1050 ......................... <pntObj.m_org3DLoc>
+  [313] pusharglist 2 ........................... <me, pntObj.m_org3DLoc>
+  [315] objcall 998 ............................. <me.rotate3DLocToCurrent(pntObj.m_org3DLoc)>
+  [318] setobjprop 1077 ......................... pntObj.m_3DLoc = me.rotate3DLocToCurrent(pntObj.m_org3DLoc)
+  [321] pushint8 1
+  [324] getlocal 16
+  [326] add
+  [327] setlocal 16
+  [329] endrepeat [273]
+  [332] getmovieprop 815 ........................ <the mouseLoc>
+  [335] getlocal 32 ............................. <tmpImageOffset>
+  [337] sub ..................................... <the mouseLoc - tmpImageOffset>
+  [338] getprop 1003 ............................ <m_onStageLoc>
+  [341] sub ..................................... <the mouseLoc - tmpImageOffset - m_onStageLoc>
+  [342] setlocal 56 ............................. tmpMouseLoc = the mouseLoc - tmpImageOffset - m_onStageLoc
+  [344] pushint8 12 ............................. <12>
+  [347] setlocal 64 ............................. tmpMinHypo = 12
+  [349] getprop 1045 ............................ <m_selectedPointObj>
+  [352] pusharglist 1 ........................... <m_selectedPointObj>
+  [354] extcall 71 .............................. <objectp(m_selectedPointObj)>
+  [357] setlocal 72 ............................. didHaveSelected = objectp(m_selectedPointObj)
+  [359] pushzero ................................ <0>
+  [360] setprop 1045 ............................ m_selectedPointObj = 0
+  [363] getprop 1027 ............................ <m_placeImage>
+  [366] getobjprop 555 .......................... <m_placeImage.rect>
+  [369] pusharglist 1 ........................... <m_placeImage.rect>
+  [371] extcall 1076 ............................ <getRectSize(m_placeImage.rect)>
+  [374] pushint8 2 .............................. <2>
+  [377] div ..................................... <getRectSize(m_placeImage.rect) / 2>
+  [378] setlocal 80 ............................. tmpPlaceOff = getRectSize(m_placeImage.rect) / 2
+  [380] getlocal 32 ............................. <tmpImageOffset>
+  [382] getlocal 32 ............................. <tmpImageOffset>
+  [384] pusharglist 2 ........................... <tmpImageOffset, tmpImageOffset>
+  [386] extcall 555 ............................. <rect(tmpImageOffset, tmpImageOffset)>
+  [389] setlocal 88 ............................. tmpImgOffRect = rect(tmpImageOffset, tmpImageOffset)
+  [391] pushzero ................................ <0>
+  [392] pushzero ................................ <0>
+  [393] pushzero ................................ <0>
+  [394] pusharglist 3 ........................... <0, 0, 0>
+  [396] extcall 1015 ............................ <rgb(0, 0, 0)>
+  [399] setlocal 96 ............................. tmpClr = rgb(0, 0, 0)
+  [401] pushint8 1 .............................. <1>
+  [404] setlocal 16
+  [406] getlocal 16
+  [408] getprop 1023 ............................ <m_linePointLists>
+  [411] getobjprop 32 ........................... <m_linePointLists.count>
+  [414] lteq
+  [415] jmpifz [669] ............................ repeat with n = 1 to m_linePointLists.count
+  [418] getprop 1023 ............................ <m_linePointLists>
+  [421] getlocal 16 ............................. <n>
+  [423] pusharglist 2 ........................... <m_linePointLists, n>
+  [425] objcall 34 .............................. <m_linePointLists[n]>
+  [428] setlocal 104 ............................ tmpList = m_linePointLists[n]
+  [430] getlocal 104 ............................ <tmpList>
+  [432] pushint8 1 .............................. <1>
+  [435] pusharglist 2 ........................... <tmpList, 1>
+  [437] objcall 34 .............................. <tmpList[1]>
+  [440] getobjprop 1077 ......................... <tmpList[1].m_3DLoc>
+  [443] setlocal 112 ............................ pnt3D1 = tmpList[1].m_3DLoc
+  [445] getlocal 112 ............................ <pnt3D1>
+  [447] pushint8 1 .............................. <1>
+  [450] pusharglist 2 ........................... <pnt3D1, 1>
+  [452] objcall 34 .............................. <pnt3D1[1]>
+  [455] getlocal 112 ............................ <pnt3D1>
+  [457] pushint8 2 .............................. <2>
+  [460] pusharglist 2 ........................... <pnt3D1, 2>
+  [462] objcall 34 .............................. <pnt3D1[2]>
+  [465] pusharglist 2 ........................... <pnt3D1[1], pnt3D1[2]>
+  [467] extcall 568 ............................. <point(pnt3D1[1], pnt3D1[2])>
+  [470] setlocal 120 ............................ pnt1 = point(pnt3D1[1], pnt3D1[2])
+  [472] pushint8 2 .............................. <2>
+  [475] setlocal 128
+  [477] getlocal 128
+  [479] getlocal 104 ............................ <tmpList>
+  [481] getobjprop 32 ........................... <tmpList.count>
+  [484] lteq
+  [485] jmpifz [658] ............................ repeat with m = 2 to tmpList.count
+  [488] getlocal 104 ............................ <tmpList>
+  [490] getlocal 128 ............................ <m>
+  [492] pusharglist 2 ........................... <tmpList, m>
+  [494] objcall 34 .............................. <tmpList[m]>
+  [497] getobjprop 1077 ......................... <tmpList[m].m_3DLoc>
+  [500] setlocal 136 ............................ pnt3D2 = tmpList[m].m_3DLoc
+  [502] getlocal 136 ............................ <pnt3D2>
+  [504] pushint8 1 .............................. <1>
+  [507] pusharglist 2 ........................... <pnt3D2, 1>
+  [509] objcall 34 .............................. <pnt3D2[1]>
+  [512] getlocal 136 ............................ <pnt3D2>
+  [514] pushint8 2 .............................. <2>
+  [517] pusharglist 2 ........................... <pnt3D2, 2>
+  [519] objcall 34 .............................. <pnt3D2[2]>
+  [522] pusharglist 2 ........................... <pnt3D2[1], pnt3D2[2]>
+  [524] extcall 568 ............................. <point(pnt3D2[1], pnt3D2[2])>
+  [527] setlocal 144 ............................ pnt2 = point(pnt3D2[1], pnt3D2[2])
+  [529] pushint8 1 .............................. <1>
+  [532] getlocal 136 ............................ <pnt3D2>
+  [534] pushint8 3 .............................. <3>
+  [537] pusharglist 2 ........................... <pnt3D2, 3>
+  [539] objcall 34 .............................. <pnt3D2[3]>
+  [542] pushzero ................................ <0>
+  [543] lt ...................................... <pnt3D2[3] < 0>
+  [544] or ...................................... <1 or (pnt3D2[3] < 0)>
+  [545] jmpifz [639] ............................ if 1 or (pnt3D2[3] < 0) then
+  [548] pushint8 100 ............................ <100>
+  [551] getlocal 136 ............................ <pnt3D2>
+  [553] pushint8 3 .............................. <3>
+  [556] pusharglist 2 ........................... <pnt3D2, 3>
+  [558] objcall 34 .............................. <pnt3D2[3]>
+  [561] getprop 1008 ............................ <m_radius>
+  [564] add ..................................... <pnt3D2[3] + m_radius>
+  [565] pushint8 2 .............................. <2>
+  [568] div ..................................... <(pnt3D2[3] + m_radius) / 2>
+  [569] sub ..................................... <100 - ((pnt3D2[3] + m_radius) / 2)>
+  [570] setlocal 152 ............................ tmpBlend = 100 - ((pnt3D2[3] + m_radius) / 2)
+  [572] getlocal 152 ............................ <tmpBlend>
+  [574] pushint8 50 ............................. <50>
+  [577] gt ...................................... <tmpBlend > 50>
+  [578] jmpifz [589] ............................ if tmpBlend > 50 then / else
+  [581] pushint8 100 ............................ <100>
+  [584] setlocal 152 ............................ tmpBlend = 100
+  [586] jmp [592]
+  [589] pushzero ................................ <0>
+  [590] setlocal 152 ............................ tmpBlend = 0
+  [592] getlocal 152 ............................ <tmpBlend>
+  [594] pushint8 1 .............................. <1>
+  [597] gt ...................................... <tmpBlend > 1>
+  [598] jmpifz [639] ............................ if tmpBlend > 1 then
+  [601] getprop 1025 ............................ <m_image>
+  [604] getlocal 120 ............................ <pnt1>
+  [606] getlocal 32 ............................. <tmpImageOffset>
+  [608] add ..................................... <pnt1 + tmpImageOffset>
+  [609] getlocal 144 ............................ <pnt2>
+  [611] getlocal 32 ............................. <tmpImageOffset>
+  [613] add ..................................... <pnt2 + tmpImageOffset>
+  [614] pushsymb 1078 ........................... <#shapeType>
+  [617] pushsymb 1079 ........................... <#line>
+  [620] pushsymb 1080 ........................... <#lineSize>
+  [623] pushint8 1 .............................. <1>
+  [626] pushsymb 1081 ........................... <#color>
+  [629] getlocal 96 ............................. <tmpClr>
+  [631] pusharglist 6 ........................... <[#shapeType: #line, #lineSize: 1, #color: tmpClr]>
+  [633] pushproplist ............................ <[#shapeType: #line, #lineSize: 1, #color: tmpClr]>
+  [634] pusharglistnoret 4 ...................... <m_image, pnt1 + tmpImageOffset, pnt2 + tmpImageOffset, [#shapeType: #line, #lineSize: 1, #color: tmpClr]>
+  [636] objcall 1082 ............................ m_image.draw(pnt1 + tmpImageOffset, pnt2 + tmpImageOffset, [#shapeType: #line, #lineSize: 1, #color: tmpClr])
+  [639] getlocal 136 ............................ <pnt3D2>
+  [641] setlocal 112 ............................ pnt3D1 = pnt3D2
+  [643] getlocal 144 ............................ <pnt2>
+  [645] setlocal 120 ............................ pnt1 = pnt2
+  [647] pushint8 1
+  [650] getlocal 128
+  [652] add
+  [653] setlocal 128
+  [655] endrepeat [477]
+  [658] pushint8 1
+  [661] getlocal 16
+  [663] add
+  [664] setlocal 16
+  [666] endrepeat [406]
+  [669] pushint8 1 .............................. <1>
+  [672] setlocal 16
+  [674] getlocal 16
+  [676] getprop 1020 ............................ <m_renderPoints>
+  [679] getobjprop 32 ........................... <m_renderPoints.count>
+  [682] lteq
+  [683] jmpifz [944] ............................ repeat with n = 1 to m_renderPoints.count
+  [686] getprop 1020 ............................ <m_renderPoints>
+  [689] getlocal 16 ............................. <n>
+  [691] pusharglist 2 ........................... <m_renderPoints, n>
+  [693] objcall 34 .............................. <m_renderPoints[n]>
+  [696] setlocal 40 ............................. pntObj = m_renderPoints[n]
+  [698] getlocal 40 ............................. <pntObj>
+  [700] getobjprop 1077 ......................... <pntObj.m_3DLoc>
+  [703] setlocal 48 ............................. pnt = pntObj.m_3DLoc
+  [705] pushint8 100 ............................ <100>
+  [708] getlocal 48 ............................. <pnt>
+  [710] pushint8 3 .............................. <3>
+  [713] pusharglist 2 ........................... <pnt, 3>
+  [715] objcall 34 .............................. <pnt[3]>
+  [718] getprop 1008 ............................ <m_radius>
+  [721] add ..................................... <pnt[3] + m_radius>
+  [722] pushint8 2 .............................. <2>
+  [725] div ..................................... <(pnt[3] + m_radius) / 2>
+  [726] sub ..................................... <100 - ((pnt[3] + m_radius) / 2)>
+  [727] setlocal 152 ............................ tmpBlend = 100 - ((pnt[3] + m_radius) / 2)
+  [729] getlocal 152 ............................ <tmpBlend>
+  [731] pushint8 50 ............................. <50>
+  [734] gt ...................................... <tmpBlend > 50>
+  [735] jmpifz [746] ............................ if tmpBlend > 50 then / else
+  [738] pushint8 100 ............................ <100>
+  [741] setlocal 152 ............................ tmpBlend = 100
+  [743] jmp [749]
+  [746] pushzero ................................ <0>
+  [747] setlocal 152 ............................ tmpBlend = 0
+  [749] getlocal 152 ............................ <tmpBlend>
+  [751] pushint8 1 .............................. <1>
+  [754] gt ...................................... <tmpBlend > 1>
+  [755] jmpifz [933] ............................ if tmpBlend > 1 then
+  [758] getlocal 48 ............................. <pnt>
+  [760] pushint8 1 .............................. <1>
+  [763] pusharglist 2 ........................... <pnt, 1>
+  [765] objcall 34 .............................. <pnt[1]>
+  [768] getlocal 48 ............................. <pnt>
+  [770] pushint8 2 .............................. <2>
+  [773] pusharglist 2 ........................... <pnt, 2>
+  [775] objcall 34 .............................. <pnt[2]>
+  [778] pusharglist 2 ........................... <pnt[1], pnt[2]>
+  [780] extcall 568 ............................. <point(pnt[1], pnt[2])>
+  [783] setlocal 160 ............................ tmpPnt = point(pnt[1], pnt[2])
+  [785] getlocal 160 ............................ <tmpPnt>
+  [787] getlocal 56 ............................. <tmpMouseLoc>
+  [789] sub ..................................... <tmpPnt - tmpMouseLoc>
+  [790] setlocal 168 ............................ tmpMouseDiff = tmpPnt - tmpMouseLoc
+  [792] getlocal 168 ............................ <tmpMouseDiff>
+  [794] pushint8 1 .............................. <1>
+  [797] pusharglist 2 ........................... <tmpMouseDiff, 1>
+  [799] objcall 34 .............................. <tmpMouseDiff[1]>
+  [802] getlocal 168 ............................ <tmpMouseDiff>
+  [804] pushint8 1 .............................. <1>
+  [807] pusharglist 2 ........................... <tmpMouseDiff, 1>
+  [809] objcall 34 .............................. <tmpMouseDiff[1]>
+  [812] mul ..................................... <tmpMouseDiff[1] * tmpMouseDiff[1]>
+  [813] getlocal 168 ............................ <tmpMouseDiff>
+  [815] pushint8 2 .............................. <2>
+  [818] pusharglist 2 ........................... <tmpMouseDiff, 2>
+  [820] objcall 34 .............................. <tmpMouseDiff[2]>
+  [823] getlocal 168 ............................ <tmpMouseDiff>
+  [825] pushint8 2 .............................. <2>
+  [828] pusharglist 2 ........................... <tmpMouseDiff, 2>
+  [830] objcall 34 .............................. <tmpMouseDiff[2]>
+  [833] mul ..................................... <tmpMouseDiff[2] * tmpMouseDiff[2]>
+  [834] add ..................................... <(tmpMouseDiff[1] * tmpMouseDiff[1]) + (tmpMouseDiff[2] * tmpMouseDiff[2])>
+  [835] pusharglist 1 ........................... <(tmpMouseDiff[1] * tmpMouseDiff[1]) + (tmpMouseDiff[2] * tmpMouseDiff[2])>
+  [837] extcall 1048 ............................ <sqrt((tmpMouseDiff[1] * tmpMouseDiff[1]) + (tmpMouseDiff[2] * tmpMouseDiff[2]))>
+  [840] setlocal 176 ............................ tmpHypo = sqrt((tmpMouseDiff[1] * tmpMouseDiff[1]) + (tmpMouseDiff[2] * tmpMouseDiff[2]))
+  [842] getlocal 176 ............................ <tmpHypo>
+  [844] getlocal 64 ............................. <tmpMinHypo>
+  [846] lt ...................................... <tmpHypo < tmpMinHypo>
+  [847] jmpifz [865] ............................ if tmpHypo < tmpMinHypo then
+  [850] getlocal 176 ............................ <tmpHypo>
+  [852] setlocal 64 ............................. tmpMinHypo = tmpHypo
+  [854] getlocal 40 ............................. <pntObj>
+  [856] setprop 1045 ............................ m_selectedPointObj = pntObj
+  [859] pushint8 1 .............................. <1>
+  [862] setprop 1029 ............................ m_invalidated = 1
+  [865] getprop 1025 ............................ <m_image>
+  [868] getprop 1027 ............................ <m_placeImage>
+  [871] getprop 1027 ............................ <m_placeImage>
+  [874] getobjprop 555 .......................... <m_placeImage.rect>
+  [877] getlocal 160 ............................ <tmpPnt>
+  [879] getlocal 160 ............................ <tmpPnt>
+  [881] pusharglist 2 ........................... <tmpPnt, tmpPnt>
+  [883] extcall 555 ............................. <rect(tmpPnt, tmpPnt)>
+  [886] add ..................................... <m_placeImage.rect + rect(tmpPnt, tmpPnt)>
+  [887] getlocal 88 ............................. <tmpImgOffRect>
+  [889] add ..................................... <m_placeImage.rect + rect(tmpPnt, tmpPnt) + tmpImgOffRect>
+  [890] getlocal 80 ............................. <tmpPlaceOff>
+  [892] getlocal 80 ............................. <tmpPlaceOff>
+  [894] pusharglist 2 ........................... <tmpPlaceOff, tmpPlaceOff>
+  [896] extcall 555 ............................. <rect(tmpPlaceOff, tmpPlaceOff)>
+  [899] sub ..................................... <m_placeImage.rect + rect(tmpPnt, tmpPnt) + tmpImgOffRect - rect(tmpPlaceOff, tmpPlaceOff)>
+  [900] getprop 1027 ............................ <m_placeImage>
+  [903] getobjprop 555 .......................... <m_placeImage.rect>
+  [906] pushsymb 1073 ........................... <#ink>
+  [909] pushsymb 1083 ........................... <#blend>
+  [912] pushsymb 1083 ........................... <#blend>
+  [915] getlocal 152 ............................ <tmpBlend>
+  [917] pushsymb 1081 ........................... <#color>
+  [920] getlocal 40 ............................. <pntObj>
+  [922] getobjprop 1084 ......................... <pntObj.m_clr>
+  [925] pusharglist 6 ........................... <[#ink: #blend, #blend: tmpBlend, #color: pntObj.m_clr]>
+  [927] pushproplist ............................ <[#ink: #blend, #blend: tmpBlend, #color: pntObj.m_clr]>
+  [928] pusharglistnoret 5 ...................... <m_image, m_placeImage, m_placeImage.rect + rect(tmpPnt, tmpPnt) + tmpImgOffRect - rect(tmpPlaceOff, tmpPlaceOff), m_placeImage.rect, [#ink: #blend, #blend: tmpBlend, #color: pntObj.m_clr]>
+  [930] objcall 1075 ............................ m_image.copyPixels(m_placeImage, m_placeImage.rect + rect(tmpPnt, tmpPnt) + tmpImgOffRect - rect(tmpPlaceOff, tmpPlaceOff), m_placeImage.rect, [#ink: #blend, #blend: tmpBlend, #color: pntObj.m_clr])
+  [933] pushint8 1
+  [936] getlocal 16
+  [938] add
+  [939] setlocal 16
+  [941] endrepeat [674]
+  [944] getlocal 72 ............................. <didHaveSelected>
+  [946] getprop 1045 ............................ <m_selectedPointObj>
+  [949] pusharglist 1 ........................... <m_selectedPointObj>
+  [951] extcall 71 .............................. <objectp(m_selectedPointObj)>
+  [954] not ..................................... <not objectp(m_selectedPointObj)>
+  [955] and ..................................... <didHaveSelected and not objectp(m_selectedPointObj)>
+  [956] jmpifz [965] ............................ if didHaveSelected and not objectp(m_selectedPointObj) then
+  [959] pushint8 1 .............................. <1>
+  [962] setprop 1029 ............................ m_invalidated = 1
+  [965] getprop 1045 ............................ <m_selectedPointObj>
+  [968] pusharglist 1 ........................... <m_selectedPointObj>
+  [970] extcall 71 .............................. <objectp(m_selectedPointObj)>
+  [973] jmpifz [1083] ........................... if objectp(m_selectedPointObj) then
+  [976] getprop 1045 ............................ <m_selectedPointObj>
+  [979] pushsymb 1077 ........................... <#m_3DLoc>
+  [982] pushint8 1 .............................. <1>
+  [985] pusharglist 3 ........................... <m_selectedPointObj, #m_3DLoc, 1>
+  [987] objcall 152 ............................. <m_selectedPointObj.m_3DLoc[1]>
+  [990] getprop 1045 ............................ <m_selectedPointObj>
+  [993] pushsymb 1077 ........................... <#m_3DLoc>
+  [996] pushint8 2 .............................. <2>
+  [999] pusharglist 3 ........................... <m_selectedPointObj, #m_3DLoc, 2>
+  [1001] objcall 152 ............................ <m_selectedPointObj.m_3DLoc[2]>
+  [1004] pusharglist 2 .......................... <m_selectedPointObj.m_3DLoc[1], m_selectedPointObj.m_3DLoc[2]>
+  [1006] extcall 568 ............................ <point(m_selectedPointObj.m_3DLoc[1], m_selectedPointObj.m_3DLoc[2])>
+  [1009] setlocal 160 ........................... tmpPnt = point(m_selectedPointObj.m_3DLoc[1], m_selectedPointObj.m_3DLoc[2])
+  [1011] getprop 1025 ........................... <m_image>
+  [1014] getprop 1027 ........................... <m_placeImage>
+  [1017] getprop 1027 ........................... <m_placeImage>
+  [1020] getobjprop 555 ......................... <m_placeImage.rect>
+  [1023] getlocal 160 ........................... <tmpPnt>
+  [1025] getlocal 160 ........................... <tmpPnt>
+  [1027] pusharglist 2 .......................... <tmpPnt, tmpPnt>
+  [1029] extcall 555 ............................ <rect(tmpPnt, tmpPnt)>
+  [1032] add .................................... <m_placeImage.rect + rect(tmpPnt, tmpPnt)>
+  [1033] getlocal 88 ............................ <tmpImgOffRect>
+  [1035] add .................................... <m_placeImage.rect + rect(tmpPnt, tmpPnt) + tmpImgOffRect>
+  [1036] getlocal 80 ............................ <tmpPlaceOff>
+  [1038] getlocal 80 ............................ <tmpPlaceOff>
+  [1040] pusharglist 2 .......................... <tmpPlaceOff, tmpPlaceOff>
+  [1042] extcall 555 ............................ <rect(tmpPlaceOff, tmpPlaceOff)>
+  [1045] sub .................................... <m_placeImage.rect + rect(tmpPnt, tmpPnt) + tmpImgOffRect - rect(tmpPlaceOff, tmpPlaceOff)>
+  [1046] getprop 1027 ........................... <m_placeImage>
+  [1049] getobjprop 555 ......................... <m_placeImage.rect>
+  [1052] pushsymb 1073 .......................... <#ink>
+  [1055] pushsymb 1074 .......................... <#copy>
+  [1058] pushsymb 1081 .......................... <#color>
+  [1061] pushint8 255 ........................... <255>
+  [1064] pushint8 130 ........................... <130>
+  [1067] pushint8 130 ........................... <130>
+  [1070] pusharglist 3 .......................... <255, 130, 130>
+  [1072] extcall 1015 ........................... <rgb(255, 130, 130)>
+  [1075] pusharglist 4 .......................... <[#ink: #copy, #color: rgb(255, 130, 130)]>
+  [1077] pushproplist ........................... <[#ink: #copy, #color: rgb(255, 130, 130)]>
+  [1078] pusharglistnoret 5 ..................... <m_image, m_placeImage, m_placeImage.rect + rect(tmpPnt, tmpPnt) + tmpImgOffRect - rect(tmpPlaceOff, tmpPlaceOff), m_placeImage.rect, [#ink: #copy, #color: rgb(255, 130, 130)]>
+  [1080] objcall 1075 ........................... m_image.copyPixels(m_placeImage, m_placeImage.rect + rect(tmpPnt, tmpPnt) + tmpImgOffRect - rect(tmpPlaceOff, tmpPlaceOff), m_placeImage.rect, [#ink: #copy, #color: rgb(255, 130, 130)])
+  [1083] getprop 1009 ........................... <m_earthAnim>
+  [1086] getprop 1007 ........................... <m_roundedEquatorialRotation>
+  [1089] pusharglistnoret 2 ..................... <m_earthAnim, m_roundedEquatorialRotation>
+  [1091] objcall 997 ............................ m_earthAnim.rotate(m_roundedEquatorialRotation)
+  [1094] getprop 1013 ........................... <m_pasteIntoImage>
+  [1097] getprop 1009 ........................... <m_earthAnim>
+  [1100] getobjprop 1025 ........................ <m_earthAnim.m_image>
+  [1103] getprop 1009 ........................... <m_earthAnim>
+  [1106] getobjprop 1025 ........................ <m_earthAnim.m_image>
+  [1109] getobjprop 555 ......................... <m_earthAnim.m_image.rect>
+  [1112] getprop 1017 ........................... <m_blitOffsetLoc>
+  [1115] getprop 1017 ........................... <m_blitOffsetLoc>
+  [1118] pusharglist 2 .......................... <m_blitOffsetLoc, m_blitOffsetLoc>
+  [1120] extcall 555 ............................ <rect(m_blitOffsetLoc, m_blitOffsetLoc)>
+  [1123] add .................................... <m_earthAnim.m_image.rect + rect(m_blitOffsetLoc, m_blitOffsetLoc)>
+  [1124] pushint8 4 ............................. <4>
+  [1127] inv .................................... <-4>
+  [1128] pushint8 7 ............................. <7>
+  [1131] inv .................................... <-7>
+  [1132] pushint8 4 ............................. <4>
+  [1135] inv .................................... <-4>
+  [1136] pushint8 7 ............................. <7>
+  [1139] inv .................................... <-7>
+  [1140] pusharglist 4 .......................... <-4, -7, -4, -7>
+  [1142] extcall 555 ............................ <rect(-4, -7, -4, -7)>
+  [1145] add .................................... <m_earthAnim.m_image.rect + rect(m_blitOffsetLoc, m_blitOffsetLoc) + rect(-4, -7, -4, -7)>
+  [1146] getprop 1009 ........................... <m_earthAnim>
+  [1149] getobjprop 1025 ........................ <m_earthAnim.m_image>
+  [1152] getobjprop 555 ......................... <m_earthAnim.m_image.rect>
+  [1155] pushsymb 1073 .......................... <#ink>
+  [1158] pushint8 36 ............................ <36>
+  [1161] pusharglist 2 .......................... <[#ink: 36]>
+  [1163] pushproplist ........................... <[#ink: 36]>
+  [1164] pusharglistnoret 5 ..................... <m_pasteIntoImage, m_earthAnim.m_image, m_earthAnim.m_image.rect + rect(m_blitOffsetLoc, m_blitOffsetLoc) + rect(-4, -7, -4, -7), m_earthAnim.m_image.rect, [#ink: 36]>
+  [1166] objcall 1075 ........................... m_pasteIntoImage.copyPixels(m_earthAnim.m_image, m_earthAnim.m_image.rect + rect(m_blitOffsetLoc, m_blitOffsetLoc) + rect(-4, -7, -4, -7), m_earthAnim.m_image.rect, [#ink: 36])
+  [1169] getprop 1013 ........................... <m_pasteIntoImage>
+  [1172] getprop 1025 ........................... <m_image>
+  [1175] getprop 1025 ........................... <m_image>
+  [1178] getobjprop 555 ......................... <m_image.rect>
+  [1181] getprop 1017 ........................... <m_blitOffsetLoc>
+  [1184] getprop 1017 ........................... <m_blitOffsetLoc>
+  [1187] pusharglist 2 .......................... <m_blitOffsetLoc, m_blitOffsetLoc>
+  [1189] extcall 555 ............................ <rect(m_blitOffsetLoc, m_blitOffsetLoc)>
+  [1192] add .................................... <m_image.rect + rect(m_blitOffsetLoc, m_blitOffsetLoc)>
+  [1193] getprop 1025 ........................... <m_image>
+  [1196] getobjprop 555 ......................... <m_image.rect>
+  [1199] pushsymb 1073 .......................... <#ink>
+  [1202] pushint8 36 ............................ <36>
+  [1205] pusharglist 2 .......................... <[#ink: 36]>
+  [1207] pushproplist ........................... <[#ink: 36]>
+  [1208] pusharglistnoret 5 ..................... <m_pasteIntoImage, m_image, m_image.rect + rect(m_blitOffsetLoc, m_blitOffsetLoc), m_image.rect, [#ink: 36]>
+  [1210] objcall 1075 ........................... m_pasteIntoImage.copyPixels(m_image, m_image.rect + rect(m_blitOffsetLoc, m_blitOffsetLoc), m_image.rect, [#ink: 36])
+  [1213] getprop 1011 ........................... <m_pasteWhere>
+  [1216] pusharglist 1 .......................... <m_pasteWhere>
+  [1218] extcall 71 ............................. <objectp(m_pasteWhere)>
+  [1221] getprop 1024 ........................... <m_rotSpeed>
+  [1224] pushzero ............................... <0>
+  [1225] nteq ................................... <m_rotSpeed <> 0>
+  [1226] getprop 1029 ........................... <m_invalidated>
+  [1229] or ..................................... <(m_rotSpeed <> 0) or m_invalidated>
+  [1230] and .................................... <objectp(m_pasteWhere) and ((m_rotSpeed <> 0) or m_invalidated)>
+  [1231] jmpifz [1243] .......................... if objectp(m_pasteWhere) and ((m_rotSpeed <> 0) or m_invalidated) then
+  [1234] getprop 1011 ........................... <m_pasteWhere>
+  [1237] getprop 1013 ........................... <m_pasteIntoImage>
+  [1240] setobjprop 1014 ........................ m_pasteWhere.image = m_pasteIntoImage
+  [1243] pushzero ............................... <0>
+  [1244] setprop 1029 ........................... m_invalidated = 0
+  [1247] ret
+end
+
+on calcBetweenStuff me, argPntObj1, argPntObj2
+  [  0] getparam 8 .............................. <argPntObj1>
+  [  2] getobjprop 1038 ......................... <argPntObj1.m_mapLoc>
+  [  5] inv ..................................... <-argPntObj1.m_mapLoc>
+  [  6] setlocal 0 .............................. rotationXY = -argPntObj1.m_mapLoc
+  [  8] getparam 16 ............................. <argPntObj2>
+  [ 10] pusharglistnoret 1 ...................... <argPntObj2>
+  [ 12] objcall 1053 ............................ argPntObj2.reset()
+  [ 15] getparam 16 ............................. <argPntObj2>
+  [ 17] getlocal 0 .............................. <rotationXY>
+  [ 19] pushint8 2 .............................. <2>
+  [ 22] pusharglist 2 ........................... <rotationXY, 2>
+  [ 24] objcall 34 .............................. <rotationXY[2]>
+  [ 27] getlocal 0 .............................. <rotationXY>
+  [ 29] pushint8 1 .............................. <1>
+  [ 32] pusharglist 2 ........................... <rotationXY, 1>
+  [ 34] objcall 34 .............................. <rotationXY[1]>
+  [ 37] pusharglistnoret 3 ...................... <argPntObj2, rotationXY[2], rotationXY[1]>
+  [ 39] objcall 1102 ............................ argPntObj2.rotateYthenX(rotationXY[2], rotationXY[1])
+  [ 42] getparam 16 ............................. <argPntObj2>
+  [ 44] getobjprop 1077 ......................... <argPntObj2.m_3DLoc>
+  [ 47] setlocal 8 .............................. tmp = argPntObj2.m_3DLoc
+  [ 49] pushzero ................................ <0>
+  [ 50] pushzero ................................ <0>
+  [ 51] pusharglist 2 ........................... <0, 0>
+  [ 53] extcall 568 ............................. <point(0, 0)>
+  [ 56] getlocal 8 .............................. <tmp>
+  [ 58] pushint8 1 .............................. <1>
+  [ 61] pusharglist 2 ........................... <tmp, 1>
+  [ 63] objcall 34 .............................. <tmp[1]>
+  [ 66] getlocal 8 .............................. <tmp>
+  [ 68] pushint8 2 .............................. <2>
+  [ 71] pusharglist 2 ........................... <tmp, 2>
+  [ 73] objcall 34 .............................. <tmp[2]>
+  [ 76] pusharglist 2 ........................... <tmp[1], tmp[2]>
+  [ 78] extcall 568 ............................. <point(tmp[1], tmp[2])>
+  [ 81] pushsymb 1055 ........................... <#radians>
+  [ 84] pusharglist 3 ........................... <point(0, 0), point(tmp[1], tmp[2]), #radians>
+  [ 86] extcall 1054 ............................ <calcDirection(point(0, 0), point(tmp[1], tmp[2]), #radians)>
+  [ 89] setlocal 16 ............................. rotationZ = calcDirection(point(0, 0), point(tmp[1], tmp[2]), #radians)
+  [ 91] getlocal 16 ............................. <rotationZ>
+  [ 93] pusharglist 0 ........................... <>
+  [ 95] extcall 1005 ............................ <PI>
+  [ 98] gt ...................................... <rotationZ > PI>
+  [ 99] jmpifz [112] ............................ if rotationZ > PI then
+  [102] getlocal 16 ............................. <rotationZ>
+  [104] pusharglist 0 ........................... <>
+  [106] extcall 1005 ............................ <PI>
+  [109] sub ..................................... <rotationZ - PI>
+  [110] setlocal 16 ............................. rotationZ = rotationZ - PI
+  [112] pusharglist 0 ........................... <>
+  [114] extcall 1005 ............................ <PI>
+  [117] pushint8 2 .............................. <2>
+  [120] div ..................................... <PI / 2>
+  [121] getlocal 16 ............................. <rotationZ>
+  [123] sub ..................................... <(PI / 2) - rotationZ>
+  [124] setlocal 16 ............................. rotationZ = (PI / 2) - rotationZ
+  [126] getparam 16 ............................. <argPntObj2>
+  [128] getobjprop 1077 ......................... <argPntObj2.m_3DLoc>
+  [131] getlocal 16 ............................. <rotationZ>
+  [133] inv ..................................... <-rotationZ>
+  [134] pushint8 3 .............................. <3>
+  [137] pusharglist 3 ........................... <argPntObj2.m_3DLoc, -rotationZ, 3>
+  [139] extcall 1052 ............................ <rotate3D(argPntObj2.m_3DLoc, -rotationZ, 3)>
+  [142] setlocal 24 ............................. tmpNew = rotate3D(argPntObj2.m_3DLoc, -rotationZ, 3)
+  [144] pushzero ................................ <0>
+  [145] pushzero ................................ <0>
+  [146] pusharglist 2 ........................... <0, 0>
+  [148] extcall 568 ............................. <point(0, 0)>
+  [151] getlocal 24 ............................. <tmpNew>
+  [153] pushint8 1 .............................. <1>
+  [156] pusharglist 2 ........................... <tmpNew, 1>
+  [158] objcall 34 .............................. <tmpNew[1]>
+  [161] getlocal 24 ............................. <tmpNew>
+  [163] pushint8 3 .............................. <3>
+  [166] pusharglist 2 ........................... <tmpNew, 3>
+  [168] objcall 34 .............................. <tmpNew[3]>
+  [171] inv ..................................... <-tmpNew[3]>
+  [172] pusharglist 2 ........................... <tmpNew[1], -tmpNew[3]>
+  [174] extcall 568 ............................. <point(tmpNew[1], -tmpNew[3])>
+  [177] pushsymb 1055 ........................... <#radians>
+  [180] pusharglist 3 ........................... <point(0, 0), point(tmpNew[1], -tmpNew[3]), #radians>
+  [182] extcall 1054 ............................ <calcDirection(point(0, 0), point(tmpNew[1], -tmpNew[3]), #radians)>
+  [185] setlocal 32 ............................. finalAng = calcDirection(point(0, 0), point(tmpNew[1], -tmpNew[3]), #radians)
+  [187] getlocal 32 ............................. <finalAng>
+  [189] pusharglist 0 ........................... <>
+  [191] extcall 1005 ............................ <PI>
+  [194] sub ..................................... <finalAng - PI>
+  [195] setlocal 32 ............................. finalAng = finalAng - PI
+  [197] pushsymb 1069 ........................... <#rot>
+  [200] getlocal 0 .............................. <rotationXY>
+  [202] pushint8 2 .............................. <2>
+  [205] pusharglist 2 ........................... <rotationXY, 2>
+  [207] objcall 34 .............................. <rotationXY[2]>
+  [210] inv ..................................... <-rotationXY[2]>
+  [211] getlocal 0 .............................. <rotationXY>
+  [213] pushint8 1 .............................. <1>
+  [216] pusharglist 2 ........................... <rotationXY, 1>
+  [218] objcall 34 .............................. <rotationXY[1]>
+  [221] inv ..................................... <-rotationXY[1]>
+  [222] getlocal 16 ............................. <rotationZ>
+  [224] pusharglist 3 ........................... <[-rotationXY[2], -rotationXY[1], rotationZ]>
+  [226] pushlist ................................ <[-rotationXY[2], -rotationXY[1], rotationZ]>
+  [227] pushsymb 1103 ........................... <#angle>
+  [230] getlocal 32 ............................. <finalAng>
+  [232] pusharglist 4 ........................... <[#rot: [-rotationXY[2], -rotationXY[1], rotationZ], #angle: finalAng]>
+  [234] pushproplist ............................ <[#rot: [-rotationXY[2], -rotationXY[1], rotationZ], #angle: finalAng]>
+  [235] pusharglistnoret 1 ...................... <[#rot: [-rotationXY[2], -rotationXY[1], rotationZ], #angle: finalAng]>
+  [237] extcall 21 .............................. return [#rot: [-rotationXY[2], -rotationXY[1], rotationZ], #angle: finalAng]
+  [239] ret
+end
+
+on getDistanceBetween me, argPntObj1, argPntObj2
+  [  0] getparam 0 .............................. <me>
+  [  2] getparam 8 .............................. <argPntObj1>
+  [  4] getparam 16 ............................. <argPntObj2>
+  [  6] pusharglist 3 ........................... <me, argPntObj1, argPntObj2>
+  [  8] objcall 999 ............................. <me.calcBetweenStuff(argPntObj1, argPntObj2)>
+  [ 11] setlocal 0 .............................. tmpInfo = me.calcBetweenStuff(argPntObj1, argPntObj2)
+  [ 13] getlocal 0 .............................. <tmpInfo>
+  [ 15] pushsymb 1103 ........................... <#angle>
+  [ 18] pusharglist 2 ........................... <tmpInfo, #angle>
+  [ 20] objcall 34 .............................. <tmpInfo[#angle]>
+  [ 23] pusharglist 1 ........................... <tmpInfo[#angle]>
+  [ 25] extcall 765 ............................. <abs(tmpInfo[#angle])>
+  [ 28] pusharglistnoret 1 ...................... <abs(tmpInfo[#angle])>
+  [ 30] extcall 21 .............................. return abs(tmpInfo[#angle])
+  [ 32] ret
+end
+
+on createListOfMapPointsBetweenPoints me, argPntObj1, argPntObj2
+  [  0] getparam 0 .............................. <me>
+  [  2] getparam 8 .............................. <argPntObj1>
+  [  4] getparam 16 ............................. <argPntObj2>
+  [  6] pusharglist 3 ........................... <me, argPntObj1, argPntObj2>
+  [  8] objcall 999 ............................. <me.calcBetweenStuff(argPntObj1, argPntObj2)>
+  [ 11] setlocal 0 .............................. tmpInfo = me.calcBetweenStuff(argPntObj1, argPntObj2)
+  [ 13] getlocal 0 .............................. <tmpInfo>
+  [ 15] pushsymb 1103 ........................... <#angle>
+  [ 18] pusharglist 2 ........................... <tmpInfo, #angle>
+  [ 20] objcall 34 .............................. <tmpInfo[#angle]>
+  [ 23] pusharglist 0 ........................... <>
+  [ 25] extcall 1005 ............................ <PI>
+  [ 28] pushint8 32 ............................. <32>
+  [ 31] div ..................................... <PI / 32>
+  [ 32] div ..................................... <tmpInfo[#angle] / (PI / 32)>
+  [ 33] pusharglist 1 ........................... <tmpInfo[#angle] / (PI / 32)>
+  [ 35] extcall 54 .............................. <integer(tmpInfo[#angle] / (PI / 32))>
+  [ 38] setlocal 8 .............................. tmpNumDivisions = integer(tmpInfo[#angle] / (PI / 32))
+  [ 40] getlocal 8 .............................. <tmpNumDivisions>
+  [ 42] pusharglist 1 ........................... <tmpNumDivisions>
+  [ 44] extcall 1110 ............................ <getSign(tmpNumDivisions)>
+  [ 47] setlocal 16 ............................. tmpSign = getSign(tmpNumDivisions)
+  [ 49] pusharglist 0 ........................... <[]>
+  [ 51] pushlist ................................ <[]>
+  [ 52] setlocal 24 ............................. tmpList = []
+  [ 54] pushint8 1 .............................. <1>
+  [ 57] setlocal 32
+  [ 59] getlocal 32
+  [ 61] getlocal 8 .............................. <tmpNumDivisions>
+  [ 63] pusharglist 1 ........................... <tmpNumDivisions>
+  [ 65] extcall 765 ............................. <abs(tmpNumDivisions)>
+  [ 68] pushint8 1 .............................. <1>
+  [ 71] sub ..................................... <abs(tmpNumDivisions) - 1>
+  [ 72] lteq
+  [ 73] jmpifz [270] ............................ repeat with n = 1 to abs(tmpNumDivisions) - 1
+  [ 76] getlocal 16 ............................. <tmpSign>
+  [ 78] getlocal 32 ............................. <n>
+  [ 80] mul ..................................... <tmpSign * n>
+  [ 81] getlocal 0 .............................. <tmpInfo>
+  [ 83] pushsymb 1103 ........................... <#angle>
+  [ 86] pusharglist 2 ........................... <tmpInfo, #angle>
+  [ 88] objcall 34 .............................. <tmpInfo[#angle]>
+  [ 91] mul ..................................... <tmpSign * n * tmpInfo[#angle]>
+  [ 92] getlocal 8 .............................. <tmpNumDivisions>
+  [ 94] div ..................................... <tmpSign * n * tmpInfo[#angle] / tmpNumDivisions>
+  [ 95] setlocal 40 ............................. tmpAng = tmpSign * n * tmpInfo[#angle] / tmpNumDivisions
+  [ 97] pushcons 160 ............................ <"MapPlaceScript">
+  [ 99] pusharglist 1 ........................... <"MapPlaceScript">
+  [101] extcall 284 ............................. <script("MapPlaceScript")>
+  [104] getlocal 40 ............................. <tmpAng>
+  [106] pushzero ................................ <0>
+  [107] pusharglist 2 ........................... <[tmpAng, 0]>
+  [109] pushlist ................................ <[tmpAng, 0]>
+  [110] getprop 1008 ............................ <m_radius>
+  [113] pusharglist 0 ........................... <>
+  [115] extcall 190 ............................. <VOID>
+  [118] pushint8 1 .............................. <1>
+  [121] pusharglist 5 ........................... <script("MapPlaceScript"), [tmpAng, 0], m_radius, VOID, 1>
+  [123] objcall 0 ............................... <script("MapPlaceScript").new([tmpAng, 0], m_radius, VOID, 1)>
+  [125] setlocal 48 ............................. obj = script("MapPlaceScript").new([tmpAng, 0], m_radius, VOID, 1)
+  [127] getlocal 48 ............................. <obj>
+  [129] getlocal 48 ............................. <obj>
+  [131] getobjprop 1077 ......................... <obj.m_3DLoc>
+  [134] getlocal 0 .............................. <tmpInfo>
+  [136] pushsymb 1069 ........................... <#rot>
+  [139] pusharglist 2 ........................... <tmpInfo, #rot>
+  [141] objcall 34 .............................. <tmpInfo[#rot]>
+  [144] pushint8 3 .............................. <3>
+  [147] pusharglist 2 ........................... <tmpInfo[#rot], 3>
+  [149] objcall 34 .............................. <tmpInfo[#rot][3]>
+  [152] pushint8 3 .............................. <3>
+  [155] pusharglist 3 ........................... <obj.m_3DLoc, tmpInfo[#rot][3], 3>
+  [157] extcall 1052 ............................ <rotate3D(obj.m_3DLoc, tmpInfo[#rot][3], 3)>
+  [160] setobjprop 1077 ......................... obj.m_3DLoc = rotate3D(obj.m_3DLoc, tmpInfo[#rot][3], 3)
+  [163] getlocal 48 ............................. <obj>
+  [165] getlocal 48 ............................. <obj>
+  [167] getobjprop 1077 ......................... <obj.m_3DLoc>
+  [170] getlocal 0 .............................. <tmpInfo>
+  [172] pushsymb 1069 ........................... <#rot>
+  [175] pusharglist 2 ........................... <tmpInfo, #rot>
+  [177] objcall 34 .............................. <tmpInfo[#rot]>
+  [180] pushint8 1 .............................. <1>
+  [183] pusharglist 2 ........................... <tmpInfo[#rot], 1>
+  [185] objcall 34 .............................. <tmpInfo[#rot][1]>
+  [188] pushint8 1 .............................. <1>
+  [191] pusharglist 3 ........................... <obj.m_3DLoc, tmpInfo[#rot][1], 1>
+  [193] extcall 1052 ............................ <rotate3D(obj.m_3DLoc, tmpInfo[#rot][1], 1)>
+  [196] setobjprop 1077 ......................... obj.m_3DLoc = rotate3D(obj.m_3DLoc, tmpInfo[#rot][1], 1)
+  [199] getlocal 48 ............................. <obj>
+  [201] getlocal 48 ............................. <obj>
+  [203] getobjprop 1077 ......................... <obj.m_3DLoc>
+  [206] getlocal 0 .............................. <tmpInfo>
+  [208] pushsymb 1069 ........................... <#rot>
+  [211] pusharglist 2 ........................... <tmpInfo, #rot>
+  [213] objcall 34 .............................. <tmpInfo[#rot]>
+  [216] pushint8 2 .............................. <2>
+  [219] pusharglist 2 ........................... <tmpInfo[#rot], 2>
+  [221] objcall 34 .............................. <tmpInfo[#rot][2]>
+  [224] pushint8 2 .............................. <2>
+  [227] pusharglist 3 ........................... <obj.m_3DLoc, tmpInfo[#rot][2], 2>
+  [229] extcall 1052 ............................ <rotate3D(obj.m_3DLoc, tmpInfo[#rot][2], 2)>
+  [232] setobjprop 1077 ......................... obj.m_3DLoc = rotate3D(obj.m_3DLoc, tmpInfo[#rot][2], 2)
+  [235] getlocal 48 ............................. <obj>
+  [237] getlocal 48 ............................. <obj>
+  [239] getobjprop 1077 ......................... <obj.m_3DLoc>
+  [242] pusharglist 1 ........................... <obj.m_3DLoc>
+  [244] objcall 44 .............................. <obj.m_3DLoc.duplicate()>
+  [247] setobjprop 1050 ......................... obj.m_org3DLoc = obj.m_3DLoc.duplicate()
+  [250] getlocal 24 ............................. <tmpList>
+  [252] getlocal 48 ............................. <obj>
+  [254] pusharglistnoret 2 ...................... <tmpList, obj>
+  [256] objcall 50 .............................. tmpList.add(obj)
+  [259] pushint8 1
+  [262] getlocal 32
+  [264] add
+  [265] setlocal 32
+  [267] endrepeat [ 59]
+  [270] getlocal 24 ............................. <tmpList>
+  [272] pusharglistnoret 1 ...................... <tmpList>
+  [274] extcall 21 .............................. return tmpList
+  [276] ret
+end

@@ -1,0 +1,523 @@
+property m_readFile, m_CDPath, m_iniPropEqualsVal, m_callBackInfo, m_timerObj, m_fxObj, m_MUIObj, m_startCheckMSecs, m_dontCareIfCDROM
+global gSystem
+
+on new me, argCDPath, argReadFile, argIniPropEqualsVal, argCallBackInfo
+  [  0] getparam 8 .............................. <argCDPath>
+  [  2] setprop 373 ............................. m_CDPath = argCDPath
+  [  5] getprop 373 ............................. <m_CDPath>
+  [  8] pusharglist 1 ........................... <m_CDPath>
+  [ 10] extcall 223 ............................. <voidp(m_CDPath)>
+  [ 13] jmpifz [ 21] ............................ if voidp(m_CDPath) then
+  [ 16] pushcons 0 .............................. <"E:\\">
+  [ 18] setprop 373 ............................. m_CDPath = "E:\\"
+  [ 21] getparam 16 ............................. <argReadFile>
+  [ 23] setprop 374 ............................. m_readFile = argReadFile
+  [ 26] getprop 374 ............................. <m_readFile>
+  [ 29] pusharglist 1 ........................... <m_readFile>
+  [ 31] extcall 223 ............................. <voidp(m_readFile)>
+  [ 34] jmpifz [ 42] ............................ if voidp(m_readFile) then
+  [ 37] pushcons 8 .............................. <"RockCD.INF">
+  [ 39] setprop 374 ............................. m_readFile = "RockCD.INF"
+  [ 42] getparam 24 ............................. <argIniPropEqualsVal>
+  [ 44] setprop 375 ............................. m_iniPropEqualsVal = argIniPropEqualsVal
+  [ 47] getprop 375 ............................. <m_iniPropEqualsVal>
+  [ 50] pusharglist 1 ........................... <m_iniPropEqualsVal>
+  [ 52] extcall 223 ............................. <voidp(m_iniPropEqualsVal)>
+  [ 55] jmpifz [ 75] ............................ if voidp(m_iniPropEqualsVal) then
+  [ 58] pushsymb 376 ............................ <#settings>
+  [ 61] pushsymb 377 ............................ <#Language>
+  [ 64] pusharglist 2 ........................... <[#settings, #Language]>
+  [ 66] pushlist ................................ <[#settings, #Language]>
+  [ 67] pushcons 16 ............................. <"Swedish">
+  [ 69] pusharglist 2 ........................... <[[#settings, #Language], "Swedish"]>
+  [ 71] pushlist ................................ <[[#settings, #Language], "Swedish"]>
+  [ 72] setprop 375 ............................. m_iniPropEqualsVal = [[#settings, #Language], "Swedish"]
+  [ 75] getparam 32 ............................. <argCallBackInfo>
+  [ 77] setprop 356 ............................. m_callBackInfo = argCallBackInfo
+  [ 80] pushcons 24 ............................. <"FileXtra3">
+  [ 82] pusharglist 1 ........................... <"FileXtra3">
+  [ 84] extcall 7 ............................... <xtra("FileXtra3")>
+  [ 86] pusharglist 1 ........................... <xtra("FileXtra3")>
+  [ 88] objcall 37 .............................. <xtra("FileXtra3").new()>
+  [ 91] setprop 358 ............................. m_fxObj = xtra("FileXtra3").new()
+  [ 94] pushcons 32 ............................. <"StatusText">
+  [ 96] pusharglist 1 ........................... <"StatusText">
+  [ 98] extcall 65 .............................. <member("StatusText")>
+  [101] pushcons 40 ............................. <EMPTY>
+  [103] setobjprop 28 ........................... member("StatusText").text = EMPTY
+  [105] pushsymb 534 ............................ <#setReportObj>
+  [108] getparam 0 .............................. <me>
+  [110] pusharglistnoret 2 ...................... <#setReportObj, me>
+  [112] extcall 538 ............................. sendAllSprites(#setReportObj, me)
+  [115] getparam 0 .............................. <me>
+  [117] pusharglistnoret 1 ...................... <me>
+  [119] extcall 2 ............................... return me
+  [121] ret
+end
+
+on kill me
+  [  0] pushcons 48 ............................. <"StatusText">
+  [  2] pusharglist 1 ........................... <"StatusText">
+  [  4] extcall 65 .............................. <member("StatusText")>
+  [  7] pushcons 56 ............................. <EMPTY>
+  [  9] setobjprop 28 ........................... member("StatusText").text = EMPTY
+  [ 11] getprop 361 ............................. <m_timerObj>
+  [ 14] pusharglist 1 ........................... <m_timerObj>
+  [ 16] extcall 50 .............................. <objectp(m_timerObj)>
+  [ 19] jmpifz [ 30] ............................ if objectp(m_timerObj) then
+  [ 22] getprop 361 ............................. <m_timerObj>
+  [ 25] pusharglistnoret 1 ...................... <m_timerObj>
+  [ 27] objcall 362 ............................. m_timerObj.forget()
+  [ 30] pushzero ................................ <0>
+  [ 31] setprop 361 ............................. m_timerObj = 0
+  [ 34] getprop 358 ............................. <m_fxObj>
+  [ 37] pusharglist 1 ........................... <m_fxObj>
+  [ 39] extcall 50 .............................. <objectp(m_fxObj)>
+  [ 42] jmpifz [ 49] ............................ if objectp(m_fxObj) then
+  [ 45] pushzero ................................ <0>
+  [ 46] setprop 358 ............................. m_fxObj = 0
+  [ 49] pushzero ................................ <0>
+  [ 50] pusharglistnoret 1 ...................... <0>
+  [ 52] extcall 2 ............................... return 0
+  [ 54] ret
+end
+
+on tryReadDisc me
+  [  0] getmovieprop 646 ........................ <the milliSeconds>
+  [  3] setprop 645 ............................. m_startCheckMSecs = the milliSeconds
+  [  6] getparam 0 .............................. <me>
+  [  8] pusharglistnoret 1 ...................... <me>
+  [ 10] objcall 463 ............................. me.verifyCD()
+  [ 13] ret
+end
+
+on startChecking me
+  [  0] getprop 358 ............................. <m_fxObj>
+  [  3] pushcons 64 ............................. <"D:\\Dok\\Jonas\\Redovisn\\1999.xls">
+  [  5] pusharglist 2 ........................... <m_fxObj, "D:\\Dok\\Jonas\\Redovisn\\1999.xls">
+  [  7] objcall 367 ............................. <m_fxObj.fx_FileExists("D:\\Dok\\Jonas\\Redovisn\\1999.xls")>
+  [ 10] pushint8 1 .............................. <1>
+  [ 13] eq ...................................... <m_fxObj.fx_FileExists("D:\\Dok\\Jonas\\Redovisn\\1999.xls") = 1>
+  [ 14] jmpifz [ 22] ............................ if m_fxObj.fx_FileExists("D:\\Dok\\Jonas\\Redovisn\\1999.xls") = 1 then
+  [ 17] pushint8 1 .............................. <1>
+  [ 20] setlocal 0 .............................. tmpIsJonas = 1
+  [ 22] getlocal 0 .............................. <tmpIsJonas>
+  [ 24] jmpifz [ 33] ............................ if tmpIsJonas then
+  [ 27] pushint8 1 .............................. <1>
+  [ 30] setprop 688 ............................. m_dontCareIfCDROM = 1
+  [ 33] getprop 373 ............................. <m_CDPath>
+  [ 36] pusharglist 1 ........................... <m_CDPath>
+  [ 38] extcall 335 ............................. <stringp(m_CDPath)>
+  [ 41] not ..................................... <not stringp(m_CDPath)>
+  [ 42] jmpifz [ 90] ............................ if not stringp(m_CDPath) then
+  [ 45] getlocal 0 .............................. <tmpIsJonas>
+  [ 47] pushint8 1 .............................. <1>
+  [ 50] eq ...................................... <tmpIsJonas = 1>
+  [ 51] jmpifz [ 86] ............................ if tmpIsJonas = 1 then / else
+  [ 54] pushcons 72 ............................. <"Hi Jonas!">
+  [ 56] pusharglistnoret 1 ...................... <"Hi Jonas!">
+  [ 58] extcall 72 .............................. alert("Hi Jonas!")
+  [ 61] pushcons 80 ............................. <"D:\\dok\\Rock\\">
+  [ 63] setprop 373 ............................. m_CDPath = "D:\\dok\\Rock\\"
+  [ 66] getglobal 51 ............................ <gSystem>
+  [ 69] getprop 373 ............................. <m_CDPath>
+  [ 72] setobjprop 373 .......................... gSystem.m_CDPath = m_CDPath
+  [ 75] getglobal 51 ............................ <gSystem>
+  [ 78] pusharglistnoret 1 ...................... <gSystem>
+  [ 80] objcall 665 ............................. gSystem.resolveSearchPaths()
+  [ 83] jmp [ 90]
+  [ 86] pushzero ................................ <0>
+  [ 87] setprop 373 ............................. m_CDPath = 0
+  [ 90] pushcons 88 ............................. <"Please insert CD: ">
+  [ 92] getprop 375 ............................. <m_iniPropEqualsVal>
+  [ 95] pushint8 2 .............................. <2>
+  [ 98] pusharglist 2 ........................... <m_iniPropEqualsVal, 2>
+  [100] objcall 63 .............................. <m_iniPropEqualsVal[2]>
+  [103] joinstr ................................. <"Please insert CD: " & m_iniPropEqualsVal[2]>
+  [104] pushcons 96 ............................. <". Click OK when done.">
+  [106] joinstr ................................. <"Please insert CD: " & m_iniPropEqualsVal[2] & ". Click OK when done.">
+  [107] setlocal 8 .............................. tmpMsg = "Please insert CD: " & m_iniPropEqualsVal[2] & ". Click OK when done."
+  [109] getmovieprop 646 ........................ <the milliSeconds>
+  [112] setprop 645 ............................. m_startCheckMSecs = the milliSeconds
+  [115] getparam 0 .............................. <me>
+  [117] getlocal 8 .............................. <tmpMsg>
+  [119] pushsymb 546 ............................ <#MsgNoCD>
+  [122] pusharglistnoret 3 ...................... <me, tmpMsg, #MsgNoCD>
+  [124] objcall 463 ............................. me.verifyCD(tmpMsg, #MsgNoCD)
+  [127] ret
+end
+
+on timeTick me
+  [  0] getmovieprop 646 ........................ <the milliSeconds>
+  [  3] getprop 645 ............................. <m_startCheckMSecs>
+  [  6] sub ..................................... <the milliSeconds - m_startCheckMSecs>
+  [  7] pushint8 10 ............................. <10>
+  [ 10] pushint8 1000 ........................... <1000>
+  [ 13] mul ..................................... <10 * 1000>
+  [ 14] gt ...................................... <(the milliSeconds - m_startCheckMSecs) > (10 * 1000)>
+  [ 15] jmpifz [ 36] ............................ if (the milliSeconds - m_startCheckMSecs) > (10 * 1000) then / else
+  [ 18] getparam 0 .............................. <me>
+  [ 20] pusharglist 0 ........................... <>
+  [ 22] extcall 647 ............................. <VOID>
+  [ 25] pushsymb 546 ............................ <#MsgNoCD>
+  [ 28] pusharglistnoret 3 ...................... <me, VOID, #MsgNoCD>
+  [ 30] objcall 463 ............................. me.verifyCD(VOID, #MsgNoCD)
+  [ 33] jmp [ 43]
+  [ 36] getparam 0 .............................. <me>
+  [ 38] pusharglistnoret 1 ...................... <me>
+  [ 40] objcall 463 ............................. me.verifyCD()
+  [ 43] ret
+end
+
+on verifyCD me, argMsgStr, argMsgNoCD
+  [  0] pushzero ................................ <0>
+  [  1] setlocal 0 .............................. tmpOK = 0
+  [  3] getprop 373 ............................. <m_CDPath>
+  [  6] pushzero ................................ <0>
+  [  7] eq ...................................... <m_CDPath = 0>
+  [  8] jmpifz [ 59] ............................ if m_CDPath = 0 then
+  [ 11] getglobal 51 ............................ <gSystem>
+  [ 14] getprop 374 ............................. <m_readFile>
+  [ 17] pusharglist 1 ........................... <[m_readFile]>
+  [ 19] pushlist ................................ <[m_readFile]>
+  [ 20] pusharglist 1 ........................... <[[m_readFile]]>
+  [ 22] pushlist ................................ <[[m_readFile]]>
+  [ 23] pusharglist 2 ........................... <gSystem, [[m_readFile]]>
+  [ 25] objcall 211 ............................. <gSystem.getCDPath([[m_readFile]])>
+  [ 28] setprop 373 ............................. m_CDPath = gSystem.getCDPath([[m_readFile]])
+  [ 31] getprop 373 ............................. <m_CDPath>
+  [ 34] pusharglist 1 ........................... <m_CDPath>
+  [ 36] extcall 335 ............................. <stringp(m_CDPath)>
+  [ 39] jmpifz [ 59] ............................ if stringp(m_CDPath) then
+  [ 42] getglobal 51 ............................ <gSystem>
+  [ 45] getprop 373 ............................. <m_CDPath>
+  [ 48] setobjprop 373 .......................... gSystem.m_CDPath = m_CDPath
+  [ 51] getglobal 51 ............................ <gSystem>
+  [ 54] pusharglistnoret 1 ...................... <gSystem>
+  [ 56] objcall 665 ............................. gSystem.resolveSearchPaths()
+  [ 59] getprop 373 ............................. <m_CDPath>
+  [ 62] pushzero ................................ <0>
+  [ 63] eq ...................................... <m_CDPath = 0>
+  [ 64] jmpifz [ 89] ............................ if m_CDPath = 0 then / else
+  [ 67] pushcons 104 ............................ <"No CD! Please insert CD: ">
+  [ 69] getprop 375 ............................. <m_iniPropEqualsVal>
+  [ 72] pushint8 2 .............................. <2>
+  [ 75] pusharglist 2 ........................... <m_iniPropEqualsVal, 2>
+  [ 77] objcall 63 .............................. <m_iniPropEqualsVal[2]>
+  [ 80] joinstr ................................. <"No CD! Please insert CD: " & m_iniPropEqualsVal[2]>
+  [ 81] pushcons 112 ............................ <". Click OK when done.">
+  [ 83] joinstr ................................. <"No CD! Please insert CD: " & m_iniPropEqualsVal[2] & ". Click OK when done.">
+  [ 84] setlocal 8 .............................. msgStr = "No CD! Please insert CD: " & m_iniPropEqualsVal[2] & ". Click OK when done."
+  [ 86] jmp [375]
+  [ 89] getprop 358 ............................. <m_fxObj>
+  [ 92] getprop 373 ............................. <m_CDPath>
+  [ 95] pusharglist 2 ........................... <m_fxObj, m_CDPath>
+  [ 97] objcall 342 ............................. <m_fxObj.fx_VolumeIsCDROM(m_CDPath)>
+  [100] pushzero ................................ <0>
+  [101] eq ...................................... <m_fxObj.fx_VolumeIsCDROM(m_CDPath) = 0>
+  [102] getprop 688 ............................. <m_dontCareIfCDROM>
+  [105] pushint8 1 .............................. <1>
+  [108] nteq .................................... <m_dontCareIfCDROM <> 1>
+  [109] and ..................................... <(m_fxObj.fx_VolumeIsCDROM(m_CDPath) = 0) and (m_dontCareIfCDROM <> 1)>
+  [110] jmpifz [149] ............................ if (m_fxObj.fx_VolumeIsCDROM(m_CDPath) = 0) and (m_dontCareIfCDROM <> 1) then / else
+  [113] getparam 16 ............................. <argMsgNoCD>
+  [115] pushsymb 546 ............................ <#MsgNoCD>
+  [118] nteq .................................... <argMsgNoCD <> #MsgNoCD>
+  [119] jmpifz [127] ............................ if argMsgNoCD <> #MsgNoCD then
+  [122] pushzero ................................ <0>
+  [123] pusharglistnoret 1 ...................... <0>
+  [125] extcall 2 ............................... return 0
+  [127] pushcons 120 ............................ <"No CD! Please insert CD: ">
+  [129] getprop 375 ............................. <m_iniPropEqualsVal>
+  [132] pushint8 2 .............................. <2>
+  [135] pusharglist 2 ........................... <m_iniPropEqualsVal, 2>
+  [137] objcall 63 .............................. <m_iniPropEqualsVal[2]>
+  [140] joinstr ................................. <"No CD! Please insert CD: " & m_iniPropEqualsVal[2]>
+  [141] pushcons 128 ............................ <". Click OK when done.">
+  [143] joinstr ................................. <"No CD! Please insert CD: " & m_iniPropEqualsVal[2] & ". Click OK when done.">
+  [144] setlocal 8 .............................. msgStr = "No CD! Please insert CD: " & m_iniPropEqualsVal[2] & ". Click OK when done."
+  [146] jmp [375]
+  [149] getprop 358 ............................. <m_fxObj>
+  [152] getprop 373 ............................. <m_CDPath>
+  [155] getprop 374 ............................. <m_readFile>
+  [158] joinstr ................................. <m_CDPath & m_readFile>
+  [159] pusharglist 2 ........................... <m_fxObj, m_CDPath & m_readFile>
+  [161] objcall 367 ............................. <m_fxObj.fx_FileExists(m_CDPath & m_readFile)>
+  [164] pushzero ................................ <0>
+  [165] eq ...................................... <m_fxObj.fx_FileExists(m_CDPath & m_readFile) = 0>
+  [166] jmpifz [191] ............................ if m_fxObj.fx_FileExists(m_CDPath & m_readFile) = 0 then / else
+  [169] pushcons 136 ............................ <"Wrong CD! Please insert CD: ">
+  [171] getprop 375 ............................. <m_iniPropEqualsVal>
+  [174] pushint8 2 .............................. <2>
+  [177] pusharglist 2 ........................... <m_iniPropEqualsVal, 2>
+  [179] objcall 63 .............................. <m_iniPropEqualsVal[2]>
+  [182] joinstr ................................. <"Wrong CD! Please insert CD: " & m_iniPropEqualsVal[2]>
+  [183] pushcons 144 ............................ <". Click OK when done.">
+  [185] joinstr ................................. <"Wrong CD! Please insert CD: " & m_iniPropEqualsVal[2] & ". Click OK when done.">
+  [186] setlocal 8 .............................. msgStr = "Wrong CD! Please insert CD: " & m_iniPropEqualsVal[2] & ". Click OK when done."
+  [188] jmp [375]
+  [191] getprop 373 ............................. <m_CDPath>
+  [194] getprop 374 ............................. <m_readFile>
+  [197] joinstr ................................. <m_CDPath & m_readFile>
+  [198] pusharglist 1 ........................... <m_CDPath & m_readFile>
+  [200] extcall 42 .............................. <readFile(m_CDPath & m_readFile)>
+  [203] setlocal 16 ............................. str = readFile(m_CDPath & m_readFile)
+  [205] getlocal 16 ............................. <str>
+  [207] pusharglist 1 ........................... <str>
+  [209] extcall 335 ............................. <stringp(str)>
+  [212] not ..................................... <not stringp(str)>
+  [213] jmpifz [238] ............................ if not stringp(str) then / else
+  [216] pushcons 152 ............................ <"Wrong CD!! Please insert CD: ">
+  [218] getprop 375 ............................. <m_iniPropEqualsVal>
+  [221] pushint8 2 .............................. <2>
+  [224] pusharglist 2 ........................... <m_iniPropEqualsVal, 2>
+  [226] objcall 63 .............................. <m_iniPropEqualsVal[2]>
+  [229] joinstr ................................. <"Wrong CD!! Please insert CD: " & m_iniPropEqualsVal[2]>
+  [230] pushcons 160 ............................ <". Click OK when done.">
+  [232] joinstr ................................. <"Wrong CD!! Please insert CD: " & m_iniPropEqualsVal[2] & ". Click OK when done.">
+  [233] setlocal 8 .............................. msgStr = "Wrong CD!! Please insert CD: " & m_iniPropEqualsVal[2] & ". Click OK when done."
+  [235] jmp [375]
+  [238] getlocal 16 ............................. <str>
+  [240] pusharglist 1 ........................... <str>
+  [242] extcall 384 ............................. <iniStrToPropList(str)>
+  [245] setlocal 24 ............................. infoList = iniStrToPropList(str)
+  [247] getlocal 24 ............................. <infoList>
+  [249] pusharglist 1 ........................... <infoList>
+  [251] extcall 290 ............................. <listp(infoList)>
+  [254] not ..................................... <not listp(infoList)>
+  [255] jmpifz [261] ............................ if not listp(infoList) then / else
+  [258] jmp [375]
+  [261] getlocal 24 ............................. <infoList>
+  [263] getprop 375 ............................. <m_iniPropEqualsVal>
+  [266] pushint8 1 .............................. <1>
+  [269] pusharglist 2 ........................... <m_iniPropEqualsVal, 1>
+  [271] objcall 63 .............................. <m_iniPropEqualsVal[1]>
+  [274] pushint8 1 .............................. <1>
+  [277] pusharglist 2 ........................... <m_iniPropEqualsVal[1], 1>
+  [279] objcall 63 .............................. <m_iniPropEqualsVal[1][1]>
+  [282] pusharglist 2 ........................... <infoList, m_iniPropEqualsVal[1][1]>
+  [284] objcall 63 .............................. <infoList[m_iniPropEqualsVal[1][1]]>
+  [287] setlocal 32 ............................. tmpInfo = infoList[m_iniPropEqualsVal[1][1]]
+  [289] getlocal 32 ............................. <tmpInfo>
+  [291] pusharglist 1 ........................... <tmpInfo>
+  [293] extcall 290 ............................. <listp(tmpInfo)>
+  [296] not ..................................... <not listp(tmpInfo)>
+  [297] jmpifz [303] ............................ if not listp(tmpInfo) then / else
+  [300] jmp [375]
+  [303] getlocal 32 ............................. <tmpInfo>
+  [305] getprop 375 ............................. <m_iniPropEqualsVal>
+  [308] pushint8 1 .............................. <1>
+  [311] pusharglist 2 ........................... <m_iniPropEqualsVal, 1>
+  [313] objcall 63 .............................. <m_iniPropEqualsVal[1]>
+  [316] pushint8 2 .............................. <2>
+  [319] pusharglist 2 ........................... <m_iniPropEqualsVal[1], 2>
+  [321] objcall 63 .............................. <m_iniPropEqualsVal[1][2]>
+  [324] pusharglist 2 ........................... <tmpInfo, m_iniPropEqualsVal[1][2]>
+  [326] objcall 63 .............................. <tmpInfo[m_iniPropEqualsVal[1][2]]>
+  [329] setlocal 40 ............................. val = tmpInfo[m_iniPropEqualsVal[1][2]]
+  [331] getlocal 40 ............................. <val>
+  [333] getprop 375 ............................. <m_iniPropEqualsVal>
+  [336] pushint8 2 .............................. <2>
+  [339] pusharglist 2 ........................... <m_iniPropEqualsVal, 2>
+  [341] objcall 63 .............................. <m_iniPropEqualsVal[2]>
+  [344] nteq .................................... <val <> m_iniPropEqualsVal[2]>
+  [345] jmpifz [370] ............................ if val <> m_iniPropEqualsVal[2] then / else
+  [348] pushcons 168 ............................ <"Wrong language CD! Please insert CD: ">
+  [350] getprop 375 ............................. <m_iniPropEqualsVal>
+  [353] pushint8 2 .............................. <2>
+  [356] pusharglist 2 ........................... <m_iniPropEqualsVal, 2>
+  [358] objcall 63 .............................. <m_iniPropEqualsVal[2]>
+  [361] joinstr ................................. <"Wrong language CD! Please insert CD: " & m_iniPropEqualsVal[2]>
+  [362] pushcons 176 ............................ <". Click OK when done.">
+  [364] joinstr ................................. <"Wrong language CD! Please insert CD: " & m_iniPropEqualsVal[2] & ". Click OK when done.">
+  [365] setlocal 8 .............................. msgStr = "Wrong language CD! Please insert CD: " & m_iniPropEqualsVal[2] & ". Click OK when done."
+  [367] jmp [375]
+  [370] pushint8 1 .............................. <1>
+  [373] setlocal 0 .............................. tmpOK = 1
+  [375] getlocal 0 .............................. <tmpOK>
+  [377] pushzero ................................ <0>
+  [378] eq ...................................... <tmpOK = 0>
+  [379] jmpifz [703] ............................ if tmpOK = 0 then / else
+  [382] pushcons 184 ............................ <"StatusText">
+  [384] pusharglist 1 ........................... <"StatusText">
+  [386] extcall 65 .............................. <member("StatusText")>
+  [389] pushcons 192 ............................ <EMPTY>
+  [391] setobjprop 28 ........................... member("StatusText").text = EMPTY
+  [393] pusharglistnoret 0 ...................... <>
+  [395] extcall 295 ............................. updateStage()
+  [398] pushint8 1 .............................. <1>
+  [401] jmpifz [599] ............................ if 1 then / else
+  [404] getparam 8 .............................. <argMsgStr>
+  [406] pusharglist 1 ........................... <argMsgStr>
+  [408] extcall 335 ............................. <stringp(argMsgStr)>
+  [411] jmpifz [418] ............................ if stringp(argMsgStr) then
+  [414] getparam 8 .............................. <argMsgStr>
+  [416] setlocal 8 .............................. msgStr = argMsgStr
+  [418] getlocal 8 .............................. <msgStr>
+  [420] pusharglist 1 ........................... <msgStr>
+  [422] extcall 335 ............................. <stringp(msgStr)>
+  [425] jmpifz [596] ............................ if stringp(msgStr) then
+  [428] pushcons 200 ............................ <"MUIAlertDef">
+  [430] pusharglist 1 ........................... <"MUIAlertDef">
+  [432] extcall 65 .............................. <member("MUIAlertDef")>
+  [435] getobjprop 28 ........................... <member("MUIAlertDef").text>
+  [437] pusharglist 1 ........................... <member("MUIAlertDef").text>
+  [439] extcall 549 ............................. <propListFromTable(member("MUIAlertDef").text)>
+  [442] setlocal 48 ............................. lst = propListFromTable(member("MUIAlertDef").text)
+  [444] getlocal 48 ............................. <lst>
+  [446] pushsymb 251 ............................ <#window>
+  [449] pusharglist 2 ........................... <lst, #window>
+  [451] objcall 63 .............................. <lst[#window]>
+  [454] pushsymb 69 ............................. <#name>
+  [457] pushcons 208 ............................ <"Wrong CD">
+  [459] pusharglistnoret 3 ...................... <lst[#window], #name, "Wrong CD">
+  [461] objcall 550 ............................. lst[#window][#name] = "Wrong CD"
+  [464] getlocal 48 ............................. <lst>
+  [466] pushsymb 551 ............................ <#items>
+  [469] pusharglist 2 ........................... <lst, #items>
+  [471] objcall 63 .............................. <lst[#items]>
+  [474] pushsymb 28 ............................. <#text>
+  [476] pusharglist 2 ........................... <lst[#items], #text>
+  [478] objcall 63 .............................. <lst[#items][#text]>
+  [481] pushsymb 444 ............................ <#value>
+  [484] getlocal 8 .............................. <msgStr>
+  [486] pusharglistnoret 3 ...................... <lst[#items][#text], #value, msgStr>
+  [488] objcall 550 ............................. lst[#items][#text][#value] = msgStr
+  [491] getlocal 48 ............................. <lst>
+  [493] pushsymb 551 ............................ <#items>
+  [496] pusharglist 2 ........................... <lst, #items>
+  [498] objcall 63 .............................. <lst[#items]>
+  [501] pushsymb 471 ............................ <#Ok>
+  [504] pusharglist 2 ........................... <lst[#items], #Ok>
+  [506] objcall 63 .............................. <lst[#items][#Ok]>
+  [509] pushsymb 1 .............................. <#title>
+  [511] pushcons 216 ............................ <"OK">
+  [513] pusharglistnoret 3 ...................... <lst[#items][#Ok], #title, "OK">
+  [515] objcall 550 ............................. lst[#items][#Ok][#title] = "OK"
+  [518] getlocal 48 ............................. <lst>
+  [520] pushsymb 551 ............................ <#items>
+  [523] pusharglist 2 ........................... <lst, #items>
+  [525] objcall 63 .............................. <lst[#items]>
+  [528] pushsymb 552 ............................ <#Cancel>
+  [531] pusharglist 2 ........................... <lst[#items], #Cancel>
+  [533] objcall 63 .............................. <lst[#items][#Cancel]>
+  [536] pushsymb 1 .............................. <#title>
+  [538] pushcons 224 ............................ <"Quit Program">
+  [540] pusharglistnoret 3 ...................... <lst[#items][#Cancel], #title, "Quit Program">
+  [542] objcall 550 ............................. lst[#items][#Cancel][#title] = "Quit Program"
+  [545] pushcons 232 ............................ <"MUIScript">
+  [547] pusharglist 1 ........................... <"MUIScript">
+  [549] extcall 16 .............................. <script("MUIScript")>
+  [551] getlocal 48 ............................. <lst>
+  [553] pushsymb 357 ............................ <#CallBackInfo>
+  [556] pushsymb 363 ............................ <#object>
+  [559] getparam 0 .............................. <me>
+  [561] pushsymb 364 ............................ <#handler>
+  [564] pushsymb 577 ............................ <#MUICallback>
+  [567] pusharglist 4 ........................... <[#object: me, #handler: #MUICallback]>
+  [569] pushproplist ............................ <[#object: me, #handler: #MUICallback]>
+  [570] pusharglist 2 ........................... <[#CallBackInfo: [#object: me, #handler: #MUICallback]]>
+  [572] pushproplist ............................ <[#CallBackInfo: [#object: me, #handler: #MUICallback]]>
+  [573] pusharglist 3 ........................... <script("MUIScript"), lst, [#CallBackInfo: [#object: me, #handler: #MUICallback]]>
+  [575] objcall 37 .............................. <script("MUIScript").new(lst, [#CallBackInfo: [#object: me, #handler: #MUICallback]])>
+  [578] setlocal 56 ............................. a = script("MUIScript").new(lst, [#CallBackInfo: [#object: me, #handler: #MUICallback]])
+  [580] getlocal 56 ............................. <a>
+  [582] pusharglistnoret 1 ...................... <a>
+  [584] objcall 553 ............................. a.open()
+  [587] getlocal 56 ............................. <a>
+  [589] pusharglist 1 ........................... <a>
+  [591] objcall 210 ............................. <a.kill()>
+  [594] setlocal 56 ............................. a = a.kill()
+  [596] jmp [646]
+  [599] getparam 8 .............................. <argMsgStr>
+  [601] pusharglist 1 ........................... <argMsgStr>
+  [603] extcall 335 ............................. <stringp(argMsgStr)>
+  [606] jmpifz [619] ............................ if stringp(argMsgStr) then / else
+  [609] getparam 8 .............................. <argMsgStr>
+  [611] pusharglistnoret 1 ...................... <argMsgStr>
+  [613] extcall 72 .............................. alert(argMsgStr)
+  [616] jmp [646]
+  [619] getlocal 8 .............................. <msgStr>
+  [621] pusharglist 1 ........................... <msgStr>
+  [623] extcall 335 ............................. <stringp(msgStr)>
+  [626] jmpifz [639] ............................ if stringp(msgStr) then / else
+  [629] getlocal 8 .............................. <msgStr>
+  [631] pusharglistnoret 1 ...................... <msgStr>
+  [633] extcall 72 .............................. alert(msgStr)
+  [636] jmp [646]
+  [639] pushcons 240 ............................ <"Wrong CD!">
+  [641] pusharglistnoret 1 ...................... <"Wrong CD!">
+  [643] extcall 72 .............................. alert("Wrong CD!")
+  [646] pushcons 248 ............................ <"StatusText">
+  [648] pusharglist 1 ........................... <"StatusText">
+  [650] extcall 65 .............................. <member("StatusText")>
+  [653] pushcons 256 ............................ <"Checking...">
+  [656] setobjprop 28 ........................... member("StatusText").text = "Checking..."
+  [658] getprop 361 ............................. <m_timerObj>
+  [661] pusharglist 1 ........................... <m_timerObj>
+  [663] extcall 50 .............................. <objectp(m_timerObj)>
+  [666] not ..................................... <not objectp(m_timerObj)>
+  [667] jmpifz [694] ............................ if not objectp(m_timerObj) then
+  [670] pushcons 264 ............................ <"CDTimer">
+  [673] pusharglist 1 ........................... <"CDTimer">
+  [675] extcall 403 ............................. <timeout("CDTimer")>
+  [678] pushint8 500 ............................ <500>
+  [681] pushsymb 352 ............................ <#timeTick>
+  [684] getparam 0 .............................. <me>
+  [686] pusharglist 4 ........................... <timeout("CDTimer"), 500, #timeTick, me>
+  [688] objcall 37 .............................. <timeout("CDTimer").new(500, #timeTick, me)>
+  [691] setprop 361 ............................. m_timerObj = timeout("CDTimer").new(500, #timeTick, me)
+  [694] getmovieprop 646 ........................ <the milliSeconds>
+  [697] setprop 645 ............................. m_startCheckMSecs = the milliSeconds
+  [700] jmp [769]
+  [703] getprop 361 ............................. <m_timerObj>
+  [706] pusharglist 1 ........................... <m_timerObj>
+  [708] extcall 50 .............................. <objectp(m_timerObj)>
+  [711] jmpifz [722] ............................ if objectp(m_timerObj) then
+  [714] getprop 361 ............................. <m_timerObj>
+  [717] pusharglistnoret 1 ...................... <m_timerObj>
+  [719] objcall 362 ............................. m_timerObj.forget()
+  [722] pushzero ................................ <0>
+  [723] setprop 361 ............................. m_timerObj = 0
+  [726] pushcons 272 ............................ <"StatusText">
+  [729] pusharglist 1 ........................... <"StatusText">
+  [731] extcall 65 .............................. <member("StatusText")>
+  [734] pushcons 280 ............................ <"OK">
+  [737] setobjprop 28 ........................... member("StatusText").text = "OK"
+  [739] getprop 356 ............................. <m_callBackInfo>
+  [742] pushsymb 364 ............................ <#handler>
+  [745] pusharglist 2 ........................... <m_callBackInfo, #handler>
+  [747] objcall 63 .............................. <m_callBackInfo[#handler]>
+  [750] getprop 356 ............................. <m_callBackInfo>
+  [753] pushsymb 363 ............................ <#object>
+  [756] pusharglist 2 ........................... <m_callBackInfo, #object>
+  [758] objcall 63 .............................. <m_callBackInfo[#object]>
+  [761] pushsymb 471 ............................ <#Ok>
+  [764] pusharglistnoret 3 ...................... <m_callBackInfo[#handler], m_callBackInfo[#object], #Ok>
+  [766] extcall 291 ............................. call(m_callBackInfo[#handler], m_callBackInfo[#object], #Ok)
+  [769] getlocal 0 .............................. <tmpOK>
+  [771] pusharglistnoret 1 ...................... <tmpOK>
+  [773] extcall 2 ............................... return tmpOK
+  [775] ret
+end
+
+on MUICallback me, argObj, argWhat, argID
+  [  0] getparam 16 ............................. <argWhat>
+  [  2] pushsymb 570 ............................ <#itemClicked>
+  [  5] eq ...................................... <argWhat = #itemClicked>
+  [  6] jmpifz [ 40] ............................ if argWhat = #itemClicked then
+  [  9] getparam 8 .............................. <argObj>
+  [ 11] pusharglistnoret 1 ...................... <argObj>
+  [ 13] objcall 554 ............................. argObj.close()
+  [ 16] getparam 24 ............................. <argID>
+  [ 18] pushsymb 552 ............................ <#Cancel>
+  [ 21] eq ...................................... <argID = #Cancel>
+  [ 22] jmpifz [ 40] ............................ if argID = #Cancel then
+  [ 25] getmovieprop 215 ........................ <the runMode>
+  [ 28] pushcons 288 ............................ <"Author">
+  [ 31] nteq .................................... <the runMode <> "Author">
+  [ 32] jmpifz [ 40] ............................ if the runMode <> "Author" then
+  [ 35] pusharglistnoret 0 ...................... <>
+  [ 37] extcall 480 ............................. quit()
+  [ 40] ret
+end

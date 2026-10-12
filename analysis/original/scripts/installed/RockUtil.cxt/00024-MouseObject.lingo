@@ -1,0 +1,180 @@
+property myRect, reportObject, ID, type, Active, isInside, optionList, downOn, noPassRoll, noPassButton, myLoc, cursorRoll, orgCursRoll, masterObj, layer, lastMouseUp
+global gUseful
+
+on new me, argReportObject, argRectOrSpriteNum, argOptList
+  reportObject = argReportObject
+  myRect = argRectOrSpriteNum
+  noPassRoll = 0
+  noPassButton = 1
+  if listp(argOptList) then
+    ID = argOptList[#ID]
+    type = argOptList[#type]
+    layer = argOptList[#layer]
+    tmp = argOptList[#noPassRoll]
+    if tmp = 1 then
+      noPassRoll = 1
+    end if
+    tmp = argOptList[#PassButton]
+    if tmp = 1 then
+      noPassButton = 0
+    end if
+    cursorRoll = argOptList[#cursorRoll]
+    orgCursRoll = cursorRoll
+    myLoc = argOptList[#loc]
+    if voidp(myLoc) then
+      myLoc = (point(myRect[3] - myRect[1], myRect[4] - myRect[2]) / 2) + point(myRect[1], myRect[2])
+    end if
+    optionList = argOptList
+    lastMouseUp = argOptList[#doubleClick]
+    if voidp(lastMouseUp) then
+      lastMouseUp = 0
+    end if
+  else
+    optionList = [:]
+    layer = 50
+    lastMouseUp = 0
+  end if
+  Active = 1
+  isInside = 0
+  if voidp(cursorRoll) then
+    cursorRoll = #click
+  end if
+  masterObj = optionList[#masterObj]
+  if voidp(masterObj) then
+    masterObj = gUseful.mouseObjects
+  end if
+  masterObj.addObject(me, layer)
+  return me
+end
+
+on kill me
+  me.activate(0)
+  masterObj.deleteObject(me)
+  masterObj = 0
+  reportObject = 0
+  optionList = 0
+  return 0
+end
+
+on setLayer me, argLayer
+  masterObj.changeLayer(me, argLayer)
+  layer = argLayer
+end
+
+on setCursor me, argCursor
+  cursorRoll = argCursor
+end
+
+on move me, argLoc, argMode
+  if argMode = #Relative then
+    myLoc = myLoc + argLoc
+    myRect = myRect + rect(argLoc, argLoc)
+  else
+    tmpDiff = argLoc - myLoc
+    myRect = myRect + rect(tmpDiff, tmpDiff)
+    myLoc = argLoc
+  end if
+end
+
+on checkDown me, argPoint
+  if not Active then
+    return 0
+  end if
+  me.check(argPoint, 1)
+  if downOn then
+    exit
+  end if
+  if isInside then
+    downOn = 1
+    reportObject.mouse(me, #down)
+    return noPassButton
+  end if
+  return 0
+end
+
+on checkUp me, argPoint, argOKToClick
+  if not Active then
+    return 0
+  end if
+  if not argOKToClick then
+    return 0
+  end if
+  if lastMouseUp >= 0 then
+    tmpMsecs = the milliSeconds
+    tmpTimeDiff = tmpMsecs - lastMouseUp
+    lastMouseUp = tmpMsecs
+  else
+    tmpTimeDiff = 0
+  end if
+  me.check(argPoint)
+  if downOn then
+    downOn = 0
+    if isInside then
+      if argOKToClick then
+        if 0 and (tmpTimeDiff > 0) and (tmpTimeDiff < 300) then
+          reportObject.mouse(me, #doubleClick)
+        else
+          reportObject.mouse(me, #click)
+        end if
+        return noPassButton
+      end if
+    else
+      reportObject.mouse(me, #UpOutside)
+    end if
+  else
+    if isInside then
+      reportObject.mouse(me, #up)
+      return noPassButton
+    end if
+  end if
+  return 0
+end
+
+on check me, argPoint, argOKToEnter
+  if Active then
+    if inside(argPoint, myRect) then
+      if symbolp(cursorRoll) then
+        masterObj.cursorChange(cursorRoll)
+      end if
+      if isInside then
+        if downOn then
+          reportObject.mouse(me, #stillDown)
+        else
+        end if
+        return noPassRoll
+      else
+        if argOKToEnter then
+          isInside = 1
+          reportObject.mouse(me, #enter)
+          masterObj.setIsInside(me, 1)
+          return noPassRoll
+        end if
+      end if
+    else
+      if isInside then
+        isInside = 0
+        reportObject.mouse(me, #Leave)
+        masterObj.setIsInside(me, 0)
+      end if
+    end if
+  end if
+  return 0
+end
+
+on otherReacted me, argObj, argWhat
+  if Active then
+    reportObject.mouse(me, argWhat)
+  end if
+end
+
+on activate me, YesNo
+  Active = YesNo
+  isInside = 0
+  masterObj.setIsInside(me, 0)
+end
+
+on getOption me, argProp
+  if listp(optionList) then
+    return optionList[argProp]
+  end if
+end

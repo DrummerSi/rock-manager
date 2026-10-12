@@ -1,0 +1,111 @@
+property ancestor, m_eventToBook_r, m_bookOptions
+global gDir, gRock
+
+on new me, argOptions
+  ID = argOptions[#ID]
+  argOptions.setaProp(#ReportTo, me)
+  argOptions.setaProp(#child, me)
+  m_bookOptions = argOptions[#bookOptions]
+  if voidp(m_bookOptions[#RemoveWhenCancel]) then
+    m_bookOptions[#RemoveWhenCancel] = 1
+  end if
+  if voidp(m_bookOptions[#AutoClose]) then
+    m_bookOptions[#AutoClose] = 1
+  end if
+  m_eventToBook_r = m_bookOptions[#EventToBook]
+  tmpDlgID = argOptions[#UseDlgID]
+  if voidp(tmpDlgID) then
+    tmpDlgID = #DlgRecordReleaseBook
+  end if
+  dialog_r = gRock.m_classManager.getObjByIDAndClass(tmpDlgID, #Dialog)
+  dialog_r.dataMemberName = "DlgLiveBookData"
+  argOptions[#DlgInfoObj] = dialog_r
+  ancestor = script("DlgRockAncestorScript").new(argOptions)
+  img = m_bookOptions[#InfoImage]
+  if objectp(img) then
+    itemObj = ancestor.m_objDlg.getItem(#Info)
+    if objectp(itemObj) then
+      itemObj.setOneProp(#Pic, img)
+    end if
+  end if
+  img = m_bookOptions[#PicImage]
+  if stringp(img) then
+    img = member(img)
+  end if
+  if ilk(img) = #member then
+    img = img.image
+  end if
+  if objectp(img) then
+    itemObj = ancestor.m_objDlg.getItem(#Pic)
+    if objectp(itemObj) then
+      itemObj.setOneProp(#Pic, img)
+    end if
+  end if
+  setupAgenda(m_eventToBook_r, me, ancestor.getSPOverDlg())
+  ancestor.render()
+  return me
+end
+
+on kill me
+  rCloseAgenda()
+  ancestor = ancestor.kill()
+  m_eventToBook_r = 0
+  m_bookOptions = [:]
+  return 0
+end
+
+on GetSPNeed me
+  return ancestor.GetSPNeed() + gRock.m_agenda.GetSPNeed()
+end
+
+on Report me, argObj, argWhat
+end
+
+on mouse me, argObj, argWhat, argOption
+  if objectp(argOption) then
+    if argWhat = #click then
+      ID = argOption.getOneProp(#ID)
+      IDStr = string(ID)
+      if ID = #ButtonOK then
+        if not voidp(m_bookOptions[#CheckPrice]) then
+          if gRock.m_player.hasThisMoney(m_bookOptions[#CheckPrice]) = 0 then
+            rWarnMoney()
+            exit
+          end if
+        end if
+        tmpMsg = symbol("Book" & string(m_eventToBook_r.className))
+        tmpReportSymbol = #BookedOK
+        m_eventToBook_r.Moveable = 0
+      else
+        if ID = #ButtonCancel then
+          tmpReportSymbol = #BookedCancel
+          if m_bookOptions[#RemoveWhenCancel] = 1 then
+            gRock.m_classManager.removeObj(m_eventToBook_r, #kill)
+          end if
+        end if
+      end if
+      tmpReportObj = 0
+      if ancestor.m_objReportTo <> me then
+        tmpReportObj = ancestor.m_objReportTo
+      else
+        tmpReportObj = gDir.m_objDialogsMaster.getDialogUnder(me)
+      end if
+      if objectp(tmpReportObj) then
+        tmpReportObj.Report(me, tmpReportSymbol, m_eventToBook_r)
+      end if
+      if ID = #ButtonOK then
+        gRock.m_msgManager.msg(tmpMsg, m_eventToBook_r)
+      end if
+      if not objectp(ancestor) then
+        exit
+      end if
+      if m_bookOptions[#AutoClose] = 1 then
+        if m_bookOptions[#AutoCloseUnder] = 1 then
+          gDir.m_objDialogsMaster.closeAllDialogs()
+        else
+          ancestor.mouse(argObj, argWhat, argOption)
+        end if
+      end if
+    end if
+  end if
+end

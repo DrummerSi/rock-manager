@@ -1,0 +1,361 @@
+global gRock
+
+on getLanguageDataFolder
+  [  0] getglobal 23 ............................ <gRock>
+  [  2] getobjprop 50 ........................... <gRock.m_paths>
+  [  5] pushsymb 3673 ........................... <#CD>
+  [  8] pusharglist 2 ........................... <gRock.m_paths, #CD>
+  [ 10] objcall 53 .............................. <gRock.m_paths.getPath(#CD)>
+  [ 13] setlocal 0 .............................. szPathCD = gRock.m_paths.getPath(#CD)
+  [ 15] getlocal 0 .............................. <szPathCD>
+  [ 17] pushcons 0 .............................. <"RockCD.INF">
+  [ 19] joinstr ................................. <szPathCD & "RockCD.INF">
+  [ 20] pusharglist 1 ........................... <szPathCD & "RockCD.INF">
+  [ 22] extcall 137 ............................. <readFile(szPathCD & "RockCD.INF")>
+  [ 25] setlocal 8 .............................. szIni = readFile(szPathCD & "RockCD.INF")
+  [ 27] getlocal 8 .............................. <szIni>
+  [ 29] pusharglist 1 ........................... <szIni>
+  [ 31] extcall 13 .............................. <stringp(szIni)>
+  [ 33] jmpifz [107] ............................ if stringp(szIni) then
+  [ 36] getlocal 8 .............................. <szIni>
+  [ 38] pusharglist 1 ........................... <szIni>
+  [ 40] localcall 4 ............................. <iniStrToPropList(szIni)>
+  [ 42] setlocal 16 ............................. lstIni = iniStrToPropList(szIni)
+  [ 44] getlocal 16 ............................. <lstIni>
+  [ 46] pusharglist 1 ........................... <lstIni>
+  [ 48] extcall 115 ............................. <listp(lstIni)>
+  [ 51] jmpifz [107] ............................ if listp(lstIni) then
+  [ 54] getlocal 16 ............................. <lstIni>
+  [ 56] pushsymb 3674 ........................... <#settings>
+  [ 59] pushsymb 3675 ........................... <#Language>
+  [ 62] pusharglist 2 ........................... <[#settings, #Language]>
+  [ 64] pushlist ................................ <[#settings, #Language]>
+  [ 65] pusharglist 2 ........................... <lstIni, [#settings, #Language]>
+  [ 67] extcall 162 ............................. <rgetProp(lstIni, [#settings, #Language])>
+  [ 70] setlocal 24 ............................. szLanguage = rgetProp(lstIni, [#settings, #Language])
+  [ 72] getlocal 24 ............................. <szLanguage>
+  [ 74] getobjprop 135 .......................... <szLanguage.length>
+  [ 77] pushint8 1 .............................. <1>
+  [ 80] gt ...................................... <szLanguage.length > 1>
+  [ 81] jmpifz [107] ............................ if szLanguage.length > 1 then
+  [ 84] getglobal 23 ............................ <gRock>
+  [ 86] getobjprop 50 ........................... <gRock.m_paths>
+  [ 89] pushsymb 21 ............................. <#data>
+  [ 91] pusharglist 2 ........................... <gRock.m_paths, #data>
+  [ 93] objcall 53 .............................. <gRock.m_paths.getPath(#data)>
+  [ 96] getlocal 24 ............................. <szLanguage>
+  [ 98] joinstr ................................. <gRock.m_paths.getPath(#data) & szLanguage>
+  [ 99] pushcons 8 .............................. <"\\">
+  [101] joinstr ................................. <gRock.m_paths.getPath(#data) & szLanguage & "\\">
+  [102] pusharglistnoret 1 ...................... <gRock.m_paths.getPath(#data) & szLanguage & "\\">
+  [104] extcall 69 .............................. return gRock.m_paths.getPath(#data) & szLanguage & "\\"
+  [107] pusharglist 0 ........................... <>
+  [109] extcall 151 ............................. <VOID>
+  [112] pusharglistnoret 1 ...................... <VOID>
+  [114] extcall 69 .............................. return VOID
+  [117] ret
+end
+
+on getRealDataFiles
+  [  0] getglobal 23 ............................ <gRock>
+  [  2] getobjprop 50 ........................... <gRock.m_paths>
+  [  5] pushsymb 21 ............................. <#data>
+  [  7] pusharglist 2 ........................... <gRock.m_paths, #data>
+  [  9] objcall 286 ............................. <gRock.m_paths.getAllAlternativePaths(#data)>
+  [ 12] pusharglist 1 ........................... <gRock.m_paths.getAllAlternativePaths(#data)>
+  [ 14] extcall 285 ............................. <getLatestDataFilesInFolders(gRock.m_paths.getAllAlternativePaths(#data))>
+  [ 17] setlocal 0 .............................. lstSzFiles = getLatestDataFilesInFolders(gRock.m_paths.getAllAlternativePaths(#data))
+  [ 19] pusharglist 0 ........................... <[]>
+  [ 21] pushlist ................................ <[]>
+  [ 22] setlocal 8 .............................. lstSzFilesToUse = []
+  [ 24] pusharglist 0 ........................... <>
+  [ 26] localcall 0 ............................. <getLanguageDataFolder()>
+  [ 28] setlocal 16 ............................. szPathPluginsLanguage = getLanguageDataFolder()
+  [ 30] getlocal 16 ............................. <szPathPluginsLanguage>
+  [ 32] pusharglist 1 ........................... <szPathPluginsLanguage>
+  [ 34] extcall 13 .............................. <stringp(szPathPluginsLanguage)>
+  [ 36] jmpifz [205] ............................ if stringp(szPathPluginsLanguage) then
+  [ 39] getlocal 16 ............................. <szPathPluginsLanguage>
+  [ 41] pusharglist 1 ........................... <szPathPluginsLanguage>
+  [ 43] extcall 2196 ............................ <getFilesInFolder(szPathPluginsLanguage)>
+  [ 46] setlocal 8 .............................. lstSzFilesToUse = getFilesInFolder(szPathPluginsLanguage)
+  [ 48] pushcons 16 ............................. <RETURN>
+  [ 50] setlocal 24 ............................. szFiles = RETURN
+  [ 52] getlocal 8 .............................. <lstSzFilesToUse>
+  [ 54] getobjprop 156 .......................... <lstSzFilesToUse.count>
+  [ 57] setlocal 32
+  [ 59] getlocal 32
+  [ 61] pushint8 1 .............................. <1>
+  [ 64] gteq
+  [ 65] jmpifz [125] ............................ repeat with n = lstSzFilesToUse.count down to 1
+  [ 68] getlocal 24 ............................. <szFiles>
+  [ 70] getlocal 8 .............................. <lstSzFilesToUse>
+  [ 72] getlocal 32 ............................. <n>
+  [ 74] pusharglist 2 ........................... <lstSzFilesToUse, n>
+  [ 76] objcall 119 ............................. <lstSzFilesToUse[n]>
+  [ 79] pusharglist 1 ........................... <lstSzFilesToUse[n]>
+  [ 81] extcall 2198 ............................ <fileStripName(lstSzFilesToUse[n])>
+  [ 84] joinstr ................................. <szFiles & fileStripName(lstSzFilesToUse[n])>
+  [ 85] pushcons 24 ............................. <RETURN>
+  [ 87] joinstr ................................. <szFiles & fileStripName(lstSzFilesToUse[n]) & RETURN>
+  [ 88] setlocal 24 ............................. szFiles = szFiles & fileStripName(lstSzFilesToUse[n]) & RETURN
+  [ 90] getlocal 8 .............................. <lstSzFilesToUse>
+  [ 92] getlocal 32 ............................. <n>
+  [ 94] getlocal 16 ............................. <szPathPluginsLanguage>
+  [ 96] pushcons 32 ............................. <"\\">
+  [ 98] joinstr ................................. <szPathPluginsLanguage & "\\">
+  [ 99] getlocal 8 .............................. <lstSzFilesToUse>
+  [101] getlocal 32 ............................. <n>
+  [103] pusharglist 2 ........................... <lstSzFilesToUse, n>
+  [105] objcall 119 ............................. <lstSzFilesToUse[n]>
+  [108] joinstr ................................. <szPathPluginsLanguage & "\\" & lstSzFilesToUse[n]>
+  [109] pusharglistnoret 3 ...................... <lstSzFilesToUse, n, szPathPluginsLanguage & "\\" & lstSzFilesToUse[n]>
+  [111] objcall 353 ............................. lstSzFilesToUse[n] = szPathPluginsLanguage & "\\" & lstSzFilesToUse[n]
+  [114] pushint8 -1
+  [117] getlocal 32
+  [119] add
+  [120] setlocal 32
+  [122] endrepeat [ 59]
+  [125] getlocal 0 .............................. <lstSzFiles>
+  [127] getobjprop 156 .......................... <lstSzFiles.count>
+  [130] setlocal 32
+  [132] getlocal 32
+  [134] pushint8 1 .............................. <1>
+  [137] gteq
+  [138] jmpifz [205] ............................ repeat with n = lstSzFiles.count down to 1
+  [141] getlocal 0 .............................. <lstSzFiles>
+  [143] getlocal 32 ............................. <n>
+  [145] pusharglist 2 ........................... <lstSzFiles, n>
+  [147] objcall 119 ............................. <lstSzFiles[n]>
+  [150] pusharglist 1 ........................... <lstSzFiles[n]>
+  [152] extcall 2198 ............................ <fileStripName(lstSzFiles[n])>
+  [155] setlocal 40 ............................. szFileName = fileStripName(lstSzFiles[n])
+  [157] pushcons 40 ............................. <RETURN>
+  [159] getlocal 40 ............................. <szFileName>
+  [161] joinstr ................................. <RETURN & szFileName>
+  [162] pushcons 48 ............................. <RETURN>
+  [164] joinstr ................................. <RETURN & szFileName & RETURN>
+  [165] getlocal 24 ............................. <szFiles>
+  [167] pusharglist 2 ........................... <RETURN & szFileName & RETURN, szFiles>
+  [169] extcall 384 ............................. <offset(RETURN & szFileName & RETURN, szFiles)>
+  [172] jmpifz [178] ............................ if offset(RETURN & szFileName & RETURN, szFiles) then
+  [175] jmp [194] ............................... next repeat
+  [178] getlocal 8 .............................. <lstSzFilesToUse>
+  [180] getlocal 0 .............................. <lstSzFiles>
+  [182] getlocal 32 ............................. <n>
+  [184] pusharglist 2 ........................... <lstSzFiles, n>
+  [186] objcall 119 ............................. <lstSzFiles[n]>
+  [189] pusharglistnoret 2 ...................... <lstSzFilesToUse, lstSzFiles[n]>
+  [191] objcall 229 ............................. lstSzFilesToUse.add(lstSzFiles[n])
+  [194] pushint8 -1
+  [197] getlocal 32
+  [199] add
+  [200] setlocal 32
+  [202] endrepeat [132]
+  [205] getlocal 8 .............................. <lstSzFilesToUse>
+  [207] pusharglist 1 ........................... <lstSzFilesToUse>
+  [209] extcall 115 ............................. <listp(lstSzFilesToUse)>
+  [212] jmpifz [232] ............................ if listp(lstSzFilesToUse) then
+  [215] getlocal 8 .............................. <lstSzFilesToUse>
+  [217] getobjprop 156 .......................... <lstSzFilesToUse.count>
+  [220] pushzero ................................ <0>
+  [221] gt ...................................... <lstSzFilesToUse.count > 0>
+  [222] jmpifz [232] ............................ if lstSzFilesToUse.count > 0 then
+  [225] getlocal 8 .............................. <lstSzFilesToUse>
+  [227] pusharglistnoret 1 ...................... <lstSzFilesToUse>
+  [229] extcall 69 .............................. return lstSzFilesToUse
+  [232] getlocal 0 .............................. <lstSzFiles>
+  [234] pusharglistnoret 1 ...................... <lstSzFiles>
+  [236] extcall 69 .............................. return lstSzFiles
+  [239] ret
+end
+
+on getPathToLanguageAndTranslation
+  [  0] pushcons 56 ............................. <"Translation.txt">
+  [  2] setlocal 0 .............................. tmpLanguageFile = "Translation.txt"
+  [  4] getglobal 23 ............................ <gRock>
+  [  6] getobjprop 50 ........................... <gRock.m_paths>
+  [  9] getlocal 0 .............................. <tmpLanguageFile>
+  [ 11] pushsymb 21 ............................. <#data>
+  [ 13] pusharglist 3 ........................... <gRock.m_paths, tmpLanguageFile, #data>
+  [ 15] objcall 22 .............................. <gRock.m_paths.findFileInOneOfPaths(tmpLanguageFile, #data)>
+  [ 17] setlocal 8 .............................. tmpPath = gRock.m_paths.findFileInOneOfPaths(tmpLanguageFile, #data)
+  [ 19] pusharglist 0 ........................... <>
+  [ 21] localcall 0 ............................. <getLanguageDataFolder()>
+  [ 23] setlocal 16 ............................. szPathPluginsLanguage = getLanguageDataFolder()
+  [ 25] getlocal 16 ............................. <szPathPluginsLanguage>
+  [ 27] pusharglist 1 ........................... <szPathPluginsLanguage>
+  [ 29] extcall 13 .............................. <stringp(szPathPluginsLanguage)>
+  [ 31] jmpifz [ 54] ............................ if stringp(szPathPluginsLanguage) then
+  [ 34] getlocal 16 ............................. <szPathPluginsLanguage>
+  [ 36] getlocal 0 .............................. <tmpLanguageFile>
+  [ 38] joinstr ................................. <szPathPluginsLanguage & tmpLanguageFile>
+  [ 39] pusharglist 1 ........................... <szPathPluginsLanguage & tmpLanguageFile>
+  [ 41] extcall 105 ............................. <fileExists2(szPathPluginsLanguage & tmpLanguageFile)>
+  [ 44] jmpifz [ 54] ............................ if fileExists2(szPathPluginsLanguage & tmpLanguageFile) then
+  [ 47] getlocal 16 ............................. <szPathPluginsLanguage>
+  [ 49] pusharglistnoret 1 ...................... <szPathPluginsLanguage>
+  [ 51] extcall 69 .............................. return szPathPluginsLanguage
+  [ 54] getlocal 8 .............................. <tmpPath>
+  [ 56] pusharglistnoret 1 ...................... <tmpPath>
+  [ 58] extcall 69 .............................. return tmpPath
+  [ 61] ret
+end
+
+on getPathToMissionSave argSzFileName
+  [  0] pusharglist 0 ........................... <>
+  [  2] localcall 0 ............................. <getLanguageDataFolder()>
+  [  4] setlocal 0 .............................. szPathPluginsLanguage = getLanguageDataFolder()
+  [  6] getlocal 0 .............................. <szPathPluginsLanguage>
+  [  8] pusharglist 1 ........................... <szPathPluginsLanguage>
+  [ 10] extcall 13 .............................. <stringp(szPathPluginsLanguage)>
+  [ 12] jmpifz [ 35] ............................ if stringp(szPathPluginsLanguage) then
+  [ 15] getlocal 0 .............................. <szPathPluginsLanguage>
+  [ 17] getparam 0 .............................. <argSzFileName>
+  [ 19] joinstr ................................. <szPathPluginsLanguage & argSzFileName>
+  [ 20] pusharglist 1 ........................... <szPathPluginsLanguage & argSzFileName>
+  [ 22] extcall 105 ............................. <fileExists2(szPathPluginsLanguage & argSzFileName)>
+  [ 25] jmpifz [ 35] ............................ if fileExists2(szPathPluginsLanguage & argSzFileName) then
+  [ 28] getlocal 0 .............................. <szPathPluginsLanguage>
+  [ 30] pusharglistnoret 1 ...................... <szPathPluginsLanguage>
+  [ 32] extcall 69 .............................. return szPathPluginsLanguage
+  [ 35] getglobal 23 ............................ <gRock>
+  [ 37] getobjprop 50 ........................... <gRock.m_paths>
+  [ 40] getparam 0 .............................. <argSzFileName>
+  [ 42] pushsymb 134 ............................ <#MissionSave>
+  [ 45] pusharglist 3 ........................... <gRock.m_paths, argSzFileName, #MissionSave>
+  [ 47] objcall 22 .............................. <gRock.m_paths.findFileInOneOfPaths(argSzFileName, #MissionSave)>
+  [ 49] pusharglistnoret 1 ...................... <gRock.m_paths.findFileInOneOfPaths(argSzFileName, #MissionSave)>
+  [ 51] extcall 69 .............................. return gRock.m_paths.findFileInOneOfPaths(argSzFileName, #MissionSave)
+  [ 54] ret
+end
+
+on iniStrToPropList argStr, argIgnoreComments
+  [  0] pusharglist 0 ........................... <[:]>
+  [  2] pushproplist ............................ <[:]>
+  [  3] setlocal 0 .............................. wholeLst = [:]
+  [  5] getparam 0 .............................. <argStr>
+  [  7] pushint8 4 .............................. <4>
+  [ 10] get 1 ................................... <the number of lines in argStr>
+  [ 12] setlocal 8 .............................. numLines = the number of lines in argStr
+  [ 14] pushint8 1 .............................. <1>
+  [ 17] setlocal 16
+  [ 19] getlocal 16
+  [ 21] getlocal 8 .............................. <numLines>
+  [ 23] lteq
+  [ 24] jmpifz [285] ............................ repeat with lineNr = 1 to numLines
+  [ 27] getparam 0 .............................. <argStr>
+  [ 29] pushsymb 395 ............................ <#line>
+  [ 32] getlocal 16 ............................. <lineNr>
+  [ 34] pusharglist 3 ........................... <argStr, #line, lineNr>
+  [ 36] objcall 113 ............................. <argStr.line[lineNr]>
+  [ 39] setlocal 24 ............................. tmpLine = argStr.line[lineNr]
+  [ 41] getlocal 24 ............................. <tmpLine>
+  [ 43] pushsymb 138 ............................ <#char>
+  [ 46] pushint8 1 .............................. <1>
+  [ 49] pusharglist 3 ........................... <tmpLine, #char, 1>
+  [ 51] objcall 113 ............................. <tmpLine.char[1]>
+  [ 54] pushint8 10 ............................. <10>
+  [ 57] pusharglist 1 ........................... <10>
+  [ 59] extcall 375 ............................. <numToChar(10)>
+  [ 62] eq ...................................... <tmpLine.char[1] = numToChar(10)>
+  [ 63] jmpifz [ 87] ............................ if tmpLine.char[1] = numToChar(10) then
+  [ 66] pushint8 3 .............................. <3>
+  [ 69] pushchunkvarref 5 ....................... <wholeLst>
+  [ 71] pushsymb 138 ............................ <#char>
+  [ 74] pushint8 1 .............................. <1>
+  [ 77] pusharglist 3 ........................... <wholeLst, #char, 1>
+  [ 79] objcall 416 ............................. <wholeLst.char[1]>
+  [ 82] pusharglistnoret 1 ...................... <wholeLst.char[1]>
+  [ 84] objcall 417 ............................. delete wholeLst.char[1]
+  [ 87] getlocal 24 ............................. <tmpLine>
+  [ 89] getobjprop 135 .......................... <tmpLine.length>
+  [ 92] pushzero ................................ <0>
+  [ 93] eq ...................................... <tmpLine.length = 0>
+  [ 94] jmpifz [100] ............................ if tmpLine.length = 0 then
+  [ 97] jmp [274] ............................... next repeat
+  [100] getparam 8 .............................. <argIgnoreComments>
+  [102] pushint8 1 .............................. <1>
+  [105] eq ...................................... <argIgnoreComments = 1>
+  [106] jmpifz [131] ............................ if argIgnoreComments = 1 then
+  [109] getlocal 24 ............................. <tmpLine>
+  [111] pushsymb 138 ............................ <#char>
+  [114] pushint8 1 .............................. <1>
+  [117] pusharglist 3 ........................... <tmpLine, #char, 1>
+  [119] objcall 113 ............................. <tmpLine.char[1]>
+  [122] pushcons 64 ............................. <";">
+  [124] eq ...................................... <tmpLine.char[1] = ";">
+  [125] jmpifz [131] ............................ if tmpLine.char[1] = ";" then
+  [128] jmp [274] ............................... next repeat
+  [131] getlocal 24 ............................. <tmpLine>
+  [133] pushsymb 138 ............................ <#char>
+  [136] pushint8 1 .............................. <1>
+  [139] pusharglist 3 ........................... <tmpLine, #char, 1>
+  [141] objcall 113 ............................. <tmpLine.char[1]>
+  [144] pushcons 72 ............................. <"[">
+  [146] eq ...................................... <tmpLine.char[1] = "[">
+  [147] jmpifz [198] ............................ if tmpLine.char[1] = "[" then
+  [150] getlocal 24 ............................. <tmpLine>
+  [152] pushsymb 138 ............................ <#char>
+  [155] pushint8 2 .............................. <2>
+  [158] getlocal 24 ............................. <tmpLine>
+  [160] getobjprop 135 .......................... <tmpLine.length>
+  [163] pushint8 1 .............................. <1>
+  [166] sub ..................................... <tmpLine.length - 1>
+  [167] pusharglist 4 ........................... <tmpLine, #char, 2, tmpLine.length - 1>
+  [169] objcall 113 ............................. <tmpLine.char[2..tmpLine.length - 1]>
+  [172] setlocal 32 ............................. category = tmpLine.char[2..tmpLine.length - 1]
+  [174] pusharglist 0 ........................... <[:]>
+  [176] pushproplist ............................ <[:]>
+  [177] setlocal 40 ............................. lst = [:]
+  [179] getlocal 0 .............................. <wholeLst>
+  [181] getlocal 32 ............................. <category>
+  [183] pusharglist 1 ........................... <category>
+  [185] extcall 267 ............................. <symbol(category)>
+  [188] getlocal 40 ............................. <lst>
+  [190] pusharglistnoret 3 ...................... <wholeLst, symbol(category), lst>
+  [192] objcall 309 ............................. wholeLst.addProp(symbol(category), lst)
+  [195] jmp [274] ............................... next repeat
+  [198] pushcons 80 ............................. <"=">
+  [200] getlocal 24 ............................. <tmpLine>
+  [202] pusharglist 2 ........................... <"=", tmpLine>
+  [204] extcall 384 ............................. <offset("=", tmpLine)>
+  [207] setlocal 48 ............................. tmpOff = offset("=", tmpLine)
+  [209] getlocal 48 ............................. <tmpOff>
+  [211] not ..................................... <not tmpOff>
+  [212] jmpifz [218] ............................ if not tmpOff then
+  [215] jmp [274] ............................... next repeat
+  [218] getlocal 24 ............................. <tmpLine>
+  [220] pushsymb 138 ............................ <#char>
+  [223] pushint8 1 .............................. <1>
+  [226] getlocal 48 ............................. <tmpOff>
+  [228] pushint8 1 .............................. <1>
+  [231] sub ..................................... <tmpOff - 1>
+  [232] pusharglist 4 ........................... <tmpLine, #char, 1, tmpOff - 1>
+  [234] objcall 113 ............................. <tmpLine.char[1..tmpOff - 1]>
+  [237] setlocal 56 ............................. prop = tmpLine.char[1..tmpOff - 1]
+  [239] getlocal 40 ............................. <lst>
+  [241] getlocal 56 ............................. <prop>
+  [243] pusharglist 1 ........................... <prop>
+  [245] extcall 267 ............................. <symbol(prop)>
+  [248] getlocal 24 ............................. <tmpLine>
+  [250] pushsymb 138 ............................ <#char>
+  [253] getlocal 48 ............................. <tmpOff>
+  [255] pushint8 1 .............................. <1>
+  [258] add ..................................... <tmpOff + 1>
+  [259] getlocal 24 ............................. <tmpLine>
+  [261] getobjprop 135 .......................... <tmpLine.length>
+  [264] pusharglist 4 ........................... <tmpLine, #char, tmpOff + 1, tmpLine.length>
+  [266] objcall 113 ............................. <tmpLine.char[tmpOff + 1..tmpLine.length]>
+  [269] pusharglistnoret 3 ...................... <lst, symbol(prop), tmpLine.char[tmpOff + 1..tmpLine.length]>
+  [271] objcall 309 ............................. lst.addProp(symbol(prop), tmpLine.char[tmpOff + 1..tmpLine.length])
+  [274] pushint8 1
+  [277] getlocal 16
+  [279] add
+  [280] setlocal 16
+  [282] endrepeat [ 19]
+  [285] getlocal 0 .............................. <wholeLst>
+  [287] pusharglistnoret 1 ...................... <wholeLst>
+  [289] extcall 69 .............................. return wholeLst
+  [292] ret
+end

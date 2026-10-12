@@ -1,0 +1,82 @@
+property myRect, size, topLeft, bottomRight, area, center
+
+on new me, argRect
+  me.setRect(argRect)
+  return me
+end
+
+on kill me
+  return 0
+end
+
+on setRect me, argRect
+  if voidp(argRect) then
+    argRect = rect(0, 0, 0, 0)
+  end if
+  myRect = argRect
+  size = point(myRect[3], myRect[4]) - point(myRect[1], myRect[2])
+  area = getAt(size, 1) * getAt(size, 2)
+  move(me, point(0, 0))
+end
+
+on getQuad me
+  return [point(myRect[1], myRect[2]), point(myRect[3], myRect[2]), point(myRect[3], myRect[4]), point(myRect[1], myRect[4])]
+end
+
+on getSize me
+  return size
+end
+
+on getRect me
+  return myRect
+end
+
+on getCenter me
+  return center
+end
+
+on getCenterFromTopLeft me
+  return size / 2
+end
+
+on move me, argPoint
+  myRect = myRect + rect(argPoint, argPoint)
+  topLeft = point(getAt(myRect, 1), getAt(myRect, 2))
+  bottomRight = point(getAt(myRect, 3), getAt(myRect, 4))
+  center = topLeft + (size / 2)
+end
+
+on inside me, argPoint
+  return inside(argPoint, myRect)
+end
+
+on getWhereInRectFact me, argPoint
+  tmpOff = argPoint - topLeft
+  tmp = tmpOff / point(float(getAt(size, 1)), float(getAt(size, 2)))
+  return tmp
+end
+
+on getWhereInRectPix me, argPoint
+  tmp = argPoint * size
+  tmp = topLeft + tmp
+  return tmp
+end
+
+on getAlignedPoint me, argRegs
+  tmpResult = point(0, 0)
+  repeat with n = 1 to 2
+    tmp = argRegs[n]
+    if tmp = 0 then
+      tmpResult[n] = center[n]
+      next repeat
+    end if
+    if tmp = -1 then
+      tmpResult[n] = myRect[n]
+      next repeat
+    end if
+    if tmp = 1 then
+      tmpResult[n] = myRect[n + 2]
+    end if
+  end repeat
+  return tmpResult
+end

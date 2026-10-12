@@ -1,0 +1,135 @@
+property ancestor, child, className, belongsTo, _killed, type, MediaID, Intensity, ReachesGroups, IntensityPerGroup, QualityPerGroup, quality, InfluenceWhat
+global gRock
+
+on new me, argChild, argBelongsTo
+  if objectp(argChild) then
+    child = argChild
+  else
+    child = me
+  end if
+  belongsTo = argBelongsTo
+  ancestor = script("ClassEventScript").new(child)
+  className = #AudienceExposure
+  type = #none
+  MediaID = #none
+  Intensity = 0.0
+  ReachesGroups = [:]
+  IntensityPerGroup = [:]
+  QualityPerGroup = [:]
+  quality = 0.0
+  InfluenceWhat = [:]
+  return me
+end
+
+on kill me
+  _killed = 1
+  gRock.m_gameTimer.deleteObject(me)
+  if objectp(ancestor) then
+    ancestor = ancestor.kill()
+  end if
+  child = 0
+  belongsTo = 0
+  return 0
+end
+
+on stdSetReachesGroups me
+  media_r = gRock.m_classManager.getObjByIDAndClass(MediaID, #media)
+  if not objectp(media_r) then
+    groups_r = gRock.m_classManager.getObjsOfClass(#Group)
+    repeat with group_r in groups_r
+      ReachesGroups.addProp(group_r.ID, 1.0)
+    end repeat
+  else
+    ReachesGroups = media_r.ReachesGroups.duplicate()
+  end if
+end
+
+on stdSetInfluenceWhat me
+  InfluenceWhat = [:]
+  band_r = gRock.m_context.getFocus(#Band)
+  if objectp(band_r) then
+    InfluenceWhat.addProp(band_r.ID, 1.0)
+  end if
+  album_r = gRock.m_context.getFocus(#album)
+  if objectp(album_r) then
+    if album_r.getAlbumIsSigned() then
+      InfluenceWhat.addProp(album_r.ID, 1.0)
+    end if
+  end if
+end
+
+on stdFillInBlanks me
+  if ReachesGroups.count = 0 then
+    me.stdSetReachesGroups()
+  end if
+  if InfluenceWhat.count = 0 then
+    me.stdSetInfluenceWhat()
+  end if
+  if IntensityPerGroup.count = 0 then
+    if listp(Intensity) then
+      pott("Intensity is a list!")
+    end if
+    IntensityPerGroup = [:]
+    repeat with n = 1 to ReachesGroups.count
+      group_r = gRock.m_classManager.getObjByIDAndClass(ReachesGroups.getPropAt(n), #Group)
+      tmpReach = ReachesGroups[n] * Intensity
+      IntensityPerGroup.addProp(ReachesGroups.getPropAt(n), tmpReach)
+    end repeat
+  end if
+  if QualityPerGroup.count = 0 then
+    QualityPerGroup = [:]
+    repeat with n = 1 to ReachesGroups.count
+      QualityPerGroup.addProp(ReachesGroups.getPropAt(n), quality)
+    end repeat
+  end if
+end
+
+on eventChangeState me, argAction, argOption
+  if argAction = #start then
+    if child.className = #ExpoReview then
+      pott("ADDOBJ", me, child)
+    end if
+    gRock.m_gameTimer.addObject(me)
+    if (QualityPerGroup.count = 0) or (IntensityPerGroup.count = 0) then
+      me.stdFillInBlanks()
+    end if
+  else
+    if argAction = #stop then
+      gRock.m_gameTimer.deleteObject(me)
+    end if
+  end if
+  ancestor.eventChangeState(argAction, argOption)
+end
+
+on timeTick me
+  repeat with n = 1 to IntensityPerGroup.count
+    tmpGroupID = IntensityPerGroup.getPropAt(n)
+    group_r = gRock.m_classManager.getObjByIDAndClass(tmpGroupID, #Group)
+    tmpReach = IntensityPerGroup[n]
+    repeat with m = 1 to InfluenceWhat.count
+      group_r.expose(InfluenceWhat.getPropAt(m), InfluenceWhat[m] * tmpReach, QualityPerGroup.getaProp(tmpGroupID))
+    end repeat
+  end repeat
+end
+
+on getAverageIntensity me
+  avgWeighted = [:]
+  repeat with n = 1 to IntensityPerGroup.count
+    tmpGroupID = IntensityPerGroup.getPropAt(n)
+    group_r = gRock.m_classManager.getObjByIDAndClass(tmpGroupID, #Group)
+    tmp = IntensityPerGroup[n]
+    avgWeighted.addProp(group_r.size, tmp)
+  end repeat
+  return calcAverage(avgWeighted)
+end
+
+on getAverageQuality me
+  avgWeighted = [:]
+  repeat with n = 1 to IntensityPerGroup.count
+    tmpGroupID = IntensityPerGroup.getPropAt(n)
+    group_r = gRock.m_classManager.getObjByIDAndClass(tmpGroupID, #Group)
+    tmp = QualityPerGroup[n]
+    avgWeighted.addProp(group_r.size, tmp)
+  end repeat
+  return calcAverage(avgWeighted)
+end

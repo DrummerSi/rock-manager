@@ -1,0 +1,64 @@
+property m_objMoney, m_objCPBand, m_objCredMeter, m_objDateDisplay, m_spriteList, m_allowUserActive, m_objCPAgenda, m_objMainMenu, m_clrTextHilite, m_clrTextNormal
+global gRock, gDir
+
+on new me, argAllowUserActive
+  m_allowUserActive = argAllowUserActive
+  if voidp(m_allowUserActive) then
+    m_allowUserActive = 1
+  end if
+  m_spriteList = gDir.m_spriteList[#InterfaceBarSpriteList]
+  m_clrTextHilite = rgb(245, 245, 245)
+  m_clrTextNormal = rgb(180, 180, 180)
+  sprite(m_spriteList[#BG]).member = member("interface main01")
+  sprite(m_spriteList[#BG]).loc = point(400, 71)
+  sprite(m_spriteList[#BG]).ink = 0
+  return me
+end
+
+on init me
+  m_objMoney = script("MoneyDisplayScript").new(me)
+  m_objDateDisplay = script("DateDisplayScript").new(me)
+  gRock.m_date.setDisplayObj(m_objDateDisplay)
+  m_objCredMeter = script("CredMeterScript").new(me)
+  m_objMainMenu = script("MainMenuShortCutScript").new(me, m_allowUserActive)
+  m_objCPAgenda = script("CPAgendaScript").new(me)
+end
+
+on kill me
+  if objectp(m_objMainMenu) then
+    m_objMainMenu = m_objMainMenu.kill()
+  end if
+  if objectp(m_objCPAgenda) then
+    m_objCPAgenda = m_objCPAgenda.kill()
+  end if
+  if objectp(m_objCredMeter) then
+    m_objCredMeter = m_objCredMeter.kill()
+  end if
+  if objectp(m_objCPBand) then
+    m_objCPBand = m_objCPBand.kill()
+  end if
+  gRock.m_date.setDisplayObj(0)
+  if objectp(m_objDateDisplay) then
+    m_objDateDisplay = m_objDateDisplay.kill()
+  end if
+  if objectp(m_objMoney) then
+    m_objMoney = m_objMoney.kill()
+  end if
+  return 0
+end
+
+on redrawAfterLoad me
+  if objectp(m_objCPBand) then
+    m_objCPBand = m_objCPBand.kill()
+  end if
+  m_objCPBand = script("BandIconsScript").new(me, m_allowUserActive)
+  gRock.m_player.changeCred(0)
+end
+
+on redrawBand me
+  m_objCPBand.redraw()
+end
+
+on redraw me
+  m_objCPBand.redraw()
+end

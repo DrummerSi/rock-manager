@@ -1,0 +1,249 @@
+on TwoDArrayToStr argChart, argDelimChar, argNLChar
+  if voidp(argDelimChar) then
+    argDelimChar = numToChar(9)
+  end if
+  if voidp(argNLChar) then
+    argNLChar = RETURN
+  end if
+  str = EMPTY
+  repeat with X = 1 to argChart.count
+    lst = argChart[X]
+    repeat with Y = 1 to lst.count
+      str = str & lst[Y] & argDelimChar
+    end repeat
+    str = str & argNLChar
+  end repeat
+  return str
+end
+
+on setValInMultiDimensionArray argGridPtr, argCoords, argVal
+  lst = argGridPtr
+  repeat with n = 1 to argCoords.count() - 1
+    Pos = argCoords[n]
+    if lst.count < Pos then
+      repeat with m = lst.count + 1 to Pos
+        lst[m] = []
+      end repeat
+    end if
+    lst = lst[Pos]
+  end repeat
+  Pos = argCoords[n]
+  if lst.count < Pos then
+    repeat with m = lst.count + 1 to Pos
+      lst[m] = VOID
+    end repeat
+  end if
+  lst[Pos] = argVal
+end
+
+on setStringInChart argStrPtr, argColRow, argVal
+  delim = numToChar(9)
+  repeat with n = argStrPtr[1].lines.count + 1 to argColRow[2]
+    argStrPtr[1] = argStrPtr[1] & RETURN
+  end repeat
+  tmpLine = argStrPtr[1].line[argColRow[2]]
+  the itemDelimiter = delim
+  orgCnt = tmpLine.items.count
+  repeat with n = orgCnt + 1 to argColRow[1]
+    tmpLine = tmpLine & delim
+  end repeat
+  put argVal into delim.item[argColRow[1]]
+  str = argStrPtr[1]
+  put tmpLine into delim.line[argColRow[2]]
+  argStrPtr[1] = str
+end
+
+on readStringInto2DArray argStr, argArray, argDelimChar
+  if voidp(argDelimChar) then
+    argDelimChar = numToChar(9)
+  end if
+  the itemDelimiter = argDelimChar
+  numLines = the number of lines in argStr
+  repeat with lineNr = 1 to numLines
+    tmpLine = line lineNr of argStr
+    numItems = the number of items in tmpLine
+    repeat with itemNr = 1 to numItems
+      setValInMultiDimensionArray(argArray, point(lineNr, itemNr), tmpLine.item[itemNr])
+    end repeat
+  end repeat
+end
+
+on loadTableAsPropList argFile
+  if voidp(argFile) then
+    argFile = the moviePath & "_jaheim.txt"
+  end if
+  str = readFile(argFile)
+  if not stringp(str) then
+    return str
+  end if
+  str = removePCNewLine(str)
+  tmpLst = [:]
+  the itemDelimiter = numToChar(9)
+  propListFromTable(str, tmpLst)
+  return tmpLst
+end
+
+on propListFromTable argStr, argPropList
+  tmpPropList = argPropList
+  numLines = the number of lines in argStr
+  lastIndent = 0
+  repeat with lineNr = 1 to numLines
+    if (lineNr mod 100) = 0 then
+      pott(lineNr)
+    end if
+    tmpLine = argStr.line[lineNr]
+    numWords = the number of words in tmpLine
+    if numWords = 0 then
+      next repeat
+    end if
+    tmpWord = tmpLine.word[1]
+    tmpOff = offset(tmpWord, tmpLine)
+    indent = the number of items in tmpLine.char[1..tmpOff]
+    prop = value(tmpWord)
+    if not (integerp(prop) or floatp(prop)) then
+      prop = symbol(tmpWord)
+    end if
+    if indent > lastIndent then
+    else
+      if indent < lastIndent then
+        tmpPropList = argPropList
+        repeat with n = 1 to indent - 1
+          tmpPropList = tmpPropList[tmpPropList.count]
+        end repeat
+      end if
+    end if
+    if numWords = 1 then
+      tmpNewPropList = [:]
+      tmpPropList.addProp(prop, tmpNewPropList)
+      tmpPropList = tmpNewPropList
+    end if
+    if numWords > 1 then
+      val = tmpLine.word[2..numWords]
+      val = value(val)
+      prop = symbol(tmpWord)
+      tmpPropList.addProp(prop, val)
+    else
+    end if
+    lastIndent = indent
+  end repeat
+end
+
+on savePropListAsTable argPropList, argFileName, argForceValCol
+  if voidp(argFileName) then
+    argFileName = the moviePath & "_jaheim.txt"
+  end if
+  chart = []
+  recurseTableFromPropList(argPropList, chart, [1, 1], argForceValCol)
+  str = TwoDArrayToStr(chart)
+  str = assertPCNewLine(str)
+  writeFile(argFileName, str)
+end
+
+on recurseTableFromPropList argPropList, argChart, argColRow, argForceValCol
+  repeat with n = 1 to argPropList.count
+    argColRow[1] = argColRow[1] + 1
+    prop = argPropList.getPropAt(n)
+    setValInMultiDimensionArray(argChart, argColRow, string(prop) & ":")
+    val = argPropList[n]
+    tmpIlk = ilk(val)
+    if (tmpIlk = #propList) or (tmpIlk = #instance) then
+      if val.count then
+        argColRow[2] = argColRow[2] + 1
+        recurseTableFromPropList(val, argChart, argColRow, argForceValCol)
+        argColRow[2] = argColRow[2] - 1
+        next repeat
+      end if
+    end if
+    if tmpIlk = #symbol then
+      val = "#" & string(val)
+    else
+      if tmpIlk = #string then
+        val = fixQuotesForSave(val)
+        val = QUOTE & val & QUOTE
+      else
+        if tmpIlk = #list then
+        else
+          if (tmpIlk = #propList) or (tmpIlk = #instance) then
+          else
+            if objectp(val) then
+              val = "__WARNING" & string(tmpIlk) & " " & val
+            else
+              if voidp(val) then
+                val = "__WARNINGVOID"
+              end if
+            end if
+          end if
+        end if
+      end if
+    end if
+    if integerp(argForceValCol) then
+      setValInMultiDimensionArray(argChart, [argColRow[1], argForceValCol], val)
+      next repeat
+    end if
+    setValInMultiDimensionArray(argChart, argColRow + [0, 1], val)
+  end repeat
+end
+
+on fixQuotesForSave argStr
+  tmpOff = offset(QUOTE, argStr)
+  if tmpOff then
+    repeat with chNr = argStr.length down to tmpOff
+      if argStr.char[chNr] = QUOTE then
+        put QUOTE & "&QUOTE&" & QUOTE into argStr.char[chNr]
+      end if
+    end repeat
+  end if
+  return argStr
+end
+
+on testaExp
+  a = readFile(the moviePath & "Mis02-tst.sav")
+  lst = value(a)
+  if not listp(lst) then
+    pott("Not a list!")
+    exit
+  end if
+  savePropListAsTable(lst, the moviePath & "Mis02-Exp.txt")
+  a = loadTableAsPropList(the moviePath & "Mis02-Exp.txt")
+  writeFile(the moviePath & "Mis02-tstXXX", string(a))
+end
+
+on convTableFileToPropListFile argInFile, argOutFile
+  lst = loadTableAsPropList(argInFile)
+  if not listp(lst) then
+    pott("Not a list")
+    exit
+  end if
+  writeFile(argOutFile, string(lst))
+end
+
+on convPropListFileToTableFile argInFile, argOutFile
+  a = readFile(argInFile)
+  lst = value(a)
+  if not listp(lst) then
+    pott("Not a list")
+    exit
+  end if
+  savePropListAsTable(lst, argOutFile)
+end
+
+on convTableFileToVListFile argInFile, argOutFile, argEncryption
+  lst = loadTableAsPropList(argInFile)
+  vList = xtra("vList").new(argOutFile)
+  tmp = vList.write(lst)
+  if tmp = 0 then
+    return 1
+  end if
+  pott("vList Err", tmp)
+  return 0
+end
+
+on convVListFileToTableFile argInFile, argOutFile, argEncryption
+  vList = xtra("vList").new(argInFile)
+  lst = vList.read()
+  if not listp(lst) then
+    pott("Not a list")
+    exit
+  end if
+  savePropListAsTable(lst, argOutFile)
+end

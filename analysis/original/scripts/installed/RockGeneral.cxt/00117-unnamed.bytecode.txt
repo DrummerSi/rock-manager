@@ -1,0 +1,601 @@
+on readRockDataFile argFile
+  [  0] getparam 0 .............................. <argFile>
+  [  2] pusharglist 1 ........................... <argFile>
+  [  4] extcall 2283 ............................ <fileGetExtension(argFile)>
+  [  7] setlocal 0 .............................. tmpExtension = fileGetExtension(argFile)
+  [  9] getparam 0 .............................. <argFile>
+  [ 11] pusharglist 1 ........................... <argFile>
+  [ 13] extcall 2198 ............................ <fileStripName(argFile)>
+  [ 16] setlocal 8 .............................. stripped = fileStripName(argFile)
+  [ 18] getparam 0 .............................. <argFile>
+  [ 20] pusharglist 1 ........................... <argFile>
+  [ 22] extcall 123 ............................. <fileExtractPath(argFile)>
+  [ 25] setlocal 16 ............................. path = fileExtractPath(argFile)
+  [ 27] pushzero ................................ <0>
+  [ 28] setlocal 24 ............................. useVList = 0
+  [ 30] pushint8 1 .............................. <1>
+  [ 33] getlocal 0 .............................. <tmpExtension>
+  [ 35] getobjprop 135 .......................... <tmpExtension.length>
+  [ 38] pushint8 1 .............................. <1>
+  [ 41] gt ...................................... <tmpExtension.length > 1>
+  [ 42] and ..................................... <1 and (tmpExtension.length > 1)>
+  [ 43] jmpifz [ 62] ............................ if 1 and (tmpExtension.length > 1) then / else
+  [ 46] getlocal 0 .............................. <tmpExtension>
+  [ 48] pushcons 0 .............................. <"dat">
+  [ 50] eq ...................................... <tmpExtension = "dat">
+  [ 51] jmpifz [ 59] ............................ if tmpExtension = "dat" then
+  [ 54] pushint8 1 .............................. <1>
+  [ 57] setlocal 24 ............................. useVList = 1
+  [ 59] jmp [106]
+  [ 62] getlocal 16 ............................. <path>
+  [ 64] getlocal 8 .............................. <stripped>
+  [ 66] joinstr ................................. <path & stripped>
+  [ 67] pushcons 8 .............................. <".dat">
+  [ 69] joinstr ................................. <path & stripped & ".dat">
+  [ 70] getlocal 16 ............................. <path>
+  [ 72] getlocal 8 .............................. <stripped>
+  [ 74] joinstr ................................. <path & stripped>
+  [ 75] pushcons 16 ............................. <".txt">
+  [ 77] joinstr ................................. <path & stripped & ".txt">
+  [ 78] pusharglist 2 ........................... <[path & stripped & ".dat", path & stripped & ".txt"]>
+  [ 80] pushlist ................................ <[path & stripped & ".dat", path & stripped & ".txt"]>
+  [ 81] setlocal 32 ............................. tmp = [path & stripped & ".dat", path & stripped & ".txt"]
+  [ 83] getlocal 32 ............................. <tmp>
+  [ 85] pusharglist 1 ........................... <tmp>
+  [ 87] extcall 2447 ............................ <getLatestModifiedFileNr(tmp)>
+  [ 90] setlocal 40 ............................. Nr = getLatestModifiedFileNr(tmp)
+  [ 92] getlocal 40 ............................. <Nr>
+  [ 94] pushint8 1 .............................. <1>
+  [ 97] eq ...................................... <Nr = 1>
+  [ 98] jmpifz [106] ............................ if Nr = 1 then
+  [101] pushint8 1 .............................. <1>
+  [104] setlocal 24 ............................. useVList = 1
+  [106] getlocal 24 ............................. <useVList>
+  [108] pushint8 1 .............................. <1>
+  [111] eq ...................................... <useVList = 1>
+  [112] jmpifz [162] ............................ if useVList = 1 then
+  [115] pushcons 24 ............................. <"vList">
+  [117] pusharglist 1 ........................... <"vList">
+  [119] extcall 120 ............................. <xtra("vList")>
+  [122] getlocal 16 ............................. <path>
+  [124] getlocal 8 .............................. <stripped>
+  [126] joinstr ................................. <path & stripped>
+  [127] pushcons 32 ............................. <".dat">
+  [129] joinstr ................................. <path & stripped & ".dat">
+  [130] pusharglist 2 ........................... <xtra("vList"), path & stripped & ".dat">
+  [132] objcall 11 .............................. <xtra("vList").new(path & stripped & ".dat")>
+  [134] setlocal 48 ............................. vList = xtra("vList").new(path & stripped & ".dat")
+  [136] getlocal 48 ............................. <vList>
+  [138] pusharglist 1 ........................... <vList>
+  [140] objcall 139 ............................. <vList.read()>
+  [143] setlocal 56 ............................. lst = vList.read()
+  [145] getlocal 56 ............................. <lst>
+  [147] pusharglist 1 ........................... <lst>
+  [149] extcall 115 ............................. <listp(lst)>
+  [152] jmpifz [162] ............................ if listp(lst) then
+  [155] getlocal 56 ............................. <lst>
+  [157] pusharglistnoret 1 ...................... <lst>
+  [159] extcall 69 .............................. return lst
+  [162] getlocal 16 ............................. <path>
+  [164] getlocal 8 .............................. <stripped>
+  [166] joinstr ................................. <path & stripped>
+  [167] pushcons 40 ............................. <".txt">
+  [169] joinstr ................................. <path & stripped & ".txt">
+  [170] pusharglist 1 ........................... <path & stripped & ".txt">
+  [172] extcall 137 ............................. <readFile(path & stripped & ".txt")>
+  [175] setlocal 64 ............................. str = readFile(path & stripped & ".txt")
+  [177] getlocal 64 ............................. <str>
+  [179] pusharglist 1 ........................... <str>
+  [181] extcall 13 .............................. <stringp(str)>
+  [183] not ..................................... <not stringp(str)>
+  [184] jmpifz [209] ............................ if not stringp(str) then
+  [187] pushcons 48 ............................. <"Err read">
+  [189] getlocal 8 .............................. <stripped>
+  [191] pushcons 56 ............................. <".txt">
+  [193] joinstr ................................. <stripped & ".txt">
+  [194] pusharglistnoret 2 ...................... <"Err read", stripped & ".txt">
+  [196] extcall 122 ............................. pott("Err read", stripped & ".txt")
+  [199] pusharglist 0 ........................... <>
+  [201] extcall 151 ............................. <VOID>
+  [204] pusharglistnoret 1 ...................... <VOID>
+  [206] extcall 69 .............................. return VOID
+  [209] getlocal 64 ............................. <str>
+  [211] pusharglist 1 ........................... <str>
+  [213] extcall 2448 ............................ <rotatedTabDataStringToPropList(str)>
+  [216] setlocal 56 ............................. lst = rotatedTabDataStringToPropList(str)
+  [218] getlocal 56 ............................. <lst>
+  [220] pusharglistnoret 1 ...................... <lst>
+  [222] extcall 69 .............................. return lst
+  [225] ret
+end
+
+on getLatestDataFiles argPath, argConvTextFiles
+  [  0] getparam 0 .............................. <argPath>
+  [  2] pusharglist 1 ........................... <argPath>
+  [  4] extcall 2196 ............................ <getFilesInFolder(argPath)>
+  [  7] setlocal 0 .............................. Files = getFilesInFolder(argPath)
+  [  9] pushcons 64 ............................. <"Data*">
+  [ 11] getlocal 0 .............................. <Files>
+  [ 13] pusharglist 2 ........................... <"Data*", Files>
+  [ 15] extcall 289 ............................. <wildCardSearch("Data*", Files)>
+  [ 18] setlocal 0 .............................. Files = wildCardSearch("Data*", Files)
+  [ 20] pushcons 72 ............................. <"*.txt">
+  [ 22] getlocal 0 .............................. <Files>
+  [ 24] pusharglist 2 ........................... <"*.txt", Files>
+  [ 26] extcall 289 ............................. <wildCardSearch("*.txt", Files)>
+  [ 29] setlocal 8 .............................. textFiles = wildCardSearch("*.txt", Files)
+  [ 31] pushcons 80 ............................. <"*.dat">
+  [ 33] getlocal 0 .............................. <Files>
+  [ 35] pusharglist 2 ........................... <"*.dat", Files>
+  [ 37] extcall 289 ............................. <wildCardSearch("*.dat", Files)>
+  [ 40] setlocal 16 ............................. vListFiles = wildCardSearch("*.dat", Files)
+  [ 42] getlocal 16 ............................. <vListFiles>
+  [ 44] pusharglistnoret 1 ...................... <vListFiles>
+  [ 46] objcall 609 ............................. vListFiles.sort()
+  [ 49] pushcons 88 ............................. <EMPTY>
+  [ 51] setlocal 24 ............................. vListFilesStr = EMPTY
+  [ 53] getlocal 16 ............................. <vListFiles>
+  [ 55] peek 0
+  [ 57] pusharglist 1
+  [ 59] extcall 156
+  [ 62] pushint8 1
+  [ 64] peek 0
+  [ 66] peek 2
+  [ 68] lteq
+  [ 69] jmpifz [104] ............................ repeat with tmpFile in vListFiles
+  [ 72] peek 2
+  [ 74] peek 1
+  [ 76] pusharglist 2
+  [ 78] extcall 119
+  [ 81] setlocal 32
+  [ 83] getlocal 24 ............................. <vListFilesStr>
+  [ 85] getlocal 32 ............................. <tmpFile>
+  [ 87] pusharglist 1 ........................... <tmpFile>
+  [ 89] extcall 2198 ............................ <fileStripName(tmpFile)>
+  [ 92] joinstr ................................. <vListFilesStr & fileStripName(tmpFile)>
+  [ 93] pushcons 96 ............................. <RETURN>
+  [ 95] joinstr ................................. <vListFilesStr & fileStripName(tmpFile) & RETURN>
+  [ 96] setlocal 24 ............................. vListFilesStr = vListFilesStr & fileStripName(tmpFile) & RETURN
+  [ 98] pushint8 1
+  [100] add
+  [101] endrepeat [ 64]
+  [104] pop 3
+  [106] pusharglist 0 ........................... <[]>
+  [108] pushlist ................................ <[]>
+  [109] setlocal 40 ............................. vListFilesToWrite = []
+  [111] pusharglist 0 ........................... <[]>
+  [113] pushlist ................................ <[]>
+  [114] setlocal 48 ............................. newestFiles = []
+  [116] pushint8 1 .............................. <1>
+  [119] setlocal 56
+  [121] getlocal 56
+  [123] getlocal 8 .............................. <textFiles>
+  [125] getobjprop 156 .......................... <textFiles.count>
+  [128] lteq
+  [129] jmpifz [318] ............................ repeat with n = 1 to textFiles.count
+  [132] getlocal 8 .............................. <textFiles>
+  [134] getlocal 56 ............................. <n>
+  [136] pusharglist 2 ........................... <textFiles, n>
+  [138] objcall 119 ............................. <textFiles[n]>
+  [141] setlocal 32 ............................. tmpFile = textFiles[n]
+  [143] getlocal 32 ............................. <tmpFile>
+  [145] pusharglist 1 ........................... <tmpFile>
+  [147] extcall 2198 ............................ <fileStripName(tmpFile)>
+  [150] setlocal 64 ............................. stripped = fileStripName(tmpFile)
+  [152] getlocal 64 ............................. <stripped>
+  [154] pushcons 104 ............................ <RETURN>
+  [156] joinstr ................................. <stripped & RETURN>
+  [157] getlocal 24 ............................. <vListFilesStr>
+  [159] pusharglist 2 ........................... <stripped & RETURN, vListFilesStr>
+  [161] extcall 384 ............................. <offset(stripped & RETURN, vListFilesStr)>
+  [164] setlocal 72 ............................. tmpOff = offset(stripped & RETURN, vListFilesStr)
+  [166] getlocal 72 ............................. <tmpOff>
+  [168] jmpifz [283] ............................ if tmpOff then
+  [171] pushint8 3 .............................. <3>
+  [174] pushchunkvarref 5 ....................... <Files>
+  [176] pushsymb 138 ............................ <#char>
+  [179] getlocal 72 ............................. <tmpOff>
+  [181] getlocal 72 ............................. <tmpOff>
+  [183] getlocal 64 ............................. <stripped>
+  [185] getobjprop 135 .......................... <stripped.length>
+  [188] add ..................................... <tmpOff + stripped.length>
+  [189] pusharglist 4 ........................... <Files, #char, tmpOff, tmpOff + stripped.length>
+  [191] objcall 416 ............................. <Files.char[tmpOff..tmpOff + stripped.length]>
+  [194] pusharglistnoret 1 ...................... <Files.char[tmpOff..tmpOff + stripped.length]>
+  [196] objcall 417 ............................. delete Files.char[tmpOff..tmpOff + stripped.length]
+  [199] getparam 0 .............................. <argPath>
+  [201] getlocal 64 ............................. <stripped>
+  [203] joinstr ................................. <argPath & stripped>
+  [204] pushcons 112 ............................ <".dat">
+  [206] joinstr ................................. <argPath & stripped & ".dat">
+  [207] getparam 0 .............................. <argPath>
+  [209] getlocal 64 ............................. <stripped>
+  [211] joinstr ................................. <argPath & stripped>
+  [212] pushcons 120 ............................ <".txt">
+  [214] joinstr ................................. <argPath & stripped & ".txt">
+  [215] pusharglist 2 ........................... <[argPath & stripped & ".dat", argPath & stripped & ".txt"]>
+  [217] pushlist ................................ <[argPath & stripped & ".dat", argPath & stripped & ".txt"]>
+  [218] setlocal 80 ............................. tmp = [argPath & stripped & ".dat", argPath & stripped & ".txt"]
+  [220] getlocal 80 ............................. <tmp>
+  [222] pusharglist 1 ........................... <tmp>
+  [224] extcall 2447 ............................ <getLatestModifiedFileNr(tmp)>
+  [227] setlocal 88 ............................. Nr = getLatestModifiedFileNr(tmp)
+  [229] getlocal 88 ............................. <Nr>
+  [231] pushint8 2 .............................. <2>
+  [234] eq ...................................... <Nr = 2>
+  [235] jmpifz [265] ............................ if Nr = 2 then / else
+  [238] getlocal 40 ............................. <vListFilesToWrite>
+  [240] getlocal 64 ............................. <stripped>
+  [242] pusharglistnoret 2 ...................... <vListFilesToWrite, stripped>
+  [244] objcall 229 ............................. vListFilesToWrite.add(stripped)
+  [247] getlocal 48 ............................. <newestFiles>
+  [249] getparam 0 .............................. <argPath>
+  [251] getlocal 64 ............................. <stripped>
+  [253] joinstr ................................. <argPath & stripped>
+  [254] pushcons 128 ............................ <".txt">
+  [256] joinstr ................................. <argPath & stripped & ".txt">
+  [257] pusharglistnoret 2 ...................... <newestFiles, argPath & stripped & ".txt">
+  [259] objcall 229 ............................. newestFiles.add(argPath & stripped & ".txt")
+  [262] jmp [280]
+  [265] getlocal 48 ............................. <newestFiles>
+  [267] getparam 0 .............................. <argPath>
+  [269] getlocal 64 ............................. <stripped>
+  [271] joinstr ................................. <argPath & stripped>
+  [272] pushcons 136 ............................ <".dat">
+  [274] joinstr ................................. <argPath & stripped & ".dat">
+  [275] pusharglistnoret 2 ...................... <newestFiles, argPath & stripped & ".dat">
+  [277] objcall 229 ............................. newestFiles.add(argPath & stripped & ".dat")
+  [280] jmp [307] ............................... next repeat
+  [283] getlocal 40 ............................. <vListFilesToWrite>
+  [285] getlocal 64 ............................. <stripped>
+  [287] pusharglistnoret 2 ...................... <vListFilesToWrite, stripped>
+  [289] objcall 229 ............................. vListFilesToWrite.add(stripped)
+  [292] getlocal 48 ............................. <newestFiles>
+  [294] getparam 0 .............................. <argPath>
+  [296] getlocal 64 ............................. <stripped>
+  [298] joinstr ................................. <argPath & stripped>
+  [299] pushcons 144 ............................ <".txt">
+  [301] joinstr ................................. <argPath & stripped & ".txt">
+  [302] pusharglistnoret 2 ...................... <newestFiles, argPath & stripped & ".txt">
+  [304] objcall 229 ............................. newestFiles.add(argPath & stripped & ".txt")
+  [307] pushint8 1
+  [310] getlocal 56
+  [312] add
+  [313] setlocal 56
+  [315] endrepeat [121]
+  [318] getlocal 24 ............................. <vListFilesStr>
+  [320] pushint8 4 .............................. <4>
+  [323] get 1 ................................... <the number of lines in vListFilesStr>
+  [325] setlocal 96 ............................. numLines = the number of lines in vListFilesStr
+  [327] pushint8 1 .............................. <1>
+  [330] setlocal 56
+  [332] getlocal 56
+  [334] getlocal 96 ............................. <numLines>
+  [336] lteq
+  [337] jmpifz [395] ............................ repeat with n = 1 to numLines
+  [340] getlocal 24 ............................. <vListFilesStr>
+  [342] pushsymb 395 ............................ <#line>
+  [345] getlocal 56 ............................. <n>
+  [347] pusharglist 3 ........................... <vListFilesStr, #line, n>
+  [349] objcall 113 ............................. <vListFilesStr.line[n]>
+  [352] setlocal 104 ............................ tmpLine = vListFilesStr.line[n]
+  [354] getlocal 104 ............................ <tmpLine>
+  [356] getobjprop 135 .......................... <tmpLine.length>
+  [359] pushint8 1 .............................. <1>
+  [362] lteq .................................... <tmpLine.length <= 1>
+  [363] jmpifz [369] ............................ if tmpLine.length <= 1 then
+  [366] jmp [384] ............................... next repeat
+  [369] getlocal 48 ............................. <newestFiles>
+  [371] getparam 0 .............................. <argPath>
+  [373] getlocal 104 ............................ <tmpLine>
+  [375] joinstr ................................. <argPath & tmpLine>
+  [376] pushcons 152 ............................ <".dat">
+  [378] joinstr ................................. <argPath & tmpLine & ".dat">
+  [379] pusharglistnoret 2 ...................... <newestFiles, argPath & tmpLine & ".dat">
+  [381] objcall 229 ............................. newestFiles.add(argPath & tmpLine & ".dat")
+  [384] pushint8 1
+  [387] getlocal 56
+  [389] add
+  [390] setlocal 56
+  [392] endrepeat [332]
+  [395] getparam 8 .............................. <argConvTextFiles>
+  [397] pushsymb 284 ............................ <#convert>
+  [400] eq ...................................... <argConvTextFiles = #convert>
+  [401] jmpifz [463] ............................ if argConvTextFiles = #convert then
+  [404] pushcons 160 ............................ <"Converting">
+  [406] getlocal 40 ............................. <vListFilesToWrite>
+  [408] pusharglistnoret 2 ...................... <"Converting", vListFilesToWrite>
+  [410] extcall 122 ............................. pott("Converting", vListFilesToWrite)
+  [413] getlocal 40 ............................. <vListFilesToWrite>
+  [415] peek 0
+  [417] pusharglist 1
+  [419] extcall 156
+  [422] pushint8 1
+  [424] peek 0
+  [426] peek 2
+  [428] lteq
+  [429] jmpifz [461] ............................ repeat with tmpFile in vListFilesToWrite
+  [432] peek 2
+  [434] peek 1
+  [436] pusharglist 2
+  [438] extcall 119
+  [441] setlocal 32
+  [443] getparam 0 .............................. <argPath>
+  [445] getlocal 32 ............................. <tmpFile>
+  [447] joinstr ................................. <argPath & tmpFile>
+  [448] pushcons 168 ............................ <".txt">
+  [450] joinstr ................................. <argPath & tmpFile & ".txt">
+  [451] pusharglistnoret 1 ...................... <argPath & tmpFile & ".txt">
+  [453] localcall 3 ............................. convDataFileToVListFile(argPath & tmpFile & ".txt")
+  [455] pushint8 1
+  [457] add
+  [458] endrepeat [424]
+  [461] pop 3
+  [463] getlocal 48 ............................. <newestFiles>
+  [465] pusharglistnoret 1 ...................... <newestFiles>
+  [467] extcall 69 .............................. return newestFiles
+  [470] ret
+end
+
+on getLatestDataFilesInFolders argPossiblePaths, argConvertedPath
+  [  0] getparam 0 .............................. <argPossiblePaths>
+  [  2] pusharglist 1 ........................... <argPossiblePaths>
+  [  4] extcall 61 .............................. <voidp(argPossiblePaths)>
+  [  7] jmpifz [ 19] ............................ if voidp(argPossiblePaths) then
+  [ 10] pushcons 176 ............................ <"\\\\resurs\\Monsterland\\_Projects\\Rockmanager\\Data\\">
+  [ 12] pushcons 184 ............................ <"D:\\Dok\\Rock\\CopyToHD\\Data\\">
+  [ 14] pusharglist 2 ........................... <["\\\\resurs\\Monsterland\\_Projects\\Rockmanager\\Data\\", "D:\\Dok\\Rock\\CopyToHD\\Data\\"]>
+  [ 16] pushlist ................................ <["\\\\resurs\\Monsterland\\_Projects\\Rockmanager\\Data\\", "D:\\Dok\\Rock\\CopyToHD\\Data\\"]>
+  [ 17] setparam 0 .............................. argPossiblePaths = ["\\\\resurs\\Monsterland\\_Projects\\Rockmanager\\Data\\", "D:\\Dok\\Rock\\CopyToHD\\Data\\"]
+  [ 19] pusharglist 0 ........................... <[:]>
+  [ 21] pushproplist ............................ <[:]>
+  [ 22] setlocal 0 .............................. sortedByName = [:]
+  [ 24] pushcons 192 ............................ <"FileXtra3">
+  [ 26] pusharglist 1 ........................... <"FileXtra3">
+  [ 28] extcall 120 ............................. <xtra("FileXtra3")>
+  [ 31] pusharglist 1 ........................... <xtra("FileXtra3")>
+  [ 33] objcall 11 .............................. <xtra("FileXtra3").new()>
+  [ 35] setlocal 8 .............................. fxObj = xtra("FileXtra3").new()
+  [ 37] pushint8 1 .............................. <1>
+  [ 40] setlocal 16
+  [ 42] getlocal 16
+  [ 44] getparam 0 .............................. <argPossiblePaths>
+  [ 46] getobjprop 156 .......................... <argPossiblePaths.count>
+  [ 49] lteq
+  [ 50] jmpifz [222] ............................ repeat with pathNr = 1 to argPossiblePaths.count
+  [ 53] getparam 0 .............................. <argPossiblePaths>
+  [ 55] getlocal 16 ............................. <pathNr>
+  [ 57] pusharglist 2 ........................... <argPossiblePaths, pathNr>
+  [ 59] objcall 119 ............................. <argPossiblePaths[pathNr]>
+  [ 62] setlocal 24 ............................. path = argPossiblePaths[pathNr]
+  [ 64] getlocal 24 ............................. <path>
+  [ 66] pusharglist 1 ........................... <path>
+  [ 68] extcall 2196 ............................ <getFilesInFolder(path)>
+  [ 71] setlocal 32 ............................. Files = getFilesInFolder(path)
+  [ 73] pushcons 200 ............................ <"Data*">
+  [ 75] getlocal 32 ............................. <Files>
+  [ 77] pusharglist 2 ........................... <"Data*", Files>
+  [ 79] extcall 289 ............................. <wildCardSearch("Data*", Files)>
+  [ 82] setlocal 32 ............................. Files = wildCardSearch("Data*", Files)
+  [ 84] pushint8 1 .............................. <1>
+  [ 87] setlocal 40
+  [ 89] getlocal 40
+  [ 91] getlocal 32 ............................. <Files>
+  [ 93] getobjprop 156 .......................... <Files.count>
+  [ 96] lteq
+  [ 97] jmpifz [211] ............................ repeat with fileNr = 1 to Files.count
+  [100] getlocal 32 ............................. <Files>
+  [102] getlocal 40 ............................. <fileNr>
+  [104] pusharglist 2 ........................... <Files, fileNr>
+  [106] objcall 119 ............................. <Files[fileNr]>
+  [109] setlocal 48 ............................. file = Files[fileNr]
+  [111] getlocal 48 ............................. <file>
+  [113] pusharglist 1 ........................... <file>
+  [115] extcall 2198 ............................ <fileStripName(file)>
+  [118] setlocal 56 ............................. stripped = fileStripName(file)
+  [120] getlocal 8 .............................. <fxObj>
+  [122] getlocal 24 ............................. <path>
+  [124] getlocal 48 ............................. <file>
+  [126] joinstr ................................. <path & file>
+  [127] pusharglist 2 ........................... <fxObj, path & file>
+  [129] objcall 2201 ............................ <fxObj.fx_FileGetModDate(path & file)>
+  [132] pushsymb 114 ............................ <#string>
+  [135] pusharglist 2 ........................... <fxObj.fx_FileGetModDate(path & file), #string>
+  [137] extcall 2200 ............................ <translateFXDate(fxObj.fx_FileGetModDate(path & file), #string)>
+  [140] setlocal 64 ............................. dateStr = translateFXDate(fxObj.fx_FileGetModDate(path & file), #string)
+  [142] getlocal 0 .............................. <sortedByName>
+  [144] getlocal 56 ............................. <stripped>
+  [146] pusharglist 2 ........................... <sortedByName, stripped>
+  [148] objcall 183 ............................. <sortedByName.getaProp(stripped)>
+  [151] setlocal 72 ............................. tmp = sortedByName.getaProp(stripped)
+  [153] getlocal 72 ............................. <tmp>
+  [155] pusharglist 1 ........................... <tmp>
+  [157] extcall 61 .............................. <voidp(tmp)>
+  [160] jmpifz [186] ............................ if voidp(tmp) then
+  [163] pusharglist 0 ........................... <[:]>
+  [165] pushproplist ............................ <[:]>
+  [166] setlocal 72 ............................. tmp = [:]
+  [168] getlocal 72 ............................. <tmp>
+  [170] pusharglistnoret 1 ...................... <tmp>
+  [172] objcall 609 ............................. tmp.sort()
+  [175] getlocal 0 .............................. <sortedByName>
+  [177] getlocal 56 ............................. <stripped>
+  [179] getlocal 72 ............................. <tmp>
+  [181] pusharglistnoret 3 ...................... <sortedByName, stripped, tmp>
+  [183] objcall 309 ............................. sortedByName.addProp(stripped, tmp)
+  [186] getlocal 72 ............................. <tmp>
+  [188] getlocal 64 ............................. <dateStr>
+  [190] getlocal 24 ............................. <path>
+  [192] getlocal 48 ............................. <file>
+  [194] joinstr ................................. <path & file>
+  [195] pusharglistnoret 3 ...................... <tmp, dateStr, path & file>
+  [197] objcall 309 ............................. tmp.addProp(dateStr, path & file)
+  [200] pushint8 1
+  [203] getlocal 40
+  [205] add
+  [206] setlocal 40
+  [208] endrepeat [ 89]
+  [211] pushint8 1
+  [214] getlocal 16
+  [216] add
+  [217] setlocal 16
+  [219] endrepeat [ 42]
+  [222] pusharglist 0 ........................... <[]>
+  [224] pushlist ................................ <[]>
+  [225] setlocal 80 ............................. convertThese = []
+  [227] pusharglist 0 ........................... <[]>
+  [229] pushlist ................................ <[]>
+  [230] setlocal 88 ............................. newestFiles = []
+  [232] pushint8 1 .............................. <1>
+  [235] setlocal 96
+  [237] getlocal 96
+  [239] getlocal 0 .............................. <sortedByName>
+  [241] getobjprop 156 .......................... <sortedByName.count>
+  [244] lteq
+  [245] jmpifz [321] ............................ repeat with strippedFileNr = 1 to sortedByName.count
+  [248] getlocal 0 .............................. <sortedByName>
+  [250] getlocal 96 ............................. <strippedFileNr>
+  [252] pusharglist 2 ........................... <sortedByName, strippedFileNr>
+  [254] objcall 119 ............................. <sortedByName[strippedFileNr]>
+  [257] setlocal 104 ............................ lst = sortedByName[strippedFileNr]
+  [259] getlocal 104 ............................ <lst>
+  [261] getlocal 104 ............................ <lst>
+  [263] getobjprop 156 .......................... <lst.count>
+  [266] pusharglist 2 ........................... <lst, lst.count>
+  [268] objcall 119 ............................. <lst[lst.count]>
+  [271] setlocal 112 ............................ newest = lst[lst.count]
+  [273] pushcons 208 ............................ <".txt">
+  [275] getlocal 112 ............................ <newest>
+  [277] pusharglist 2 ........................... <".txt", newest>
+  [279] extcall 384 ............................. <offset(".txt", newest)>
+  [282] jmpifz [301] ............................ if offset(".txt", newest) then
+  [285] getlocal 80 ............................. <convertThese>
+  [287] getlocal 0 .............................. <sortedByName>
+  [289] getlocal 96 ............................. <strippedFileNr>
+  [291] pusharglist 2 ........................... <sortedByName, strippedFileNr>
+  [293] objcall 295 ............................. <sortedByName.getPropAt(strippedFileNr)>
+  [296] pusharglistnoret 2 ...................... <convertThese, sortedByName.getPropAt(strippedFileNr)>
+  [298] objcall 229 ............................. convertThese.add(sortedByName.getPropAt(strippedFileNr))
+  [301] getlocal 88 ............................. <newestFiles>
+  [303] getlocal 112 ............................ <newest>
+  [305] pusharglistnoret 2 ...................... <newestFiles, newest>
+  [307] objcall 229 ............................. newestFiles.add(newest)
+  [310] pushint8 1
+  [313] getlocal 96
+  [315] add
+  [316] setlocal 96
+  [318] endrepeat [237]
+  [321] getparam 8 .............................. <argConvertedPath>
+  [323] pusharglist 1 ........................... <argConvertedPath>
+  [325] extcall 13 .............................. <stringp(argConvertedPath)>
+  [327] jmpifz [389] ............................ if stringp(argConvertedPath) then
+  [330] pushcons 216 ............................ <"Converting">
+  [332] getlocal 80 ............................. <convertThese>
+  [334] pusharglistnoret 2 ...................... <"Converting", convertThese>
+  [336] extcall 122 ............................. pott("Converting", convertThese)
+  [339] getlocal 80 ............................. <convertThese>
+  [341] peek 0
+  [343] pusharglist 1
+  [345] extcall 156
+  [348] pushint8 1
+  [350] peek 0
+  [352] peek 2
+  [354] lteq
+  [355] jmpifz [387] ............................ repeat with tmpFile in convertThese
+  [358] peek 2
+  [360] peek 1
+  [362] pusharglist 2
+  [364] extcall 119
+  [367] setlocal 120
+  [369] getparam 8 .............................. <argConvertedPath>
+  [371] getlocal 120 ............................ <tmpFile>
+  [373] joinstr ................................. <argConvertedPath & tmpFile>
+  [374] pushcons 224 ............................ <".txt">
+  [376] joinstr ................................. <argConvertedPath & tmpFile & ".txt">
+  [377] pusharglistnoret 1 ...................... <argConvertedPath & tmpFile & ".txt">
+  [379] localcall 3 ............................. convDataFileToVListFile(argConvertedPath & tmpFile & ".txt")
+  [381] pushint8 1
+  [383] add
+  [384] endrepeat [350]
+  [387] pop 3
+  [389] getlocal 88 ............................. <newestFiles>
+  [391] pusharglistnoret 1 ...................... <newestFiles>
+  [393] extcall 69 .............................. return newestFiles
+  [396] ret
+end
+
+on convDataFileToVListFile argFile, argNewFile
+  [  0] getparam 0 .............................. <argFile>
+  [  2] pusharglist 1 ........................... <argFile>
+  [  4] extcall 137 ............................. <readFile(argFile)>
+  [  7] setlocal 0 .............................. str = readFile(argFile)
+  [  9] getlocal 0 .............................. <str>
+  [ 11] pusharglist 1 ........................... <str>
+  [ 13] extcall 13 .............................. <stringp(str)>
+  [ 15] not ..................................... <not stringp(str)>
+  [ 16] jmpifz [ 25] ............................ if not stringp(str) then
+  [ 19] pushzero ................................ <0>
+  [ 20] pusharglistnoret 1 ...................... <0>
+  [ 22] extcall 69 .............................. return 0
+  [ 25] getparam 8 .............................. <argNewFile>
+  [ 27] pusharglist 1 ........................... <argNewFile>
+  [ 29] extcall 61 .............................. <voidp(argNewFile)>
+  [ 32] jmpifz [ 58] ............................ if voidp(argNewFile) then / else
+  [ 35] getparam 0 .............................. <argFile>
+  [ 37] pusharglist 1 ........................... <argFile>
+  [ 39] extcall 123 ............................. <fileExtractPath(argFile)>
+  [ 42] getparam 0 .............................. <argFile>
+  [ 44] pusharglist 1 ........................... <argFile>
+  [ 46] extcall 2198 ............................ <fileStripName(argFile)>
+  [ 49] joinstr ................................. <fileExtractPath(argFile) & fileStripName(argFile)>
+  [ 50] pushcons 232 ............................ <".dat">
+  [ 52] joinstr ................................. <fileExtractPath(argFile) & fileStripName(argFile) & ".dat">
+  [ 53] setparam 8 .............................. argNewFile = fileExtractPath(argFile) & fileStripName(argFile) & ".dat"
+  [ 55] jmp [ 88]
+  [ 58] getparam 8 .............................. <argNewFile>
+  [ 60] pusharglist 1 ........................... <argNewFile>
+  [ 62] extcall 2198 ............................ <fileStripName(argNewFile)>
+  [ 65] getobjprop 135 .......................... <fileStripName(argNewFile).length>
+  [ 68] pushzero ................................ <0>
+  [ 69] eq ...................................... <fileStripName(argNewFile).length = 0>
+  [ 70] jmpifz [ 88] ............................ if fileStripName(argNewFile).length = 0 then
+  [ 73] getparam 8 .............................. <argNewFile>
+  [ 75] getparam 0 .............................. <argFile>
+  [ 77] pusharglist 1 ........................... <argFile>
+  [ 79] extcall 2198 ............................ <fileStripName(argFile)>
+  [ 82] joinstr ................................. <argNewFile & fileStripName(argFile)>
+  [ 83] pushcons 240 ............................ <".dat">
+  [ 85] joinstr ................................. <argNewFile & fileStripName(argFile) & ".dat">
+  [ 86] setparam 8 .............................. argNewFile = argNewFile & fileStripName(argFile) & ".dat"
+  [ 88] getlocal 0 .............................. <str>
+  [ 90] pusharglist 1 ........................... <str>
+  [ 92] extcall 2448 ............................ <rotatedTabDataStringToPropList(str)>
+  [ 95] setlocal 8 .............................. lst = rotatedTabDataStringToPropList(str)
+  [ 97] pushcons 248 ............................ <"vList">
+  [ 99] pusharglist 1 ........................... <"vList">
+  [101] extcall 120 ............................. <xtra("vList")>
+  [104] getparam 8 .............................. <argNewFile>
+  [106] pusharglist 2 ........................... <xtra("vList"), argNewFile>
+  [108] objcall 11 .............................. <xtra("vList").new(argNewFile)>
+  [110] setlocal 16 ............................. vList = xtra("vList").new(argNewFile)
+  [112] getlocal 16 ............................. <vList>
+  [114] getlocal 8 .............................. <lst>
+  [116] pusharglist 2 ........................... <vList, lst>
+  [118] objcall 121 ............................. <vList.write(lst)>
+  [121] setlocal 24 ............................. tmp = vList.write(lst)
+  [123] getlocal 24 ............................. <tmp>
+  [125] pushzero ................................ <0>
+  [126] eq ...................................... <tmp = 0>
+  [127] jmpifz [138] ............................ if tmp = 0 then
+  [130] pushint8 1 .............................. <1>
+  [133] pusharglistnoret 1 ...................... <1>
+  [135] extcall 69 .............................. return 1
+  [138] pushcons 256 ............................ <"vList Err">
+  [141] getlocal 24 ............................. <tmp>
+  [143] pusharglistnoret 2 ...................... <"vList Err", tmp>
+  [145] extcall 122 ............................. pott("vList Err", tmp)
+  [148] pushzero ................................ <0>
+  [149] pusharglistnoret 1 ...................... <0>
+  [151] extcall 69 .............................. return 0
+  [154] ret
+end

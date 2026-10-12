@@ -1,0 +1,138 @@
+property ancestor, m_actions_r, m_action_r, m_pos, m_warnAboutMoney, m_dimmedActions_r
+global gDir, gRock
+
+on new me, argOptions
+  ID = argOptions[#ID]
+  argOptions.setaProp(#ReportTo, me)
+  argOptions.setaProp(#child, me)
+  dialog_r = gRock.m_classManager.getObjByIDAndClass(#DlgRehearsalGift, #Dialog)
+  dialog_r.dataMemberName = "DlgMerchandiseData"
+  argOptions[#DlgInfoObj] = dialog_r
+  tmpClass = argOptions[#ItemClass]
+  if voidp(tmpClass) then
+    tmpClass = #Action
+  end if
+  if stringp(argOptions[#icon]) then
+    dialog_r.icon = argOptions[#icon]
+  end if
+  if stringp(argOptions[#name]) then
+    dialog_r.name = argOptions[#name]
+  end if
+  if listp(argOptions[#loc]) then
+    dialog_r.loc = argOptions[#loc]
+  end if
+  m_warnAboutMoney = argOptions[#WarnAboutMoney]
+  if voidp(m_warnAboutMoney) then
+    m_warnAboutMoney = 1
+  end if
+  ancestor = script("DlgRockAncestorScript").new(argOptions)
+  m_dimmedActions_r = []
+  m_actions_r = []
+  repeat with tmpID in argOptions[#ActionIDs]
+    obj_r = gRock.m_classManager.getObjByIDAndClass(tmpID, tmpClass)
+    if objectp(obj_r) then
+      if tmpClass = #Action then
+        if obj_r.PreExecuteThis.length > 0 then
+          tmpPreExecuteResult = rExecuteActions(obj_r.PreExecuteThis, [:], obj_r)
+          if tmpPreExecuteResult = #DimAction then
+            m_dimmedActions_r.add(obj_r)
+          else
+            if tmpPreExecuteResult = #HideAction then
+              obj_r = 0
+            end if
+          end if
+        end if
+      end if
+      if objectp(obj_r) then
+        m_actions_r.add(obj_r)
+      end if
+    end if
+  end repeat
+  m_pos = 0
+  if m_actions_r.count = 1 then
+    ancestor.m_objDlg.deleteItem(#ArrowLeft)
+    ancestor.m_objDlg.deleteItem(#ArrowRight)
+  end if
+  ancestor.m_objDlg.recalc(#DontPaint)
+  me.setAction(1)
+  ancestor.render()
+  return me
+end
+
+on kill me
+  ancestor.kill()
+  m_dimmedActions_r = 0
+  m_actions_r = 0
+  m_action_r = 0
+  return 0
+end
+
+on Report me, argObj, argWhat
+end
+
+on mouse me, argObj, argWhat, argOption
+  if objectp(argOption) then
+    if argWhat = #click then
+      ID = argOption.getOneProp(#ID)
+      IDStr = string(ID)
+      if offset("Arrow", IDStr) then
+        if ID = #ArrowRight then
+          me.setAction(1)
+        else
+          if ID = #ArrowLeft then
+            me.setAction(-1)
+          end if
+        end if
+        exit
+      end if
+      if ID = #ButtonOK then
+        tmpDimmed = m_dimmedActions_r.getPos(m_action_r)
+        if tmpDimmed then
+          alert("Not available right now")
+          exit
+        end if
+        if m_warnAboutMoney then
+          if not gRock.m_player.hasThisMoney(m_action_r.price) then
+            rWarnMoney()
+            exit
+          end if
+        end if
+        overDlg = gDir.m_objDialogsMaster.getDialogUnder(me)
+        if objectp(overDlg) then
+          overDlg.Report(me, #DoAction, m_action_r)
+          exit
+        end if
+      end if
+      ancestor.mouse(argObj, argWhat, argOption)
+    end if
+  end if
+end
+
+on setAction me, argDir
+  if m_actions_r.count = 0 then
+    exit
+  end if
+  m_pos = m_pos + argDir
+  m_pos = rDlgCheckDimArrows(ancestor.m_objDlg, m_pos, m_actions_r.count)
+  m_action_r = m_actions_r[m_pos]
+  itemObj = ancestor.m_objDlg.getItem(#ButtonOK)
+  tmpDimmed = m_dimmedActions_r.getPos(m_action_r)
+  if tmpDimmed then
+    itemObj.send(#dimButton, 1)
+  else
+    itemObj.send(#dimButton, 0)
+  end if
+  itemObj = ancestor.m_objDlg.getItem(#Pic)
+  itemObj.setOneProp(#Pic, m_action_r.Gfx)
+  if m_action_r.price > 0 then
+    formatList = [m_action_r.name, m_action_r.comment, #szidPrice, rCurrency(m_action_r.price, 0, 1)]
+  else
+    if m_action_r.price < 0 then
+      formatList = [m_action_r.name, m_action_r.comment, #szidMoneyAmount, rCurrency(-m_action_r.price, 0, 1)]
+    else
+      formatList = [m_action_r.name, m_action_r.comment]
+    end if
+  end if
+  itemObj = ancestor.m_objDlg.getItem(#Info)
+  itemObj.setOneProp(#Pic, rFormatText(formatList, "GiftFormatting", [#shadow: 1]))
+end

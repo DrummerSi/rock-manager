@@ -1,0 +1,220 @@
+property m_queued, m_rendered, m_doWhatWhenDoneList, m_waitUntilMsecs, m_renderToPath, m_slicedPath, m_useDll, m_maxWait, m_decodeFilesList, m_compressedPath, m_renderStrings, m_cuesPath, m_compressionFormatExtension, m_debugging, m_progressObj, m_allDecodedList
+global gUseful, gRock
+
+on new me
+  if 0 then
+    m_slicedPath = gRock.m_paths.getPath(#Sliced)
+    m_renderToPath = gRock.m_paths.getPath(#RenderedMusic)
+    m_compressedPath = gRock.m_paths.getPath(#Sliced)
+    m_cuesPath = gRock.m_paths.getPath(#Sliced)
+  else
+    m_slicedPath = gRock.m_paths.getPath(#RenderedMusic)
+    m_renderToPath = gRock.m_paths.getPath(#RenderedMusic)
+    m_compressedPath = gRock.m_paths.getPath(#CompressedMusic)
+    if rgetPref(#LowSoundQuality) = 1 then
+      m_compressedPath = m_compressedPath & "22kHz\"
+    end if
+    m_cuesPath = gRock.m_paths.getPath(#Sliced)
+  end if
+  m_compressionFormatExtension = "ogg"
+  m_queued = [:]
+  m_rendered = [:]
+  m_doWhatWhenDoneList = [:]
+  m_decodeFilesList = [:]
+  m_allDecodedList = []
+  m_useDll = 1
+  m_debugging = 0
+  return me
+end
+
+on kill me
+  gUseful.frameTimer.deleteObject(me)
+  return 0
+end
+
+on queueRendering me, argID, argFile, argSwitches
+  m_queued.setaProp(argID, [#file: argFile, #Switches: argSwitches])
+end
+
+on renderQueue me
+  global gDir
+  waitCursor(1)
+  m_decodeFilesList = []
+  m_renderStrings = []
+  m_rendered = [:]
+  repeat with n = 1 to m_queued.count
+    ID = m_queued.getPropAt(n)
+    Info = m_queued[n]
+    inputPath = m_slicedPath & Info[#file] & ".wa*"
+    if me.checkDecodedExists(Info[#file]) = 0 then
+      if fileExists2(m_compressedPath & Info[#file] & "." & m_compressionFormatExtension) = 0 then
+        pott("Doesn't exist", Info[#file])
+        next repeat
+      else
+        if m_debugging = 1 then
+          pott("Decoding " & Info[#file])
+        end if
+        tmpDecodeInfo = [#fileName: Info[#file], #in: m_compressedPath & Info[#file] & "." & m_compressionFormatExtension, #Out: m_slicedPath & Info[#file] & ".wav"]
+        m_decodeFilesList.add(tmpDecodeInfo)
+        if m_allDecodedList.getPos(tmpDecodeInfo[#Out]) = 0 then
+          m_allDecodedList.add(tmpDecodeInfo[#Out])
+        end if
+      end if
+    end if
+    outputPath = Info[#file]
+    outputPath = fileStripName(outputPath)
+    outputPath = m_renderToPath & string(ID) & ".wav"
+    tmpFileObj = xtra("FileIO").new()
+    tmpFileObj.openFile(outputPath, 0)
+    if tmpFileObj.status() = 0 then
+      delete tmpFileObj
+      tmpFileObj.closeFile()
+    end if
+    tmpInfo = Info[#Switches].duplicate()
+    tmpInfo[#in] = inputPath
+    tmpInfo[#Out] = outputPath
+    renderStr = mixGenFXStr(tmpInfo, #dll)
+    renderStr = "cues:" & m_cuesPath & Info[#file] & ".txt, " & renderStr
+    m_renderStrings.add(renderStr)
+    m_rendered.setaProp(ID, outputPath)
+  end repeat
+  if m_renderStrings.count > 0 then
+    if objectp(gDir) then
+      if gDir.handler(#progressInit) then
+        totalNumOperations = m_decodeFilesList.count + m_renderStrings.count
+        gDir.progressInit(totalNumOperations)
+      end if
+    end if
+    if m_decodeFilesList.count > 0 then
+      if m_debugging = 1 then
+        pott("Decoding " & m_decodeFilesList)
+      end if
+      mixDecodeFiles(m_decodeFilesList, m_compressionFormatExtension)
+    else
+      if m_debugging = 1 then
+        pott("Start rendering(1)")
+      end if
+      mixCallRockWave(m_renderStrings)
+      if m_debugging = 1 then
+        pott("Done rendering(1)")
+      end if
+    end if
+    m_queued = [:]
+    if m_doWhatWhenDoneList.count then
+      m_maxWait = the milliSeconds + integer(10.0 * 1000)
+      m_waitUntilMsecs = the milliSeconds + 0
+      if gUseful.isRunning <> 1 then
+        m_waitUntilMsecs = 0
+        me.timeTick()
+      else
+        gUseful.frameTimer.addObject(me)
+      end if
+    end if
+  else
+    me.doTheCallBack()
+  end if
+end
+
+on getRendered me, argID, argAltFileName
+  tmp = m_rendered.getaProp(argID)
+  if voidp(tmp) then
+    return argAltFileName
+  end if
+  return tmp
+end
+
+on checkDecodedExists me, argFileName
+  return fileExists2(m_slicedPath & argFileName & ".wav")
+end
+
+on timeTick me
+  if the milliSeconds > m_waitUntilMsecs then
+    tmpImDone = 1
+    if m_decodeFilesList.count > 0 then
+      repeat with n = m_decodeFilesList.count down to 1
+        tmp = m_decodeFilesList[n]
+        if me.checkDecodedExists(tmp[#fileName]) then
+          m_decodeFilesList.deleteAt(n)
+        end if
+      end repeat
+      if m_decodeFilesList.count > 0 then
+        if m_debugging = 1 then
+          pott("Num left to decode: " & string(m_decodeFilesList.count))
+        end if
+        tmpImDone = 0
+      else
+        if m_debugging = 1 then
+          pott("Start rendering(2)")
+        end if
+        mixCallRockWave(m_renderStrings)
+      end if
+    end if
+    if tmpImDone = 1 then
+      repeat with n = m_rendered.count down to 1
+        if fileExists2(m_rendered[n]) = 0 then
+          pott("Still waiting for", m_rendered[n])
+          tmpImDone = 0
+          exit repeat
+        end if
+      end repeat
+    end if
+    if tmpImDone = 0 then
+      if the milliSeconds > m_maxWait then
+      else
+        m_waitUntilMsecs = the milliSeconds + 500
+        exit
+      end if
+    end if
+    if m_debugging = 1 then
+      pott("Render DONE!")
+    end if
+    me.doTheCallBack()
+    gUseful.frameTimer.deleteObject(me)
+  end if
+end
+
+on doTheCallBack me
+  if objectp(m_doWhatWhenDoneList[#ReportTo]) then
+    tmpHandler = m_doWhatWhenDoneList[#handler]
+    if voidp(tmpHandler) then
+      tmpHandler = #Report
+    end if
+    if m_doWhatWhenDoneList[#ReportTo].handler(tmpHandler) then
+      call(tmpHandler, m_doWhatWhenDoneList[#ReportTo])
+    end if
+  end if
+end
+
+on deleteDecodedFiles me
+  if 0 then
+    fileObj = xtra("FileIO").new()
+    repeat with filePath in m_allDecodedList
+      fileObj.openFile(filePath, 0)
+      if fileObj.status() = 0 then
+        delete fileObj
+        fileObj.closeFile()
+      end if
+    end repeat
+    fileObj = 0
+  end if
+  m_allDecodedList = []
+  fileObj = xtra("FileIO").new()
+  Files = getFilesInFolder(m_renderToPath)
+  Files = wildCardSearch("*.wav", Files, #Strings)
+  dontRemoveWilds = ["?.wav", "mix*.wav"]
+  repeat with wild in dontRemoveWilds
+    dontRemove = wildCardSearch(wild, Files, #Strings)
+    repeat with file in dontRemove
+      Files.deleteOne(file)
+    end repeat
+  end repeat
+  pott(Files)
+  repeat with file in Files
+    fileObj.openFile(m_renderToPath & file, 0)
+    if fileObj.status() = 0 then
+      delete fileObj
+      fileObj.closeFile()
+    end if
+  end repeat
+  fileObj = 0
+end

@@ -1,0 +1,797 @@
+property ancestor, m_Xplace_r, m_numDays, m_startDate, m_event_r, m_events_r, m_CPHaveRendered, m_price
+global gDir, gRock
+
+on new me, argOptions
+  [  0] getparam 8 .............................. <argOptions>
+  [  2] pushsymb 86 ............................. <#ID>
+  [  5] pusharglist 2 ........................... <argOptions, #ID>
+  [  7] objcall 51 .............................. <argOptions[#ID]>
+  [ 10] setlocal 0 .............................. ID = argOptions[#ID]
+  [ 12] getglobal 35 ............................ <gRock>
+  [ 15] getobjprop 36 ........................... <gRock.m_context>
+  [ 18] pushsymb 78 ............................. <#place>
+  [ 21] pusharglist 2 ........................... <gRock.m_context, #place>
+  [ 23] objcall 359 ............................. <gRock.m_context.getFocus(#place)>
+  [ 26] setprop 965 ............................. m_Xplace_r = gRock.m_context.getFocus(#place)
+  [ 29] getparam 8 .............................. <argOptions>
+  [ 31] pushsymb 437 ............................ <#ReportTo>
+  [ 34] getparam 0 .............................. <me>
+  [ 36] pusharglistnoret 3 ...................... <argOptions, #ReportTo, me>
+  [ 38] objcall 438 ............................. argOptions.setaProp(#ReportTo, me)
+  [ 41] getparam 8 .............................. <argOptions>
+  [ 43] pushsymb 439 ............................ <#child>
+  [ 46] getparam 0 .............................. <me>
+  [ 48] pusharglistnoret 3 ...................... <argOptions, #child, me>
+  [ 50] objcall 438 ............................. argOptions.setaProp(#child, me)
+  [ 53] getglobal 35 ............................ <gRock>
+  [ 56] getobjprop 77 ........................... <gRock.m_classManager>
+  [ 59] pushsymb 966 ............................ <#DlgMediaAd>
+  [ 62] pushsymb 441 ............................ <#Dialog>
+  [ 65] pusharglist 3 ........................... <gRock.m_classManager, #DlgMediaAd, #Dialog>
+  [ 67] objcall 403 ............................. <gRock.m_classManager.getObjByIDAndClass(#DlgMediaAd, #Dialog)>
+  [ 70] setlocal 8 .............................. dialog_r = gRock.m_classManager.getObjByIDAndClass(#DlgMediaAd, #Dialog)
+  [ 72] getlocal 8 .............................. <dialog_r>
+  [ 74] pushcons 0 .............................. <"DlgMediaAdData">
+  [ 76] setobjprop 442 .......................... dialog_r.dataMemberName = "DlgMediaAdData"
+  [ 79] getlocal 8 .............................. <dialog_r>
+  [ 81] getprop 965 ............................. <m_Xplace_r>
+  [ 84] getobjprop 429 .......................... <m_Xplace_r.icon>
+  [ 87] setobjprop 429 .......................... dialog_r.icon = m_Xplace_r.icon
+  [ 90] getparam 8 .............................. <argOptions>
+  [ 92] pushsymb 443 ............................ <#DlgInfoObj>
+  [ 95] getlocal 8 .............................. <dialog_r>
+  [ 97] pusharglistnoret 3 ...................... <argOptions, #DlgInfoObj, dialog_r>
+  [ 99] objcall 130 ............................. argOptions[#DlgInfoObj] = dialog_r
+  [102] pushcons 8 .............................. <"DlgRockAncestorScript">
+  [104] pusharglist 1 ........................... <"DlgRockAncestorScript">
+  [106] extcall 49 .............................. <script("DlgRockAncestorScript")>
+  [109] getparam 8 .............................. <argOptions>
+  [111] pusharglist 2 ........................... <script("DlgRockAncestorScript"), argOptions>
+  [113] objcall 0 ............................... <script("DlgRockAncestorScript").new(argOptions)>
+  [115] setprop 447 ............................. ancestor = script("DlgRockAncestorScript").new(argOptions)
+  [118] getparam 8 .............................. <argOptions>
+  [120] pushsymb 954 ............................ <#AdIDs>
+  [123] pusharglist 2 ........................... <argOptions, #AdIDs>
+  [125] objcall 51 .............................. <argOptions[#AdIDs]>
+  [128] setlocal 16 ............................. tmpIDs = argOptions[#AdIDs]
+  [130] pusharglist 0 ........................... <[]>
+  [132] pushlist ................................ <[]>
+  [133] setprop 967 ............................. m_events_r = []
+  [136] pushint8 1 .............................. <1>
+  [139] setlocal 24
+  [141] getlocal 24
+  [143] getlocal 16 ............................. <tmpIDs>
+  [145] getobjprop 85 ........................... <tmpIDs.count>
+  [148] lteq
+  [149] jmpifz [212] ............................ repeat with n = 1 to tmpIDs.count
+  [152] getlocal 16 ............................. <tmpIDs>
+  [154] getlocal 24 ............................. <n>
+  [156] pusharglist 2 ........................... <tmpIDs, n>
+  [158] objcall 51 .............................. <tmpIDs[n]>
+  [161] setlocal 32 ............................. tmpID = tmpIDs[n]
+  [163] getglobal 35 ............................ <gRock>
+  [166] getobjprop 77 ........................... <gRock.m_classManager>
+  [169] getlocal 32 ............................. <tmpID>
+  [171] pushsymb 968 ............................ <#Event>
+  [174] pusharglist 3 ........................... <gRock.m_classManager, tmpID, #Event>
+  [176] objcall 403 ............................. <gRock.m_classManager.getObjByIDAndClass(tmpID, #Event)>
+  [179] setlocal 40 ............................. tmpObj = gRock.m_classManager.getObjByIDAndClass(tmpID, #Event)
+  [181] getlocal 40 ............................. <tmpObj>
+  [183] pusharglist 1 ........................... <tmpObj>
+  [185] extcall 63 .............................. <objectp(tmpObj)>
+  [188] jmpifz [201] ............................ if objectp(tmpObj) then
+  [191] getprop 967 ............................. <m_events_r>
+  [194] getlocal 40 ............................. <tmpObj>
+  [196] pusharglistnoret 2 ...................... <m_events_r, tmpObj>
+  [198] objcall 98 .............................. m_events_r.add(tmpObj)
+  [201] pushint8 1
+  [204] getlocal 24
+  [206] add
+  [207] setlocal 24
+  [209] endrepeat [141]
+  [212] getprop 447 ............................. <ancestor>
+  [215] getobjprop 360 .......................... <ancestor.m_objDlg>
+  [218] pushsymb 969 ............................ <#ChooseAction>
+  [221] pushsymb 933 ............................ <#Chooser>
+  [224] pushsymb 9 .............................. <#text>
+  [226] pusharglist 3 ........................... <[#ChooseAction, #Chooser, #text]>
+  [228] pushlist ................................ <[#ChooseAction, #Chooser, #text]>
+  [229] pusharglist 2 ........................... <ancestor.m_objDlg, [#ChooseAction, #Chooser, #text]>
+  [231] objcall 411 ............................. <ancestor.m_objDlg.getItemByPath([#ChooseAction, #Chooser, #text])>
+  [234] setlocal 48 ............................. obj = ancestor.m_objDlg.getItemByPath([#ChooseAction, #Chooser, #text])
+  [236] getlocal 48 ............................. <obj>
+  [238] pushsymb 455 ............................ <#inOffsetRect>
+  [241] pusharglist 2 ........................... <obj, #inOffsetRect>
+  [243] objcall 456 ............................. <obj.getOneProp(#inOffsetRect)>
+  [246] setlocal 56 ............................. tmp = obj.getOneProp(#inOffsetRect)
+  [248] getlocal 56 ............................. <tmp>
+  [250] pushint8 3 .............................. <3>
+  [253] pushint8 210 ............................ <210>
+  [256] pusharglistnoret 3 ...................... <tmp, 3, 210>
+  [258] objcall 130 ............................. tmp[3] = 210
+  [261] getlocal 48 ............................. <obj>
+  [263] pushsymb 455 ............................ <#inOffsetRect>
+  [266] getlocal 56 ............................. <tmp>
+  [268] pusharglistnoret 3 ...................... <obj, #inOffsetRect, tmp>
+  [270] objcall 364 ............................. obj.setOneProp(#inOffsetRect, tmp)
+  [273] getprop 447 ............................. <ancestor>
+  [276] getobjprop 360 .......................... <ancestor.m_objDlg>
+  [279] pushsymb 969 ............................ <#ChooseAction>
+  [282] pushsymb 584 ............................ <#Head>
+  [285] pushsymb 429 ............................ <#icon>
+  [288] pusharglist 3 ........................... <[#ChooseAction, #Head, #icon]>
+  [290] pushlist ................................ <[#ChooseAction, #Head, #icon]>
+  [291] pusharglist 2 ........................... <ancestor.m_objDlg, [#ChooseAction, #Head, #icon]>
+  [293] objcall 411 ............................. <ancestor.m_objDlg.getItemByPath([#ChooseAction, #Head, #icon])>
+  [296] setlocal 48 ............................. obj = ancestor.m_objDlg.getItemByPath([#ChooseAction, #Head, #icon])
+  [298] getlocal 48 ............................. <obj>
+  [300] pushsymb 361 ............................ <#Pic>
+  [303] pushcons 16 ............................. <"Dummy">
+  [305] pusharglistnoret 3 ...................... <obj, #Pic, "Dummy">
+  [307] objcall 364 ............................. obj.setOneProp(#Pic, "Dummy")
+  [310] getprop 447 ............................. <ancestor>
+  [313] getobjprop 360 .......................... <ancestor.m_objDlg>
+  [316] pushsymb 969 ............................ <#ChooseAction>
+  [319] pushsymb 584 ............................ <#Head>
+  [322] pushsymb 393 ............................ <#Info>
+  [325] pusharglist 3 ........................... <[#ChooseAction, #Head, #Info]>
+  [327] pushlist ................................ <[#ChooseAction, #Head, #Info]>
+  [328] pusharglist 2 ........................... <ancestor.m_objDlg, [#ChooseAction, #Head, #Info]>
+  [330] objcall 411 ............................. <ancestor.m_objDlg.getItemByPath([#ChooseAction, #Head, #Info])>
+  [333] setlocal 48 ............................. obj = ancestor.m_objDlg.getItemByPath([#ChooseAction, #Head, #Info])
+  [335] getlocal 48 ............................. <obj>
+  [337] pushsymb 412 ............................ <#editData>
+  [340] getglobal 35 ............................ <gRock>
+  [343] getobjprop 585 .......................... <gRock.m_languageManager>
+  [346] pushsymb 970 ............................ <#szidCampaignType>
+  [349] pushsymb 935 ............................ <#FirstUppercase>
+  [352] pushint8 1 .............................. <1>
+  [355] pusharglist 2 ........................... <[#FirstUppercase: 1]>
+  [357] pushproplist ............................ <[#FirstUppercase: 1]>
+  [358] pusharglist 3 ........................... <gRock.m_languageManager, #szidCampaignType, [#FirstUppercase: 1]>
+  [360] objcall 587 ............................. <gRock.m_languageManager.getStr(#szidCampaignType, [#FirstUppercase: 1])>
+  [363] pusharglistnoret 3 ...................... <obj, #editData, gRock.m_languageManager.getStr(#szidCampaignType, [#FirstUppercase: 1])>
+  [365] objcall 364 ............................. obj.setOneProp(#editData, gRock.m_languageManager.getStr(#szidCampaignType, [#FirstUppercase: 1]))
+  [368] getprop 447 ............................. <ancestor>
+  [371] getobjprop 360 .......................... <ancestor.m_objDlg>
+  [374] pushsymb 971 ............................ <#ChooseDays>
+  [377] pushsymb 933 ............................ <#Chooser>
+  [380] pushsymb 9 .............................. <#text>
+  [382] pusharglist 3 ........................... <[#ChooseDays, #Chooser, #text]>
+  [384] pushlist ................................ <[#ChooseDays, #Chooser, #text]>
+  [385] pusharglist 2 ........................... <ancestor.m_objDlg, [#ChooseDays, #Chooser, #text]>
+  [387] objcall 411 ............................. <ancestor.m_objDlg.getItemByPath([#ChooseDays, #Chooser, #text])>
+  [390] setlocal 48 ............................. obj = ancestor.m_objDlg.getItemByPath([#ChooseDays, #Chooser, #text])
+  [392] getlocal 48 ............................. <obj>
+  [394] pushsymb 455 ............................ <#inOffsetRect>
+  [397] pusharglist 2 ........................... <obj, #inOffsetRect>
+  [399] objcall 456 ............................. <obj.getOneProp(#inOffsetRect)>
+  [402] setlocal 56 ............................. tmp = obj.getOneProp(#inOffsetRect)
+  [404] getlocal 56 ............................. <tmp>
+  [406] pushint8 3 .............................. <3>
+  [409] pushint8 50 ............................. <50>
+  [412] pusharglistnoret 3 ...................... <tmp, 3, 50>
+  [414] objcall 130 ............................. tmp[3] = 50
+  [417] getlocal 48 ............................. <obj>
+  [419] pushsymb 455 ............................ <#inOffsetRect>
+  [422] getlocal 56 ............................. <tmp>
+  [424] pusharglistnoret 3 ...................... <obj, #inOffsetRect, tmp>
+  [426] objcall 364 ............................. obj.setOneProp(#inOffsetRect, tmp)
+  [429] getprop 447 ............................. <ancestor>
+  [432] getobjprop 360 .......................... <ancestor.m_objDlg>
+  [435] pushsymb 971 ............................ <#ChooseDays>
+  [438] pushsymb 584 ............................ <#Head>
+  [441] pushsymb 429 ............................ <#icon>
+  [444] pusharglist 3 ........................... <[#ChooseDays, #Head, #icon]>
+  [446] pushlist ................................ <[#ChooseDays, #Head, #icon]>
+  [447] pusharglist 2 ........................... <ancestor.m_objDlg, [#ChooseDays, #Head, #icon]>
+  [449] objcall 411 ............................. <ancestor.m_objDlg.getItemByPath([#ChooseDays, #Head, #icon])>
+  [452] setlocal 48 ............................. obj = ancestor.m_objDlg.getItemByPath([#ChooseDays, #Head, #icon])
+  [454] getlocal 48 ............................. <obj>
+  [456] pushsymb 361 ............................ <#Pic>
+  [459] pushcons 24 ............................. <"Dummy">
+  [461] pusharglistnoret 3 ...................... <obj, #Pic, "Dummy">
+  [463] objcall 364 ............................. obj.setOneProp(#Pic, "Dummy")
+  [466] getprop 447 ............................. <ancestor>
+  [469] getobjprop 360 .......................... <ancestor.m_objDlg>
+  [472] pushsymb 971 ............................ <#ChooseDays>
+  [475] pushsymb 584 ............................ <#Head>
+  [478] pushsymb 393 ............................ <#Info>
+  [481] pusharglist 3 ........................... <[#ChooseDays, #Head, #Info]>
+  [483] pushlist ................................ <[#ChooseDays, #Head, #Info]>
+  [484] pusharglist 2 ........................... <ancestor.m_objDlg, [#ChooseDays, #Head, #Info]>
+  [486] objcall 411 ............................. <ancestor.m_objDlg.getItemByPath([#ChooseDays, #Head, #Info])>
+  [489] setlocal 48 ............................. obj = ancestor.m_objDlg.getItemByPath([#ChooseDays, #Head, #Info])
+  [491] getlocal 48 ............................. <obj>
+  [493] pushsymb 412 ............................ <#editData>
+  [496] getglobal 35 ............................ <gRock>
+  [499] getobjprop 585 .......................... <gRock.m_languageManager>
+  [502] pushsymb 972 ............................ <#szidCampaignTime>
+  [505] pushsymb 935 ............................ <#FirstUppercase>
+  [508] pushint8 1 .............................. <1>
+  [511] pusharglist 2 ........................... <[#FirstUppercase: 1]>
+  [513] pushproplist ............................ <[#FirstUppercase: 1]>
+  [514] pusharglist 3 ........................... <gRock.m_languageManager, #szidCampaignTime, [#FirstUppercase: 1]>
+  [516] objcall 587 ............................. <gRock.m_languageManager.getStr(#szidCampaignTime, [#FirstUppercase: 1])>
+  [519] pusharglistnoret 3 ...................... <obj, #editData, gRock.m_languageManager.getStr(#szidCampaignTime, [#FirstUppercase: 1])>
+  [521] objcall 364 ............................. obj.setOneProp(#editData, gRock.m_languageManager.getStr(#szidCampaignTime, [#FirstUppercase: 1]))
+  [524] getprop 447 ............................. <ancestor>
+  [527] getobjprop 360 .......................... <ancestor.m_objDlg>
+  [530] pushsymb 361 ............................ <#Pic>
+  [533] pusharglist 2 ........................... <ancestor.m_objDlg, #Pic>
+  [535] objcall 362 ............................. <ancestor.m_objDlg.getItem(#Pic)>
+  [538] setlocal 64 ............................. itemObj = ancestor.m_objDlg.getItem(#Pic)
+  [540] getprop 965 ............................. <m_Xplace_r>
+  [543] getobjprop 86 ........................... <m_Xplace_r.ID>
+  [546] pusharglist 1 ........................... <m_Xplace_r.ID>
+  [548] extcall 159 ............................. <string(m_Xplace_r.ID)>
+  [551] setlocal 72 ............................. tmpImgMember = string(m_Xplace_r.ID)
+  [553] getlocal 64 ............................. <itemObj>
+  [555] pusharglist 1 ........................... <itemObj>
+  [557] extcall 63 .............................. <objectp(itemObj)>
+  [560] jmpifz [581] ............................ if objectp(itemObj) then
+  [563] getlocal 64 ............................. <itemObj>
+  [565] pushsymb 361 ............................ <#Pic>
+  [568] pushcons 32 ............................. <"image_">
+  [570] getlocal 72 ............................. <tmpImgMember>
+  [572] joinstr ................................. <"image_" & tmpImgMember>
+  [573] pushcons 40 ............................. <"_small01">
+  [575] joinstr ................................. <"image_" & tmpImgMember & "_small01">
+  [576] pusharglistnoret 3 ...................... <itemObj, #Pic, "image_" & tmpImgMember & "_small01">
+  [578] objcall 364 ............................. itemObj.setOneProp(#Pic, "image_" & tmpImgMember & "_small01")
+  [581] pushint8 5 .............................. <5>
+  [584] getglobal 35 ............................ <gRock>
+  [587] getobjprop 208 .......................... <gRock.m_date>
+  [590] pusharglist 1 ........................... <gRock.m_date>
+  [592] objcall 209 ............................. <gRock.m_date.getDateInt()>
+  [595] add ..................................... <5 + gRock.m_date.getDateInt()>
+  [596] setprop 973 ............................. m_startDate = 5 + gRock.m_date.getDateInt()
+  [599] pushzero ................................ <0>
+  [600] setprop 974 ............................. m_CPHaveRendered = 0
+  [603] getparam 0 .............................. <me>
+  [605] getprop 967 ............................. <m_events_r>
+  [608] pushint8 1 .............................. <1>
+  [611] pusharglist 2 ........................... <m_events_r, 1>
+  [613] objcall 51 .............................. <m_events_r[1]>
+  [616] pusharglistnoret 2 ...................... <me, m_events_r[1]>
+  [618] objcall 964 ............................. me.setEvent(m_events_r[1])
+  [621] getparam 0 .............................. <me>
+  [623] pushint8 5 .............................. <5>
+  [626] pusharglistnoret 2 ...................... <me, 5>
+  [628] objcall 963 ............................. me.setNumDays(5)
+  [631] getprop 447 ............................. <ancestor>
+  [634] getobjprop 360 .......................... <ancestor.m_objDlg>
+  [637] pushsymb 365 ............................ <#DontPaint>
+  [640] pusharglistnoret 2 ...................... <ancestor.m_objDlg, #DontPaint>
+  [642] objcall 366 ............................. ancestor.m_objDlg.recalc(#DontPaint)
+  [645] getprop 447 ............................. <ancestor>
+  [648] getobjprop 360 .......................... <ancestor.m_objDlg>
+  [651] pushsymb 367 ............................ <#AgendaBG>
+  [654] pusharglist 2 ........................... <ancestor.m_objDlg, #AgendaBG>
+  [656] objcall 362 ............................. <ancestor.m_objDlg.getItem(#AgendaBG)>
+  [659] setlocal 64 ............................. itemObj = ancestor.m_objDlg.getItem(#AgendaBG)
+  [661] getlocal 64 ............................. <itemObj>
+  [663] pusharglist 1 ........................... <itemObj>
+  [665] objcall 369 ............................. <itemObj.getOnStageRect()>
+  [668] pushzero ................................ <0>
+  [669] pushzero ................................ <0>
+  [670] pushzero ................................ <0>
+  [671] pushzero ................................ <0>
+  [672] pusharglist 4 ........................... <0, 0, 0, 0>
+  [674] extcall 65 .............................. <rect(0, 0, 0, 0)>
+  [677] add ..................................... <itemObj.getOnStageRect() + rect(0, 0, 0, 0)>
+  [678] pushsymb 370 ............................ <#MoveItems>
+  [681] pushint8 1 .............................. <1>
+  [684] pushsymb 92 ............................. <#show>
+  [687] pusharglist 0 ........................... <[:]>
+  [689] pushproplist ............................ <[:]>
+  [690] pushsymb 371 ............................ <#bgPic>
+  [693] pushcons 48 ............................. <"agenda_background01">
+  [695] pushsymb 372 ............................ <#ShrinkRect>
+  [698] pushint8 6 .............................. <6>
+  [701] pushint8 5 .............................. <5>
+  [704] pushint8 6 .............................. <6>
+  [707] inv ..................................... <-6>
+  [708] pushint8 5 .............................. <5>
+  [711] inv ..................................... <-5>
+  [712] pusharglist 4 ........................... <6, 5, -6, -5>
+  [714] extcall 65 .............................. <rect(6, 5, -6, -5)>
+  [717] pushsymb 117 ............................ <#SPNum>
+  [720] getprop 447 ............................. <ancestor>
+  [723] pusharglist 1 ........................... <ancestor>
+  [725] objcall 504 ............................. <ancestor.getSPOverDlg()>
+  [728] pusharglist 10 .......................... <[#MoveItems: 1, #show: [:], #bgPic: "agenda_background01", #ShrinkRect: rect(6, 5, -6, -5), #SPNum: ancestor.getSPOverDlg()]>
+  [730] pushproplist ............................ <[#MoveItems: 1, #show: [:], #bgPic: "agenda_background01", #ShrinkRect: rect(6, 5, -6, -5), #SPNum: ancestor.getSPOverDlg()]>
+  [731] pusharglistnoret 2 ...................... <itemObj.getOnStageRect() + rect(0, 0, 0, 0), [#MoveItems: 1, #show: [:], #bgPic: "agenda_background01", #ShrinkRect: rect(6, 5, -6, -5), #SPNum: ancestor.getSPOverDlg()]>
+  [733] extcall 368 ............................. rOpenAgenda(itemObj.getOnStageRect() + rect(0, 0, 0, 0), [#MoveItems: 1, #show: [:], #bgPic: "agenda_background01", #ShrinkRect: rect(6, 5, -6, -5), #SPNum: ancestor.getSPOverDlg()])
+  [736] pushint8 1 .............................. <1>
+  [739] setprop 974 ............................. m_CPHaveRendered = 1
+  [742] getprop 447 ............................. <ancestor>
+  [745] pusharglistnoret 1 ...................... <ancestor>
+  [747] objcall 457 ............................. ancestor.render()
+  [750] getparam 0 .............................. <me>
+  [752] pusharglistnoret 1 ...................... <me>
+  [754] extcall 46 .............................. return me
+  [757] ret
+end
+
+on kill me
+  [  0] pusharglistnoret 0 ...................... <>
+  [  2] extcall 506 ............................. rCloseAgenda()
+  [  5] getprop 447 ............................. <ancestor>
+  [  8] pusharglistnoret 1 ...................... <ancestor>
+  [ 10] objcall 3 ............................... ancestor.kill()
+  [ 12] pushzero ................................ <0>
+  [ 13] pusharglistnoret 1 ...................... <0>
+  [ 15] extcall 46 .............................. return 0
+  [ 18] ret
+end
+
+on GetSPNeed me
+  [  0] getprop 447 ............................. <ancestor>
+  [  3] pusharglist 1 ........................... <ancestor>
+  [  5] objcall 90 .............................. <ancestor.GetSPNeed()>
+  [  8] getglobal 35 ............................ <gRock>
+  [ 11] getobjprop 507 .......................... <gRock.m_agenda>
+  [ 14] pusharglist 1 ........................... <gRock.m_agenda>
+  [ 16] objcall 90 .............................. <gRock.m_agenda.GetSPNeed()>
+  [ 19] add ..................................... <ancestor.GetSPNeed() + gRock.m_agenda.GetSPNeed()>
+  [ 20] pusharglistnoret 1 ...................... <ancestor.GetSPNeed() + gRock.m_agenda.GetSPNeed()>
+  [ 22] extcall 46 .............................. return ancestor.GetSPNeed() + gRock.m_agenda.GetSPNeed()
+  [ 25] ret
+end
+
+on Report me, argObj, argWhat
+  [  0] ret
+end
+
+on mouse me, argObj, argWhat, argOption
+  [  0] getparam 24 ............................. <argOption>
+  [  2] pusharglist 1 ........................... <argOption>
+  [  4] extcall 63 .............................. <objectp(argOption)>
+  [  7] jmpifz [580] ............................ if objectp(argOption) then
+  [ 10] getparam 16 ............................. <argWhat>
+  [ 12] pushsymb 187 ............................ <#click>
+  [ 15] eq ...................................... <argWhat = #click>
+  [ 16] jmpifz [580] ............................ if argWhat = #click then
+  [ 19] getparam 24 ............................. <argOption>
+  [ 21] pushsymb 86 ............................. <#ID>
+  [ 24] pusharglist 2 ........................... <argOption, #ID>
+  [ 26] objcall 456 ............................. <argOption.getOneProp(#ID)>
+  [ 29] setlocal 0 .............................. ID = argOption.getOneProp(#ID)
+  [ 31] getlocal 0 .............................. <ID>
+  [ 33] pusharglist 1 ........................... <ID>
+  [ 35] extcall 159 ............................. <string(ID)>
+  [ 38] setlocal 8 .............................. IDStr = string(ID)
+  [ 40] pushcons 56 ............................. <"Arrow">
+  [ 42] getlocal 8 .............................. <IDStr>
+  [ 44] pusharglist 2 ........................... <"Arrow", IDStr>
+  [ 46] extcall 171 ............................. <offset("Arrow", IDStr)>
+  [ 49] jmpifz [289] ............................ if offset("Arrow", IDStr) then / else
+  [ 52] getparam 24 ............................. <argOption>
+  [ 54] setlocal 16 ............................. obj = argOption
+  [ 56] getlocal 16 ............................. <obj>
+  [ 58] pusharglist 1 ........................... <obj>
+  [ 60] extcall 63 .............................. <objectp(obj)>
+  [ 63] jmpifz [286] ............................ if objectp(obj) then
+  [ 66] getlocal 16 ............................. <obj>
+  [ 68] getobjprop 890 .......................... <obj.masterObj>
+  [ 71] pusharglist 1 ........................... <obj.masterObj>
+  [ 73] objcall 891 ............................. <obj.masterObj.getOverIDs()>
+  [ 76] setlocal 24 ............................. overIDs = obj.masterObj.getOverIDs()
+  [ 78] getlocal 24 ............................. <overIDs>
+  [ 80] pusharglist 1 ........................... <overIDs>
+  [ 82] objcall 85 .............................. <overIDs.count()>
+  [ 85] setlocal 32 ............................. cnt = overIDs.count()
+  [ 87] getlocal 32 ............................. <cnt>
+  [ 89] pushint8 2 .............................. <2>
+  [ 92] gteq .................................... <cnt >= 2>
+  [ 93] jmpifz [286] ............................ if cnt >= 2 then
+  [ 96] getlocal 24 ............................. <overIDs>
+  [ 98] pushint8 1 .............................. <1>
+  [101] pusharglist 2 ........................... <overIDs, 1>
+  [103] objcall 51 .............................. <overIDs[1]>
+  [106] setlocal 40 ............................. belongingToID = overIDs[1]
+  [108] getlocal 40 ............................. <belongingToID>
+  [110] pusharglist 1 ........................... <belongingToID>
+  [112] extcall 159 ............................. <string(belongingToID)>
+  [115] setlocal 48 ............................. tmp = string(belongingToID)
+  [117] pushcons 64 ............................. <"Choose">
+  [119] getlocal 48 ............................. <tmp>
+  [121] pusharglist 2 ........................... <"Choose", tmp>
+  [123] extcall 171 ............................. <offset("Choose", tmp)>
+  [126] jmpifz [156] ............................ if offset("Choose", tmp) then / else
+  [129] pushint8 6 .............................. <6>
+  [132] pushchunkvarref 5 ....................... <ID>
+  [134] pushsymb 245 ............................ <#char>
+  [137] pushint8 1 .............................. <1>
+  [140] pushint8 6 .............................. <6>
+  [143] pusharglist 4 ........................... <ID, #char, 1, 6>
+  [145] objcall 246 ............................. <ID.char[1..6]>
+  [148] pusharglistnoret 1 ...................... <ID.char[1..6]>
+  [150] objcall 335 ............................. delete ID.char[1..6]
+  [153] jmp [157]
+  [156] ret ..................................... exit
+  [157] pushint8 2 .............................. <2>
+  [160] getlocal 0 .............................. <ID>
+  [162] pushsymb 977 ............................ <#ArrowDown>
+  [165] eq ...................................... <ID = #ArrowDown>
+  [166] mul ..................................... <2 * (ID = #ArrowDown)>
+  [167] pushint8 1 .............................. <1>
+  [170] sub ..................................... <(2 * (ID = #ArrowDown)) - 1>
+  [171] setlocal 56 ............................. tmpDir = (2 * (ID = #ArrowDown)) - 1
+  [173] getlocal 40 ............................. <belongingToID>
+  [175] pushsymb 969 ............................ <#ChooseAction>
+  [178] eq ...................................... <belongingToID = #ChooseAction>
+  [179] jmpifz [244] ............................ if belongingToID = #ChooseAction then / else
+  [182] getlocal 56 ............................. <tmpDir>
+  [184] inv ..................................... <-tmpDir>
+  [185] setlocal 56 ............................. tmpDir = -tmpDir
+  [187] getprop 967 ............................. <m_events_r>
+  [190] getprop 978 ............................. <m_event_r>
+  [193] pusharglist 2 ........................... <m_events_r, m_event_r>
+  [195] objcall 254 ............................. <m_events_r.getPos(m_event_r)>
+  [198] setlocal 64 ............................. tmpPos = m_events_r.getPos(m_event_r)
+  [200] getprop 447 ............................. <ancestor>
+  [203] getobjprop 360 .......................... <ancestor.m_objDlg>
+  [206] getlocal 64 ............................. <tmpPos>
+  [208] getlocal 56 ............................. <tmpDir>
+  [210] add ..................................... <tmpPos + tmpDir>
+  [211] getprop 967 ............................. <m_events_r>
+  [214] getobjprop 85 ........................... <m_events_r.count>
+  [217] pusharglist 3 ........................... <ancestor.m_objDlg, tmpPos + tmpDir, m_events_r.count>
+  [219] extcall 931 ............................. <rDlgCheckUpDownArrows(ancestor.m_objDlg, tmpPos + tmpDir, m_events_r.count)>
+  [222] setlocal 64 ............................. tmpPos = rDlgCheckUpDownArrows(ancestor.m_objDlg, tmpPos + tmpDir, m_events_r.count)
+  [224] getparam 0 .............................. <me>
+  [226] getprop 967 ............................. <m_events_r>
+  [229] getlocal 64 ............................. <tmpPos>
+  [231] pusharglist 2 ........................... <m_events_r, tmpPos>
+  [233] objcall 51 .............................. <m_events_r[tmpPos]>
+  [236] pusharglistnoret 2 ...................... <me, m_events_r[tmpPos]>
+  [238] objcall 964 ............................. me.setEvent(m_events_r[tmpPos])
+  [241] jmp [286]
+  [244] getlocal 40 ............................. <belongingToID>
+  [246] pushsymb 971 ............................ <#ChooseDays>
+  [249] eq ...................................... <belongingToID = #ChooseDays>
+  [250] jmpifz [286] ............................ if belongingToID = #ChooseDays then
+  [253] getprop 979 ............................. <m_numDays>
+  [256] getlocal 56 ............................. <tmpDir>
+  [258] sub ..................................... <m_numDays - tmpDir>
+  [259] setprop 979 ............................. m_numDays = m_numDays - tmpDir
+  [262] getprop 979 ............................. <m_numDays>
+  [265] pushzero ................................ <0>
+  [266] eq ...................................... <m_numDays = 0>
+  [267] jmpifz [276] ............................ if m_numDays = 0 then
+  [270] pushint8 1 .............................. <1>
+  [273] setprop 979 ............................. m_numDays = 1
+  [276] getparam 0 .............................. <me>
+  [278] getprop 979 ............................. <m_numDays>
+  [281] pusharglistnoret 2 ...................... <me, m_numDays>
+  [283] objcall 963 ............................. me.setNumDays(m_numDays)
+  [286] jmp [580]
+  [289] getlocal 0 .............................. <ID>
+  [291] pushsymb 278 ............................ <#ButtonOK>
+  [294] eq ...................................... <ID = #ButtonOK>
+  [295] jmpifz [536] ............................ if ID = #ButtonOK then / else
+  [298] getglobal 35 ............................ <gRock>
+  [301] getobjprop 485 .......................... <gRock.m_player>
+  [304] getprop 980 ............................. <m_price>
+  [307] pusharglist 2 ........................... <gRock.m_player, m_price>
+  [309] objcall 487 ............................. <gRock.m_player.hasThisMoney(m_price)>
+  [312] jmpifz [527] ............................ if gRock.m_player.hasThisMoney(m_price) then / else
+  [315] getglobal 35 ............................ <gRock>
+  [318] getobjprop 485 .......................... <gRock.m_player>
+  [321] getprop 980 ............................. <m_price>
+  [324] inv ..................................... <-m_price>
+  [325] pushsymb 943 ............................ <#media>
+  [328] pushsymb 981 ............................ <#Ads>
+  [331] pusharglist 2 ........................... <[#media, #Ads]>
+  [333] pushlist ................................ <[#media, #Ads]>
+  [334] pusharglistnoret 3 ...................... <gRock.m_player, -m_price, [#media, #Ads]>
+  [336] objcall 742 ............................. gRock.m_player.transactMoney(-m_price, [#media, #Ads])
+  [339] getglobal 35 ............................ <gRock>
+  [342] getobjprop 77 ........................... <gRock.m_classManager>
+  [345] getprop 978 ............................. <m_event_r>
+  [348] getobjprop 315 .......................... <m_event_r.className>
+  [351] pusharglist 2 ........................... <gRock.m_classManager, m_event_r.className>
+  [353] objcall 199 ............................. <gRock.m_classManager.createObj(m_event_r.className)>
+  [356] setlocal 72 ............................. eventToBook_r = gRock.m_classManager.createObj(m_event_r.className)
+  [358] getglobal 35 ............................ <gRock>
+  [361] getobjprop 77 ........................... <gRock.m_classManager>
+  [364] getprop 978 ............................. <m_event_r>
+  [367] getlocal 72 ............................. <eventToBook_r>
+  [369] pusharglistnoret 3 ...................... <gRock.m_classManager, m_event_r, eventToBook_r>
+  [371] objcall 982 ............................. gRock.m_classManager.copy(m_event_r, eventToBook_r)
+  [374] getlocal 72 ............................. <eventToBook_r>
+  [376] getglobal 35 ............................ <gRock>
+  [379] getobjprop 77 ........................... <gRock.m_classManager>
+  [382] getlocal 72 ............................. <eventToBook_r>
+  [384] pusharglist 2 ........................... <gRock.m_classManager, eventToBook_r>
+  [386] objcall 200 ............................. <gRock.m_classManager.genUniqueID(eventToBook_r)>
+  [389] setobjprop 86 ........................... eventToBook_r.ID = gRock.m_classManager.genUniqueID(eventToBook_r)
+  [392] getlocal 72 ............................. <eventToBook_r>
+  [394] pushzero ................................ <0>
+  [395] setobjprop 353 .......................... eventToBook_r.Moveable = 0
+  [398] getlocal 72 ............................. <eventToBook_r>
+  [400] getlocal 72 ............................. <eventToBook_r>
+  [402] getobjprop 355 .......................... <eventToBook_r.StartDate>
+  [405] getlocal 72 ............................. <eventToBook_r>
+  [407] getobjprop 357 .......................... <eventToBook_r.duration>
+  [410] pusharglistnoret 3 ...................... <eventToBook_r, eventToBook_r.StartDate, eventToBook_r.duration>
+  [412] objcall 210 ............................. eventToBook_r.setDates(eventToBook_r.StartDate, eventToBook_r.duration)
+  [415] getprop 978 ............................. <m_event_r>
+  [418] pushzero ................................ <0>
+  [419] setobjprop 352 .......................... m_event_r.visible = 0
+  [422] pushcons 72 ............................. <"Book">
+  [424] getlocal 72 ............................. <eventToBook_r>
+  [426] getobjprop 315 .......................... <eventToBook_r.className>
+  [429] pusharglist 1 ........................... <eventToBook_r.className>
+  [431] extcall 159 ............................. <string(eventToBook_r.className)>
+  [434] joinstr ................................. <"Book" & string(eventToBook_r.className)>
+  [435] pusharglist 1 ........................... <"Book" & string(eventToBook_r.className)>
+  [437] extcall 296 ............................. <symbol("Book" & string(eventToBook_r.className))>
+  [440] setlocal 80 ............................. tmpMsg = symbol("Book" & string(eventToBook_r.className))
+  [442] getglobal 35 ............................ <gRock>
+  [445] getobjprop 56 ........................... <gRock.m_msgManager>
+  [448] getlocal 80 ............................. <tmpMsg>
+  [450] getlocal 72 ............................. <eventToBook_r>
+  [452] pusharglistnoret 3 ...................... <gRock.m_msgManager, tmpMsg, eventToBook_r>
+  [454] objcall 58 .............................. gRock.m_msgManager.msg(tmpMsg, eventToBook_r)
+  [457] getglobal 35 ............................ <gRock>
+  [460] getobjprop 56 ........................... <gRock.m_msgManager>
+  [463] getlocal 80 ............................. <tmpMsg>
+  [465] getlocal 72 ............................. <eventToBook_r>
+  [467] pusharglistnoret 3 ...................... <gRock.m_msgManager, tmpMsg, eventToBook_r>
+  [469] objcall 58 .............................. gRock.m_msgManager.msg(tmpMsg, eventToBook_r)
+  [472] getglobal 81 ............................ <gDir>
+  [475] getobjprop 50 ........................... <gDir.m_objDialogsMaster>
+  [478] getparam 0 .............................. <me>
+  [480] pusharglist 2 ........................... <gDir.m_objDialogsMaster, me>
+  [482] objcall 467 ............................. <gDir.m_objDialogsMaster.getDialogUnder(me)>
+  [485] setlocal 16 ............................. obj = gDir.m_objDialogsMaster.getDialogUnder(me)
+  [487] getprop 447 ............................. <ancestor>
+  [490] getparam 8 .............................. <argObj>
+  [492] getparam 16 ............................. <argWhat>
+  [494] getparam 24 ............................. <argOption>
+  [496] pusharglistnoret 4 ...................... <ancestor, argObj, argWhat, argOption>
+  [498] objcall 71 .............................. ancestor.mouse(argObj, argWhat, argOption)
+  [501] getlocal 16 ............................. <obj>
+  [503] pusharglist 1 ........................... <obj>
+  [505] extcall 63 .............................. <objectp(obj)>
+  [508] jmpifz [523] ............................ if objectp(obj) then
+  [511] getlocal 16 ............................. <obj>
+  [513] getparam 0 .............................. <me>
+  [515] pushsymb 952 ............................ <#Ad>
+  [518] pusharglistnoret 3 ...................... <obj, me, #Ad>
+  [520] objcall 156 ............................. obj.Report(me, #Ad)
+  [523] ret ..................................... exit
+  [524] jmp [533]
+  [527] pusharglistnoret 0 ...................... <>
+  [529] extcall 488 ............................. rWarnMoney()
+  [532] ret ..................................... exit
+  [533] jmp [566]
+  [536] getlocal 0 .............................. <ID>
+  [538] pushsymb 279 ............................ <#ButtonCancel>
+  [541] eq ...................................... <ID = #ButtonCancel>
+  [542] jmpifz [566] ............................ if ID = #ButtonCancel then
+  [545] getprop 978 ............................. <m_event_r>
+  [548] pushint8 1 .............................. <1>
+  [551] pushint8 1 .............................. <1>
+  [554] pusharglistnoret 3 ...................... <m_event_r, 1, 1>
+  [556] objcall 210 ............................. m_event_r.setDates(1, 1)
+  [559] getprop 978 ............................. <m_event_r>
+  [562] pushzero ................................ <0>
+  [563] setobjprop 352 .......................... m_event_r.visible = 0
+  [566] getprop 447 ............................. <ancestor>
+  [569] getparam 8 .............................. <argObj>
+  [571] getparam 16 ............................. <argWhat>
+  [573] getparam 24 ............................. <argOption>
+  [575] pusharglistnoret 4 ...................... <ancestor, argObj, argWhat, argOption>
+  [577] objcall 71 .............................. ancestor.mouse(argObj, argWhat, argOption)
+  [580] ret
+end
+
+on calcPrice me
+  [  0] getprop 979 ............................. <m_numDays>
+  [  3] getprop 978 ............................. <m_event_r>
+  [  6] getobjprop 486 .......................... <m_event_r.price>
+  [  9] mul ..................................... <m_numDays * m_event_r.price>
+  [ 10] setprop 980 ............................. m_price = m_numDays * m_event_r.price
+  [ 13] getprop 447 ............................. <ancestor>
+  [ 16] getobjprop 360 .......................... <ancestor.m_objDlg>
+  [ 19] pushsymb 969 ............................ <#ChooseAction>
+  [ 22] pushsymb 933 ............................ <#Chooser>
+  [ 25] pushsymb 9 .............................. <#text>
+  [ 27] pusharglist 3 ........................... <[#ChooseAction, #Chooser, #text]>
+  [ 29] pushlist ................................ <[#ChooseAction, #Chooser, #text]>
+  [ 30] pusharglist 2 ........................... <ancestor.m_objDlg, [#ChooseAction, #Chooser, #text]>
+  [ 32] objcall 411 ............................. <ancestor.m_objDlg.getItemByPath([#ChooseAction, #Chooser, #text])>
+  [ 35] setlocal 0 .............................. itemObj = ancestor.m_objDlg.getItemByPath([#ChooseAction, #Chooser, #text])
+  [ 37] getlocal 0 .............................. <itemObj>
+  [ 39] pushsymb 412 ............................ <#editData>
+  [ 42] getprop 978 ............................. <m_event_r>
+  [ 45] getobjprop 172 .......................... <m_event_r.name>
+  [ 48] pushcons 80 ............................. <" ">
+  [ 50] joinstr ................................. <m_event_r.name & " ">
+  [ 51] getprop 980 ............................. <m_price>
+  [ 54] pushzero ................................ <0>
+  [ 55] pushint8 1 .............................. <1>
+  [ 58] pusharglist 3 ........................... <m_price, 0, 1>
+  [ 60] extcall 493 ............................. <rCurrency(m_price, 0, 1)>
+  [ 63] joinstr ................................. <m_event_r.name & " " & rCurrency(m_price, 0, 1)>
+  [ 64] pusharglistnoret 3 ...................... <itemObj, #editData, m_event_r.name & " " & rCurrency(m_price, 0, 1)>
+  [ 66] objcall 364 ............................. itemObj.setOneProp(#editData, m_event_r.name & " " & rCurrency(m_price, 0, 1))
+  [ 69] ret
+end
+
+on setNumDays me, argNumDays
+  [  0] getprop 979 ............................. <m_numDays>
+  [  3] setlocal 0 .............................. beforeNumDays = m_numDays
+  [  5] getparam 8 .............................. <argNumDays>
+  [  7] setprop 979 ............................. m_numDays = argNumDays
+  [ 10] getprop 447 ............................. <ancestor>
+  [ 13] getobjprop 360 .......................... <ancestor.m_objDlg>
+  [ 16] pushsymb 971 ............................ <#ChooseDays>
+  [ 19] pushsymb 933 ............................ <#Chooser>
+  [ 22] pushsymb 9 .............................. <#text>
+  [ 24] pusharglist 3 ........................... <[#ChooseDays, #Chooser, #text]>
+  [ 26] pushlist ................................ <[#ChooseDays, #Chooser, #text]>
+  [ 27] pusharglist 2 ........................... <ancestor.m_objDlg, [#ChooseDays, #Chooser, #text]>
+  [ 29] objcall 411 ............................. <ancestor.m_objDlg.getItemByPath([#ChooseDays, #Chooser, #text])>
+  [ 32] setlocal 8 .............................. obj = ancestor.m_objDlg.getItemByPath([#ChooseDays, #Chooser, #text])
+  [ 34] getlocal 8 .............................. <obj>
+  [ 36] pushsymb 412 ............................ <#editData>
+  [ 39] getprop 979 ............................. <m_numDays>
+  [ 42] pusharglist 1 ........................... <m_numDays>
+  [ 44] extcall 159 ............................. <string(m_numDays)>
+  [ 47] pusharglistnoret 3 ...................... <obj, #editData, string(m_numDays)>
+  [ 49] objcall 364 ............................. obj.setOneProp(#editData, string(m_numDays))
+  [ 52] getparam 0 .............................. <me>
+  [ 54] pusharglistnoret 1 ...................... <me>
+  [ 56] objcall 962 ............................. me.calcPrice()
+  [ 59] getprop 978 ............................. <m_event_r>
+  [ 62] getprop 979 ............................. <m_numDays>
+  [ 65] setobjprop 357 .......................... m_event_r.duration = m_numDays
+  [ 68] getprop 978 ............................. <m_event_r>
+  [ 71] getobjprop 355 .......................... <m_event_r.StartDate>
+  [ 74] setprop 973 ............................. m_startDate = m_event_r.StartDate
+  [ 77] getglobal 35 ............................ <gRock>
+  [ 80] getobjprop 354 .......................... <gRock.m_eventsManager>
+  [ 83] getprop 978 ............................. <m_event_r>
+  [ 86] getprop 973 ............................. <m_startDate>
+  [ 89] pusharglist 3 ........................... <gRock.m_eventsManager, m_event_r, m_startDate>
+  [ 91] objcall 356 ............................. <gRock.m_eventsManager.closestPossibleDate(m_event_r, m_startDate)>
+  [ 94] setlocal 16 ............................. tmpDate = gRock.m_eventsManager.closestPossibleDate(m_event_r, m_startDate)
+  [ 96] getlocal 16 ............................. <tmpDate>
+  [ 98] pushzero ................................ <0>
+  [ 99] gteq .................................... <tmpDate >= 0>
+  [100] jmpifz [119] ............................ if tmpDate >= 0 then / else
+  [103] getprop 978 ............................. <m_event_r>
+  [106] getlocal 16 ............................. <tmpDate>
+  [108] getprop 979 ............................. <m_numDays>
+  [111] pusharglistnoret 3 ...................... <m_event_r, tmpDate, m_numDays>
+  [113] objcall 210 ............................. m_event_r.setDates(tmpDate, m_numDays)
+  [116] jmp [126]
+  [119] pushcons 88 ............................. <"Couldn't find any place to put concert (within reasonable future)">
+  [121] pusharglistnoret 1 ...................... <"Couldn't find any place to put concert (within reasonable future)">
+  [123] extcall 358 ............................. alert("Couldn't find any place to put concert (within reasonable future)")
+  [126] getprop 978 ............................. <m_event_r>
+  [129] pusharglist 1 ........................... <m_event_r>
+  [131] extcall 63 .............................. <objectp(m_event_r)>
+  [134] getprop 974 ............................. <m_CPHaveRendered>
+  [137] and ..................................... <objectp(m_event_r) and m_CPHaveRendered>
+  [138] jmpifz [231] ............................ if objectp(m_event_r) and m_CPHaveRendered then
+  [141] getglobal 35 ............................ <gRock>
+  [144] getobjprop 507 .......................... <gRock.m_agenda>
+  [147] getprop 978 ............................. <m_event_r>
+  [150] getobjprop 86 ........................... <m_event_r.ID>
+  [153] pusharglist 2 ........................... <gRock.m_agenda, m_event_r.ID>
+  [155] objcall 984 ............................. <gRock.m_agenda.getPlannedEvent(m_event_r.ID)>
+  [158] setlocal 24 ............................. planned = gRock.m_agenda.getPlannedEvent(m_event_r.ID)
+  [160] getlocal 24 ............................. <planned>
+  [162] pusharglist 1 ........................... <planned>
+  [164] extcall 63 .............................. <objectp(planned)>
+  [167] jmpifz [231] ............................ if objectp(planned) then
+  [170] getlocal 24 ............................. <planned>
+  [172] getprop 978 ............................. <m_event_r>
+  [175] pusharglistnoret 2 ...................... <planned, m_event_r>
+  [177] objcall 964 ............................. planned.setEvent(m_event_r)
+  [180] getlocal 24 ............................. <planned>
+  [182] pusharglist 1 ........................... <planned>
+  [184] objcall 985 ............................. <planned.putIntoFreeChannel()>
+  [187] pushzero ................................ <0>
+  [188] eq ...................................... <planned.putIntoFreeChannel() = 0>
+  [189] jmpifz [220] ............................ if planned.putIntoFreeChannel() = 0 then
+  [192] getprop 979 ............................. <m_numDays>
+  [195] getlocal 0 .............................. <beforeNumDays>
+  [197] nteq .................................... <m_numDays <> beforeNumDays>
+  [198] jmpifz [220] ............................ if m_numDays <> beforeNumDays then
+  [201] getlocal 0 .............................. <beforeNumDays>
+  [203] pushzero ................................ <0>
+  [204] gt ...................................... <beforeNumDays > 0>
+  [205] jmpifz [220] ............................ if beforeNumDays > 0 then / else
+  [208] getparam 0 .............................. <me>
+  [210] getlocal 0 .............................. <beforeNumDays>
+  [212] pusharglistnoret 2 ...................... <me, beforeNumDays>
+  [214] objcall 963 ............................. me.setNumDays(beforeNumDays)
+  [217] jmp [220]
+  [220] getglobal 35 ............................ <gRock>
+  [223] getobjprop 507 .......................... <gRock.m_agenda>
+  [226] pusharglistnoret 1 ...................... <gRock.m_agenda>
+  [228] objcall 189 ............................. gRock.m_agenda.draw()
+  [231] ret
+end
+
+on setEvent me, argEvent
+  [  0] getprop 978 ............................. <m_event_r>
+  [  3] pusharglist 1 ........................... <m_event_r>
+  [  5] extcall 63 .............................. <objectp(m_event_r)>
+  [  8] getprop 974 ............................. <m_CPHaveRendered>
+  [ 11] and ..................................... <objectp(m_event_r) and m_CPHaveRendered>
+  [ 12] jmpifz [ 64] ............................ if objectp(m_event_r) and m_CPHaveRendered then
+  [ 15] getprop 978 ............................. <m_event_r>
+  [ 18] getobjprop 355 .......................... <m_event_r.StartDate>
+  [ 21] setprop 973 ............................. m_startDate = m_event_r.StartDate
+  [ 24] getprop 978 ............................. <m_event_r>
+  [ 27] pushint8 1 .............................. <1>
+  [ 30] pushint8 1 .............................. <1>
+  [ 33] pusharglistnoret 3 ...................... <m_event_r, 1, 1>
+  [ 35] objcall 210 ............................. m_event_r.setDates(1, 1)
+  [ 38] getprop 978 ............................. <m_event_r>
+  [ 41] pushzero ................................ <0>
+  [ 42] setobjprop 352 .......................... m_event_r.visible = 0
+  [ 45] getglobal 35 ............................ <gRock>
+  [ 48] getobjprop 507 .......................... <gRock.m_agenda>
+  [ 51] getprop 978 ............................. <m_event_r>
+  [ 54] getobjprop 86 ........................... <m_event_r.ID>
+  [ 57] pusharglist 2 ........................... <gRock.m_agenda, m_event_r.ID>
+  [ 59] objcall 984 ............................. <gRock.m_agenda.getPlannedEvent(m_event_r.ID)>
+  [ 62] setlocal 0 .............................. planned = gRock.m_agenda.getPlannedEvent(m_event_r.ID)
+  [ 64] getparam 8 .............................. <argEvent>
+  [ 66] setprop 978 ............................. m_event_r = argEvent
+  [ 69] getprop 978 ............................. <m_event_r>
+  [ 72] getprop 973 ............................. <m_startDate>
+  [ 75] getprop 979 ............................. <m_numDays>
+  [ 78] pusharglistnoret 3 ...................... <m_event_r, m_startDate, m_numDays>
+  [ 80] objcall 210 ............................. m_event_r.setDates(m_startDate, m_numDays)
+  [ 83] getprop 978 ............................. <m_event_r>
+  [ 86] pushint8 1 .............................. <1>
+  [ 89] setobjprop 352 .......................... m_event_r.visible = 1
+  [ 92] getlocal 0 .............................. <planned>
+  [ 94] pusharglist 1 ........................... <planned>
+  [ 96] extcall 63 .............................. <objectp(planned)>
+  [ 99] jmpifz [123] ............................ if objectp(planned) then
+  [102] getlocal 0 .............................. <planned>
+  [104] getprop 978 ............................. <m_event_r>
+  [107] pusharglistnoret 2 ...................... <planned, m_event_r>
+  [109] objcall 964 ............................. planned.setEvent(m_event_r)
+  [112] getglobal 35 ............................ <gRock>
+  [115] getobjprop 507 .......................... <gRock.m_agenda>
+  [118] pusharglistnoret 1 ...................... <gRock.m_agenda>
+  [120] objcall 189 ............................. gRock.m_agenda.draw()
+  [123] getparam 0 .............................. <me>
+  [125] pusharglistnoret 1 ...................... <me>
+  [127] objcall 962 ............................. me.calcPrice()
+  [130] getprop 447 ............................. <ancestor>
+  [133] getobjprop 360 .......................... <ancestor.m_objDlg>
+  [136] pushsymb 393 ............................ <#Info>
+  [139] pusharglist 2 ........................... <ancestor.m_objDlg, #Info>
+  [141] objcall 362 ............................. <ancestor.m_objDlg.getItem(#Info)>
+  [144] setlocal 8 .............................. itemObj = ancestor.m_objDlg.getItem(#Info)
+  [146] getlocal 8 .............................. <itemObj>
+  [148] pushsymb 361 ............................ <#Pic>
+  [151] getprop 978 ............................. <m_event_r>
+  [154] getobjprop 276 .......................... <m_event_r.comment>
+  [157] pusharglist 1 ........................... <[m_event_r.comment]>
+  [159] pushlist ................................ <[m_event_r.comment]>
+  [160] pushcons 96 ............................. <"MediaAdFormatting">
+  [162] pushsymb 474 ............................ <#shadow>
+  [165] pushint8 1 .............................. <1>
+  [168] pusharglist 2 ........................... <[#shadow: 1]>
+  [170] pushproplist ............................ <[#shadow: 1]>
+  [171] pusharglist 3 ........................... <[m_event_r.comment], "MediaAdFormatting", [#shadow: 1]>
+  [173] extcall 382 ............................. <rFormatText([m_event_r.comment], "MediaAdFormatting", [#shadow: 1])>
+  [176] pusharglistnoret 3 ...................... <itemObj, #Pic, rFormatText([m_event_r.comment], "MediaAdFormatting", [#shadow: 1])>
+  [178] objcall 364 ............................. itemObj.setOneProp(#Pic, rFormatText([m_event_r.comment], "MediaAdFormatting", [#shadow: 1]))
+  [181] ret
+end

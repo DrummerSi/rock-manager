@@ -1,0 +1,144 @@
+property ancestor, m_yScale, m_data, m_dataStartAndEndDates, m_centerVal, m_pixPerV, m_zeroAt, m_displayMode, m_type
+
+on new me, argMasterObj, argChildObj, argInfo
+  m_type = #point
+  argInfo[#ClrDepth] = 1
+  ancestor = script("ChannelAncestorScript").new(argMasterObj, me, argInfo)
+  ancestor.m_type = #point
+  ancestor.m_height = 40
+  m_yScale = 1.0
+  m_centerVal = 0.5
+  tmpStartDate = argInfo[#StartDate]
+  if voidp(tmpStartDate) then
+    tmpStartDate = 350
+  end if
+  m_data = argInfo[#data]
+  if listp(m_data) then
+    if ilk(m_data) = #propList then
+      if m_data.count() then
+        tmpMax = 0
+        tmpStartDate = m_data.getPropAt(1)
+        tmpData = []
+        tmpLastDate = m_data.getPropAt(1)
+        if (argInfo[#ContinueTilToday] = 1) and (m_data.getPropAt(m_data.count()) < ancestor.m_agenda.m_todayDate) then
+          m_data.setaProp(ancestor.m_agenda.m_todayDate, m_data[m_data.count()])
+        end if
+        repeat with n = 2 to m_data.count()
+          tmpNextDate = m_data.getPropAt(n)
+          tmpVal = m_data[n - 1]
+          if tmpVal > tmpMax then
+            tmpMax = tmpVal
+          end if
+          repeat with tmpDate = tmpLastDate to tmpNextDate - 1
+            tmpData.add(tmpVal)
+          end repeat
+          tmpLastDate = tmpNextDate
+        end repeat
+        m_data = tmpData
+        m_yScale = tmpMax
+        m_centerVal = tmpMax / 2
+      else
+        m_data = []
+      end if
+    end if
+    if m_yScale = 0 then
+      m_yScale = 1.0
+    end if
+  else
+    m_data = []
+    repeat with n = 1 to 100
+      m_data.add((n / 100.0) + 0.25 + (0.25 * sin(float(n) * 1.0)))
+    end repeat
+  end if
+  m_dataStartAndEndDates = [tmpStartDate, tmpStartDate + m_data.count() - 1]
+  m_displayMode = #line
+  return me
+end
+
+on kill me
+  ancestor = ancestor.kill()
+  return 0
+end
+
+on scroll me, argPoint
+  ancestor.scroll(argPoint)
+end
+
+on draw me, argStartAndEndDates, argRect
+  if ancestor.m_isExpanded = 0 then
+    ancestor.draw(argStartAndEndDates)
+    exit
+  end if
+  tmpStartEnd = [integer(ancestor.m_agenda.locHtoDate(argRect[1])), integer(ancestor.m_agenda.locHtoDate(argRect[3]))]
+  realStartAndEndDates = tmpStartEnd
+  if m_displayMode = #Bar then
+    realStartAndEndDates[2] = realStartAndEndDates[2] + 1
+  else
+    if m_displayMode = #line then
+      realStartAndEndDates[2] = realStartAndEndDates[2] + 1
+    end if
+  end if
+  tmpDataToDisplay = 1
+  if m_dataStartAndEndDates[1] > realStartAndEndDates[1] then
+    if m_dataStartAndEndDates[2] > argStartAndEndDates[2] then
+      tmpDataToDisplay = 0
+    else
+      realStartAndEndDates[1] = m_dataStartAndEndDates[1]
+    end if
+  end if
+  if m_dataStartAndEndDates[2] < realStartAndEndDates[2] then
+    if m_dataStartAndEndDates[2] < argStartAndEndDates[1] then
+      tmpDataToDisplay = 0
+    else
+      realStartAndEndDates[2] = m_dataStartAndEndDates[2]
+    end if
+  end if
+  if 0 then
+    blitOffset = ancestor.m_blitOffset
+    tmpImage = ancestor.m_agenda.m_imagePtr[1]
+  else
+    blitOffset = point(0, 0)
+    tmpImage = ancestor.m_image
+    argRect[2] = 0
+    argRect[4] = ancestor.m_image.rect[4]
+    tmpImage.fill(argRect, rgb(255, 255, 255))
+  end if
+  centerOff = ancestor.m_agenda.m_pixelsPerDay / 2
+  tmpLastLoc = VOID
+  barStartAt = m_zeroAt
+  if tmpDataToDisplay then
+    repeat with tmpDate = realStartAndEndDates[1] to realStartAndEndDates[2]
+      tmpLocH = ancestor.m_agenda.dateToLocH(tmpDate)
+      tmpIndex = tmpDate - m_dataStartAndEndDates[1] + 1
+      tmpLocV = m_zeroAt - (m_data[tmpIndex] * m_pixPerV)
+      tmpLoc = point(tmpLocH, integer(tmpLocV)) + blitOffset
+      if (tmpLoc[2] >= blitOffset[2]) and (tmpLoc[2] < (blitOffset[2] + ancestor.m_size[2])) then
+        if voidp(tmpLastLoc) then
+          tmpLastLoc = tmpLoc
+        end if
+        if m_displayMode = #line then
+          tmpImage.draw(tmpLastLoc, tmpLoc, rgb(0, 0, 0))
+        else
+          if m_displayMode = #Bar then
+            tmpRect = rect(tmpLastLoc[1] + 1, tmpLoc[2], tmpLoc[1], ancestor.m_viewRect[4]) + rect(-centerOff, 0, -centerOff, 0)
+            tmpImage.fill(tmpRect, [#shapeType: #rect, #color: rgb(0, 0, 0)])
+          else
+            tmpImage.setPixel(tmpLoc, rgb(0, 0, 0))
+          end if
+        end if
+      end if
+      tmpLastLoc = tmpLoc
+    end repeat
+  end if
+  blitOffset = point(ancestor.m_viewRect[1], ancestor.m_viewRect[2])
+  ancestor.m_agenda.m_imagePtr[1].copyPixels(tmpImage, tmpImage.rect + rect(blitOffset, blitOffset), tmpImage.rect, [#ink: 36, #color: rgb(255, 90, 0)])
+  ancestor.draw(argStartAndEndDates)
+end
+
+on setViewRect me, argRect
+  ancestor.setViewRect(argRect)
+  tmpSize = getRectSize(argRect)
+  tmpViewYRange = [0.0, float(m_yScale)]
+  m_pixPerV = float(tmpSize[2]) / (tmpViewYRange[2] - tmpViewYRange[1])
+  m_zeroAt = float(tmpSize[2])
+end

@@ -1,0 +1,89 @@
+property m_viewRect, m_agenda, m_child, m_expandMouseObj, m_isExpanded, m_image, m_info, m_size, m_blitOffset, m_type, m_height
+
+on new me, argMasterObj, argChildObj, argList
+  m_info = argList
+  m_agenda = argMasterObj
+  m_child = argChildObj
+  if voidp(argList) then
+    argList = [:]
+  end if
+  m_viewRect = argList[#ViewRect]
+  if voidp(m_viewRect) then
+    m_viewRect = rect(0, 0, 0, 0)
+  end if
+  m_height = 40
+  m_expandMouseObj = script("MouseObject").new(me, rect(0, 0, 0, 0), [#ID: #expand, #layer: 1000002])
+  m_isExpanded = 1
+  return me
+end
+
+on kill me
+  m_expandMouseObj = m_expandMouseObj.kill()
+  m_agenda = 0
+  m_child = 0
+  m_image = 0
+  m_info = 0
+  return 0
+end
+
+on expand me, argIsTRUE
+  m_isExpanded = argIsTRUE
+  m_agenda.expandedChannel()
+  if m_isExpanded then
+  else
+  end if
+end
+
+on display me, argIsTRUE
+  m_expandMouseObj.activate(argIsTRUE)
+  if argIsTRUE then
+  end if
+end
+
+on scroll me, argPoint
+  imageMoveWithin(m_image, -argPoint, m_image.rect, m_image.rect)
+end
+
+on setViewRect me, argRect
+  m_viewRect = argRect
+  m_viewRect[4] = m_viewRect[2] + m_height
+  m_size = getRectSize(argRect)
+  m_blitOffset = point(m_viewRect[1], m_viewRect[2])
+  depth = m_info[#ClrDepth]
+  if voidp(depth) then
+    depth = 1
+  end if
+  m_image = image(m_size[1], m_size[2], depth)
+end
+
+on getBottomV me
+  if m_isExpanded then
+    return m_viewRect[4]
+  end if
+  return m_viewRect[2] + 13
+end
+
+on draw me, argStartAndEndDates
+  exit
+  member("DatePlotText").text = m_info[#name] & " "
+  tmp = charPosToLoc(member("DatePlotText"), member("DatePlotText").text.length)
+  tmpR = rect(0, 0, tmp[1], tmp[2])
+  img = member("DatePlotText").image
+  img2 = image(tmp[1], tmp[2], 8)
+  img2.fill(img2.rect, rgb(0, 0, 0))
+  img2.copyPixels(img, img.rect, img.rect, [#color: m_agenda.m_stdTextClr])
+  m_expandMouseObj.myRect = tmpR + rect(m_blitOffset, m_blitOffset) + rect(m_agenda.m_viewRectOnStage[1], m_agenda.m_viewRectOnStage[2], m_agenda.m_viewRectOnStage[1], m_agenda.m_viewRectOnStage[2])
+  m_agenda.m_imagePtr[1].copyPixels(img2, rect(m_blitOffset, m_blitOffset) + tmpR, tmpR, [#ink: 0])
+end
+
+on mouse me, argObj, argWhat
+  if argWhat = #click then
+    if argObj.ID = #expand then
+      if m_isExpanded then
+        me.expand(0)
+      else
+        me.expand(1)
+      end if
+    end if
+  end if
+end

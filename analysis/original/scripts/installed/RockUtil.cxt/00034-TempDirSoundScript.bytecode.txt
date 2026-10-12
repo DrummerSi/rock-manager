@@ -1,0 +1,157 @@
+property m_sound, m_file, m_fullFileName, m_reportTo, m_startedPlaying
+global gUseful
+
+on new me, argFile, argOptions
+  [  0] getparam 16 ............................. <argOptions>
+  [  2] pusharglist 1 ........................... <argOptions>
+  [  4] extcall 68 .............................. <voidp(argOptions)>
+  [  7] jmpifz [ 15] ............................ if voidp(argOptions) then
+  [ 10] pusharglist 0 ........................... <[:]>
+  [ 12] pushproplist ............................ <[:]>
+  [ 13] setparam 16 ............................. argOptions = [:]
+  [ 15] getparam 16 ............................. <argOptions>
+  [ 17] pushsymb 72 ............................. <#ReportTo>
+  [ 20] pusharglist 2 ........................... <argOptions, #ReportTo>
+  [ 22] objcall 34 .............................. <argOptions[#ReportTo]>
+  [ 25] setprop 973 ............................. m_reportTo = argOptions[#ReportTo]
+  [ 28] pushint8 4 .............................. <4>
+  [ 31] get 8 ................................... <the number of castLibs>
+  [ 33] pusharglist 1 ........................... <the number of castLibs>
+  [ 35] extcall 974 ............................. <castLib(the number of castLibs)>
+  [ 38] getobjprop 504 .......................... <castLib(the number of castLibs).name>
+  [ 41] pushcons 0 .............................. <"Snd">
+  [ 43] eq ...................................... <castLib(the number of castLibs).name = "Snd">
+  [ 44] jmpifz [ 54] ............................ if castLib(the number of castLibs).name = "Snd" then
+  [ 47] pushcons 8 .............................. <"Got castLib!">
+  [ 49] pusharglistnoret 1 ...................... <"Got castLib!">
+  [ 51] extcall 36 .............................. pott("Got castLib!")
+  [ 54] getparam 8 .............................. <argFile>
+  [ 56] setprop 975 ............................. m_file = argFile
+  [ 59] getprop 975 ............................. <m_file>
+  [ 62] pusharglist 1 ........................... <m_file>
+  [ 64] extcall 976 ............................. <filePathContainsDrive(m_file)>
+  [ 67] jmpifz [ 79] ............................ if filePathContainsDrive(m_file) then / else
+  [ 70] getprop 975 ............................. <m_file>
+  [ 73] setprop 977 ............................. m_fullFileName = m_file
+  [ 76] jmp [ 97]
+  [ 79] getglobal 23 ............................ <gUseful>
+  [ 81] getobjprop 619 .......................... <gUseful.soundObj>
+  [ 84] getobjprop 718 .......................... <gUseful.soundObj.soundPath>
+  [ 87] pushcons 16 ............................. <"Mp3\\">
+  [ 89] joinstr ................................. <gUseful.soundObj.soundPath & "Mp3\\">
+  [ 90] getprop 975 ............................. <m_file>
+  [ 93] joinstr ................................. <gUseful.soundObj.soundPath & "Mp3\\" & m_file>
+  [ 94] setprop 977 ............................. m_fullFileName = gUseful.soundObj.soundPath & "Mp3\\" & m_file
+  [ 97] getprop 977 ............................. <m_fullFileName>
+  [100] pusharglist 1 ........................... <m_fullFileName>
+  [102] extcall 661 ............................. <fileGetExtension(m_fullFileName)>
+  [105] setlocal 0 .............................. extension = fileGetExtension(m_fullFileName)
+  [107] getlocal 0 .............................. <extension>
+  [109] pushcons 24 ............................. <EMPTY>
+  [111] eq ...................................... <extension = EMPTY>
+  [112] jmpifz [124] ............................ if extension = EMPTY then
+  [115] getprop 977 ............................. <m_fullFileName>
+  [118] pushcons 32 ............................. <".mp3">
+  [120] joinstr ................................. <m_fullFileName & ".mp3">
+  [121] setprop 977 ............................. m_fullFileName = m_fullFileName & ".mp3"
+  [124] getprop 977 ............................. <m_fullFileName>
+  [127] pusharglist 1 ........................... <m_fullFileName>
+  [129] extcall 426 ............................. <getWaveFileInfo(m_fullFileName)>
+  [132] setlocal 8 .............................. tmpInfo = getWaveFileInfo(m_fullFileName)
+  [134] pushint8 1 .............................. <1>
+  [137] pusharglist 1 ........................... <1>
+  [139] extcall 259 ............................. <sound(1)>
+  [142] setprop 978 ............................. m_sound = sound(1)
+  [145] getprop 978 ............................. <m_sound>
+  [148] pusharglist 1 ........................... <m_sound>
+  [150] objcall 701 ............................. <m_sound.isBusy()>
+  [153] jmpifz [164] ............................ if m_sound.isBusy() then
+  [156] getprop 978 ............................. <m_sound>
+  [159] pusharglistnoret 1 ...................... <m_sound>
+  [161] objcall 238 ............................. m_sound.stop()
+  [164] getprop 978 ............................. <m_sound>
+  [167] pushint8 128 ............................ <128>
+  [170] setobjprop 698 .......................... m_sound.volume = 128
+  [173] getprop 978 ............................. <m_sound>
+  [176] pushsymb 296 ............................ <#member>
+  [179] pushcons 40 ............................. <"LinkedAudio">
+  [181] pusharglist 1 ........................... <"LinkedAudio">
+  [183] extcall 296 ............................. <member("LinkedAudio")>
+  [186] pushsymb 699 ............................ <#loopCount>
+  [189] pushint8 1 .............................. <1>
+  [192] pusharglist 4 ........................... <[#member: member("LinkedAudio"), #loopCount: 1]>
+  [194] pushproplist ............................ <[#member: member("LinkedAudio"), #loopCount: 1]>
+  [195] pusharglistnoret 2 ...................... <m_sound, [#member: member("LinkedAudio"), #loopCount: 1]>
+  [197] objcall 979 ............................. m_sound.queue([#member: member("LinkedAudio"), #loopCount: 1])
+  [200] pushzero ................................ <0>
+  [201] setprop 980 ............................. m_startedPlaying = 0
+  [204] getglobal 23 ............................ <gUseful>
+  [206] getobjprop 24 ........................... <gUseful.frameTimer>
+  [208] getparam 0 .............................. <me>
+  [210] pusharglistnoret 2 ...................... <gUseful.frameTimer, me>
+  [212] objcall 56 .............................. gUseful.frameTimer.addObject(me)
+  [215] getparam 0 .............................. <me>
+  [217] pusharglistnoret 1 ...................... <me>
+  [219] extcall 21 .............................. return me
+  [221] ret
+end
+
+on kill me
+  [  0] getglobal 23 ............................ <gUseful>
+  [  2] getobjprop 24 ........................... <gUseful.frameTimer>
+  [  4] getparam 0 .............................. <me>
+  [  6] pusharglistnoret 2 ...................... <gUseful.frameTimer, me>
+  [  8] objcall 25 .............................. gUseful.frameTimer.deleteObject(me)
+  [ 10] getprop 978 ............................. <m_sound>
+  [ 13] pusharglistnoret 1 ...................... <m_sound>
+  [ 15] objcall 238 ............................. m_sound.stop()
+  [ 18] pushzero ................................ <0>
+  [ 19] setprop 978 ............................. m_sound = 0
+  [ 22] pushzero ................................ <0>
+  [ 23] pusharglistnoret 1 ...................... <0>
+  [ 25] extcall 21 .............................. return 0
+  [ 27] ret
+end
+
+on timeTick me
+  [  0] getprop 980 ............................. <m_startedPlaying>
+  [  3] pushzero ................................ <0>
+  [  4] eq ...................................... <m_startedPlaying = 0>
+  [  5] jmpifz [ 49] ............................ if m_startedPlaying = 0 then / else
+  [  8] getprop 978 ............................. <m_sound>
+  [ 11] pusharglistnoret 1 ...................... <m_sound>
+  [ 13] objcall 237 ............................. m_sound.play()
+  [ 16] getprop 973 ............................. <m_reportTo>
+  [ 19] pusharglist 1 ........................... <m_reportTo>
+  [ 21] extcall 71 .............................. <objectp(m_reportTo)>
+  [ 24] jmpifz [ 40] ............................ if objectp(m_reportTo) then
+  [ 27] getprop 973 ............................. <m_reportTo>
+  [ 30] getparam 0 .............................. <me>
+  [ 32] pushsymb 237 ............................ <#play>
+  [ 35] pusharglistnoret 3 ...................... <m_reportTo, me, #play>
+  [ 37] objcall 74 .............................. m_reportTo.Report(me, #play)
+  [ 40] pushint8 1 .............................. <1>
+  [ 43] setprop 980 ............................. m_startedPlaying = 1
+  [ 46] jmp [ 96]
+  [ 49] getprop 978 ............................. <m_sound>
+  [ 52] pusharglist 1 ........................... <m_sound>
+  [ 54] objcall 701 ............................. <m_sound.isBusy()>
+  [ 57] pushzero ................................ <0>
+  [ 58] eq ...................................... <m_sound.isBusy() = 0>
+  [ 59] jmpifz [ 96] ............................ if m_sound.isBusy() = 0 then
+  [ 62] getprop 973 ............................. <m_reportTo>
+  [ 65] pusharglist 1 ........................... <m_reportTo>
+  [ 67] extcall 71 .............................. <objectp(m_reportTo)>
+  [ 70] jmpifz [ 86] ............................ if objectp(m_reportTo) then
+  [ 73] getprop 973 ............................. <m_reportTo>
+  [ 76] getparam 0 .............................. <me>
+  [ 78] pushsymb 646 ............................ <#finished>
+  [ 81] pusharglistnoret 3 ...................... <m_reportTo, me, #finished>
+  [ 83] objcall 74 .............................. m_reportTo.Report(me, #finished)
+  [ 86] getglobal 23 ............................ <gUseful>
+  [ 88] getobjprop 24 ........................... <gUseful.frameTimer>
+  [ 90] getparam 0 .............................. <me>
+  [ 92] pusharglistnoret 2 ...................... <gUseful.frameTimer, me>
+  [ 94] objcall 25 .............................. gUseful.frameTimer.deleteObject(me)
+  [ 96] ret
+end

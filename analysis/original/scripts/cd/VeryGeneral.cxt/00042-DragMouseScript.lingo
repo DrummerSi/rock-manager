@@ -1,0 +1,77 @@
+property ancestor, overMouseObj, reportObj, deltaMove, downLoc, lastLoc
+global gUseful
+
+on new me, argReportObj, argRect, argOptions
+  reportObj = argReportObj
+  if voidp(argOptions) then
+    argOptions = [:]
+  end if
+  ancestor = new(script("MouseObject"), me, argRect, argOptions)
+  argOptions = argOptions.duplicate()
+  argOptions.setaProp(#layer, 1000000)
+  overMouseObj = new(script("MouseObject"), me, rect(-1000, -1000, 2000, 2000), argOptions)
+  overMouseObj.activate(0)
+  downLoc = point(0, 0)
+  lastLoc = point(0, 0)
+  deltaMove = point(0, 0)
+  return me
+end
+
+on kill me
+  ancestor = ancestor.kill()
+  overMouseObj = overMouseObj.kill()
+  return 0
+end
+
+on setLayer me, argLayer
+  ancestor.setLayer(argLayer)
+end
+
+on setCursor me, argCursor
+  ancestor.setCursor(argCursor)
+  overMouseObj.setCursor(argCursor)
+end
+
+on mouse me, argObj, argWhat
+  if argWhat = #DownOnOther then
+    if (gUseful.mouseObjects.downOnObj = ancestor) or (gUseful.mouseObjects.downOnObj = overMouseObj) then
+      exit
+    end if
+  end if
+  if argObj = ancestor then
+    if argWhat = #stillDown then
+    end if
+    if argWhat = #down then
+      downLoc = gUseful.mouseObjects.getMouseLoc()
+      lastLoc = downLoc
+      overMouseObj.activate(1)
+      ancestor.downOn = 0
+      overMouseObj.downOn = 1
+      overMouseObj.isInside = 1
+    end if
+  else
+    if argObj = overMouseObj then
+      if argWhat = #stillDown then
+        tmp = gUseful.mouseObjects.getMouseLoc()
+        deltaMove = tmp - lastLoc
+        lastLoc = tmp
+      else
+        if argWhat = #click then
+          overMouseObj.activate(0)
+        end if
+      end if
+    end if
+  end if
+  reportObj.mouse(me, argWhat)
+end
+
+on getDraggedRect me
+  return rect(downLoc, lastLoc)
+end
+
+on getMove me, argMode
+  if argMode = #down then
+    return lastLoc - downLoc
+  end if
+  return deltaMove
+end

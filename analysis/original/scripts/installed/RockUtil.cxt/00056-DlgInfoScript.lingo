@@ -1,0 +1,55 @@
+property ancestor
+global gDir, gRock
+
+on new me, argOptions
+  ID = argOptions[#ID]
+  argOptions[#child] = me
+  argOptions[#ReportTo] = me
+  Info = argOptions[#InfoSettings]
+  if voidp(Info) then
+    Info = [#title: "Jonas!", #text: "A cool man."]
+  end if
+  dialog_r = gRock.m_classManager.getObjByIDAndClass(#DlgInfo, #Dialog)
+  dialog_r.dataMemberName = "DlgRockEventCardType01Data"
+  dialog_r.name = Info[#title]
+  dialog_r.loc = point(100, 100)
+  argOptions[#DlgInfoObj] = dialog_r
+  ancestor = script("DlgRockAncestorScript").new(argOptions)
+  tmp = argOptions[#Pic]
+  if voidp(tmp) then
+    tmp = "Dummy"
+  end if
+  obj = ancestor.m_objDlg.getItem(#Pic)
+  if objectp(obj) then
+    obj.setOneProp(#Pic, tmp)
+  end if
+  tmp = Info[#text]
+  obj = ancestor.m_objDlg.getItem(#Info)
+  if objectp(obj) then
+    tmpMembName = "DefaultInfoText"
+    tmpMemb = member(tmpMembName)
+    tmpMemb.text = tmp
+    obj.setOneProp(#Pic, tmpMembName)
+  end if
+  ancestor.render()
+  return me
+end
+
+on kill me
+  dialog_r = ancestor.m_dialogInfoObj_r
+  ancestor.kill()
+  return 0
+end
+
+on Report me, argObj, argWhat
+end
+
+on mouse me, argObj, argWhat, argOption
+  if objectp(argOption) then
+    if argWhat = #click then
+      ID = argOption.getOneProp(#ID)
+      IDStr = string(ID)
+      ancestor.mouse(argObj, argWhat, argOption)
+    end if
+  end if
+end

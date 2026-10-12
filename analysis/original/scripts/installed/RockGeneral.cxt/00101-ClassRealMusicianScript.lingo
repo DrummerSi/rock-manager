@@ -1,0 +1,603 @@
+property ancestor, child, className, belongsTo, _killed, InBand, Alive, Health, Excentricity, FakeSkill, NowPlaying, spatialPos, Gifts, Mood, InstrumentGFX, Needs, WantedSalary, BandInfluence, attitudeModifiers
+global gRock
+
+on new me, argChild, argBelongsTo
+  if objectp(argChild) then
+    child = argChild
+  else
+    child = me
+  end if
+  belongsTo = argBelongsTo
+  ancestor = script("ClassMusicianScript").new(child)
+  className = #RealMusician
+  InBand = 0
+  Alive = 1
+  Health = script("ClassDynamicTriggerVarScript").new(VOID, me)
+  Excentricity = script("ClassDynamicVarScript").new(VOID, me)
+  FakeSkill = 0.0
+  NowPlaying = #none
+  spatialPos = 0
+  Gifts = [:]
+  Mood = script("ClassDynamicTriggerVarScript").new(VOID, me)
+  InstrumentGFX = script("ClassInstrumentGFXScript").new(VOID, me)
+  Needs = script("ClassNeedsScript").new(VOID, me)
+  WantedSalary = 0
+  BandInfluence = 0.0
+  Mood.mode = #none
+  Mood.GainFact = 0.01
+  Mood.LoseFact = 0.01
+  Mood.ValTriggers = [0.01: #quit, 0.10000000000000001: #Furious, 0.20000000000000001: #Angry, 0.34999999999999998: #Annoyed, 0.65000000000000002: #normal, 0.80000000000000004: #Satisfied, 0.90000000000000002: #Happy, 9.0: #Happy]
+  Health.mode = #AutoNormalize
+  Health.GainFact = 0
+  Health.LoseFact = 0
+  Health.ValTriggers = [0.01: #Dead, 0.10000000000000001: #VeryIll, 0.20000000000000001: #Ill, 0.90000000000000002: #HealthOK, 9.0: #HealthGreat]
+  attitudeModifiers = [:]
+  return me
+end
+
+on kill me
+  _killed = 1
+  if objectp(Excentricity) then
+    Excentricity = Excentricity.kill()
+  end if
+  if objectp(Health) then
+    Health = Health.kill()
+  end if
+  if objectp(Mood) then
+    Mood = Mood.kill()
+  end if
+  if objectp(InstrumentGFX) then
+    InstrumentGFX = InstrumentGFX.kill()
+  end if
+  if objectp(Needs) then
+    Needs = Needs.kill()
+  end if
+  me.removeAttitudeModifiers()
+  if objectp(ancestor) then
+    ancestor = ancestor.kill()
+  end if
+  gRock.m_gameTimer.deleteObject(me)
+  child = 0
+  belongsTo = 0
+  return 0
+end
+
+on PreInit me
+  tmp = ancestor.Gfx
+  ancestor.RefNr = value(tmp.char[tmp.length - 1..tmp.length])
+  if voidp(ancestor.RefNr) then
+    repeat with n = 1 to tmp.length
+      tmpAsci = charToNum(tmp.char[n])
+      if (tmpAsci >= 48) and (tmpAsci <= 57) then
+        ancestor.RefNr = value(tmp.char[n..n + 1])
+        exit repeat
+      end if
+    end repeat
+  end if
+  if Mood.normal = 0 then
+    Mood.normal = Mood.Current
+  end if
+  if Health.normal = 0 then
+    Health.normal = Health.Current
+  end if
+  if Health.GainFact = 0 then
+    tmpHealthAgeCurve = [8: 0.69999999999999996, 15: 1, 23: 1, 30: 0.80000000000000004, 40: 0.69999999999999996, 60: 0.5, 80: 0.20000000000000001]
+    tmpHealthAgeCurve.sort()
+    tmpHealthAgeFactor = interpolateBetween(ancestor.Age, tmpHealthAgeCurve)
+    Health.GainFact = 0.01 * tmpHealthAgeFactor
+    Health.LoseFact = 0.01 * (1.0 - tmpHealthAgeFactor)
+  end if
+  lst = gRock.m_classManager.getAllObjInstancesInObj(me, 1)
+  repeat with obj in lst
+    if obj.handler(#PreInit) then
+      obj.PreInit()
+    end if
+  end repeat
+  ancestor.PreInit()
+end
+
+on init me
+  lst = gRock.m_classManager.getAllObjInstancesInObj(me, 1)
+  repeat with obj in lst
+    if obj.handler(#init) then
+      obj.init()
+    end if
+  end repeat
+  if InBand and Alive then
+    me.setActiveState(1)
+  end if
+end
+
+on save me
+  modList = [:]
+  repeat with n = 1 to attitudeModifiers.count
+    modList.addProp(attitudeModifiers.getPropAt(n), attitudeModifiers[n].m_IDNr)
+  end repeat
+  return [#AttitudeMods: modList]
+end
+
+on load me, argList
+  if voidp(argList) then
+    argList = [:]
+  end if
+  modList = argList.getaProp(#AttitudeMods)
+  if listp(modList) then
+    repeat with n = 1 to modList.count
+      attitudeModifiers.addProp(modList.getPropAt(n), gRock.m_modifiersManager.getModifierByIDNr(modList[n]))
+    end repeat
+  else
+    if InBand = 1 then
+      pott("No attitudeMods!", ancestor.ID)
+      me.bandMembersChanged()
+    end if
+  end if
+end
+
+on removeAttitudeModifiers me
+  repeat with n = 1 to attitudeModifiers.count
+    attitudeModifiers[n].kill()
+  end repeat
+  attitudeModifiers = [:]
+end
+
+on setActiveState me, argState
+  if argState = #InBand then
+    argState = 1
+  end if
+  if argState = 1 then
+    InBand = 1
+    gRock.m_gameTimer.addObject(me)
+  else
+    if argState = 0 then
+      InBand = 0
+      me.removeAttitudeModifiers()
+      gRock.m_gameTimer.deleteObject(me)
+      me.setNowPlaying(0)
+    else
+      if argState = #sleep then
+      end if
+    end if
+  end if
+  lst = gRock.m_classManager.getAllObjInstancesInObj(me, 1)
+  repeat with obj in lst
+    if obj.handler(#setActiveState) then
+      obj.setActiveState(argState)
+    end if
+  end repeat
+end
+
+on getSoundFilePrefix me
+  Prefix = "a" & convItoS(ancestor.RefNr, 2)
+  return Prefix
+end
+
+on getCurrentPic me, argSize, argMoodSetting, argForceShow
+  if voidp(argSize) then
+    argSize = #large
+  end if
+  if me.getIsOccupied([#BandTour]) and (argForceShow <> #Force) then
+    return ancestor.Gfx & "_background_" & string(argSize)
+  else
+    if argSize = #Small then
+      return "Portrait_" & ancestor.Gfx & "_" & string(argSize)
+    end if
+    if voidp(argMoodSetting) then
+      argMoodSetting = me.calcFaceSettings()
+      argMoodSetting = argMoodSetting[#Mood]
+      if argMoodSetting = #Furious then
+        argMoodSetting = #Angry
+      end if
+    end if
+    return "Portrait_" & ancestor.Gfx & "_" & string(argMoodSetting) & "_" & string(argSize)
+  end if
+end
+
+on calcStyleDifference me
+  Band = gRock.m_context.getFocus(#Band)
+  tmpMusicDiff = 0.0
+  tmpStyleMixProps = gRock.m_classManager.getPropsInClass(#StyleMix)
+  repeat with n = 1 to tmpStyleMixProps.count
+    tmpProp = tmpStyleMixProps.getPropAt(n)
+    tmpMusicDiff = tmpMusicDiff + abs(ancestor.MusicStyle[tmpProp] - Band.MusicStyle[tmpProp])
+  end repeat
+end
+
+on setSpatialPos me, argPos
+  spatialPos = argPos
+end
+
+on setNowPlaying me, argInstrument
+  if symbolp(argInstrument) then
+    NowPlaying = argInstrument
+    tmp = symbol("RealMusician" & NowPlaying)
+    gRock.m_context.setFocus(tmp, me)
+  else
+    tmp = symbol("RealMusician" & NowPlaying)
+    gRock.m_context.setFocus(tmp, 0)
+    exit
+  end if
+end
+
+on calcInfluence me
+  instrumentInfluence = [#Vocals: 1.0, #Guitar: 0.75, #Keyboards: 0.59999999999999998, #Drums: 0.25, #Bass: 0.5, #Wind: 0.10000000000000001]
+  BandInfluence = instrumentInfluence[NowPlaying]
+end
+
+on Pay me
+  player_r = gRock.m_context.getFocus(#player)
+  tmpGotMoney = player_r.transactMoney(-integer(WantedSalary), [#Band, #Salary])
+  if not tmpGotMoney then
+  end if
+  mission_r = gRock.m_context.getFocus(#Mission)
+  rsetProp(mission_r.Vars, #ExpensesBand, tmpGotMoney, "+=")
+end
+
+on bandMembersChanged me
+  band_r = gRock.m_context.getFocus(#Band)
+  repeat with n = attitudeModifiers.count down to 1
+    modifier = attitudeModifiers[n]
+    if band_r.members.getPos(modifier.ID) = 0 then
+      attitudeModifiers.deleteAt(n)
+      modifier.kill()
+    end if
+  end repeat
+  repeat with musID in band_r.members
+    if musID = ancestor.ID then
+      next repeat
+    end if
+    tmpAttitude = me.getLikesMusician(musID)
+    if voidp(tmpAttitude) then
+      ancestor.Attitudes.setAttitude(musID, 0)
+    end if
+    if not objectp(attitudeModifiers.getaProp(musID)) then
+      moodAffect = 0.10000000000000001 * tmpAttitude
+      modifier = script("ModifierScript").new(musID, me, [[[#Mood], moodAffect]], 0, #Constant)
+      attitudeModifiers.addProp(musID, modifier)
+    end if
+  end repeat
+end
+
+on timeTick me
+  if InBand then
+    if me.getIsOccupied() = 0 then
+      me.checkRelations()
+    end if
+  end if
+end
+
+on checkRelations me
+  band_r = gRock.m_context.getFocus(#Band)
+  tmpAttitudeLimit = 0.69999999999999996 - Mood.Current
+  tmpDebugRisks = [#Mood: Mood.Current]
+  musicians_r = band_r.getMusicianObjs()
+  repeat with mus_r in musicians_r
+    if mus_r.ID = ancestor.ID then
+      next repeat
+    end if
+    tmpOccupied = mus_r.getIsOccupied()
+    tmpAttitude = me.getLikesMusician(mus_r.ID)
+    moodAffect = 0.29999999999999999 * tmpAttitude * (tmpOccupied = 0)
+    modifier = attitudeModifiers.getaProp(mus_r.ID)
+    if not objectp(modifier) then
+      pott("Missing attitude modifier", ancestor.ID, mus_r.ID, attitudeModifiers)
+    else
+      modifier.changeVal(moodAffect)
+    end if
+    if tmpOccupied then
+      next repeat
+    end if
+    if moodAffect > 0.07000000000000001 then
+      next repeat
+    end if
+    tmpIncidentRisk = 0.025 * (tmpAttitudeLimit - tmpAttitude) / (1.0 + tmpAttitudeLimit) * (1.0 - Mood.Current)
+    tmpDebugRisks.addProp(mus_r.ID, [#Att: tmpAttitude, #Risk: 100 * tmpIncidentRisk])
+    if tmpIncidentRisk > 0 then
+      if random(100) <= (tmpIncidentRisk * 100) then
+        me.startFight(mus_r)
+      end if
+    end if
+  end repeat
+end
+
+on startFight me, argWithMusician_r
+  gRock.m_msgManager.msg(#Quarrel, me)
+  tmpInstrumentID = rgetProp(argWithMusician_r, #NowPlaying)
+  tmpInfo = gRock.m_classManager.getObjByIDAndClass(tmpInstrumentID, #InstrumentInfo)
+  gRock.m_eventCardsManager.tryNewShowEventCard(#ECArtistQuarrel, [#EventCardOptions: [#HumanID: argWithMusician_r.ID, #BullyID: ancestor.ID]])
+end
+
+on getLikesMusician me, argOtherMusicianID
+  tmpAttitude = ancestor.Attitudes.getAttitude(argOtherMusicianID)
+  return tmpAttitude
+end
+
+on calcFaceSettings me
+  faceSettings = [:]
+  tmpMood = Mood.getCurrentTriggerProp()
+  if tmpMood = #quit then
+    pott("Mood prop err!", tmpMood)
+    tmpMood = #Angry
+  end if
+  faceSettings[#Mood] = tmpMood
+  return faceSettings
+end
+
+on Report me, argObj, argWhat, argOptional
+  global gDir
+  tmpCrucialEventCard = 0
+  if argObj = Mood then
+    me.calcFaceSettings()
+    if objectp(gDir) then
+      if objectp(gDir[#m_interfaceBar]) then
+        gDir.m_interfaceBar.redrawBand()
+      end if
+    end if
+    if argOptional[#Change] < 0 then
+      if argWhat = #quit then
+        eventCardID = #ECOCQuitNow
+        tmpCrucialEventCard = 1
+      else
+        if argWhat = #Furious then
+          eventCardID = #ECOCWantQuit
+          tmpCrucialEventCard = 1
+        else
+          if argWhat = #Angry then
+          end if
+        end if
+      end if
+    else
+    end if
+    if symbolp(eventCardID) then
+      me.kickEventCardFromCode(eventCardID, [#EventCardOptions: [#HumanID: ancestor.ID]], tmpCrucialEventCard)
+    end if
+  else
+    if argObj = Health then
+      tuneModifyingID(ancestor.ID)
+      pott("MusReport: Health", argWhat, argOptional)
+      if argWhat = #Dead then
+        if argOptional[#Change] < 0 then
+          tmpCrucialEventCard = 1
+          eventCardID = #ECOCDeadHealth
+        else
+          pott("Impossible, returned from the dead!")
+        end if
+      else
+        if argWhat = #VeryIll then
+          if argOptional[#Change] < 0 then
+            tmpCrucialEventCard = 1
+            eventCardID = #ECOCHealthVeryIll
+          else
+            eventCardID = #ECOCHealthVeryIllRecovered
+          end if
+        else
+          if argWhat = #Ill then
+            if argOptional[#Change] < 0 then
+              gRock.m_modifiersManager.findAndChangeOtherwiseCreate(#Ill, me, [[[#Mood], -0.29999999999999999]], 0, #Constant)
+              eventCardID = #ECOCHealthIll
+              tmpCrucialEventCard = 1
+            else
+              eventCardID = #ECOCHealthIllRecovered
+            end if
+          end if
+        end if
+      end if
+      if symbolp(eventCardID) then
+        me.kickEventCardFromCode(eventCardID, [#EventCardOptions: [#HumanID: ancestor.ID]], tmpCrucialEventCard)
+      end if
+    else
+      pott("Reported: ", argWhat, "In musician!")
+    end if
+  end if
+end
+
+on kickEventCardFromCode me, argEventCardID, argECProps, argIsCrucial
+  NeededToShow = "Û#" & string(ancestor.ID) & ".getIsOKToShowEventcard()"
+  if voidp(argECProps.getaProp(#NeededToShow)) then
+    argECProps.addProp(#NeededToShow, NeededToShow)
+  end if
+  if argIsCrucial = 1 then
+    argECProps.addProp(#ShowInRehearsal, 1)
+    if gRock.m_tempVars.getaProp(#InsideDlgArtist) = 1 then
+      gRock.m_tempVars.setaProp(#KillDlgArtist, 1)
+    end if
+  end if
+  gRock.m_eventCardsManager.tryNewShowEventCard(argEventCardID, argECProps)
+end
+
+on quitBand me, argReason
+  global gDir
+  band_r = gRock.m_context.getFocus(#Band)
+  band_r.deleteMusician(me)
+  me.setActiveState(0)
+  if gRock.m_context.getFocus(#RealMusician) = me then
+    gRock.m_context.setFocus(#RealMusician, 0)
+  end if
+  mission_r = gRock.m_context.getFocus(#Mission)
+  mission_r.AvailableMusicians.deleteOne(ancestor.ID)
+  gRock.m_modifiersManager.deleteModifiersModifyingObj(me)
+  gRock.m_msgManager.msg(#quitBand, me)
+  tmpPos = comesBeforePosInList(gRock.m_date.getDateInt(), gRock.m_eventsManager.m_startDateSortedEvents)
+  repeat with n = tmpPos to gRock.m_eventsManager.m_startDateSortedEvents.count
+    event_r = gRock.m_eventsManager.m_startDateSortedEvents[n]
+    event_r.neededIDs.deleteOne(ancestor.ID)
+    if event_r.neededIDs.count = 0 then
+      if event_r.getIsOngoing() then
+        event_r.kill()
+        next repeat
+      end if
+      event_r.kill()
+    end if
+  end repeat
+  if gDir.handler(#redraw) then
+    gDir.redraw()
+    gDir.m_objDialogsMaster.refresh()
+  end if
+end
+
+on sendAway me, argWhat, argNumDays, argAutoEventCard, argVisible
+  if 0 then
+    event_r = gRock.m_classManager.createObj(#DivEvent)
+    event_r.AgendaFormat = symbol("AgFm" & string(argWhat))
+  else
+    event_r = gRock.m_classManager.createObj(#Training)
+    event_r.type = argWhat
+  end if
+  event_r.ID = gRock.m_classManager.genUniqueID(event_r)
+  event_r.neededIDs = [ancestor.ID]
+  event_r.setDates(#Now, argNumDays)
+  if voidp(argVisible) then
+    argVisible = 1
+  end if
+  event_r.visible = argVisible
+  if symbolp(argAutoEventCard) then
+    event_r.AutoEventCard = argAutoEventCard
+  end if
+  clashing = gRock.m_eventsManager.findClashingEvents(event_r)
+  repeat with clashingEventInfo in clashing
+    clashingEvent_r = clashingEventInfo[#Event]
+    if clashingEvent_r.className = #Training then
+      clashingEvent_r.AutoRemove = 1
+      clashingEvent_r.kill()
+    end if
+  end repeat
+end
+
+on getIsOKToShowEventcard me
+  if InBand = 0 then
+    return #Remove
+  end if
+  if me.getIsOccupied() = 1 then
+    return #wait
+  end if
+  return 1
+end
+
+on getIsOccupied me, argDontCareList
+  tmpAwayClasses = [#BandTour, #VideoProduction, #Training, #Kidnapped, #Away]
+  if listp(argDontCareList) then
+    repeat with tmp in argDontCareList
+      tmpAwayClasses.deleteOne(tmp)
+    end repeat
+  end if
+  repeat with tmpClass in tmpAwayClasses
+    if ancestor.OccupiedWith.getPos(tmpClass) then
+      return 1
+    end if
+  end repeat
+  return 0
+end
+
+on give me, argID
+  Gifts.addProp(gRock.m_date.getDateInt(), argID)
+end
+
+on getOKToGive me, argID
+  tmpPos = Gifts.getPos(argID)
+  if tmpPos = 0 then
+    return 1
+  end if
+  tmpDate = Gifts.getPropAt(tmpPos)
+  return 0
+end
+
+on getCanWork me
+  if me.getIsOccupied() then
+    return 0
+  end if
+end
+
+on getLikedByOthers me
+  tmpTot = 0
+  band_r = gRock.m_context.getFocus(#Band)
+  tmpMusList = band_r.getMusicianObjs()
+  repeat with mus_r in tmpMusList
+    if mus_r = me then
+      next repeat
+    end if
+    tmpTot = tmpTot + mus_r.getLikesMusician(me.ID)
+  end repeat
+  tmpTot = tmpTot / tmpMusList.count
+  return tmpTot
+end
+
+on eventChanged me, argEventObj_r, argAction
+  global gDir
+  tmpWasOccupied = me.getIsOccupied()
+  if argAction = #start then
+    if voidp(ancestor.OccupiedWith.getaProp(argEventObj_r.ID)) then
+      ancestor.OccupiedWith.addProp(argEventObj_r.ID, argEventObj_r.className)
+    end if
+  else
+    if argAction = #stop then
+      ancestor.OccupiedWith.deleteProp(argEventObj_r.ID)
+    end if
+  end if
+  tmpSuspend = VOID
+  if me.getIsOccupied() then
+    if not tmpWasOccupied then
+      tmpSuspend = 1
+    end if
+  else
+    if tmpWasOccupied then
+      tmpSuspend = 0
+    end if
+  end if
+  if integerp(tmpSuspend) then
+    lst = gRock.m_classManager.getPropsInClassIncludingAncestors(className)
+    repeat with n = 1 to lst.count
+      propName = lst.getPropAt(n)
+      if gRock.m_classManager.getVarType(className, propName) = #DynamicTriggerVar then
+        dynVar = rgetPropSimple(me, propName)
+        dynVar.suspend(tmpSuspend)
+      end if
+    end repeat
+    Needs.suspend(tmpSuspend)
+  end if
+  if not objectp(gDir) then
+    exit
+  end if
+  if not objectp(gDir.getaProp(#m_interfaceBar)) then
+    exit
+  end if
+  gDir.m_interfaceBar.m_objCPBand.redraw()
+end
+
+on die me, argReason, argAutoEventCard
+  if InBand <> 1 then
+    exit
+  end if
+  pott(ancestor.name, "is dead because of", argReason)
+  Alive = 0
+  me.quitBand()
+  if argAutoEventCard = 1 then
+    argAutoEventCard = symbol("ECOCDead" & string(argReason))
+  end if
+  if symbolp(argAutoEventCard) then
+    gRock.m_eventCardsManager.tryNewShowEventCard(argAutoEventCard)
+  end if
+  gRock.m_msgManager.msg(#Died, me)
+  if argReason = #Murder then
+  else
+    if argReason = #Drugs then
+    else
+      if argReason = #Health then
+      end if
+    end if
+  end if
+end
+
+on fire me
+  band_r = gRock.m_context.getFocus(#Band)
+  musicians_r = band_r.getMusicianObjs()
+  repeat with musician_r in musicians_r
+    if musician_r = me then
+      next repeat
+    end if
+    tmpLikes = musician_r.getLikesMusician(me.ID)
+    if tmpLikes > 0 then
+      rCreateModifier(#KickedBandMember, musician_r.ID, #Mood, -0.10000000000000001 * tmpLikes, 20)
+    end if
+  end repeat
+  me.quitBand()
+  gRock.m_msgManager.msg(#KickBandMember, me)
+end

@@ -1,0 +1,133 @@
+property ancestor, child, className, belongsTo, _killed, Attitudes, createdObjs
+global gRock
+
+on new me, argChild, argBelongsTo
+  if objectp(argChild) then
+    child = argChild
+  else
+    child = me
+  end if
+  belongsTo = argBelongsTo
+  className = #Attitudes
+  Attitudes = [:]
+  createdObjs = []
+  return me
+end
+
+on kill me
+  _killed = 1
+  repeat with obj in createdObjs
+    gRock.m_classManager.removeObj(obj, #kill)
+  end repeat
+  createdObjs = []
+  if objectp(ancestor) then
+    ancestor = ancestor.kill()
+  end if
+  child = 0
+  belongsTo = 0
+  return 0
+end
+
+on X me
+end
+
+on removeAttitude me, argPropPath
+  rdeleteProp(Attitudes, argPropPath)
+end
+
+on setAttitude me, argPropPath, argAttitudesForID
+  if voidp(argAttitudesForID) then
+    argAttitudesForID = [:]
+  end if
+  if not listp(argPropPath) then
+    Attitudes.setaProp(argPropPath, argAttitudesForID)
+  else
+    rsetProp(Attitudes, argPropPath, argAttitudesForID)
+  end if
+end
+
+on changeAttitude me, argPropPath, argVal, argMode
+  if not listp(argPropPath) then
+    argPropPath = [argPropPath]
+  end if
+  tmpPropPath = argPropPath.duplicate()
+  tmpPropPath.deleteAt(tmpPropPath.count)
+  tmp = Attitudes
+  repeat with n = 1 to tmpPropPath.count
+    tmptmp = tmp.getaProp(tmpPropPath[n])
+    if voidp(tmptmp) then
+      tmp.setaProp(tmpPropPath[n], [:])
+      tmp = tmp.getaProp(tmpPropPath[n])
+      next repeat
+    end if
+    exit repeat
+  end repeat
+  if voidp(argMode) then
+    argMode = "+="
+  else
+    rsetProp(Attitudes, argPropPath, argVal, argMode)
+  end if
+end
+
+on getAttitude me, argPropPath
+  tmp = rgetProp(Attitudes, argPropPath)
+  if voidp(tmp) then
+    return 0
+  end if
+  return tmp
+end
+
+on hasAttitude me, argPropPath
+  tmp = rgetProp(Attitudes, argPropPath)
+  return not voidp(tmp)
+end
+
+on save me
+  tmpSave = [:]
+  me.xsave(Attitudes, tmpSave)
+  return tmpSave
+end
+
+on load me, argList
+  Attitudes = [:]
+  me.xload(argList, Attitudes)
+end
+
+on xload me, argList, argSetList
+  repeat with n = 1 to argList.count
+    tmpVal = argList[n]
+    tmpIlk = ilk(tmpVal)
+    if tmpIlk = #list then
+      if tmpVal.count > 1 then
+        obj = gRock.m_classManager.createUnregObj(tmpVal[2])
+        createdObjs.add(obj)
+        gRock.m_classManager.loadObj(tmpVal[1])
+        argSetList.setaProp(argList.getPropAt(n), obj)
+      else
+        argSetList.setaProp(argList.getPropAt(n), tmpVal[1])
+      end if
+      next repeat
+    end if
+    tmp = [:]
+    argSetList.setaProp(argList.getPropAt(n), tmp)
+    me.xload(tmpVal, tmp)
+  end repeat
+end
+
+on xsave me, argList, argSaveList
+  repeat with n = 1 to argList.count
+    tmpVal = argList[n]
+    tmpIlk = ilk(tmpVal)
+    if tmpIlk = #instance then
+      argSaveList.addProp(argList.getPropAt(n), [gRock.m_classManager.saveObj(tmpVal, [tmpVal.className], #Force), tmpVal.className])
+      next repeat
+    end if
+    if tmpIlk = #propList then
+      tmpSave = [:]
+      argSaveList.addProp(argList.getPropAt(n), tmpSave)
+      me.xsave(tmpVal, tmpSave)
+      next repeat
+    end if
+    argSaveList.addProp(argList.getPropAt(n), [tmpVal])
+  end repeat
+end

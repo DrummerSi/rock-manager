@@ -1,0 +1,187 @@
+property m_reportObj, m_viewRect, m_items, m_viewImage, m_SP, m_member, m_wholeSize, m_scrollBar, m_onScreenOffLoc, m_selectedItem, m_scrollOffLoc, m_layer, m_arrows, m_bgColor, m_lastClickInfo, m_downOnTime
+
+on new me, argReportObj, argSPNum, argInfoList, argRect, argLayer, argOffsetRectForArrows, argDontShowControls
+  m_reportObj = argReportObj
+  m_SP = sprite(argSPNum)
+  m_member = newMember(#bitmap, "__TEMP")
+  m_bgColor = rgb(0, 0, 0)
+  if not listp(argRect) then
+    argRect = rect(200, 200, 400, 300)
+  end if
+  m_onScreenOffLoc = point(argRect[1], argRect[2])
+  size = getRectSize(argRect)
+  m_SP.loc = m_onScreenOffLoc
+  m_scrollOffLoc = point(0, 0)
+  m_items = [:]
+  if voidp(argLayer) then
+    argLayer = 1000000
+  end if
+  m_layer = argLayer
+  if voidp(argInfoList) then
+    argInfoList = [1, 2, 3, 4, 5, 6]
+  end if
+  if voidp(argOffsetRectForArrows) then
+    argOffsetRectForArrows = rect(0, -16, 0, 9)
+  end if
+  me.prepare(argInfoList, size)
+  me.scroll(point(0, 0))
+  visiblePart = float(m_wholeSize[2]) / size[2]
+  dimButtons = visiblePart <= 1
+  m_arrows = []
+  spaceBetween = [0, 0]
+  size = size + point(25, 0)
+  if argDontShowControls <> #DontShowControls then
+    memb = member("RockScrollArrowUp")
+    spaceBetween[1] = memb.height
+    tmpLoc = m_onScreenOffLoc + point(size[1], memb.regPoint[2]) + point(0, argOffsetRectForArrows[2])
+    arrowObj = script("ButtonScript").new(me, memb, tmpLoc, argSPNum + 3, [#layer: m_layer, #states: [#enter: 1, #dim: 2]])
+    m_arrows.add(arrowObj)
+    if dimButtons then
+      arrowObj.dim()
+    end if
+    memb = member("RockScrollArrowDown")
+    spaceBetween[2] = size[2] - memb.height
+    tmpLoc = m_onScreenOffLoc + point(size[1], size[2] - memb.height + memb.regPoint[2]) + point(0, argOffsetRectForArrows[4])
+    arrowObj = script("ButtonScript").new(me, memb, tmpLoc, argSPNum + 4, [#layer: m_layer, #states: [#enter: 1, #dim: 2]])
+    m_arrows.add(arrowObj)
+    if dimButtons then
+      arrowObj.dim()
+    end if
+    tmpLoc = m_onScreenOffLoc + point(size[1], 0)
+    tmpRect = rect(point(-7, spaceBetween[1]), point(6, spaceBetween[2])) + rect(tmpLoc, tmpLoc) + argOffsetRectForArrows + rect(0, 3, 0, -4)
+    sprite(argSPNum + 1).member = member("BehindScrollerPic")
+    sprite(argSPNum + 1).rect = tmpRect
+    if dimButtons = 0 then
+      memb = member("RockScrollBarPic")
+      barLoc = point(size[1], memb.regPoint[2]) + m_onScreenOffLoc
+      tmpRect = rect(barLoc + point(0, spaceBetween[1]), barLoc + point(0, spaceBetween[2] - memb.height)) + argOffsetRectForArrows
+      m_scrollBar = script("SliderScript").new(me, argSPNum + 2, memb, tmpRect, VOID, [#layer: m_layer])
+      oneItemSize = m_wholeSize[2] / m_items.count
+      numItemsInView = float(size[2]) / oneItemSize
+      if m_items.count > numItemsInView then
+        scrollBarMove = 1.0 / (float(m_items.count) - numItemsInView) * (tmpRect[4] - tmpRect[2])
+      else
+        scrollBarMove = 0
+      end if
+      m_scrollBar.clickBehindStep = point(0, scrollBarMove)
+    end if
+  end if
+  m_downOnTime = 0
+  m_SP.member = m_member
+  m_SP.ink = 0
+  m_selectedItem = 0
+  return me
+end
+
+on kill me
+  repeat with obj in m_items
+    obj.kill()
+  end repeat
+  m_items = [:]
+  repeat with obj in m_arrows
+    obj.kill()
+  end repeat
+  m_arrows = []
+  m_lastClickInfo = 0
+  m_SP.member = member("Dummy")
+  m_member.erase()
+  sprite(m_SP.spriteNum + 1).member = member("Dummy")
+  sprite(m_SP.spriteNum + 1).stretch = 0
+  if objectp(m_scrollBar) then
+    m_scrollBar = m_scrollBar.kill()
+  end if
+  m_reportObj = 0
+  return 0
+end
+
+on GetSPNeed me
+  return 5
+end
+
+on Report me, argObj, argWhat, argOption
+  if argObj = m_scrollBar then
+    if argWhat = #changed then
+      me.scroll(argOption)
+    end if
+  else
+    if m_items.getPos(argObj) then
+      if argWhat = #select then
+        if objectp(m_selectedItem) then
+          m_selectedItem.hilite(0)
+        end if
+        m_selectedItem = argObj
+        m_selectedItem.hilite(1)
+        me.scroll()
+        if objectp(m_reportObj) then
+          m_reportObj.Report(me, #select, m_selectedItem)
+        end if
+      else
+        if argWhat = #doubleClick then
+          if objectp(m_reportObj) then
+            m_reportObj.Report(me, #doubleClick, m_selectedItem)
+          end if
+        end if
+      end if
+    else
+    end if
+  end if
+end
+
+on mouse me, argObj, argWhat
+  if (argWhat = #down) or (argWhat = #stillDown) then
+    if argWhat = #down then
+      m_downOnTime = the milliSeconds
+    else
+      if (the milliSeconds - m_downOnTime) < 300 then
+        exit
+      end if
+    end if
+    tmp = (2 * m_arrows.getPos(argObj)) - 3
+    size = getRectSize(m_viewRect)
+    tmpDivideBy = m_wholeSize[2] - size[2]
+    if tmpDivideBy <= 0 then
+      exit
+    end if
+    tmpNewFact = float(m_scrollOffLoc[2] + (tmp * 20)) / tmpDivideBy
+    m_scrollBar.setFactor(1.0 - tmpNewFact)
+  end if
+end
+
+on scroll me, argDeltaFromTop
+  if floatp(argDeltaFromTop) then
+    size = getRectSize(m_viewRect)
+    argDeltaFromTop = point(0, integer((m_wholeSize[2] - size[2]) * argDeltaFromTop))
+  end if
+  if voidp(argDeltaFromTop) then
+    argDeltaFromTop = m_scrollOffLoc
+  end if
+  m_viewImage.fill(m_viewImage.rect, m_bgColor)
+  repeat with obj in m_items
+    obj.setScroll(argDeltaFromTop, m_viewImage)
+  end repeat
+  m_scrollOffLoc = argDeltaFromTop
+  m_member.image = m_viewImage
+  m_member.regPoint = point(0, 0)
+end
+
+on prepare me, argInfoList, argSize
+  if argInfoList.count() = 0 then
+    return 0
+  end if
+  if voidp(argSize) then
+    argSize = point(300, 100)
+  end if
+  m_viewRect = rect(point(0, 0), argSize)
+  m_viewImage = image(argSize[1], argSize[2], 24, 0)
+  m_items = [:]
+  obj = script("CPScrollItemScript").new(me, argInfoList[1], point(m_viewRect[1], m_viewRect[2]), m_layer)
+  m_items.addProp(obj.m_ID, obj)
+  size = obj.calcSrndSize()
+  size[2] = size[2] + 1
+  m_wholeSize = point(size[1], size[2] * argInfoList.count)
+  repeat with n = 2 to argInfoList.count
+    off = point(0, (n - 1) * size[2])
+    obj = script("CPScrollItemScript").new(me, argInfoList[n], off + point(m_viewRect[1], m_viewRect[2]), m_layer)
+    m_items.addProp(obj.m_ID, obj)
+  end repeat
+end

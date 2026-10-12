@@ -1,0 +1,95 @@
+property firstFrame, mouseObj, SP, reportObject, ID, loc, displaying, Active, extraReports, castOffset
+
+on new me, argReportObject, argMainMemb, argLoc, argSP, argOptions
+  SP = argSP
+  reportObject = argReportObject
+  castOffset = 0
+  if listp(argOptions) then
+    ID = getaProp(argOptions, #ID)
+    tmpLayer = getaProp(argOptions, #layer)
+    extraReports = getaProp(argOptions, #Extra)
+    castOffset = getaProp(argOptions, #castOffset)
+  end if
+  if voidp(tmpLayer) then
+    tmpLayer = 499
+  end if
+  if voidp(extraReports) then
+    extraReports = []
+  end if
+  loc = argLoc
+  if integerp(argMainMemb) then
+    firstFrame = argMainMemb
+  else
+    firstFrame = getMemberNum(argMainMemb)
+  end if
+  set the member of sprite SP to member(firstFrame + 1 + castOffset)
+  set the loc of sprite SP to loc
+  displaying = 1
+  Active = 1
+  tmpRect = getMemberRect2(member(firstFrame + 1 + castOffset))
+  tmpRect = rect(loc, loc) + tmpRect
+  mouseObj = new(script("MouseObject"), me, tmpRect, [#layer: tmpLayer])
+  return me
+end
+
+on kill me
+  set the member of sprite SP to member("Dummy")
+  mouseObj = kill(mouseObj)
+  return 0
+end
+
+on setMember me, argMainMemb
+  tmpRect = getMemberRect(argMainMemb)
+  tmpRect = rect(loc, loc) + tmpRect
+  mouseObj.myRect = tmpRect
+  firstFrame = getMemberNum(argMainMemb)
+  set the member of sprite SP to member(firstFrame)
+end
+
+on setLoc me, argLoc
+  tmpDiff = argLoc - loc
+  loc = argLoc
+  tmpRect = mouseObj.myRect
+  tmpRect = tmpRect + rect(tmpDiff, tmpDiff)
+  mouseObj.myRect = tmpRect
+  set the loc of sprite SP to loc
+end
+
+on display me, argIsTRUE
+  displaying = argIsTRUE
+  activate(me, argIsTRUE)
+  if argIsTRUE then
+    set the member of sprite SP to member(firstFrame + 1 + castOffset)
+    set the loc of sprite SP to loc
+  else
+    set the member of sprite SP to member("Dummy")
+  end if
+end
+
+on dim me, argOffset
+  activate(me, 0)
+  set the member of sprite SP to member(firstFrame + 0 + castOffset)
+end
+
+on activate me, argIsTRUE
+  Active = argIsTRUE
+  activate(mouseObj, argIsTRUE)
+end
+
+on mouse me, argObj, argWhat
+  if argWhat = #enter then
+    set the member of sprite SP to member(firstFrame + 2 + castOffset)
+  else
+    if argWhat = #Leave then
+      set the member of sprite SP to member(firstFrame + 1 + castOffset)
+    else
+      if argWhat = #click then
+        mouse(reportObject, me, argWhat)
+      else
+        if getPos(extraReports, argWhat) then
+          mouse(reportObject, me, argWhat)
+        end if
+      end if
+    end if
+  end if
+end

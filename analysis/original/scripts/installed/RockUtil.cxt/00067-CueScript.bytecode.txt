@@ -1,0 +1,228 @@
+property cues, startTime, modFact, ancestor, cueOffset, cueNum, states, reportObj, mp3SoundObj, currentCue
+global gUseful
+
+on new me, argReportObj, argFileName, argSndOptions
+  [  0] getparam 8 .............................. <argReportObj>
+  [  2] setprop 538 ............................. reportObj = argReportObj
+  [  5] getglobal 7 ............................. <gRock>
+  [  7] getobjprop 8 ............................ <gRock.m_paths>
+  [  9] pushsymb 259 ............................ <#sound>
+  [ 12] pusharglist 2 ........................... <gRock.m_paths, #sound>
+  [ 14] objcall 10 .............................. <gRock.m_paths.getPath(#sound)>
+  [ 16] setlocal 0 .............................. tmpPath = gRock.m_paths.getPath(#sound)
+  [ 18] getparam 24 ............................. <argSndOptions>
+  [ 20] pusharglist 1 ........................... <argSndOptions>
+  [ 22] extcall 68 .............................. <voidp(argSndOptions)>
+  [ 25] jmpifz [ 33] ............................ if voidp(argSndOptions) then
+  [ 28] pusharglist 0 ........................... <[:]>
+  [ 30] pushproplist ............................ <[:]>
+  [ 31] setparam 24 ............................. argSndOptions = [:]
+  [ 33] getparam 24 ............................. <argSndOptions>
+  [ 35] pushsymb 72 ............................. <#ReportTo>
+  [ 38] getparam 0 .............................. <me>
+  [ 40] pusharglistnoret 3 ...................... <argSndOptions, #ReportTo, me>
+  [ 42] objcall 28 .............................. argSndOptions.setaProp(#ReportTo, me)
+  [ 44] getparam 24 ............................. <argSndOptions>
+  [ 46] pushsymb 137 ............................ <#vol>
+  [ 49] pusharglist 2 ........................... <argSndOptions, #vol>
+  [ 51] objcall 34 .............................. <argSndOptions[#vol]>
+  [ 54] pusharglist 1 ........................... <argSndOptions[#vol]>
+  [ 56] extcall 68 .............................. <voidp(argSndOptions[#vol])>
+  [ 59] jmpifz [ 75] ............................ if voidp(argSndOptions[#vol]) then
+  [ 62] getparam 24 ............................. <argSndOptions>
+  [ 64] pushsymb 137 ............................ <#vol>
+  [ 67] pushsymb 627 ............................ <#SpeakVol>
+  [ 70] pusharglistnoret 3 ...................... <argSndOptions, #vol, #SpeakVol>
+  [ 72] objcall 46 .............................. argSndOptions[#vol] = #SpeakVol
+  [ 75] getparam 24 ............................. <argSndOptions>
+  [ 77] pushsymb 1137 ........................... <#format>
+  [ 80] pusharglist 2 ........................... <argSndOptions, #format>
+  [ 82] objcall 34 .............................. <argSndOptions[#format]>
+  [ 85] pushsymb 1856 ........................... <#Mp3>
+  [ 88] eq ...................................... <argSndOptions[#format] = #Mp3>
+  [ 89] jmpifz [154] ............................ if argSndOptions[#format] = #Mp3 then / else
+  [ 92] getparam 16 ............................. <argFileName>
+  [ 94] pusharglist 1 ........................... <argFileName>
+  [ 96] extcall 661 ............................. <fileGetExtension(argFileName)>
+  [ 99] setlocal 8 .............................. tmpExt = fileGetExtension(argFileName)
+  [101] getlocal 8 .............................. <tmpExt>
+  [103] getobjprop 151 .......................... <tmpExt.length>
+  [106] pushzero ................................ <0>
+  [107] eq ...................................... <tmpExt.length = 0>
+  [108] jmpifz [121] ............................ if tmpExt.length = 0 then
+  [111] getparam 16 ............................. <argFileName>
+  [113] getglobal 23 ............................ <gUseful>
+  [115] getobjprop 610 .......................... <gUseful.soundFileExt>
+  [118] joinstr ................................. <argFileName & gUseful.soundFileExt>
+  [119] setparam 16 ............................. argFileName = argFileName & gUseful.soundFileExt
+  [121] pushcons 0 .............................. <"SoundScript">
+  [123] pusharglist 1 ........................... <"SoundScript">
+  [125] extcall 284 ............................. <script("SoundScript")>
+  [128] getglobal 7 ............................. <gRock>
+  [130] getobjprop 8 ............................ <gRock.m_paths>
+  [132] pushsymb 1858 ........................... <#ActorSounds>
+  [135] pusharglist 2 ........................... <gRock.m_paths, #ActorSounds>
+  [137] objcall 10 .............................. <gRock.m_paths.getPath(#ActorSounds)>
+  [139] getparam 16 ............................. <argFileName>
+  [141] joinstr ................................. <gRock.m_paths.getPath(#ActorSounds) & argFileName>
+  [142] getparam 24 ............................. <argSndOptions>
+  [144] pusharglist 3 ........................... <script("SoundScript"), gRock.m_paths.getPath(#ActorSounds) & argFileName, argSndOptions>
+  [146] objcall 0 ............................... <script("SoundScript").new(gRock.m_paths.getPath(#ActorSounds) & argFileName, argSndOptions)>
+  [148] setprop 1857 ............................ mp3SoundObj = script("SoundScript").new(gRock.m_paths.getPath(#ActorSounds) & argFileName, argSndOptions)
+  [151] jmp [191]
+  [154] pushcons 8 .............................. <"SoundScript">
+  [156] pusharglist 1 ........................... <"SoundScript">
+  [158] extcall 284 ............................. <script("SoundScript")>
+  [161] getlocal 0 .............................. <tmpPath>
+  [163] getparam 16 ............................. <argFileName>
+  [165] joinstr ................................. <tmpPath & argFileName>
+  [166] getparam 24 ............................. <argSndOptions>
+  [168] pusharglist 3 ........................... <script("SoundScript"), tmpPath & argFileName, argSndOptions>
+  [170] objcall 0 ............................... <script("SoundScript").new(tmpPath & argFileName, argSndOptions)>
+  [172] setprop 575 ............................. ancestor = script("SoundScript").new(tmpPath & argFileName, argSndOptions)
+  [175] getprop 575 ............................. <ancestor>
+  [178] pusharglist 1 ........................... <ancestor>
+  [180] extcall 68 .............................. <voidp(ancestor)>
+  [183] jmpifz [191] ............................ if voidp(ancestor) then
+  [186] pushzero ................................ <0>
+  [187] pusharglistnoret 1 ...................... <0>
+  [189] extcall 21 .............................. return 0
+  [191] getparam 16 ............................. <argFileName>
+  [193] pusharglist 1 ........................... <argFileName>
+  [195] extcall 1770 ............................ <getCues(argFileName)>
+  [198] setprop 1774 ............................ cues = getCues(argFileName)
+  [201] pushcons 16 ............................. <60.0>
+  [203] pushint8 12 ............................. <12>
+  [206] div ..................................... <60.0 / 12>
+  [207] setprop 1859 ............................ modFact = 60.0 / 12
+  [210] getglobal 23 ............................ <gUseful>
+  [212] getobjprop 24 ........................... <gUseful.frameTimer>
+  [214] getparam 0 .............................. <me>
+  [216] pusharglistnoret 2 ...................... <gUseful.frameTimer, me>
+  [218] objcall 56 .............................. gUseful.frameTimer.addObject(me)
+  [221] pushzero ................................ <0>
+  [222] setprop 1860 ............................ cueOffset = 0
+  [225] pushzero ................................ <0>
+  [226] setprop 1861 ............................ cueNum = 0
+  [229] pushzero ................................ <0>
+  [230] setprop 1862 ............................ currentCue = 0
+  [233] getparam 0 .............................. <me>
+  [235] pusharglistnoret 1 ...................... <me>
+  [237] extcall 21 .............................. return me
+  [239] ret
+end
+
+on kill me
+  [  0] getprop 1857 ............................ <mp3SoundObj>
+  [  3] pusharglist 1 ........................... <mp3SoundObj>
+  [  5] extcall 71 .............................. <objectp(mp3SoundObj)>
+  [  8] jmpifz [ 21] ............................ if objectp(mp3SoundObj) then
+  [ 11] getprop 1857 ............................ <mp3SoundObj>
+  [ 14] pusharglist 1 ........................... <mp3SoundObj>
+  [ 16] objcall 1 ............................... <mp3SoundObj.kill()>
+  [ 18] setprop 1857 ............................ mp3SoundObj = mp3SoundObj.kill()
+  [ 21] getprop 575 ............................. <ancestor>
+  [ 24] pusharglist 1 ........................... <ancestor>
+  [ 26] extcall 71 .............................. <objectp(ancestor)>
+  [ 29] jmpifz [ 42] ............................ if objectp(ancestor) then
+  [ 32] getprop 575 ............................. <ancestor>
+  [ 35] pusharglist 1 ........................... <ancestor>
+  [ 37] objcall 1 ............................... <ancestor.kill()>
+  [ 39] setprop 575 ............................. ancestor = ancestor.kill()
+  [ 42] getglobal 23 ............................ <gUseful>
+  [ 44] getobjprop 24 ........................... <gUseful.frameTimer>
+  [ 46] getparam 0 .............................. <me>
+  [ 48] pusharglistnoret 2 ...................... <gUseful.frameTimer, me>
+  [ 50] objcall 25 .............................. gUseful.frameTimer.deleteObject(me)
+  [ 52] pushzero ................................ <0>
+  [ 53] setprop 538 ............................. reportObj = 0
+  [ 56] pushzero ................................ <0>
+  [ 57] pusharglistnoret 1 ...................... <0>
+  [ 59] extcall 21 .............................. return 0
+  [ 61] ret
+end
+
+on timeTick me
+  [  0] getparam 0 .............................. <me>
+  [  2] pusharglistnoret 1 ...................... <me>
+  [  4] objcall 1789 ............................ me.handleCue()
+  [  7] ret
+end
+
+on nextCue me
+  [  0] getprop 1860 ............................ <cueOffset>
+  [  3] pushint8 1 .............................. <1>
+  [  6] add ..................................... <cueOffset + 1>
+  [  7] setprop 1860 ............................ cueOffset = cueOffset + 1
+  [ 10] getparam 0 .............................. <me>
+  [ 12] pusharglistnoret 1 ...................... <me>
+  [ 14] objcall 1789 ............................ me.handleCue()
+  [ 17] ret
+end
+
+on getCurrentCue me
+  [  0] getprop 1862 ............................ <currentCue>
+  [  3] pusharglistnoret 1 ...................... <currentCue>
+  [  5] extcall 21 .............................. return currentCue
+  [  7] ret
+end
+
+on handleCue me
+  [  0] pusharglist 0 ........................... <>
+  [  2] thebuiltin 262 .......................... <the ticks>
+  [  5] getprop 706 ............................. <startTime>
+  [  8] sub ..................................... <the ticks - startTime>
+  [  9] getprop 1859 ............................ <modFact>
+  [ 12] div ..................................... <(the ticks - startTime) / modFact>
+  [ 13] pushint8 1 .............................. <1>
+  [ 16] add ..................................... <((the ticks - startTime) / modFact) + 1>
+  [ 17] getprop 1860 ............................ <cueOffset>
+  [ 20] add ..................................... <((the ticks - startTime) / modFact) + 1 + cueOffset>
+  [ 21] setlocal 0 .............................. tmpCueNum = ((the ticks - startTime) / modFact) + 1 + cueOffset
+  [ 23] getlocal 0 .............................. <tmpCueNum>
+  [ 25] getprop 1774 ............................ <cues>
+  [ 28] getobjprop 32 ........................... <cues.count>
+  [ 31] lt ...................................... <tmpCueNum < cues.count>
+  [ 32] jmpifz [ 64] ............................ if tmpCueNum < cues.count then
+  [ 35] getprop 1774 ............................ <cues>
+  [ 38] getlocal 0 .............................. <tmpCueNum>
+  [ 40] pusharglist 2 ........................... <cues, tmpCueNum>
+  [ 42] objcall 34 .............................. <cues[tmpCueNum]>
+  [ 45] setprop 1862 ............................ currentCue = cues[tmpCueNum]
+  [ 48] getprop 538 ............................. <reportObj>
+  [ 51] getparam 0 .............................. <me>
+  [ 53] pushsymb 1836 ........................... <#Cue>
+  [ 56] getprop 1862 ............................ <currentCue>
+  [ 59] pusharglistnoret 4 ...................... <reportObj, me, #Cue, currentCue>
+  [ 61] objcall 74 .............................. reportObj.Report(me, #Cue, currentCue)
+  [ 64] ret
+end
+
+on Report me, argObj, argWhat
+  [  0] getparam 16 ............................. <argWhat>
+  [  2] pushsymb 689 ............................ <#Preloaded>
+  [  5] eq ...................................... <argWhat = #Preloaded>
+  [  6] jmpifz [ 20] ............................ if argWhat = #Preloaded then / else
+  [  9] pusharglist 0 ........................... <>
+  [ 11] thebuiltin 262 .......................... <the ticks>
+  [ 14] setprop 706 ............................. startTime = the ticks
+  [ 17] jmp [ 49]
+  [ 20] getparam 16 ............................. <argWhat>
+  [ 22] pushsymb 237 ............................ <#play>
+  [ 25] eq ...................................... <argWhat = #play>
+  [ 26] jmpifz [ 40] ............................ if argWhat = #play then / else
+  [ 29] pusharglist 0 ........................... <>
+  [ 31] thebuiltin 262 .......................... <the ticks>
+  [ 34] setprop 706 ............................. startTime = the ticks
+  [ 37] jmp [ 49]
+  [ 40] getparam 16 ............................. <argWhat>
+  [ 42] pushsymb 646 ............................ <#finished>
+  [ 45] eq ...................................... <argWhat = #finished>
+  [ 46] jmpifz [ 49] ............................ if argWhat = #finished then
+  [ 49] getprop 538 ............................. <reportObj>
+  [ 52] getparam 0 .............................. <me>
+  [ 54] getparam 16 ............................. <argWhat>
+  [ 56] pusharglistnoret 3 ...................... <reportObj, me, argWhat>
+  [ 58] objcall 74 .............................. reportObj.Report(me, argWhat)
+  [ 61] ret
+end

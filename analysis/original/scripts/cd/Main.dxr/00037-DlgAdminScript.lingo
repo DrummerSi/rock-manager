@@ -1,0 +1,162 @@
+property ancestor, m_tabsInfo
+global gDir, gRock
+
+on new me, argOptions
+  ID = argOptions[#ID]
+  argOptions.setaProp(#ReportTo, me)
+  argOptions.setaProp(#child, me)
+  dialog_r = gRock.m_classManager.getObjByIDAndClass(#DlgAdmin, #Dialog)
+  dialog_r.dataMemberName = "DlgAdminData"
+  dialog_r.loc = point(170, 80)
+  argOptions[#DlgInfoObj] = dialog_r
+  ancestor = script("DlgRockAncestorScript").new(argOptions)
+  me.albumInfo()
+  me.missionInfo()
+  itemObj = ancestor.m_objDlg.getItem(#AlbumPic)
+  if objectp(itemObj) then
+    itemObj.setOneProp(#Pic, "Dummy")
+  end if
+  ancestor.m_objDlg.recalc(#DontPaint)
+  itemObj = ancestor.m_objDlg.getItem(#AgendaBG)
+  rOpenAgenda(itemObj.getOnStageRect() + rect(0, 0, 0, 0), [#MoveItems: 0, #midDate: 0.0, #show: [#Graphs: 1], #bgPic: "TmpLargeAgendaBG", #ShrinkRect: rect(6, 5, -6, -5)])
+  ancestor.render()
+  return me
+end
+
+on kill me
+  rCloseAgenda()
+  ancestor.kill()
+  return 0
+end
+
+on Report me, argObj, argWhat
+end
+
+on mouse me, argObj, argWhat, argOption
+  if objectp(argOption) then
+    if argWhat = #click then
+      ID = argOption.getOneProp(#ID)
+      IDStr = string(ID)
+      ancestor.mouse(argObj, argWhat, argOption)
+    end if
+  end if
+end
+
+on albumInfo me
+  itemObj = ancestor.m_objDlg.getItemByPath([#AlbumPic])
+  album_r = gRock.m_context.getFocus(#album)
+  if objectp(album_r) then
+    if album_r.DesignSettings.count then
+      img = makeAlbumCover(album_r.DesignSettings)
+      img2 = image(100, 100, 16)
+      img2.copyPixels(img, img2.rect, img.rect)
+      itemObj.setOneProp(#Pic, img2)
+    else
+      itemObj.setOneProp(#Pic, member("image_nodesign01_small01").image)
+    end if
+  else
+    itemObj.setOneProp(#Pic, member("image_nodesign01_small01").image)
+  end if
+  record_r = gRock.m_classManager.getObjByIDAndClass(gRock.m_player.CPContractor, #Record)
+  tmpInfo = []
+  tmpInfo.add("-")
+  if objectp(album_r) then
+    tmpInfo[tmpInfo.count] = album_r.name
+  end if
+  tmpInfo.add(#szidCopiesSold)
+  tmpInfo.add("-")
+  if objectp(album_r) then
+    tmpInfo[tmpInfo.count] = rCurrency(album_r.Sales)
+  end if
+  tmpInfo.add(#szidRoyalty)
+  tmpInfo.add("-")
+  if objectp(record_r) then
+    tmpInfo[tmpInfo.count] = convFloatToPercent(gRock.m_player.CPContractPriceModel.Royalty, 1) & "%"
+  end if
+  tmpInfo.add(#szidRevenue)
+  tmpInfo.add("-")
+  if objectp(record_r) and objectp(album_r) then
+    tmpInfo[tmpInfo.count] = rCurrency(record_r.getPlayerEarnedMoney(#CurrentAlbumOnly), 0, 1)
+  end if
+  tmpInfo.add(#szidAdvancePay)
+  tmpInfo.add("-")
+  if objectp(record_r) then
+    tmpInfo[tmpInfo.count] = rCurrency(record_r.Advance, 0, 1)
+  end if
+  moneyToPlayer = 0
+  if objectp(album_r) and objectp(record_r) then
+    moneyToPlayer = record_r.getDebtToPlayer()
+  end if
+  if moneyToPlayer <= 0 then
+    tmpInfo.add(#szidRecoup)
+  else
+    tmpInfo.add(#szidEarned)
+  end if
+  tmpInfo.add("-")
+  if objectp(album_r) and objectp(album_r) then
+    tmpInfo[tmpInfo.count] = rCurrency(moneyToPlayer, 0, 1)
+  end if
+  tmpInfo.add(#szidAllAlbumsSales)
+  tmpInfo.add("-")
+  mission_r = gRock.m_context.getFocus(#Mission)
+  tmpTotalSales = mission_r.getAlbumsSold()
+  if tmpTotalSales > 0 then
+    tmpInfo[tmpInfo.count] = rCurrency(tmpTotalSales)
+  end if
+  itemObj = ancestor.m_objDlg.getItemByPath([#InfoDlg, #Head, #Info])
+  itemObj.setOneProp(#editData, rGetStr(#szidAdminHeadAlbumInfo))
+  itemObj = ancestor.m_objDlg.getItemByPath([#InfoDlg, #Head, #icon])
+  itemObj.setOneProp(#Pic, "icon_cd02")
+  itemObj = ancestor.m_objDlg.getItemByPath([#InfoDlg, #dlg, #Pic])
+  itemObj.setOneProp(#Pic, rFormatText(tmpInfo, "AdminFormatting"))
+  if 0 then
+    str = EMPTY
+    band_r = gRock.m_context.getFocus(#Band)
+    groups_r = gRock.m_classManager.getObjsOfClass(#Group)
+    repeat with group_r in groups_r
+      tmpStr = string(group_r.ID)
+      tmpStr = tmpStr && "Band,"
+      tmpHype = group_r.Attitudes.getAttitude([band_r.ID, #Hype])
+      if objectp(tmpHype) then
+        tmpHype = tmpHype.Current
+      end if
+      tmpStr = tmpStr & "H:" & string(tmpHype)
+      if objectp(album_r) then
+        tmpStr = tmpStr && "Alb,"
+        tmpHype = group_r.Attitudes.getAttitude([album_r.ID, #Hype])
+        if objectp(tmpHype) then
+          tmpHype = tmpHype.Current
+        end if
+        tmpStr = tmpStr & "H:" & string(tmpHype)
+        tmpLikes = group_r.Attitudes.getAttitude([album_r.ID, #Likes])
+        if objectp(tmpLikes) then
+          tmpLikes = tmpLikes.Current
+        end if
+        tmpStr = tmpStr && "L:" & string(tmpLikes)
+      end if
+      if rOKCheatPass() then
+        tmpStr = tmpStr && string(group_r.getLikesAlbumInfo())
+      end if
+      str = str & RETURN & tmpStr
+    end repeat
+    if the shiftDown and not (the controlDown) then
+      str = str & RETURN & "Active Triggers"
+      triggers_r = gRock.m_classManager.getObjsOfClass(#Trigger)
+      repeat with trigger_r in triggers_r
+        if trigger_r.Active then
+          str = str & string(trigger_r.ID) & RETURN
+        end if
+      end repeat
+    end if
+  end if
+end
+
+on missionInfo me
+  mission_r = gRock.m_context.getFocus(#Mission)
+  itemObj = ancestor.m_objDlg.getItemByPath([#MissionDlg, #Head, #Info])
+  itemObj.setOneProp(#editData, rGetStr(#szidAdminHeadObjectives))
+  itemObj = ancestor.m_objDlg.getItemByPath([#MissionDlg, #Head, #icon])
+  itemObj.setOneProp(#Pic, "icon_effect02")
+  itemObj = ancestor.m_objDlg.getItemByPath([#MissionDlg, #dlg, #Pic])
+  itemObj.setOneProp(#Pic, rFormatText([mission_r.CriteriaText], "MissionIntro2Formatting", [#ForceHeight: 84]))
+end

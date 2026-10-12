@@ -1,0 +1,101 @@
+property m_CP, m_propList, m_reportObj, m_nextUpdate, m_refreshActive, m_editItems
+global gDir, gUseful
+
+on new me, argReportObj, argPropList
+  m_reportObj = argReportObj
+  if voidp(argPropList) then
+    argPropList = [#test: [#comment: "Test!", #format: #integer, #default: 0]]
+  end if
+  m_propList = argPropList
+  SPNum = gDir.m_spriteList[#Watcher]
+  sprite(SPNum).ink = 0
+  m_CP = script("Dialog").new([#AttachImageToMember: #temp, #StartSpriteNum: SPNum, #NumSprites: 2, #OKtoResize: 1, #ID: #WatcherDlg])
+  tmpList = []
+  tmpHelper = new(script("DialogHelperScript"))
+  tmpHelper.createPropDialog(m_propList)
+  tmpHelper.addBG()
+  tmpList2 = tmpHelper.getList()
+  mergeLists(tmpList, tmpList2)
+  m_CP.create(tmpList2)
+  repeat with n = 1 to m_CP.itemObjs.count
+    obj = m_CP.itemObjs[n]
+  end repeat
+  m_editItems = []
+  repeat with obj in m_CP.itemObjs
+    IDStr = string(obj.ID)
+    if IDStr.char[1..4] = "Edit" then
+      m_editItems.add(obj)
+    end if
+  end repeat
+  lst = m_CP.getItemsByType(#EnterField)
+  repeat with obj in lst
+    obj.scriptInstanceList.add(me)
+  end repeat
+  lst = m_CP.getItemsByType(#button)
+  repeat with obj in lst
+    obj.scriptInstanceList.add(me)
+  end repeat
+  m_CP.renderAtLoc(point(100, 100))
+  gUseful.frameTimer.addObject(me)
+  m_nextUpdate = the ticks + (1 * 60)
+  m_refreshActive = 1
+  return me
+end
+
+on kill me
+  gUseful.frameTimer.deleteObject(me)
+  m_CP = m_CP.kill()
+  m_reportObj = 0
+  return 0
+end
+
+on refresh me
+  repeat with n = 1 to m_propList.count()
+    prop = m_propList.getPropAt(n)
+    itemObj = m_editItems[n]
+    if not objectp(itemObj) then
+      next repeat
+    end if
+    obj = m_propList[n].getaProp(#object)
+    prop = m_propList[n].getaProp(#propName)
+    itemObj.setOneProp(#editData, getPropFromObjOrAncestor(obj, prop))
+  end repeat
+end
+
+on Report me, argObj, argWhat, argOptions
+  if argWhat = #EditField then
+    tmpID = argObj.storeThisForMe
+    Info = m_propList[tmpID]
+    prop = Info[#propName]
+    val = argObj.getEnteredData()
+    obj = Info[#object]
+    if objectp(obj) then
+      rsetProp(obj, prop, val)
+      pott("val set", prop, val, obj)
+    else
+      pott("Val not set ", prop, val)
+    end if
+    m_refreshActive = 1
+  else
+    if argWhat = #UserStartEdit then
+      m_refreshActive = 0
+    end if
+  end if
+end
+
+on mouse me, argObj, argWhat
+  if argWhat = #click then
+    if argObj.ID = #close then
+      m_reportObj.Report(me, #close)
+    end if
+  end if
+end
+
+on timeTick me
+  if the ticks > m_nextUpdate then
+    if m_refreshActive then
+      me.refresh()
+    end if
+    m_nextUpdate = the ticks + (4 * 60)
+  end if
+end

@@ -1,0 +1,51 @@
+on setupAgenda argEventToBook_r, argDlgObj, argStartSPNum
+  global gRock
+  argEventToBook_r.visible = 1
+  argEventToBook_r.Moveable = 1
+  tmpDate = gRock.m_eventsManager.closestPossibleDate(argEventToBook_r, argEventToBook_r.StartDate)
+  if tmpDate >= 0 then
+    argEventToBook_r.setDates(tmpDate, argEventToBook_r.duration)
+  else
+    alert("Couldn't find any place to put event (within reasonable future)")
+  end if
+  if 0 then
+    place_r = gRock.m_context.getFocus(#place)
+    itemObj = argDlgObj.m_objDlg.getItem(#Pic)
+    if objectp(place_r) then
+      if place_r.className = #Record then
+        tmpImgMember = "release01"
+      else
+        tmpImgMember = string(place_r.ID)
+      end if
+      tmpMember = member("image_" & tmpImgMember & "_small01")
+      if not (tmpMember.number > 0) then
+        tmpMember = 0
+      end if
+    end if
+    if objectp(itemObj) and objectp(tmpMember) then
+      itemObj.setOneProp(#Pic, tmpMember)
+    end if
+  end if
+  argDlgObj.m_objDlg.recalc(#DontPaint)
+  itemObj = argDlgObj.m_objDlg.getItem(#AgendaBG)
+  rOpenAgenda(itemObj.getOnStageRect() + rect(0, 0, 0, 0), [#MoveItems: 1, #show: [:], #bgPic: "agenda_background01", #ShrinkRect: rect(6, 5, -5, -5), #SPNum: argStartSPNum])
+end
+
+on createTableImage argInfoList
+  img = VOID
+  repeat with n = 1 to argInfoList.count
+    Info = argInfoList[n]
+    tmpMemb = rFormatText([Info[#string]], Info[#Formatting], [#return: #member])
+    tmpMemb.alignment = Info[#alignment]
+    if integerp(Info[#width]) then
+      tmpMemb.width = Info[#width]
+    end if
+    tmpMemb.FixedLinespace = 15
+    tmpImg = tmpMemb.image
+    if voidp(img) then
+      img = image(tmpImg.rect[3], tmpImg.rect[4], 8)
+    end if
+    img.copyPixels(tmpImg, tmpImg.rect, tmpImg.rect)
+  end repeat
+  return img
+end

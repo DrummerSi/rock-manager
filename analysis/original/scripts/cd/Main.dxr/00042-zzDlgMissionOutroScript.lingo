@@ -1,0 +1,97 @@
+property ancestor, m_succeeded, m_mission_r
+global gDir, gRock
+
+on new me, argOptions
+  ID = argOptions[#ID]
+  argOptions.setaProp(#ReportTo, me)
+  argOptions.setaProp(#child, me)
+  m_mission_r = gRock.m_context.getFocus(#Mission)
+  m_succeeded = m_mission_r.status = #succeeded
+  dialog_r = gRock.m_classManager.getObjByIDAndClass(#DlgMissionIntro, #Dialog)
+  dialog_r.dataMemberName = "DlgMissionOutroData"
+  dialog_r.name = m_mission_r.name
+  argOptions[#DlgInfoObj] = dialog_r
+  ancestor = script("DlgRockAncestorScript").new(argOptions)
+  itemObj = ancestor.m_objDlg.getItemByPath([#InfoDlg, #Head, #icon])
+  itemObj.setOneProp(#Pic, "icon_money02")
+  itemObj = ancestor.m_objDlg.getItemByPath([#InfoDlg, #Head, #Info])
+  itemObj.setOneProp(#editData, rGetStr(#szidStatistics))
+  itemObj = ancestor.m_objDlg.getItem(#Pic)
+  itemObj.setOneProp(#Pic, "mission03_failure")
+  itemObj = ancestor.m_objDlg.getItem(#Info)
+  itemObj.setOneProp(#Pic, rFormatText([m_mission_r.FailText], "MissionOutroFormatting", [#shadow: 1]))
+  me.setPlace()
+  ancestor.render()
+  return me
+end
+
+on kill me
+  ancestor.kill()
+  return 0
+end
+
+on Report me, argObj, argWhat
+end
+
+on mouse me, argObj, argWhat, argOption
+  if objectp(argOption) then
+    if argWhat = #click then
+      ID = argOption.getOneProp(#ID)
+      IDStr = string(ID)
+      if ID = #ButtonOK then
+        if m_succeeded then
+          nextID = gRock.m_player.getNextMissionID(m_mission_r)
+          if nextID = #ClockedGame then
+            alert("Game clocked!!")
+            exit
+          else
+            m_mission_r = gRock.m_classManager.getObjByIDAndClass(nextID, #Mission)
+            if not objectp(m_mission_r) then
+              pott("That mission doesn't exist", nextID)
+              m_mission_r = gRock.m_classManager.getObjByIDAndClass(#Mission01, #Mission)
+            end if
+            gRock.m_context.setFocus(#Mission, m_mission_r)
+          end if
+        end if
+        gDir.m_objDialogsMaster.ImNOTExitingToCity()
+        gDir.m_objDialogsMaster.closeAllDialogs()
+        goMovie("Mission")
+        exit
+      end if
+    end if
+  end if
+end
+
+on setPlace me
+  dlgObj = ancestor.m_objDlg
+  str1 = EMPTY
+  str2 = EMPTY
+  totalPoints = 0
+  str1 = str1 & rGetStr(#szidConcerts) & RETURN
+  str2 = str2 & m_mission_r.Vars.getaProp(#ConcertEarnings) & RETURN
+  str1 = str1 & rGetStr(#szidMerchandize) & RETURN
+  str2 = str2 & RETURN
+  str1 = str1 & rGetStr(#szidAlbums) & RETURN
+  str2 = str2 & RETURN
+  str1 = str1 & rGetStr(#szidXXXX) & RETURN
+  str2 = str2 & RETURN
+  str1 = str1 & rGetStr(#szidTours) & RETURN
+  str2 = str2 & RETURN
+  str1 = str1 & rGetStr(#szidBand_D) & RETURN
+  str2 = str2 & RETURN
+  str1 = str1 & rGetStr(#szidTours) & RETURN
+  str2 = str2 & RETURN
+  str1 = str1 & rGetStr(#szidAdvertisement) & RETURN
+  str2 = str2 & RETURN
+  str1 = str1 & rGetStr(#szidStudio) & RETURN
+  str2 = str2 & RETURN
+  str1 = str1 & rGetStr(#szidMiscellaneous) & RETURN
+  str2 = str2 & RETURN
+  str1 = str1 & "øøøøøøøøøø" & RETURN
+  itemObj = ancestor.m_objDlg.getItemByPath([#InfoDlg, #dlg, #Pic])
+  img = createTableImage([[#Formatting: "TourTableFormatting", #width: 230, #alignment: #left, #string: str1], [#Formatting: "TourTableFormatting", #alignment: #right, #string: str2]])
+  itemObj.setOneProp(#ink, 36)
+  itemObj.setOneProp(#Pic, img)
+  gRock.m_player.MissionEnd(m_mission_r, m_succeeded, [#points: totalPoints])
+  gRock.autoSave()
+end

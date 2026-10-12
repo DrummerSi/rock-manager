@@ -1,0 +1,82 @@
+property ancestor, m_isTravelling, m_tour_r, m_currentCityID, m_snd
+global gDir, gRock
+
+on new me, argOptions
+  global gUseful
+  ID = argOptions[#ID]
+  argOptions.setaProp(#ReportTo, me)
+  argOptions.setaProp(#child, me)
+  ConcertInfo = argOptions[#ConcertInfo]
+  tourConcert_r = gRock.m_classManager.getObjByIDAndClass(ConcertInfo[#ConcertID], #TourConcert)
+  city_r = gRock.m_classManager.getObjByIDAndClass(tourConcert_r.City, #TourCity)
+  dialog_r = gRock.m_classManager.getObjByIDAndClass(#DlgTourConcertResult, #Dialog)
+  dialog_r.name = city_r.name
+  ancestor = script("DlgRockAncestorScript").new(argOptions)
+  m_tour_r = gRock.m_context.getFocus(#BandTour)
+  itemObj = ancestor.m_objDlg.getItem(#Pic)
+  itemObj.setOneProp(#Pic, city_r.Gfx)
+  itemObj = ancestor.m_objDlg.getItem(#Info)
+  itemObj.setOneProp(#Pic, "Dummy")
+  itemObj = ancestor.m_objDlg.getItemByPath([#Satisfaction, #Head, #icon])
+  itemObj.setOneProp(#Pic, "icon_prize podium02")
+  itemObj = ancestor.m_objDlg.getItemByPath([#Satisfaction, #Head, #Info])
+  itemObj.setOneProp(#editData, gRock.m_languageManager.getStr(#szidSatisfaction))
+  itemObj = ancestor.m_objDlg.getItemByPath([#Satisfaction, #dlg, #Pic])
+  tmpStars = convValToRange(tourConcert_r.quality, [0.0, 1.0], [0, 10], 0, #limit)
+  tmpPic = "meter_stars" & convItoS(tmpStars, 2)
+  itemObj.setOneProp(#Pic, tmpPic)
+  itemObj = ancestor.m_objDlg.getItemByPath([#results, #Head, #icon])
+  itemObj.setOneProp(#Pic, "icon_money02")
+  itemObj = ancestor.m_objDlg.getItemByPath([#results, #Head, #Info])
+  itemObj.setOneProp(#editData, gRock.m_languageManager.getStr(#szidResults))
+  gRock.m_player.transactMoney(tourConcert_r.VenueIncome, [#Tour, #Tickets])
+  img = rFormatText([#szidAudience, #szidTicketPrice, #szidTotal], "TourConcertResultFormatting")
+  img = removeAlpha(img)
+  img2 = rFormatText([rCurrency(tourConcert_r.NumAudience), rCurrency(city_r.PreferredPriceModel.UnitPrice, 0, 1), rCurrency(tourConcert_r.VenueIncome, 0, 1)], "TourConcertResult2Formatting")
+  img.copyPixels(img2, img2.rect, img2.rect, [#ink: 36])
+  itemObj = ancestor.m_objDlg.getItemByPath([#results, #dlg, #Pic])
+  itemObj.setOneProp(#Pic, img)
+  itemObj.setOneProp(#ink, 36)
+  ancestor.render()
+  if city_r.size <= 0 then
+    tmp = 0
+  else
+    tmp = float(tourConcert_r.NumAudience) / city_r.size
+  end if
+  audienceNr = comesBeforeValInList(tmp, [0.25: 1, 0.75: 2, 10: 3])
+  sndSatisfactionNr = comesBeforeValInList(tourConcert_r.quality, [0.25: 1, 0.75: 2, 10: 3])
+  tmpUseVenueID = #Live06
+  tmpSndSuffix = string(sndSatisfactionNr) & string(audienceNr) & "1" & gUseful.soundFileExt
+  tmpSnd = gRock.m_paths.getPath(#sound) & "A" & string(tmpUseVenueID) & "-" & tmpSndSuffix
+  m_snd = script("SoundScript").new(tmpSnd, [#file: 1, #vol: #FXVol])
+  return me
+end
+
+on kill me
+  m_tour_r = 0
+  if objectp(m_snd) then
+    m_snd = m_snd.kill()
+  end if
+  ancestor.kill()
+  return 0
+end
+
+on Report me, argObj, argWhat
+end
+
+on mouse me, argObj, argWhat, argOption
+  if objectp(argOption) then
+    if argWhat = #click then
+      ID = argOption.getOneProp(#ID)
+      if ID = #ButtonOK then
+        obj = gDir.m_objDialogsMaster.getDialogUnder(me)
+        ancestor.mouse(argObj, argWhat, argOption)
+        if objectp(obj) then
+          obj.Report(me, #Closed)
+        end if
+        exit
+      end if
+      ancestor.mouse(argObj, argWhat, argOption)
+    end if
+  end if
+end

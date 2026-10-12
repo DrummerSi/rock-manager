@@ -1,0 +1,260 @@
+on assertMemberImage argMember, argSize, argDepth, argAlphaDepth, argPalette, argFillColor
+  im = argMember.image
+  if (argMember.width <> argSize[1]) or (argMember.height <> argSize[2]) or (argMember.depth <> argDepth) then
+    im = image(argSize[1], argSize[2], argDepth, argAlphaDepth, argPalette)
+  end if
+  if objectp(argFillColor) then
+    im.fill(0, 0, argSize[1], argSize[2], argFillColor)
+  end if
+  argMember.image = im
+  return im
+end
+
+on removeAlpha argImg
+  tmpImg = image(argImg.rect[3], argImg.rect[4], argImg.depth)
+  tmpImg.copyPixels(argImg, argImg.rect, argImg.rect, [:])
+  return tmpImg
+end
+
+on composeImage argInfoList, argImageOrMember, argOptions
+  tmpLocOffset = argOptions[#locOffset]
+  if voidp(tmpLocOffset) then
+    tmpLocOffset = point(0, 0)
+  end if
+  if ilk(argImageOrMember) = #image then
+    iDst = argImageOrMember
+  else
+    if ilk(argImageOrMember) = #member then
+      iDst = argImageOrMember.image
+    end if
+  end if
+  tmpPasteImageIntoMember = argOptions[#DstMember]
+  tmpUseAlpha = 0
+  if argOptions[#useAlpha] > 0 then
+    tmpUseAlpha = 1
+  end if
+  tmpDstAlphaMemb = argOptions[#PasteAlphaIntoMember]
+  if not voidp(tmpDstAlphaMemb) then
+    if stringp(tmpDstAlphaMemb) then
+      tmpDstAlphaMemb = member(tmpDstAlphaMemb)
+    end if
+    iAlpha = assertMemberImage(tmpDstAlphaMemb, point(iDst.width, iDst.height), 8, 0, #grayscale, rgb(255, 255, 255))
+    tmpUseAlpha = 1
+  end if
+  if tmpUseAlpha and voidp(tmpDstAlphaMemb) then
+    iAlpha = image(iDst.width, iDst.height, 8, 0, #grayscale)
+  end if
+  tmpInk = argOptions[#ink]
+  if voidp(tmpInk) then
+    tmpInk = 36
+  end if
+  repeat with tmpList in argInfoList
+    mSrc = tmpList[1]
+    if stringp(mSrc) then
+      mSrc = member(mSrc)
+    end if
+    if ilk(mSrc) = #image then
+      iSrc = mSrc
+      tmpReg = point(0, 0)
+      tmpSrcRect = mSrc.rect
+    else
+      iSrc = mSrc.image
+      tmpReg = mSrc.regPoint
+      tmpSrcRect = iSrc.rect
+    end if
+    tmptmpInk = tmpInk
+    if iSrc.useAlpha and (tmpInk = 36) then
+      tmptmpInk = 0
+    end if
+    tmpLoc = tmpList[2]
+    if ilk(tmpLoc) = #point then
+      tmpLoc = tmpLoc - tmpReg + tmpLocOffset
+      tmpDestRect = tmpSrcRect + rect(tmpLoc, tmpLoc)
+    else
+      if ilk(tmpLoc) = #rect then
+        tmpDestRect = tmpLoc
+      end if
+    end if
+    iDst.copyPixels(iSrc, tmpDestRect, tmpSrcRect, [#ink: tmptmpInk])
+    if tmpUseAlpha then
+    end if
+  end repeat
+  if argOptions[#useAlpha] then
+    iDst2 = image(iDst.width, iDst.height, 24, 8)
+    iDst2.copyPixels(iAlpha, iDst.rect, iDst.rect, [#ink: 0])
+    iDst2.copyPixels(iDst, iDst.rect, iDst.rect)
+    iDst2.setAlpha(iAlpha)
+    tmpRetI = iDst2
+  else
+    tmpRetI = iDst
+  end if
+  if objectp(tmpDstAlphaMemb) then
+    tmpDstAlphaMemb.image = iAlpha
+  end if
+  if ilk(argImageOrMember) = #member then
+    argImageOrMember.image = tmpRetI
+  end if
+  return tmpRetI
+end
+
+on ZZcomposeImage argInfoList, argImageOrMember, argOptions
+  tmpLocOffset = argOptions[#locOffset]
+  if voidp(tmpLocOffset) then
+    tmpLocOffset = point(0, 0)
+  end if
+  if ilk(argImageOrMember) = #image then
+    iDst = argImageOrMember
+  else
+    if ilk(argImageOrMember) = #member then
+      iDst = argImageOrMember.image
+    end if
+  end if
+  tmpPasteImageIntoMember = argOptions[#DstMember]
+  tmpUseAlpha = 0
+  if argOptions[#useAlpha] then
+    tmpUseAlpha = 1
+  end if
+  tmpDstAlphaMemb = argOptions[#PasteAlphaIntoMember]
+  if not voidp(tmpDstAlphaMemb) then
+    if stringp(tmpDstAlphaMemb) then
+      tmpDstAlphaMemb = member(tmpDstAlphaMemb)
+    end if
+    iAlpha = assertMemberImage(tmpDstAlphaMemb, point(iDst.width, iDst.height), 8, 0, #grayscale, rgb(255, 255, 255))
+    tmpUseAlpha = 1
+  end if
+  if tmpUseAlpha and voidp(tmpDstAlphaMemb) then
+    iAlpha = image(iDst.width, iDst.height, 8, 0, #grayscale)
+  end if
+  repeat with tmpList in argInfoList
+    mSrc = member(tmpList[1])
+    iSrc = mSrc.image
+    tmpReg = mSrc.regPoint
+    tmpRect = tmpList[2]
+    if ilk(tmpRect) = #point then
+      tmpPoint = tmpRect - tmpReg + tmpLocOffset
+      tmpRect = mSrc.rect + rect(tmpPoint, tmpPoint)
+    end if
+    iDst.copyPixels(iSrc, tmpRect, mSrc.rect, [#ink: 36])
+    if tmpUseAlpha then
+      tmpAlpha = iSrc.extractAlpha()
+      iAlpha.copyPixels(tmpAlpha, tmpRect, mSrc.rect, [#ink: 39])
+    end if
+  end repeat
+  if tmpUseAlpha then
+  end if
+  if argOptions[#useAlpha] then
+    iDst2 = image(iDst.width, iDst.height, 24, 8)
+    iDst2.copyPixels(iAlpha, iDst.rect, iDst.rect, [#ink: 0])
+    iDst2.copyPixels(iDst, iDst.rect, iDst.rect)
+    iDst2.setAlpha(iAlpha)
+    tmpRetI = iDst2
+  else
+    tmpRetI = iDst
+  end if
+  if objectp(tmpDstAlphaMemb) then
+    tmpDstAlphaMemb.image = iAlpha
+  end if
+  if ilk(argImageOrMember) = #member then
+    argImageOrMember.image = tmpRetI
+  end if
+  return tmpRetI
+end
+
+on fillWithPattern argDstImageOrMember, argSrcImageOrMember, argDstRect, argSrcRect
+  tmpDstImage = argDstImageOrMember
+  if ilk(tmpDstImage) = #member then
+    tmpDstImage = tmpDstImage.image
+  end if
+  tmpSrcImage = argSrcImageOrMember
+  if ilk(tmpSrcImage) = #member then
+    tmpSrcImage = tmpSrcImage.image
+  end if
+  if voidp(argSrcRect) then
+    argSrcRect = tmpSrcImage.rect
+  end if
+  tmpSrcTL = point(argSrcRect[1], argSrcRect[2])
+  tmpSrcSize = point(argSrcRect[3], argSrcRect[4]) - tmpSrcTL
+  tmpDstTL = point(argDstRect[1], argDstRect[2])
+  tmpDstSize = point(argDstRect[3], argDstRect[4]) - tmpDstTL
+  if tmpDstSize[1] < tmpSrcSize[1] then
+    tmpSrcSize[1] = tmpDstSize[1]
+    argSrcRect[3] = tmpSrcTL[1] + tmpSrcSize[1]
+  end if
+  if tmpDstSize[2] < tmpSrcSize[2] then
+    tmpSrcSize[2] = tmpDstSize[2]
+    argSrcRect[4] = tmpSrcTL[2] + tmpSrcSize[2]
+  end if
+  tmpNumWholeFills = tmpDstSize / tmpSrcSize
+  repeat with X = 1 to tmpNumWholeFills[1]
+    repeat with Y = 1 to tmpNumWholeFills[2]
+      tmpOff = (tmpSrcSize * point(X - 1, Y - 1)) + tmpDstTL
+      tmpDstImage.copyPixels(tmpSrcImage, rect(tmpOff, tmpOff) + rect(point(0, 0), tmpSrcSize), argSrcRect, [#ink: 0])
+    end repeat
+  end repeat
+  tmpFractFills = (tmpDstSize / point(float(tmpSrcSize[1]), float(tmpSrcSize[2]))) - tmpNumWholeFills
+  tmpFractSize = tmpSrcSize * tmpFractFills
+  tmpFractSize = point(integer(tmpFractSize[1]), integer(tmpFractSize[2]))
+  if tmpFractSize[2] > 0 then
+    tmptmpSrcSize = point(tmpSrcSize[1], tmpFractSize[2])
+    tmptmpSrcRect = rect(tmpSrcTL, tmpSrcTL + tmptmpSrcSize)
+    repeat with X = 1 to tmpNumWholeFills[1]
+      tmpOff = (tmpSrcSize * point(X - 1, tmpNumWholeFills[2])) + tmpDstTL
+      tmpDstImage.copyPixels(tmpSrcImage, rect(tmpOff, tmpOff) + rect(point(0, 0), tmptmpSrcSize), tmptmpSrcRect, [#ink: 0])
+    end repeat
+  end if
+  if tmpFractSize[1] > 0 then
+    tmptmpSrcSize = point(tmpFractSize[1], tmpSrcSize[2])
+    tmptmpSrcRect = rect(tmpSrcTL, tmpSrcTL + tmptmpSrcSize)
+    repeat with Y = 1 to tmpNumWholeFills[2]
+      tmpOff = (tmpSrcSize * point(tmpNumWholeFills[1], Y - 1)) + tmpDstTL
+      tmpDstImage.copyPixels(tmpSrcImage, rect(tmpOff, tmpOff) + rect(point(0, 0), tmptmpSrcSize), tmptmpSrcRect, [#ink: 0])
+    end repeat
+    if tmpFractSize[2] > 0 then
+      tmptmpSrcRect = rect(tmpSrcTL, tmpSrcTL + tmpFractSize)
+      tmpOff = (tmpSrcSize * point(tmpNumWholeFills[1], tmpNumWholeFills[2])) + tmpDstTL
+      tmpDstImage.copyPixels(tmpSrcImage, rect(tmpOff, tmpOff) + rect(point(0, 0), tmpFractSize), tmptmpSrcRect, [#ink: 0])
+    end if
+  end if
+  if ilk(argDstImageOrMember) = #member then
+    argDstImageOrMember.image = tmpDstImage
+  end if
+end
+
+on imageMoveWithin argImage, argMoveLoc, argSrcRect, argSrndRect
+  if voidp(argSrcRect) then
+    argSrcRect = argImage.rect
+  end if
+  if voidp(argSrndRect) then
+    argSrndRect = argImage.rect
+  end if
+  tmpDstRect = argSrcRect + rect(argMoveLoc, argMoveLoc)
+  tmpRealDstRect = argSrndRect.intersect(tmpDstRect)
+  if 1 then
+    tmpMoveSize = getRectSize(tmpRealDstRect)
+    tmpImage = image(tmpMoveSize[1], tmpMoveSize[2], argImage.depth, 8 * argImage.useAlpha)
+    tmpSrcRect = rect(point(0, 0), tmpMoveSize)
+    tmpImage.copyPixels(argImage, tmpSrcRect, tmpRealDstRect - rect(argMoveLoc, argMoveLoc))
+  else
+    tmpImage = argImage.duplicate()
+    tmpSrcRect = tmpRealDstRect - rect(argMoveLoc, argMoveLoc)
+  end if
+  argImage.copyPixels(tmpImage, tmpRealDstRect, tmpSrcRect)
+  return tmpRealDstRect
+end
+
+on zzimageMoveWithin argImage, argMoveLoc, argSrcRect
+  if voidp(argSrcRect) then
+    argSrcRect = argImage.rect
+  end if
+  tmpDstRect = argSrcRect + rect(argMoveLoc, argMoveLoc)
+  tmpRealDstRect = argImage.rect.intersect(tmpDstRect)
+  tmpMoveSize = getRectSize(tmpRealDstRect)
+  tmpImage = image(tmpMoveSize[1], tmpMoveSize[2], argImage.depth, argImage.alpha)
+  argImage.copyPixels(tmpImage, tmpRealDstRect, tmpRealDstRect - rect(argMoveLoc, argMoveLoc))
+end
+
+on makeGrayscale argImg
+  img2 = image(argImg.rect[3], argImg.rect[4], 8, 0, #grayscale)
+  img2.copyPixels(argImg, argImg.rect, argImg.rect)
+  return img2
+end

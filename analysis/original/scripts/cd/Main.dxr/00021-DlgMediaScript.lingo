@@ -1,0 +1,139 @@
+property ancestor, m_place_r, m_scroller, m_categoryHelper
+global gDir, gRock, gUseful
+
+on new me, argOptions
+  ID = argOptions[#ID]
+  m_place_r = gRock.m_classManager.getObjByIDAndClass(ID, #place)
+  gRock.m_context.setFocus(#place, m_place_r)
+  argOptions.setaProp(#ReportTo, me)
+  argOptions.setaProp(#child, me)
+  dialog_r = gRock.m_classManager.getObjByIDAndClass(#DlgMedia, #Dialog)
+  dialog_r.icon = m_place_r.icon
+  argOptions[#DlgInfoObj] = dialog_r
+  reporter_r = gRock.m_classManager.getObjByIDAndClass(m_place_r.Reporter, #Reporter)
+  gRock.m_context.setFocus(#Reporter, reporter_r)
+  gRock.m_context.setFocus(#media, m_place_r)
+  ancestor = script("DlgRockAncestorScript").new(argOptions)
+  m_categoryHelper = script("CategoryScript").new(me)
+  tmpChart = m_place_r.getChart()
+  objs_r = m_categoryHelper.makeObjsOfIDs(m_place_r.Actions)
+  repeat with obj_r in objs_r
+    if obj_r.className = #ActionCategory then
+      if obj_r.CategoryType = #chart then
+        if tmpChart.count then
+          obj_r.Actions = [#Ok]
+          next repeat
+        end if
+        obj_r.Actions = []
+      end if
+    end if
+  end repeat
+  me.setPlace()
+  itemObj = ancestor.m_objDlg.getItemByPath([#ScrollView, #Frame1])
+  r = itemObj.getOneProp(#inOffsetRect)
+  r[4] = 116
+  itemObj.setOneProp(#inOffsetRect, r)
+  ancestor.m_objDlg.recalc(#DontPaint)
+  me.updateScroller()
+  human_r = m_place_r.getHuman()
+  itemObj = ancestor.m_objDlg.getItem(#Pic)
+  ancestor.m_objDlg.recalc(#DontPaint)
+  portraitRect = itemObj.getOnStageRect()
+  loc = point(portraitRect[1], portraitRect[2])
+  ancestor.showFace(1, m_place_r.ID, loc, #LeftTop)
+  ancestor.render()
+  tmpMood = human_r.calcFaceSettings()
+  tmpMood = tmpMood[#Mood]
+  tmpFile = getSpeechFile(human_r, [#Greeting, tmpMood])
+  speakAndSetFace(tmpFile, tmpMood)
+  return me
+end
+
+on kill me
+  m_categoryHelper = m_categoryHelper.kill()
+  if objectp(m_scroller) then
+    m_scroller = m_scroller.kill()
+  end if
+  ancestor.kill()
+  return 0
+end
+
+on updateScroller me
+  pott("Update scroller")
+  allScrollItems = m_categoryHelper.createScrollData()
+  itemObj = ancestor.m_objDlg.getItemByPath([#ScrollView, #Frame2])
+  rct = itemObj.getOnStageRect()
+  rct = rct + rect(2, 2, -2, -2)
+  if objectp(m_scroller) then
+    m_scroller = m_scroller.kill()
+  end if
+  m_scroller = script("CPScrollerScript").new(me, ancestor.getSPOverDlg(), allScrollItems, rct, ancestor.m_objDlg.highestMouseLayer, rect(0, -16, 0, 9))
+end
+
+on Report me, argObj, argWhat, argOption
+  if argObj = m_scroller then
+    if argWhat = #select then
+      obj_r = argOption.m_ID
+      tmpStr = string(obj_r.ID)
+      if obj_r.className = #ActionCategory then
+        if obj_r.CategoryType = #Ad then
+          gDir.m_objDialogsMaster.openDialog(#MediaAd, [#ID: m_place_r.ID, #AdIDs: obj_r.Actions])
+          exit
+        else
+          if obj_r.CategoryType = #chart then
+            obj = gDir.m_objDialogsMaster.openDialog(#MediaChart, [#ID: m_place_r.ID, #MediaID: m_place_r.ID])
+            exit
+          end if
+        end if
+      end if
+    end if
+  end if
+  if argWhat = #DoAction then
+    argObj.kill()
+    action_r = argOption
+    gRock.m_player.transactMoney(-action_r.price, [#media])
+    rPlayerOkayedAction(action_r)
+    me.updateScroller()
+  else
+    if m_categoryHelper.checkCategoryReport(argObj, argWhat, argOption) then
+      me.updateScroller()
+      exit
+    else
+      if argWhat = #Ad then
+        me.kill()
+      end if
+    end if
+  end if
+end
+
+on mouse me, argObj, argWhat, argOption
+  if objectp(argOption) then
+    if argWhat = #click then
+      ID = argOption.getOneProp(#ID)
+      IDStr = string(ID)
+      ancestor.mouse(argObj, argWhat, argOption)
+    end if
+  end if
+end
+
+on setPlace me
+  dlgObj = ancestor.m_objDlg
+  itemObj = dlgObj.getItemByPath([#Fond, #title])
+  itemObj.setOneProp(#editData, m_place_r.name)
+  itemObj = dlgObj.getItem(#Pic)
+  tmpInfo = CPgetActorInfo(string(m_place_r.ID))
+  if objectp(tmpInfo[#BGMember]) then
+    itemObj.setOneProp(#Pic, tmpInfo[#BGMember])
+    tmpSize = getRectSize(tmpInfo[#BGMember].rect)
+  else
+    itemObj.setOneProp(#Pic, "media03_environment01")
+  end if
+  itemObj = dlgObj.getItemByPath([#InfoFrame, #Head, #icon])
+  tmp = m_place_r.icon
+  tmp = tmp.char[1..tmp.length - 2] & "02"
+  itemObj.setOneProp(#Pic, tmp)
+  itemObj = dlgObj.getItemByPath([#InfoFrame, #Head, #Info])
+  itemObj.setOneProp(#editData, rGetStr(#szidComment))
+  itemObj = dlgObj.getItemByPath([#InfoFrame, #dlg, #Pic])
+  itemObj.setOneProp(#Pic, rFormatText([m_place_r.comment], "MediaFormatting"))
+end

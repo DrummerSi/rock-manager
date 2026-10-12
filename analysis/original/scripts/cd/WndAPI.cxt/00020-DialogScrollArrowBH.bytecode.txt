@@ -1,0 +1,142 @@
+property mouseObj, itemObj, scrollDlgObj, scrollMasterObj, scrollDir, scrollInitPause, scrollPause, waitUntil
+
+on new me, argItemObj
+  [  0] getparam 8 .............................. <argItemObj>
+  [  2] setprop 581 ............................. itemObj = argItemObj
+  [  5] getprop 581 ............................. <itemObj>
+  [  8] getobjprop 247 .......................... <itemObj.ancestor>
+  [ 11] getobjprop 248 .......................... <itemObj.ancestor.masterObj>
+  [ 14] setprop 632 ............................. scrollDlgObj = itemObj.ancestor.masterObj
+  [ 17] getprop 581 ............................. <itemObj>
+  [ 20] getobjprop 46 ........................... <itemObj.ID>
+  [ 23] pushsymb 633 ............................ <#ArrowUp>
+  [ 26] eq ...................................... <itemObj.ID = #ArrowUp>
+  [ 27] jmpifz [ 40] ............................ if itemObj.ID = #ArrowUp then / else
+  [ 30] pushint8 1 .............................. <1>
+  [ 33] inv ..................................... <-1>
+  [ 34] setprop 634 ............................. scrollDir = -1
+  [ 37] jmp [ 46]
+  [ 40] pushint8 1 .............................. <1>
+  [ 43] setprop 634 ............................. scrollDir = 1
+  [ 46] pushint8 500 ............................ <500>
+  [ 49] setprop 635 ............................. scrollInitPause = 500
+  [ 52] pushint8 100 ............................ <100>
+  [ 55] setprop 636 ............................. scrollPause = 100
+  [ 58] pushzero ................................ <0>
+  [ 59] setprop 637 ............................. waitUntil = 0
+  [ 62] getparam 0 .............................. <me>
+  [ 64] pusharglistnoret 1 ...................... <me>
+  [ 66] extcall 96 .............................. return me
+  [ 69] ret
+end
+
+on kill me
+  [  0] pushzero ................................ <0>
+  [  1] setprop 581 ............................. itemObj = 0
+  [  4] pushzero ................................ <0>
+  [  5] pusharglistnoret 1 ...................... <0>
+  [  7] extcall 96 .............................. return 0
+  [ 10] ret
+end
+
+on mouse me, argObj, argWhat
+  [  0] getparam 16 ............................. <argWhat>
+  [  2] pushsymb 379 ............................ <#DownOnOther>
+  [  5] eq ...................................... <argWhat = #DownOnOther>
+  [  6] jmpifz [ 10] ............................ if argWhat = #DownOnOther then
+  [  9] ret ..................................... exit
+  [ 10] getparam 16 ............................. <argWhat>
+  [ 12] pushsymb 380 ............................ <#down>
+  [ 15] eq ...................................... <argWhat = #down>
+  [ 16] getparam 16 ............................. <argWhat>
+  [ 18] pushsymb 350 ............................ <#stillDown>
+  [ 21] eq ...................................... <argWhat = #stillDown>
+  [ 22] or ...................................... <(argWhat = #down) or (argWhat = #stillDown)>
+  [ 23] jmpifz [182] ............................ if (argWhat = #down) or (argWhat = #stillDown) then / else
+  [ 26] getparam 16 ............................. <argWhat>
+  [ 28] pushsymb 380 ............................ <#down>
+  [ 31] eq ...................................... <argWhat = #down>
+  [ 32] jmpifz [ 48] ............................ if argWhat = #down then / else
+  [ 35] getmovieprop 638 ........................ <the milliSeconds>
+  [ 38] getprop 635 ............................. <scrollInitPause>
+  [ 41] add ..................................... <the milliSeconds + scrollInitPause>
+  [ 42] setprop 637 ............................. waitUntil = the milliSeconds + scrollInitPause
+  [ 45] jmp [ 69]
+  [ 48] getmovieprop 638 ........................ <the milliSeconds>
+  [ 51] getprop 637 ............................. <waitUntil>
+  [ 54] lt ...................................... <the milliSeconds < waitUntil>
+  [ 55] jmpifz [ 59] ............................ if the milliSeconds < waitUntil then
+  [ 58] ret ..................................... exit
+  [ 59] getmovieprop 638 ........................ <the milliSeconds>
+  [ 62] getprop 636 ............................. <scrollPause>
+  [ 65] add ..................................... <the milliSeconds + scrollPause>
+  [ 66] setprop 637 ............................. waitUntil = the milliSeconds + scrollPause
+  [ 69] pushsymb 32 ............................. <#scroll>
+  [ 72] setlocal 0 .............................. tmpHandler = #scroll
+  [ 74] getprop 581 ............................. <itemObj>
+  [ 77] getobjprop 247 .......................... <itemObj.ancestor>
+  [ 80] getobjprop 272 .......................... <itemObj.ancestor.scriptInstanceList>
+  [ 83] peek 0
+  [ 85] pusharglist 1
+  [ 87] extcall 111
+  [ 90] pushint8 1
+  [ 92] peek 0
+  [ 94] peek 2
+  [ 96] lteq
+  [ 97] jmpifz [152] ............................ repeat with tmpObj in itemObj.ancestor.scriptInstanceList
+  [100] peek 2
+  [102] peek 1
+  [104] pusharglist 2
+  [106] extcall 43
+  [109] setlocal 8
+  [111] getlocal 8 .............................. <tmpObj>
+  [113] getparam 0 .............................. <me>
+  [115] nteq .................................... <tmpObj <> me>
+  [116] getlocal 8 .............................. <tmpObj>
+  [118] pushsymb 32 ............................. <#scroll>
+  [121] pusharglist 2 ........................... <tmpObj, #scroll>
+  [123] objcall 294 ............................. <tmpObj.handler(#scroll)>
+  [126] and ..................................... <(tmpObj <> me) and tmpObj.handler(#scroll)>
+  [127] jmpifz [146] ............................ if (tmpObj <> me) and tmpObj.handler(#scroll) then
+  [130] pushsymb 32 ............................. <#scroll>
+  [133] getlocal 8 .............................. <tmpObj>
+  [135] getprop 634 ............................. <scrollDir>
+  [138] pushsymb 639 ............................ <#Arrow>
+  [141] pusharglistnoret 4 ...................... <#scroll, tmpObj, scrollDir, #Arrow>
+  [143] extcall 295 ............................. call(#scroll, tmpObj, scrollDir, #Arrow)
+  [146] pushint8 1
+  [148] add
+  [149] endrepeat [ 92]
+  [152] pop 3
+  [154] getprop 640 ............................. <scrollMasterObj>
+  [157] pusharglist 1 ........................... <scrollMasterObj>
+  [159] extcall 105 ............................. <objectp(scrollMasterObj)>
+  [162] jmpifz [179] ............................ if objectp(scrollMasterObj) then
+  [165] getprop 640 ............................. <scrollMasterObj>
+  [168] getprop 634 ............................. <scrollDir>
+  [171] pushsymb 639 ............................ <#Arrow>
+  [174] pusharglistnoret 3 ...................... <scrollMasterObj, scrollDir, #Arrow>
+  [176] objcall 32 .............................. scrollMasterObj.scroll(scrollDir, #Arrow)
+  [179] jmp [191]
+  [182] getparam 16 ............................. <argWhat>
+  [184] pushsymb 346 ............................ <#click>
+  [187] eq ...................................... <argWhat = #click>
+  [188] jmpifz [191] ............................ if argWhat = #click then
+  [191] ret
+end
+
+on ScrollersReport me, argReportObj
+  [  0] getparam 8 .............................. <argReportObj>
+  [  2] setprop 640 ............................. scrollMasterObj = argReportObj
+  [  5] getparam 8 .............................. <argReportObj>
+  [  7] getparam 0 .............................. <me>
+  [  9] getprop 581 ............................. <itemObj>
+  [ 12] getobjprop 46 ........................... <itemObj.ID>
+  [ 15] pusharglistnoret 3 ...................... <argReportObj, me, itemObj.ID>
+  [ 17] objcall 642 ............................. argReportObj.scrollerReporting(me, itemObj.ID)
+  [ 20] ret
+end
+
+on dim me
+  [  0] ret
+end

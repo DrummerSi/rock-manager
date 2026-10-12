@@ -1,0 +1,236 @@
+property ticksList, nrOfFrames, outputInterval, cnt, SP, fieldMemb, firstFrame
+
+on beginSprite me
+  [  0] getprop 681 ............................. <fieldMemb>
+  [  3] pusharglist 1 ........................... <fieldMemb>
+  [  5] extcall 556 ............................. <length(fieldMemb)>
+  [  8] jmpifz [ 35] ............................ if length(fieldMemb) then
+  [ 11] getprop 681 ............................. <fieldMemb>
+  [ 14] pusharglist 1 ........................... <fieldMemb>
+  [ 16] extcall 309 ............................. <getMemberNum(fieldMemb)>
+  [ 19] pushzero ................................ <0>
+  [ 20] gt ...................................... <getMemberNum(fieldMemb) > 0>
+  [ 21] jmpifz [ 35] ............................ if getMemberNum(fieldMemb) > 0 then
+  [ 24] getprop 681 ............................. <fieldMemb>
+  [ 27] pusharglist 1 ........................... <fieldMemb>
+  [ 29] extcall 307 ............................. <member(fieldMemb)>
+  [ 32] setprop 681 ............................. fieldMemb = member(fieldMemb)
+  [ 35] getparam 0 .............................. <me>
+  [ 37] pusharglistnoret 1 ...................... <me>
+  [ 39] localcall 2 ............................. init(me)
+  [ 41] ret
+end
+
+on new me, argNrOfFrames, argOutputInterval, argSP, argFieldMemb
+  [  0] getparam 16 ............................. <argOutputInterval>
+  [  2] setprop 682 ............................. outputInterval = argOutputInterval
+  [  5] pushzero ................................ <0>
+  [  6] setprop 683 ............................. cnt = 0
+  [  9] getparam 8 .............................. <argNrOfFrames>
+  [ 11] setprop 660 ............................. nrOfFrames = argNrOfFrames
+  [ 14] getparam 24 ............................. <argSP>
+  [ 16] setprop 294 ............................. SP = argSP
+  [ 19] getparam 32 ............................. <argFieldMemb>
+  [ 21] pusharglist 1 ........................... <argFieldMemb>
+  [ 23] extcall 416 ............................. <stringp(argFieldMemb)>
+  [ 26] jmpifz [ 39] ............................ if stringp(argFieldMemb) then
+  [ 29] getparam 32 ............................. <argFieldMemb>
+  [ 31] pusharglist 1 ........................... <argFieldMemb>
+  [ 33] extcall 307 ............................. <member(argFieldMemb)>
+  [ 36] setprop 681 ............................. fieldMemb = member(argFieldMemb)
+  [ 39] getparam 0 .............................. <me>
+  [ 41] pusharglistnoret 1 ...................... <me>
+  [ 43] localcall 2 ............................. init(me)
+  [ 45] getparam 0 .............................. <me>
+  [ 47] pusharglistnoret 1 ...................... <me>
+  [ 49] extcall 32 .............................. return me
+  [ 52] ret
+end
+
+on init me
+  [  0] getprop 294 ............................. <SP>
+  [  3] jmpifz [ 16] ............................ if SP then
+  [  6] pushcons 0 .............................. <"DefaultNumberPic">
+  [  8] pusharglist 1 ........................... <"DefaultNumberPic">
+  [ 10] extcall 309 ............................. <getMemberNum("DefaultNumberPic")>
+  [ 13] setprop 315 ............................. firstFrame = getMemberNum("DefaultNumberPic")
+  [ 16] pusharglist 0 ........................... <[]>
+  [ 18] pushlist ................................ <[]>
+  [ 19] setprop 686 ............................. ticksList = []
+  [ 22] pusharglist 0 ........................... <>
+  [ 24] thebuiltin 42 ........................... <the ticks>
+  [ 27] setlocal 0 .............................. tmp = the ticks
+  [ 29] pushint8 1 .............................. <1>
+  [ 32] setlocal 8
+  [ 34] getlocal 8
+  [ 36] getprop 660 ............................. <nrOfFrames>
+  [ 39] lteq
+  [ 40] jmpifz [ 63] ............................ repeat with n = 1 to nrOfFrames
+  [ 43] getprop 686 ............................. <ticksList>
+  [ 46] getlocal 0 .............................. <tmp>
+  [ 48] pusharglistnoret 2 ...................... <ticksList, tmp>
+  [ 50] extcall 183 ............................. add(ticksList, tmp)
+  [ 53] pushint8 1
+  [ 56] getlocal 8
+  [ 58] add
+  [ 59] setlocal 8
+  [ 61] endrepeat [ 34]
+  [ 63] ret
+end
+
+on kill me
+  [  0] pushzero ................................ <0>
+  [  1] pusharglistnoret 1 ...................... <0>
+  [  3] extcall 32 .............................. return 0
+  [  6] ret
+end
+
+on exitFrame me
+  [  0] getparam 0 .............................. <me>
+  [  2] pusharglistnoret 1 ...................... <me>
+  [  4] localcall 5 ............................. timeTick(me)
+  [  6] ret
+end
+
+on timeTick me
+  [  0] getprop 683 ............................. <cnt>
+  [  3] pushint8 1 .............................. <1>
+  [  6] add ..................................... <cnt + 1>
+  [  7] setprop 683 ............................. cnt = cnt + 1
+  [ 10] getprop 686 ............................. <ticksList>
+  [ 13] pushint8 1 .............................. <1>
+  [ 16] pusharglistnoret 2 ...................... <ticksList, 1>
+  [ 18] extcall 344 ............................. deleteAt(ticksList, 1)
+  [ 21] pusharglist 0 ........................... <>
+  [ 23] thebuiltin 42 ........................... <the ticks>
+  [ 26] setlocal 0 .............................. tmpTicks = the ticks
+  [ 28] getprop 686 ............................. <ticksList>
+  [ 31] getlocal 0 .............................. <tmpTicks>
+  [ 33] pusharglistnoret 2 ...................... <ticksList, tmpTicks>
+  [ 35] extcall 183 ............................. add(ticksList, tmpTicks)
+  [ 38] getprop 683 ............................. <cnt>
+  [ 41] getprop 682 ............................. <outputInterval>
+  [ 44] eq ...................................... <cnt = outputInterval>
+  [ 45] jmpifz [212] ............................ if cnt = outputInterval then
+  [ 48] pushzero ................................ <0>
+  [ 49] setprop 683 ............................. cnt = 0
+  [ 52] getlocal 0 .............................. <tmpTicks>
+  [ 54] getprop 686 ............................. <ticksList>
+  [ 57] pushint8 1 .............................. <1>
+  [ 60] pusharglist 2 ........................... <ticksList, 1>
+  [ 62] extcall 23 .............................. <getAt(ticksList, 1)>
+  [ 64] sub ..................................... <tmpTicks - getAt(ticksList, 1)>
+  [ 65] setlocal 8 .............................. tmpDiff = tmpTicks - getAt(ticksList, 1)
+  [ 67] pushint8 60 ............................. <60>
+  [ 70] getprop 660 ............................. <nrOfFrames>
+  [ 73] pushint8 1 .............................. <1>
+  [ 76] sub ..................................... <nrOfFrames - 1>
+  [ 77] mul ..................................... <60 * (nrOfFrames - 1)>
+  [ 78] getlocal 8 .............................. <tmpDiff>
+  [ 80] div ..................................... <60 * (nrOfFrames - 1) / tmpDiff>
+  [ 81] setlocal 16 ............................. tmpFPS = 60 * (nrOfFrames - 1) / tmpDiff
+  [ 83] getprop 294 ............................. <SP>
+  [ 86] jmpifz [170] ............................ if SP then / else
+  [ 89] getlocal 16 ............................. <tmpFPS>
+  [ 91] pushint8 2 .............................. <2>
+  [ 94] pusharglist 2 ........................... <tmpFPS, 2>
+  [ 96] extcall 600 ............................. <convItoS(tmpFPS, 2)>
+  [ 99] setlocal 24 ............................. tmpStr = convItoS(tmpFPS, 2)
+  [101] pushint8 1 .............................. <1>
+  [104] setlocal 32
+  [106] getlocal 32
+  [108] pushint8 2 .............................. <2>
+  [111] lteq
+  [112] jmpifz [167] ............................ repeat with n = 1 to 2
+  [115] getprop 294 ............................. <SP>
+  [118] getlocal 32 ............................. <n>
+  [120] add ..................................... <SP + n>
+  [121] pushint8 1 .............................. <1>
+  [124] sub ..................................... <SP + n - 1>
+  [125] getprop 315 ............................. <firstFrame>
+  [128] getlocal 32 ............................. <n>
+  [130] pushzero ................................ <0>
+  [131] pushzero ................................ <0>
+  [132] pushzero ................................ <0>
+  [133] pushzero ................................ <0>
+  [134] pushzero ................................ <0>
+  [135] pushzero ................................ <0>
+  [136] pushzero ................................ <0>
+  [137] getlocal 24 ............................. <tmpStr>
+  [139] getchunk ................................ <char n of tmpStr>
+  [140] pusharglist 1 ........................... <char n of tmpStr>
+  [142] extcall 67 .............................. <value(char n of tmpStr)>
+  [145] add ..................................... <firstFrame + value(char n of tmpStr)>
+  [146] pusharglist 1 ........................... <firstFrame + value(char n of tmpStr)>
+  [148] extcall 307 ............................. <member(firstFrame + value(char n of tmpStr))>
+  [151] pushint8 37 ............................. <37>
+  [154] set 6 ................................... set the member of sprite (SP + n - 1) to member(firstFrame + value(char n of tmpStr))
+  [156] pushint8 1
+  [159] getlocal 32
+  [161] add
+  [162] setlocal 32
+  [164] endrepeat [106]
+  [167] jmp [212]
+  [170] getprop 681 ............................. <fieldMemb>
+  [173] pusharglist 1 ........................... <fieldMemb>
+  [175] extcall 34 .............................. <objectp(fieldMemb)>
+  [178] jmpifz [197] ............................ if objectp(fieldMemb) then / else
+  [181] getprop 681 ............................. <fieldMemb>
+  [184] getlocal 16 ............................. <tmpFPS>
+  [186] pusharglist 1 ........................... <tmpFPS>
+  [188] extcall 68 .............................. <string(tmpFPS)>
+  [191] setobjprop 310 .......................... fieldMemb.text = string(tmpFPS)
+  [194] jmp [212]
+  [197] getlocal 16 ............................. <tmpFPS>
+  [199] pusharglist 1 ........................... <tmpFPS>
+  [201] extcall 68 .............................. <string(tmpFPS)>
+  [204] pushcons 8 .............................. <" fps">
+  [206] joinstr ................................. <string(tmpFPS) & " fps">
+  [207] pusharglistnoret 1 ...................... <string(tmpFPS) & " fps">
+  [209] extcall 142 ............................. put string(tmpFPS) & " fps"
+  [212] ret
+end
+
+on getPropertyDescriptionList me
+  [  0] pushsymb 294 ............................ <#SP>
+  [  3] pushsymb 688 ............................ <#comment>
+  [  6] pushcons 16 ............................. <"Display with sprites: ">
+  [  8] pushsymb 689 ............................ <#format>
+  [ 11] pushsymb 95 ............................. <#integer>
+  [ 14] pushsymb 690 ............................ <#default>
+  [ 17] pushzero ................................ <0>
+  [ 18] pusharglist 6 ........................... <[#comment: "Display with sprites: ", #format: #integer, #default: 0]>
+  [ 20] pushproplist ............................ <[#comment: "Display with sprites: ", #format: #integer, #default: 0]>
+  [ 21] pushsymb 681 ............................ <#fieldMemb>
+  [ 24] pushsymb 688 ............................ <#comment>
+  [ 27] pushcons 24 ............................. <"else, use field: ">
+  [ 29] pushsymb 689 ............................ <#format>
+  [ 32] pushsymb 68 ............................. <#string>
+  [ 35] pushsymb 690 ............................ <#default>
+  [ 38] pushcons 32 ............................. <EMPTY>
+  [ 40] pusharglist 6 ........................... <[#comment: "else, use field: ", #format: #string, #default: EMPTY]>
+  [ 42] pushproplist ............................ <[#comment: "else, use field: ", #format: #string, #default: EMPTY]>
+  [ 43] pushsymb 660 ............................ <#nrOfFrames>
+  [ 46] pushsymb 688 ............................ <#comment>
+  [ 49] pushcons 40 ............................. <"Frames btw samples: ">
+  [ 51] pushsymb 689 ............................ <#format>
+  [ 54] pushsymb 95 ............................. <#integer>
+  [ 57] pushsymb 690 ............................ <#default>
+  [ 60] pushint8 10 ............................. <10>
+  [ 63] pusharglist 6 ........................... <[#comment: "Frames btw samples: ", #format: #integer, #default: 10]>
+  [ 65] pushproplist ............................ <[#comment: "Frames btw samples: ", #format: #integer, #default: 10]>
+  [ 66] pushsymb 682 ............................ <#outputInterval>
+  [ 69] pushsymb 688 ............................ <#comment>
+  [ 72] pushcons 48 ............................. <"Update every nth frame: ">
+  [ 74] pushsymb 689 ............................ <#format>
+  [ 77] pushsymb 95 ............................. <#integer>
+  [ 80] pushsymb 690 ............................ <#default>
+  [ 83] pushint8 5 .............................. <5>
+  [ 86] pusharglist 6 ........................... <[#comment: "Update every nth frame: ", #format: #integer, #default: 5]>
+  [ 88] pushproplist ............................ <[#comment: "Update every nth frame: ", #format: #integer, #default: 5]>
+  [ 89] pusharglist 8 ........................... <[#SP: [#comment: "Display with sprites: ", #format: #integer, #default: 0], #fieldMemb: [#comment: "else, use field: ", #format: #string, #default: EMPTY], #nrOfFrames: [#comment: "Frames btw samples: ", #format: #integer, #default: 10], #outputInterval: [#comment: "Update every nth frame: ", #format: #integer, #default: 5]]>
+  [ 91] pushproplist ............................ <[#SP: [#comment: "Display with sprites: ", #format: #integer, #default: 0], #fieldMemb: [#comment: "else, use field: ", #format: #string, #default: EMPTY], #nrOfFrames: [#comment: "Frames btw samples: ", #format: #integer, #default: 10], #outputInterval: [#comment: "Update every nth frame: ", #format: #integer, #default: 5]]>
+  [ 92] pusharglistnoret 1 ...................... <[#SP: [#comment: "Display with sprites: ", #format: #integer, #default: 0], #fieldMemb: [#comment: "else, use field: ", #format: #string, #default: EMPTY], #nrOfFrames: [#comment: "Frames btw samples: ", #format: #integer, #default: 10], #outputInterval: [#comment: "Update every nth frame: ", #format: #integer, #default: 5]]>
+  [ 94] extcall 32 .............................. return [#SP: [#comment: "Display with sprites: ", #format: #integer, #default: 0], #fieldMemb: [#comment: "else, use field: ", #format: #string, #default: EMPTY], #nrOfFrames: [#comment: "Frames btw samples: ", #format: #integer, #default: 10], #outputInterval: [#comment: "Update every nth frame: ", #format: #integer, #default: 5]]
+  [ 97] ret
+end

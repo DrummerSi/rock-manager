@@ -1,0 +1,336 @@
+on mergeLists argList1, argList2, argOption
+  if ilk(argList1) = #propList then
+    if argOption = #Replace then
+      if not listp(argList2) then
+        argList2 = [:]
+      end if
+      repeat with n = 1 to argList2.count()
+        argList1.setaProp(argList2.getPropAt(n), argList2[n])
+      end repeat
+    else
+      repeat with n = 1 to argList2.count()
+        argList1.addProp(argList2.getPropAt(n), argList2[n])
+      end repeat
+    end if
+    return argList1
+  else
+    if not listp(argList1) then
+      argList1 = []
+    end if
+    if not listp(argList2) then
+      argList2 = []
+    end if
+    if argOption = #Replace then
+      repeat with tmp in argList2
+        if not argList1.getPos(tmp) then
+          argList1.add(tmp)
+        end if
+      end repeat
+    else
+      repeat with tmp in argList2
+        argList1.add(tmp)
+      end repeat
+    end if
+    return argList1
+  end if
+end
+
+on loc2Rect argLoc
+  return rect(argLoc, argLoc)
+end
+
+on emptyList argList
+  repeat with n = argList.count down to 1
+    argList.deleteAt(n)
+  end repeat
+end
+
+on calcAverage argVals
+  if ilk(argVals) = #propList then
+    if argVals.count = 0 then
+      return 0
+    end if
+    tmpTotWeight = 0.0
+    tmpTot = 0.0
+    repeat with n = 1 to argVals.count
+      tmpWeight = argVals.getPropAt(n)
+      tmpTotWeight = tmpTotWeight + tmpWeight
+      tmpTot = tmpTot + (tmpWeight * argVals[n])
+    end repeat
+    if tmpTotWeight = 0 then
+      return 0
+    end if
+    return tmpTot / tmpTotWeight
+  else
+    tmpTot = 0.0
+    repeat with tmpVal in argVals
+      tmpTot = tmpTot + tmpVal
+    end repeat
+    return tmpTot / float(argVals.count)
+  end if
+end
+
+on comesBeforeValInList argProp, argSortedPropList
+  argSortedPropList.sort()
+  argSortedPropList.addProp(argProp, #FindThisVal)
+  Pos = argSortedPropList.getPos(#FindThisVal)
+  argSortedPropList.deleteAt(Pos)
+  if Pos > argSortedPropList.count then
+    Pos = argSortedPropList.count
+  end if
+  return argSortedPropList[Pos]
+end
+
+on comesBeforePosInList argProp, argSortedPropList, argOptionalFindVal
+  argSortedPropList.sort()
+  if voidp(argOptionalFindVal) then
+    argOptionalFindVal = -1
+  end if
+  if argSortedPropList.getPos(argOptionalFindVal) then
+    argOptionalFindVal = #Find
+  end if
+  argSortedPropList.addProp(argProp, argOptionalFindVal)
+  tmpPos = argSortedPropList.getPos(argOptionalFindVal)
+  argSortedPropList.deleteAt(tmpPos)
+  return tmpPos
+end
+
+on comesBetweenPosInList argProp, argSortedPropList
+  tmpPos = comesBeforePosInList(argProp, argSortedPropList)
+  repeat with n = tmpPos + 1 to argSortedPropList.count
+    if argSortedPropList.getPropAt(n) > argProp then
+      return [tmpPos - 1, n]
+    end if
+  end repeat
+  return [tmpPos - 1, argSortedPropList.count + 1]
+end
+
+on getListStats argList
+  cnt = argList.count
+  if cnt = 0 then
+    return [:]
+  end if
+  min = argList[1]
+  max = argList[1]
+  tot = 0
+  repeat with n = 1 to cnt
+    val = argList[n]
+    tot = tot + val
+    if val < min then
+      min = val
+    end if
+    if val > max then
+      max = val
+    end if
+  end repeat
+  medianPos = cnt / 2
+  if medianPos = 0 then
+    medianPos = 1
+  end if
+  return [#min: min, #max: max, #Median: argList[medianPos], #Average: float(tot) / cnt, #Total: tot, #count: cnt]
+end
+
+on interpolateBetween argVal, argPropListOVals
+  tmpPos = comesBeforePosInList(argVal, argPropListOVals)
+  if tmpPos = 1 then
+    return argPropListOVals[1]
+  else
+    if tmpPos = (argPropListOVals.count() + 1) then
+      return argPropListOVals[argPropListOVals.count()]
+    end if
+  end if
+  tmpDiff = argPropListOVals.getPropAt(tmpPos) - argPropListOVals.getPropAt(tmpPos - 1)
+  tmpWhereBetween = float(argVal - argPropListOVals.getPropAt(tmpPos)) / tmpDiff
+  return (tmpWhereBetween * (argPropListOVals[tmpPos] - argPropListOVals[tmpPos - 1])) + argPropListOVals[tmpPos]
+end
+
+on ensureListFromMember arg
+  if listp(arg) then
+    return arg
+  end if
+  if not stringp(arg) then
+    return VOID
+  end if
+  tmpList = arg.value()
+  if listp(tmpList) then
+    return tmpList
+  end if
+  tmpMemb = member(arg)
+  if tmpMemb.type <> #field then
+    return VOID
+  end if
+  return tmpMemb.text.value
+end
+
+on descendIntoList argList, argPropPath
+  if not listp(argPropPath) then
+    argPropPath = [argPropPath]
+  else
+    argPropPath = argPropPath.duplicate()
+  end if
+  repeat with n = 1 to argPropPath.count
+    if not listp(argList) then
+      return VOID
+    end if
+    argList = argList.getaProp(argPropPath[n])
+  end repeat
+  return argList
+end
+
+on stepIntoLastList argList, argDepth
+  repeat with n = 1 to argDepth
+    argList = argList[argList.count]
+  end repeat
+  return argList
+end
+
+on setaPropByIndex argPropList, argNth, argVal
+  tmpCnt = argPropList.count
+  repeat with n = 1 to tmpCnt
+    tmp = argPropList[n]
+    if ilk(tmp) = #propList then
+      argNth = setaPropByIndex(tmp, argNth, argVal)
+      if argNth = 0 then
+        return 0
+      end if
+      next repeat
+    end if
+    argNth = argNth - 1
+    if argNth = 0 then
+      argPropList[n] = argVal
+      return 0
+    end if
+  end repeat
+  return argNth
+end
+
+on flattenPropListStructure argPropList, argResultList
+  if voidp(argResultList) then
+    argResultList = [[]]
+  end if
+  baseList = argResultList[argResultList.count]
+  depth = baseList.count + 1
+  argResultList.deleteAt(argResultList.count)
+  cnt = argPropList.count
+  repeat with n = 1 to cnt
+    tmp = argPropList[n]
+    baseList[depth] = argPropList.getPropAt(n)
+    argResultList.add(baseList.duplicate())
+    if ilk(tmp) = #propList then
+      flattenPropListStructure(tmp, argResultList)
+      next repeat
+    end if
+  end repeat
+  return argResultList
+end
+
+on getUniqueItemsInLists argList1, argList2
+  if ilk(argList1) <> ilk(argList2) then
+    return #ilk
+  end if
+  common = []
+  list1 = argList1.duplicate()
+  list2 = argList2.duplicate()
+  if ilk(argList1) = #list then
+    repeat with n = list1.count down to 1
+      Pos = list2.getPos(list1[n])
+      if Pos then
+        common.add(list1[n])
+        list1.deleteAt(n)
+        list2.deleteAt(n)
+      end if
+    end repeat
+  end if
+  return [list1, list2, common]
+end
+
+on makePropListOfList argList
+  propLst = [:]
+  repeat with n = 1 to argList.count
+    propLst.setaProp(argList[n], argList[n + 1])
+    n = n + 1
+  end repeat
+  return propLst
+end
+
+on listArithmetics argList1, argOperator, argList2
+  argList2 = argList2.duplicate()
+  resultList = [:]
+  repeat with n = 1 to argList1.count
+    prop = argList1.getPropAt(n)
+    val1 = argList1[n]
+    val2 = argList2.getaProp(prop)
+    argList2.deleteProp(prop)
+    if voidp(val2) then
+      if ilk(val1) = #propList then
+        resultList.addProp(prop, val1)
+        next repeat
+      end if
+      val2 = 0
+    end if
+    if argOperator = "+" then
+      val = val1 + val2
+    else
+      if argOperator = "-" then
+        val = val1 - val2
+      end if
+    end if
+    resultList.addProp(prop, val)
+  end repeat
+  repeat with n = 1 to argList2.count
+    prop = argList2.getPropAt(n)
+    val2 = argList2[n]
+    if ilk(val2) = #propList then
+      if argOperator = "+" then
+        resultList.addProp(prop, val2)
+      else
+        if argOperator = "-" then
+          resultList.addProp(prop, -val2)
+        end if
+      end if
+      next repeat
+    end if
+    if argOperator = "-" then
+      resultList.addProp(prop, -val2)
+    end if
+  end repeat
+  return resultList
+end
+
+on listSetByPath argList, argPath, argVal, argCreateIfNotFound
+  if not listp(argPath) then
+    argPath = [argPath]
+  end if
+  lastProp = argPath[argPath.count]
+  repeat with n = 1 to argPath.count - 1
+    prop = argPath[n]
+    tmp = argList.getaProp(prop)
+    if not listp(tmp) then
+      tmp = [:]
+      argList.setaProp(prop, tmp)
+    end if
+    argList = tmp
+  end repeat
+  argList.setaProp(lastProp, argVal)
+end
+
+on addPropAfter argPropList, argProp, argVal
+  argPropList.addProp(argProp, #__FindProp)
+  tmpPos = argPropList.getPos(#__FindProp)
+  argPropList.deleteAt(tmpPos)
+  if tmpPos > argPropList.count then
+    argPropList.addProp(argProp, argVal)
+    exit
+  else
+    if argPropList.getPropAt(tmpPos) <> argProp then
+      argPropList.addProp(argProp, argVal)
+      exit
+    end if
+  end if
+  listCopy = argPropList.duplicate()
+  emptyList(argPropList)
+  argPropList.addProp(argProp, argVal)
+  repeat with n = listCopy.count down to 1
+    argPropList.addProp(listCopy.getPropAt(n), listCopy[n])
+  end repeat
+end

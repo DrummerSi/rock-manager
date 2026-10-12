@@ -1,0 +1,276 @@
+property m_loopsPerSong, m_currentSongCnt, m_currentLoopCnt, m_sequencer, m_waveRenderer, m_rndErr
+global gRock
+
+on new me
+  if not objectp(gRock) then
+    testPrepareMovie()
+  end if
+  m_rndErr = 0.0
+  me.createList()
+  return me
+end
+
+on kill me
+  me.stop()
+  m_loopsPerSong = [:]
+  if objectp(m_sequencer) then
+    m_sequencer = m_sequencer.kill()
+  end if
+  if objectp(m_waveRenderer) then
+    m_waveRenderer = m_waveRenderer.kill()
+  end if
+  return 0
+end
+
+on createList me
+  m_loopsPerSong = [:]
+  sortedPerSong = [:]
+  sortedPerSong.sort()
+  loops_r = gRock.m_classManager.getObjsOfClass(#loop)
+  repeat with loop_r in loops_r
+    song_r = gRock.m_classManager.getObjByIDAndClass(loop_r.BelongsToSong, #Song)
+    tmp = sortedPerSong.getaProp(song_r.ID)
+    if voidp(tmp) then
+      tmp = []
+      tmp.sort()
+      sortedPerSong.setaProp(song_r.ID, tmp)
+    end if
+    tmp.add(loop_r.ID)
+  end repeat
+  repeat with songNr = 1 to sortedPerSong.count
+    song_r = gRock.m_classManager.getObjByIDAndClass(sortedPerSong.getPropAt(songNr), #Song)
+    tmp = []
+    m_loopsPerSong.setaProp(song_r, tmp)
+    loops_r = sortedPerSong[songNr]
+    repeat with LoopID in loops_r
+      tmp.add(gRock.m_classManager.getObjByIDAndClass(LoopID, #loop))
+    end repeat
+  end repeat
+  m_currentSongCnt = 1
+  m_currentLoopCnt = 0
+end
+
+on convIDsToCnts me, argSongID, argLoop
+  song_r = gRock.m_classManager.getObjByIDAndClass(argSongID, #Song)
+  m_currentSongCnt = m_loopsPerSong.findPos(song_r)
+  if not (m_currentSongCnt > 0) then
+    pott("No song!")
+    m_currentSongCnt = 1
+    m_currentLoopCnt = 0
+    exit
+  end if
+  if not voidp(argLoop) then
+    loops_r = m_loopsPerSong[m_currentSongCnt]
+    if stringp(argLoop) then
+      repeat with n = 1 to loops_r.count
+        loop_r = loops_r[n]
+        if loop_r.file = argLoop then
+          m_currentLoopCnt = n - 1
+          exit repeat
+        end if
+      end repeat
+    else
+      if symbolp(argLoop) then
+        repeat with n = 1 to loops_r.count
+          loop_r = loops_r[n]
+          if loop_r.ID = argLoop then
+            m_currentLoopCnt = n - 1
+            exit repeat
+          end if
+        end repeat
+      end if
+    end if
+  end if
+end
+
+on goto me, argSongID, argLoop
+  me.convIDsToCnts(argSongID, argLoop)
+  me.playNext()
+end
+
+on playNext me
+  loops_r = m_loopsPerSong[m_currentSongCnt]
+  m_currentLoopCnt = m_currentLoopCnt + 1
+  if m_currentLoopCnt > loops_r.count then
+    m_currentSongCnt = m_currentSongCnt + 1
+    if m_currentSongCnt > m_loopsPerSong.count then
+      pott("No more files!")
+      exit
+    end if
+    loops_r = m_loopsPerSong[m_currentSongCnt]
+    m_currentLoopCnt = 1
+  end if
+  song_r = m_loopsPerSong.getPropAt(m_currentSongCnt)
+  loop_r = loops_r[m_currentLoopCnt]
+  pott(song_r.ID, song_r.name, loop_r.file, loop_r.name)
+  me.play(loop_r)
+end
+
+on playLoop me, argLoopID
+end
+
+on play me, argLoop_r, argMaxRnd
+  global gUseful
+  sound(1).stop()
+  gUseful.setSoundSystem(#Director)
+  if voidp(argMaxRnd) then
+    argMaxRnd = 0.0
+  end if
+  decodedOutFile = "D:\decoded.wav"
+  mixDecodeFiles([[#in: gRock.m_paths.getPath(#CompressedMusic) & argLoop_r.file & ".ogg", #Out: decodedOutFile]], "ogg")
+  song_r = gRock.m_classManager.getObjByIDAndClass(argLoop_r.BelongsToSong, #Song)
+  decodedOutFile = decodedOutFile.char[1..decodedOutFile.length - 1] & "*"
+  finalOutFile = "D:\1.wav"
+  renderStr = mixGenFXStr([#in: decodedOutFile, #Out: finalOutFile, #random: [#max: argMaxRnd], #tempo: [#Bars: argLoop_r.numBars, #TimeSig: string(song_r.TimeSignature[1]) & "/" & string(song_r.TimeSignature[1]), #BPM: song_r.BPM]], #dll)
+  renderStr = "cues:" & gRock.m_paths.getPath(#Sliced) & argLoop_r.file & ".txt, " & renderStr
+  mixCallRockWave(renderStr)
+  sound playFile 1, finalOutFile
+end
+
+on stop me
+  if objectp(m_sequencer) then
+    m_sequencer = m_sequencer.kill()
+  else
+    sound(1).stop()
+  end if
+end
+
+on testGoto me, argSongID, argLoop
+  me.convIDsToCnts(argSongID, argLoop)
+  me.testNextLoop()
+end
+
+on testAllLoops me
+  m_currentSongCnt = 1
+  m_currentLoopCnt = 0
+end
+
+on testNextLoop me
+  loops_r = m_loopsPerSong[m_currentSongCnt]
+  m_currentLoopCnt = m_currentLoopCnt + 1
+  if m_currentLoopCnt > loops_r.count then
+    m_currentSongCnt = m_currentSongCnt + 1
+    if m_currentSongCnt > m_loopsPerSong.count then
+      pott("No more files!")
+      exit
+    end if
+    loops_r = m_loopsPerSong[m_currentSongCnt]
+    m_currentLoopCnt = 1
+  end if
+  song_r = m_loopsPerSong.getPropAt(m_currentSongCnt)
+  presetLoops_r = [:]
+  repeat with loop_r in loops_r
+    if offset("dr1", loop_r.file) then
+      presetLoops_r.setaProp(loop_r.Instrument, loop_r)
+      exit repeat
+    end if
+  end repeat
+  repeat with loop_r in loops_r
+    if offset("bs1", loop_r.file) then
+      presetLoops_r.setaProp(loop_r.Instrument, loop_r)
+      exit repeat
+    end if
+  end repeat
+  loop_r = loops_r[m_currentLoopCnt]
+  presetLoops_r.setaProp(loop_r.Instrument, loop_r)
+  pott(song_r.ID, song_r.name, loop_r.file, loop_r.name)
+  playLoops = []
+  repeat with loop_r in presetLoops_r
+    playLoops.add(loop_r.file)
+  end repeat
+  me.testLoops(song_r.ID, playLoops)
+end
+
+on testLoops me, argSongID, argLoopFileNames
+  if voidp(argLoopFileNames) then
+    argLoopFileNames = []
+  else
+    if stringp(argLoopFileNames) then
+      argLoopFileNames = [argLoopFileNames]
+    end if
+  end if
+  song_r = gRock.m_classManager.getObjByIDAndClass(argSongID, #Song)
+  loops_r = m_loopsPerSong.getaProp(song_r)
+  playLoops_r = []
+  vocalPersons = []
+  songNr = string(song_r.ID)
+  songNr = value(songNr.char[songNr.length - 1..songNr.length])
+  repeat with fileName in argLoopFileNames
+    if not (value(fileName.char[1..2]) > 0) then
+      fileName = convItoS(songNr, 2) & fileName
+    end if
+    if fileName.char[3..5] = "vca" then
+      vocalPersons.add(fileName.char[5..7])
+      fileName = fileName.char[1..4]
+    end if
+    repeat with loop_r in loops_r
+      if loop_r.file = fileName then
+        playLoops_r.add(loop_r)
+      end if
+    end repeat
+  end repeat
+  channels_r = []
+  repeat with loop_r in playLoops_r
+    channel_r = gRock.m_classManager.createUnregObj(#channel)
+    channel_r.LoopID = loop_r.ID
+    channel_r.vol = 1.0
+    channel_r.Mute = 0
+    channel_r.Pan = 0.0
+    channels_r.add(channel_r)
+  end repeat
+  me.playChannels(song_r, channels_r, vocalPersons)
+end
+
+on cpo me
+end
+
+on playChannels me, argSong_r, argChannels_r, argVocalPersons
+  global gUseful
+  if objectp(m_sequencer) then
+    m_sequencer = m_sequencer.kill()
+  end if
+  gUseful.setSoundSystem(#xtra)
+  if voidp(argVocalPersons) then
+    argVocalPersons = []
+  end if
+  m_sequencer = script("PlaySequenceScript").new()
+  m_sequencer.setPaths([#sound: gRock.m_paths.m_paths[#RenderedMusic]])
+  m_sequencer.m_bpm = rgetProp(argSong_r, #BPM)
+  m_sequencer.m_numBars = argSong_r.numBars
+  m_sequencer.m_beatSignature = argSong_r.TimeSignature
+  if voidp(m_waveRenderer) then
+    m_waveRenderer = script("WaveRenderScript").new()
+  end if
+  repeat with n = 1 to argChannels_r.count
+    channel_r = argChannels_r[n]
+    LoopID = channel_r.LoopID
+    loop_r = gRock.m_classManager.getObjByIDAndClass(LoopID, #loop)
+    if loop_r.Instrument = #Vocals then
+      if argVocalPersons.count = 0 then
+        tmpFile = loop_r.file & "a01"
+      else
+        tmpFile = loop_r.file & argVocalPersons[1]
+        argVocalPersons.deleteAt(1)
+      end if
+    else
+      tmpFile = loop_r.file
+    end if
+    m_waveRenderer.queueRendering(n, tmpFile, [#tempo: [#Bars: loop_r.numBars, #TimeSig: string(argSong_r.TimeSignature[1]) & "/" & string(argSong_r.TimeSignature[1]), #BPM: m_sequencer.m_bpm], #random: [#max: m_rndErr, #center: 0.0]])
+  end repeat
+  m_waveRenderer.m_doWhatWhenDoneList = [#ReportTo: me, #handler: #renderDone]
+  gUseful.isRunning = 0
+  m_waveRenderer.renderQueue()
+end
+
+on renderDone me
+  m_waveRenderer.m_doWhatWhenDoneList = [:]
+  repeat with n = 1 to m_waveRenderer.m_rendered.count
+    trackObj = script("TrackLoopScript").new(m_sequencer)
+    tmpFile = fileExtractName(m_waveRenderer.m_rendered[n])
+    trackObj.setSetting(#file, tmpFile)
+    trackObj.setSetting(#vol, 80)
+    m_sequencer.addLoopTrack(trackObj)
+  end repeat
+  m_sequencer.prepare()
+  m_sequencer.play()
+end

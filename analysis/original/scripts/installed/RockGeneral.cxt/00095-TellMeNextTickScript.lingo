@@ -1,0 +1,71 @@
+property m_active, m_addObjects, m_deleteObjects, m_objects, m_setProp, m_handlerToCall, m_optionsList
+global gUseful
+
+on new me
+  m_setProp = symbol("_ItIsOKToSendTellNextTick")
+  m_handlerToCall = #oneTick
+  m_active = 1
+  m_addObjects = []
+  m_deleteObjects = []
+  m_objects = []
+  m_optionsList = [:]
+  gUseful.frameTimer.addObject(me)
+  return me
+end
+
+on kill me
+  gUseful.frameTimer.deleteObject(me)
+  return 0
+end
+
+on timeTick me
+  if m_active then
+    me.refreshLists()
+    repeat with obj in m_objects
+      if obj.getaProp(m_setProp) then
+        call(m_handlerToCall, obj, m_optionsList.getaProp(obj))
+        me.deleteObject(obj)
+        exit repeat
+      end if
+    end repeat
+  end if
+end
+
+on activate me, YesNo
+  m_active = YesNo
+end
+
+on addObject me, argObj, argOptions
+  argObj.setaProp(m_setProp, 1)
+  if m_deleteObjects.getPos(argObj) then
+    m_deleteObjects.deleteOne(argObj)
+  end if
+  m_addObjects.add(argObj)
+  m_optionsList.setaProp(argObj, argOptions)
+end
+
+on deleteObject me, argObj
+  m_optionsList.deleteProp(argObj)
+  argObj.setaProp(m_setProp, 0)
+  if m_addObjects.getPos(argObj) then
+    m_addObjects.deleteOne(argObj)
+    if m_objects.getPos(argObj) then
+      m_deleteObjects.add(argObj)
+    end if
+    exit
+  end if
+  m_deleteObjects.add(argObj)
+end
+
+on refreshLists me
+  repeat with obj in m_addObjects
+    if m_objects.getPos(obj) = 0 then
+      m_objects.add(obj)
+    end if
+  end repeat
+  m_addObjects = []
+  repeat with obj in m_deleteObjects
+    m_objects.deleteOne(obj)
+  end repeat
+  m_deleteObjects = []
+end

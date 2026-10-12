@@ -1,0 +1,171 @@
+property ancestor, m_place_r, m_animObj
+global gDir, gRock
+
+on new me, argOptions
+  ID = argOptions[#ID]
+  m_place_r = gRock.m_classManager.getObjByID(ID, #place)
+  gRock.m_context.setFocus(#place, m_place_r)
+  argOptions.setaProp(#ReportTo, me)
+  argOptions.setaProp(#child, me)
+  dialog_r = gRock.m_classManager.getObjByIDAndClass(#DlgLive, #Dialog)
+  dialog_r.dataMemberName = "DlgLiveData"
+  argOptions[#DlgInfoObj] = dialog_r
+  gRock.m_context.setFocus(#place, m_place_r)
+  ancestor = script("DlgRockAncestorScript").new(argOptions)
+  me.setPlace()
+  ancestor.render()
+  return me
+end
+
+on kill me
+  if objectp(m_animObj) then
+    m_animObj = m_animObj.kill()
+  end if
+  ancestor.kill()
+  return 0
+end
+
+on Report me, argObj, argWhat, argOption
+  if argWhat = #BookedOK then
+    concertToBook_r = argOption
+    gRock.m_player.transactMoney(-concertToBook_r.PriceModel.BasePrice, [#Live, #Rent])
+    mission_r = gRock.m_context.getFocus(#Mission)
+    mission_r.Vars[#ConcertBookDate] = gRock.m_date.getDateInt()
+    me.kill()
+  end if
+end
+
+on mouse me, argObj, argWhat, argOption
+  if objectp(argOption) then
+    if argWhat = #click then
+      ID = argOption.getOneProp(#ID)
+      IDStr = string(ID)
+      if ID = #ButtonOK then
+        cheat = rOKCheatPass()
+        ecard_r = 0
+        if ecard_r = 0 then
+          band_r = gRock.m_context.getFocus(#Band)
+          if band_r.members.count = 0 then
+            ecard_r = gRock.m_classManager.getObjByIDAndClass(#ECConcertBookNoBand, #EventCard)
+          end if
+        end if
+        if ecard_r = 0 then
+          album_r = gRock.m_context.getFocus(#album)
+          if not objectp(album_r) then
+            ecard_r = gRock.m_classManager.getObjByIDAndClass(#ECConcertBookNoDemo, #EventCard)
+          end if
+        end if
+        if ecard_r = 0 then
+          TodayDate = gRock.m_date.getDateInt()
+          dateSortedConcerts = [:]
+          dateSortedConcerts.sort()
+          concerts_r = gRock.m_classManager.getObjsOfClass(#Concert)
+          if listp(concerts_r) then
+            repeat with concert_r in concerts_r
+              if concert_r.Venue = m_place_r.ID then
+                dateSortedConcerts.addProp(concert_r.StartDate, concert_r)
+              end if
+            end repeat
+          end if
+          dateSortedConcerts.addProp(TodayDate, -1)
+          pott("dateSortedConcerts", dateSortedConcerts)
+          Pos = dateSortedConcerts.getPos(-1)
+          if Pos = 1 then
+            dateBefore = -1000
+          else
+            dateBefore = dateSortedConcerts.getPropAt(Pos - 1)
+          end if
+          if Pos = dateSortedConcerts.count then
+            dateAfter = TodayDate + 1000
+          else
+            dateAfter = dateSortedConcerts.getPropAt(Pos + 1)
+          end if
+          if dateBefore > (TodayDate - m_place_r.MinDaysBetweenConcerts) then
+            ecard_r = gRock.m_classManager.getObjByIDAndClass(#ECOCVenueBookTooSoon, #EventCard)
+          else
+            if dateAfter < (TodayDate + m_place_r.MinDaysBetweenConcerts) then
+              ecard_r = gRock.m_classManager.getObjByIDAndClass(#ECOCVenueBookUpcoming, #EventCard)
+            end if
+          end if
+        end if
+        if ecard_r = 0 then
+          player_r = gRock.m_context.getFocus(#player)
+          if not player_r.hasThisMoney(m_place_r.PreferredPriceModel.BasePrice) then
+            rWarnMoney()
+            exit
+          end if
+        end if
+        if ecard_r = 0 then
+          tmp = m_place_r.willLetBandPlay()
+          if stringp(tmp) then
+            ecard_r = gRock.m_classManager.getObjByIDAndClass(#ECOCVenueNotLikeStyle, #EventCard)
+            ecard_r.comment = tmp
+          else
+          end if
+        end if
+        if objectp(ecard_r) and (cheat = 0) then
+          gRock.m_eventCardsManager.tryNewShowEventCard(ecard_r, [#prio: 0])
+          exit
+        end if
+        concertToBook_r = gRock.m_classManager.createObj(#Concert)
+        newID = gRock.m_classManager.genUniqueID(concertToBook_r)
+        concertToBook_r.ID = newID
+        lst = rgetProp(concertToBook_r, #neededIDs)
+        lst.add(#Band)
+        lst.add(#NotOnTour)
+        concertToBook_r.Venue = m_place_r.ID
+        concertToBook_r.PriceModel = m_place_r.PreferredPriceModel
+        concertToBook_r.setDates(2 + gRock.m_date.getDateInt(), 1)
+        concertToBook_r.name = m_place_r.name
+        infoImg = rFormatText([m_place_r.name, m_place_r.comment, #szidTicketPrice, rCurrency(m_place_r.PreferredPriceModel.UnitPrice, 0, 1), #szidCost, rCurrency(m_place_r.PreferredPriceModel.BasePrice, 0, 1)], "LiveBookFormatting", [#shadow: 1])
+        dlg = gDir.m_objDialogsMaster.openDialog(#Book, [#UseDlgID: #DlgLiveBook, #bookOptions: [#EventToBook: concertToBook_r, #InfoImage: infoImg, #PicImage: "image_" & string(m_place_r.ID) & "_small01"]])
+        dlg.m_objReportTo = me
+        exit
+      end if
+      ancestor.mouse(argObj, argWhat, argOption)
+    end if
+  end if
+end
+
+on focusChange me, argGotFocus
+  if argGotFocus then
+    me.showAnim()
+  else
+    if objectp(m_animObj) then
+      m_animObj = m_animObj.kill()
+    end if
+  end if
+  ancestor.focusChange(argGotFocus)
+end
+
+on showAnim me
+  if m_place_r.Gfx.length > 2 then
+    itemObj = ancestor.m_objDlg.getItem(#Pic)
+    r = itemObj.getOnStageRect()
+    pnt = point(r[1], r[2]) + (getRectSize(r) / 2)
+    cstFile = the moviePath & m_place_r.Gfx.char[1..m_place_r.Gfx.length - 2]
+    if offset(cstFile, castLib("Actor").fileName) or fileExists(cstFile, ["cst", "cxt"]) then
+      castLib("Actor").fileName = cstFile
+      SPNum = gDir.m_spriteList[#PlaceAnim]
+      sprite(SPNum).ink = 36
+      sprite(SPNum).loc = pnt
+      m_animObj = script("SimpleAnimScript").new(0, SPNum, member(2, "Actor"), [#numFrames: -2 + the number of castMembers of castLib "Actor", #speed: 0.5])
+    end if
+  end if
+end
+
+on setPlace me
+  dlgObj = ancestor.m_objDlg
+  itemObj = dlgObj.getItem(#Pic)
+  membName = m_place_r.Gfx
+  if member(membName).number < 1 then
+    membName = "Live01_environment01"
+  end if
+  itemObj.setOneProp(#Pic, membName)
+  itemObj = dlgObj.getItemByPath([#InfoDlg, #Head, #Info])
+  itemObj.setOneProp(#editData, rGetStr(#szidInfo))
+  itemObj = dlgObj.getItemByPath([#InfoDlg, #SubDlg, #Info1, #Pic])
+  itemObj.setOneProp(#Pic, rFormatText([#szidMinAge, m_place_r.MinAge, #szidYear_P, #szidMaxAudience, rCurrency(m_place_r.size), #szidTicketPrice, rCurrency(m_place_r.PreferredPriceModel.UnitPrice, 0, 1), #szidCost, rCurrency(m_place_r.PreferredPriceModel.BasePrice, 0, 1)], "LiveInfo1Formatting"))
+  itemObj = dlgObj.getItemByPath([#InfoDlg, #SubDlg, #Info2, #Pic])
+  itemObj.setOneProp(#Pic, rFormatText([#szidDescription, m_place_r.comment], "LiveInfo2Formatting"))
+end

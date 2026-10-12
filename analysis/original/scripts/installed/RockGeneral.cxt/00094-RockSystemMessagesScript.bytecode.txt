@@ -1,0 +1,259 @@
+property m_active, m_addObjects, m_deleteObjects, m_objects, m_setProp, m_busyRepeating, m_busyDepth
+
+on new me
+  [  0] pushcons 0 .............................. <"_ItIsOKToSendMsg">
+  [  2] pusharglist 1 ........................... <"_ItIsOKToSendMsg">
+  [  4] extcall 267 ............................. <symbol("_ItIsOKToSendMsg")>
+  [  7] setprop 1957 ............................ m_setProp = symbol("_ItIsOKToSendMsg")
+  [ 10] pushint8 1 .............................. <1>
+  [ 13] setprop 1958 ............................ m_active = 1
+  [ 16] getparam 0 .............................. <me>
+  [ 18] pusharglistnoret 1 ...................... <me>
+  [ 20] objcall 202 ............................. me.cleanUp()
+  [ 23] getparam 0 .............................. <me>
+  [ 25] pusharglistnoret 1 ...................... <me>
+  [ 27] extcall 69 .............................. return me
+  [ 30] ret
+end
+
+on kill me
+  [  0] pushzero ................................ <0>
+  [  1] pusharglistnoret 1 ...................... <0>
+  [  3] extcall 69 .............................. return 0
+  [  6] ret
+end
+
+on cleanUp me
+  [  0] pusharglist 0 ........................... <[]>
+  [  2] pushlist ................................ <[]>
+  [  3] setprop 1959 ............................ m_addObjects = []
+  [  6] pusharglist 0 ........................... <[]>
+  [  8] pushlist ................................ <[]>
+  [  9] setprop 1960 ............................ m_deleteObjects = []
+  [ 12] pusharglist 0 ........................... <[]>
+  [ 14] pushlist ................................ <[]>
+  [ 15] setprop 1961 ............................ m_objects = []
+  [ 18] pushzero ................................ <0>
+  [ 19] setprop 1962 ............................ m_busyDepth = 0
+  [ 22] ret
+end
+
+on msg me, argWhat, argOption, argOption2
+  [  0] getprop 1958 ............................ <m_active>
+  [  3] jmpifz [217] ............................ if m_active then
+  [  6] getprop 1962 ............................ <m_busyDepth>
+  [  9] pushint8 1 .............................. <1>
+  [ 12] add ..................................... <m_busyDepth + 1>
+  [ 13] setprop 1962 ............................ m_busyDepth = m_busyDepth + 1
+  [ 16] getprop 1963 ............................ <m_busyRepeating>
+  [ 19] pushint8 1 .............................. <1>
+  [ 22] eq ...................................... <m_busyRepeating = 1>
+  [ 23] jmpifz [ 46] ............................ if m_busyRepeating = 1 then / else
+  [ 26] pushcons 8 .............................. <"MSG m_busyRepeating">
+  [ 28] getparam 8 .............................. <argWhat>
+  [ 30] getprop 1962 ............................ <m_busyDepth>
+  [ 33] pusharglistnoret 3 ...................... <"MSG m_busyRepeating", argWhat, m_busyDepth>
+  [ 35] extcall 122 ............................. pott("MSG m_busyRepeating", argWhat, m_busyDepth)
+  [ 38] pushint8 1 .............................. <1>
+  [ 41] setlocal 0 .............................. wasBusyRepeating = 1
+  [ 43] jmp [ 56]
+  [ 46] pushzero ................................ <0>
+  [ 47] setlocal 0 .............................. wasBusyRepeating = 0
+  [ 49] getparam 0 .............................. <me>
+  [ 51] pusharglistnoret 1 ...................... <me>
+  [ 53] objcall 1956 ............................ me.refreshLists()
+  [ 56] pushint8 1 .............................. <1>
+  [ 59] setprop 1963 ............................ m_busyRepeating = 1
+  [ 62] getprop 1961 ............................ <m_objects>
+  [ 65] peek 0
+  [ 67] pusharglist 1
+  [ 69] extcall 156
+  [ 72] pushint8 1
+  [ 74] peek 0
+  [ 76] peek 2
+  [ 78] lteq
+  [ 79] jmpifz [125] ............................ repeat with obj in m_objects
+  [ 82] peek 2
+  [ 84] peek 1
+  [ 86] pusharglist 2
+  [ 88] extcall 119
+  [ 91] setlocal 8
+  [ 93] getlocal 8 .............................. <obj>
+  [ 95] getprop 1957 ............................ <m_setProp>
+  [ 98] pusharglist 2 ........................... <obj, m_setProp>
+  [100] objcall 183 ............................. <obj.getaProp(m_setProp)>
+  [103] jmpifz [119] ............................ if obj.getaProp(m_setProp) then
+  [106] getlocal 8 .............................. <obj>
+  [108] getparam 8 .............................. <argWhat>
+  [110] getparam 16 ............................. <argOption>
+  [112] getparam 24 ............................. <argOption2>
+  [114] pusharglistnoret 4 ...................... <obj, argWhat, argOption, argOption2>
+  [116] objcall 621 ............................. obj.msg(argWhat, argOption, argOption2)
+  [119] pushint8 1
+  [121] add
+  [122] endrepeat [ 74]
+  [125] pop 3
+  [127] pushzero ................................ <0>
+  [128] jmpifz [196] ............................ if 0 then
+  [131] getprop 1959 ............................ <m_addObjects>
+  [134] peek 0
+  [136] pusharglist 1
+  [138] extcall 156
+  [141] pushint8 1
+  [143] peek 0
+  [145] peek 2
+  [147] lteq
+  [148] jmpifz [194] ............................ repeat with obj in m_addObjects
+  [151] peek 2
+  [153] peek 1
+  [155] pusharglist 2
+  [157] extcall 119
+  [160] setlocal 8
+  [162] getlocal 8 .............................. <obj>
+  [164] getprop 1957 ............................ <m_setProp>
+  [167] pusharglist 2 ........................... <obj, m_setProp>
+  [169] objcall 183 ............................. <obj.getaProp(m_setProp)>
+  [172] jmpifz [188] ............................ if obj.getaProp(m_setProp) then
+  [175] getlocal 8 .............................. <obj>
+  [177] getparam 8 .............................. <argWhat>
+  [179] getparam 16 ............................. <argOption>
+  [181] getparam 24 ............................. <argOption2>
+  [183] pusharglistnoret 4 ...................... <obj, argWhat, argOption, argOption2>
+  [185] objcall 621 ............................. obj.msg(argWhat, argOption, argOption2)
+  [188] pushint8 1
+  [190] add
+  [191] endrepeat [143]
+  [194] pop 3
+  [196] getlocal 0 .............................. <wasBusyRepeating>
+  [198] pushzero ................................ <0>
+  [199] eq ...................................... <wasBusyRepeating = 0>
+  [200] jmpifz [207] ............................ if wasBusyRepeating = 0 then
+  [203] pushzero ................................ <0>
+  [204] setprop 1963 ............................ m_busyRepeating = 0
+  [207] getprop 1962 ............................ <m_busyDepth>
+  [210] pushint8 1 .............................. <1>
+  [213] sub ..................................... <m_busyDepth - 1>
+  [214] setprop 1962 ............................ m_busyDepth = m_busyDepth - 1
+  [217] ret
+end
+
+on activate me, YesNo
+  [  0] getparam 8 .............................. <YesNo>
+  [  2] setprop 1958 ............................ m_active = YesNo
+  [  5] ret
+end
+
+on addObject me, argObj
+  [  0] getparam 8 .............................. <argObj>
+  [  2] getprop 1957 ............................ <m_setProp>
+  [  5] pushint8 1 .............................. <1>
+  [  8] pusharglistnoret 3 ...................... <argObj, m_setProp, 1>
+  [ 10] objcall 296 ............................. argObj.setaProp(m_setProp, 1)
+  [ 13] getprop 1960 ............................ <m_deleteObjects>
+  [ 16] getparam 8 .............................. <argObj>
+  [ 18] pusharglist 2 ........................... <m_deleteObjects, argObj>
+  [ 20] objcall 337 ............................. <m_deleteObjects.getPos(argObj)>
+  [ 23] jmpifz [ 36] ............................ if m_deleteObjects.getPos(argObj) then
+  [ 26] getprop 1960 ............................ <m_deleteObjects>
+  [ 29] getparam 8 .............................. <argObj>
+  [ 31] pusharglistnoret 2 ...................... <m_deleteObjects, argObj>
+  [ 33] objcall 335 ............................. m_deleteObjects.deleteOne(argObj)
+  [ 36] getprop 1959 ............................ <m_addObjects>
+  [ 39] getparam 8 .............................. <argObj>
+  [ 41] pusharglistnoret 2 ...................... <m_addObjects, argObj>
+  [ 43] objcall 229 ............................. m_addObjects.add(argObj)
+  [ 46] ret
+end
+
+on deleteObject me, argObj
+  [  0] getparam 8 .............................. <argObj>
+  [  2] getprop 1957 ............................ <m_setProp>
+  [  5] pushzero ................................ <0>
+  [  6] pusharglistnoret 3 ...................... <argObj, m_setProp, 0>
+  [  8] objcall 296 ............................. argObj.setaProp(m_setProp, 0)
+  [ 11] getprop 1959 ............................ <m_addObjects>
+  [ 14] getparam 8 .............................. <argObj>
+  [ 16] pusharglist 2 ........................... <m_addObjects, argObj>
+  [ 18] objcall 337 ............................. <m_addObjects.getPos(argObj)>
+  [ 21] jmpifz [ 58] ............................ if m_addObjects.getPos(argObj) then
+  [ 24] getprop 1959 ............................ <m_addObjects>
+  [ 27] getparam 8 .............................. <argObj>
+  [ 29] pusharglistnoret 2 ...................... <m_addObjects, argObj>
+  [ 31] objcall 335 ............................. m_addObjects.deleteOne(argObj)
+  [ 34] getprop 1961 ............................ <m_objects>
+  [ 37] getparam 8 .............................. <argObj>
+  [ 39] pusharglist 2 ........................... <m_objects, argObj>
+  [ 41] objcall 337 ............................. <m_objects.getPos(argObj)>
+  [ 44] jmpifz [ 57] ............................ if m_objects.getPos(argObj) then
+  [ 47] getprop 1960 ............................ <m_deleteObjects>
+  [ 50] getparam 8 .............................. <argObj>
+  [ 52] pusharglistnoret 2 ...................... <m_deleteObjects, argObj>
+  [ 54] objcall 229 ............................. m_deleteObjects.add(argObj)
+  [ 57] ret ..................................... exit
+  [ 58] getprop 1960 ............................ <m_deleteObjects>
+  [ 61] getparam 8 .............................. <argObj>
+  [ 63] pusharglistnoret 2 ...................... <m_deleteObjects, argObj>
+  [ 65] objcall 229 ............................. m_deleteObjects.add(argObj)
+  [ 68] ret
+end
+
+on refreshLists me
+  [  0] getprop 1959 ............................ <m_addObjects>
+  [  3] peek 0
+  [  5] pusharglist 1
+  [  7] extcall 156
+  [ 10] pushint8 1
+  [ 12] peek 0
+  [ 14] peek 2
+  [ 16] lteq
+  [ 17] jmpifz [ 62] ............................ repeat with obj in m_addObjects
+  [ 20] peek 2
+  [ 22] peek 1
+  [ 24] pusharglist 2
+  [ 26] extcall 119
+  [ 29] setlocal 0
+  [ 31] getprop 1961 ............................ <m_objects>
+  [ 34] getlocal 0 .............................. <obj>
+  [ 36] pusharglist 2 ........................... <m_objects, obj>
+  [ 38] objcall 337 ............................. <m_objects.getPos(obj)>
+  [ 41] pushzero ................................ <0>
+  [ 42] eq ...................................... <m_objects.getPos(obj) = 0>
+  [ 43] jmpifz [ 56] ............................ if m_objects.getPos(obj) = 0 then
+  [ 46] getprop 1961 ............................ <m_objects>
+  [ 49] getlocal 0 .............................. <obj>
+  [ 51] pusharglistnoret 2 ...................... <m_objects, obj>
+  [ 53] objcall 229 ............................. m_objects.add(obj)
+  [ 56] pushint8 1
+  [ 58] add
+  [ 59] endrepeat [ 12]
+  [ 62] pop 3
+  [ 64] pusharglist 0 ........................... <[]>
+  [ 66] pushlist ................................ <[]>
+  [ 67] setprop 1959 ............................ m_addObjects = []
+  [ 70] getprop 1960 ............................ <m_deleteObjects>
+  [ 73] peek 0
+  [ 75] pusharglist 1
+  [ 77] extcall 156
+  [ 80] pushint8 1
+  [ 82] peek 0
+  [ 84] peek 2
+  [ 86] lteq
+  [ 87] jmpifz [117] ............................ repeat with obj in m_deleteObjects
+  [ 90] peek 2
+  [ 92] peek 1
+  [ 94] pusharglist 2
+  [ 96] extcall 119
+  [ 99] setlocal 0
+  [101] getprop 1961 ............................ <m_objects>
+  [104] getlocal 0 .............................. <obj>
+  [106] pusharglistnoret 2 ...................... <m_objects, obj>
+  [108] objcall 335 ............................. m_objects.deleteOne(obj)
+  [111] pushint8 1
+  [113] add
+  [114] endrepeat [ 82]
+  [117] pop 3
+  [119] pusharglist 0 ........................... <[]>
+  [121] pushlist ................................ <[]>
+  [122] setprop 1960 ............................ m_deleteObjects = []
+  [125] ret
+end

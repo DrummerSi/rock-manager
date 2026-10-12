@@ -1,0 +1,330 @@
+property ancestor, child, type, dialogDataMemberName, renderMemberName, imageMember, dialogData, dialogObj, dialogBGItemObj, forcePaint, orgDlgInOffsetRect, dlgSrndDiff, usingTopMouse, topMouseObj
+
+on new me, argMasterObj, argChild, argList
+  type = #Dialog
+  if not objectp(argChild) then
+    argChild = me
+  end if
+  child = argChild
+  forcePaint = 0
+  dlgSrndDiff = rect(0, 0, 0, 0)
+  usingTopMouse = 0
+  ancestor = new(script("DialogAncestorScript"), argMasterObj, child, argList)
+  return me
+end
+
+on init me
+  ancestor.init()
+  tmpOptions = [:]
+  if ancestor.blit then
+    tmpOptions = [#image: ancestor.masterObj.myImagePtr, #OKtoResize: 0]
+  end if
+  tmpOptions.addProp(#ID, #DlgDlg)
+  tmpOptions.addProp(#wndParent, ancestor.masterObj)
+  tmpOptions.addProp(#dlgItemParent, me)
+  dialogObj = script("Dialog").new(tmpOptions)
+  tmp = me.getMyProps()
+  repeat with n = 1 to tmp.count()
+    tmpProp = tmp.getPropAt(n)
+    tmpVal = ancestor.temporaryArgs.getaProp(tmpProp)
+    if not voidp(tmpVal) then
+      me.setaProp(tmpProp, ancestor.temporaryArgs.getaProp(tmpProp))
+    end if
+  end repeat
+  if not voidp(dialogDataMemberName) then
+    me.attachDlg(VOID, member(dialogDataMemberName).text.value)
+  end if
+end
+
+on finalInitsBeforeCalc me
+  ancestor.finalInitsBeforeCalc()
+  if not voidp(renderMemberName) then
+    me.setOneProp(#renderMemberName, renderMemberName)
+  end if
+  __debug(#WndOpt, "final in dlg", ancestor.ID, dialogDataMemberName)
+  if ancestor.masterObj.editing then
+    if voidp(dialogDataMemberName) then
+      dialogDataMemberName = me.setOneProp(#dialogDataMemberName, dialogDataMemberName)
+    end if
+  else
+  end if
+  me.prepareDialogObj()
+  me.recalcDialog()
+  dialogObj.blitLocOffset = point(ancestor.calcRect[1], ancestor.calcRect[2]) + ancestor.masterObj.blitLocOffset
+end
+
+on kill me
+  if objectp(topMouseObj) then
+    topMouseObj = topMouseObj.kill()
+  end if
+  dialogBGItemObj = 0
+  if objectp(dialogObj) then
+    dialogObj = dialogObj.kill()
+  end if
+  ancestor = ancestor.kill()
+  child = 0
+  imageMember = 0
+  return 0
+end
+
+on getMyProps me
+  return [#dialogDataMemberName: [#comment: "Dialog data memberName", #format: #string, #default: dialogDataMemberName], #renderMemberName: [#comment: "Render to member (name)", #format: #string, #default: renderMemberName], #usingTopMouse: [#comment: "Dialog's mouse is over content's mouse", #format: #string, #default: usingTopMouse]]
+end
+
+on getProps me
+  tmpList = me.getMyProps()
+  tmpList2 = ancestor.getProps()
+  repeat with n = 1 to tmpList.count()
+    tmpList2.setaProp(tmpList.getPropAt(n), tmpList[n])
+  end repeat
+  return tmpList2
+end
+
+on getEditProps me
+  tmp = [:]
+  tmp.addProp(me.type, me.getMyProps())
+  mergeLists(tmp, ancestor.getEditProps())
+  return tmp
+end
+
+on getOneProp me, argProp
+  tmpList = me.getMyProps()
+  if voidp(tmpList.getaProp(argProp)) then
+    return ancestor.getOneProp(argProp)
+  end if
+  return me.getaProp(argProp)
+end
+
+on setOneProp me, argProp, argVal
+  if argProp = #rel then
+    if voidp(argVal) then
+      argVal = [0, 0, #Auto, #Auto]
+    end if
+  else
+    if (argProp = #inOffsetRect) or (argProp = #rect) then
+      if voidp(argVal) then
+        argVal = [0, 0, 0, 0]
+      end if
+    end if
+  end if
+  tmpList = me.getMyProps()
+  if voidp(tmpList.getaProp(argProp)) then
+    ancestor.setOneProp(argProp, argVal)
+  else
+    if ancestor.ImUpAndRunningAlready = 0 then
+      me.setaProp(argProp, argVal)
+      exit
+    end if
+    if argProp = #dialogDataMemberName then
+      if voidp(argVal) then
+        argVal = "DlgSimpleData"
+      end if
+      me.attachDlg(VOID, member(argVal).text.value)
+    else
+      if argProp = #renderMemberName then
+        if voidp(argVal) then
+          argVal = EMPTY
+        end if
+        imageMember = member(argVal)
+        if imageMember.number < 1 then
+          if ancestor.blit = 1 then
+            imageMember = 0
+          else
+            pott("Memb no exist", argVal)
+            ancestor.blit = 1
+            imageMember = 0
+          end if
+        end if
+      end if
+    end if
+    me.setaProp(argProp, argVal)
+  end if
+  if argProp = #rel then
+    if ancestor.masterObj.editing = 1 then
+      me.prepareDialogObj()
+    end if
+  end if
+end
+
+on attachDlg me, argObj, argDlgData
+  __debug(#WndOpt, "Attach dlg", ancestor.ID)
+  if objectp(argObj) then
+    dialogDataMemberName = EMPTY
+    if objectp(dialogObj) then
+      dialogObj.kill()
+    end if
+    if ancestor.blit then
+      dialogObj.myImagePtr = ancestor.masterObj.myImagePtr
+      dialogObj.isOKtoResizeImage = 0
+    end if
+    dialogObj = argObj
+    dialogObj.setWndHeritage([#wndParent: ancestor.masterObj, #dlgItemParent: me])
+  else
+    if objectp(dialogObj) then
+      dialogObj.clear()
+    end if
+  end if
+  if ancestor.masterObj.editing then
+    dialogObj.editing = 1
+  end if
+  ancestor.masterObj.changed(#ch)
+  dialogData = []
+  dialogBGItemObj = 0
+  ancestor.masterObj.invalidateRect(ancestor.calcRect + dlgSrndDiff)
+  if dialogObj.itemObjs.count() = 0 then
+    if listp(argDlgData) then
+      dialogData = argDlgData
+      dialogObj.rawCreate(argDlgData)
+    end if
+  end if
+  if ancestor.ImUpAndRunningAlready = 1 then
+    me.prepareDialogObj()
+    me.recalcDialog()
+    dialogObj.blitLocOffset = point(ancestor.calcRect[1], ancestor.calcRect[2]) + ancestor.masterObj.blitLocOffset
+  end if
+  if ancestor.masterObj.editing then
+    dialogObj.activate(0)
+  end if
+  forcePaint = 1
+end
+
+on initCalcRect me
+  ancestor.initCalcRect()
+  dialogObj.recalc(#DontPaint)
+end
+
+on calcRectDone me
+  ancestor.calcRectDone()
+  dialogObj.blitLocOffset = point(ancestor.calcRect[1], ancestor.calcRect[2]) + ancestor.masterObj.blitLocOffset
+  if ancestor.lastCalcRect <> ancestor.calcRect then
+    ancestor.masterObj.invalidateRect(ancestor.lastCalcRect + dlgSrndDiff)
+    ancestor.masterObj.invalidateRect(ancestor.calcRect + dlgSrndDiff)
+    if getRectSize(ancestor.lastCalcRect) <> getRectSize(ancestor.calcRect) then
+      me.recalcDialog()
+    end if
+  end if
+end
+
+on recalcDialog me
+  if ancestor.zoomFacts.getOne(#Auto) then
+    __debug(#WndOpt, "recalc:AUTO", ancestor.ID)
+    if not objectp(dialogBGItemObj) then
+      exit
+    end if
+    tmpSize = getRectSize(ancestor.calcRect)
+    if (tmpSize[1] < 0) or (tmpSize[2] < 0) then
+      exit
+    end if
+    tmpSizeDiff = tmpSize - ancestor.autoSize
+    tmpObjsInOffsetRect = dialogBGItemObj.inOffsetRect.duplicate()
+    repeat with n = 1 to 2
+      tmpObjsInOffsetRect[n + 2] = orgDlgInOffsetRect[n + 2] + tmpSizeDiff[n]
+    end repeat
+    dialogBGItemObj.setOneProp(#inOffsetRect, tmpObjsInOffsetRect)
+  end if
+  dialogObj.recalc(#DontPaint)
+end
+
+on paint me, argDstRect
+  tmp = ancestor.calcPaintRects(argDstRect, ancestor.calcRect)
+  if listp(tmp) or forcePaint then
+    dialogObj.blitLocOffset = point(ancestor.calcRect[1], ancestor.calcRect[2]) + ancestor.masterObj.blitLocOffset
+    if not listp(tmp) then
+    else
+      tmpR = tmp[1] + dlgSrndDiff - rect(dialogObj.blitLocOffset, dialogObj.blitLocOffset)
+      dialogObj.invalidateRect(tmpR, #External)
+    end if
+    dialogObj.paint()
+    forcePaint = 0
+  end if
+end
+
+on setLayer me, argLayerNum, argLayerPtr
+  if usingTopMouse = 1 then
+    dialogObj.setLayer(ancestor.masterObj.baseMouseLayer + argLayerNum, argLayerPtr)
+  end if
+  ancestor.setLayer(argLayerNum, argLayerPtr)
+  if usingTopMouse <> 1 then
+    dialogObj.setLayer(ancestor.masterObj.baseMouseLayer + argLayerNum, argLayerPtr)
+  end if
+  if ancestor.blit = 1 then
+    exit
+  end if
+  ancestor.reserveSprite()
+end
+
+on render me, argOffsetRect
+  ancestor.render(argOffsetRect)
+  tmpLoc = ancestor.masterObj.myLoc
+  dialogObj.renderAtLoc(tmpLoc)
+  if ancestor.blit = 1 then
+    exit
+  end if
+  tmpSPNum = ancestor.getSprite()
+  if tmpSPNum then
+    imageMember.image = dialogObj.myImage
+    sprite(tmpSPNum).member = imageMember
+    sprite(tmpSPNum).rect = ancestor.onStageRect
+  end if
+end
+
+on getNumSprites me
+  return dialogObj.itemObjs.count()
+  if ancestor.blit then
+    return 0
+  end if
+  return 1
+end
+
+on dlgRectChanged me
+  if objectp(dialogBGItemObj) then
+    tmpAutoSize = getRectSize(dialogBGItemObj.calcRect)
+    orgDlgInOffsetRect = dialogBGItemObj.getOneProp(#inOffsetRect).duplicate()
+    dlgSrndDiff = rect(0, 0, 0, 0)
+  else
+    tmpAutoSize = getRectSize(dialogObj.surroundRect)
+  end if
+  ancestor.setAutoSize(tmpAutoSize)
+  tmpSize = getRectSize(ancestor.calcRect)
+  if (tmpSize[1] > 0) and (tmpSize[2] > 0) then
+    if ancestor.autoList.count() then
+      tmpNewInOffsetRect = ancestor.inOffsetRect.duplicate()
+      repeat with n = 1 to ancestor.autoList.count()
+        tmpWhich = ancestor.autoList[n]
+        tmp = ancestor.autoSize[2 - (tmpWhich mod 2)]
+        tmp = tmp * -getSign(tmpWhich - 2.5)
+        tmpOther = ancestor.getOther(tmpWhich)
+        ancestor.calcRect[tmpOther] = ancestor.calcRect[tmpWhich] + tmp + 0
+        tmpNewInOffsetRect[tmpOther] = 0
+      end repeat
+      ancestor.setOneProp(#inOffsetRect, tmpNewInOffsetRect)
+    end if
+    ancestor.masterObj.invalidateRect(ancestor.calcRect + dlgSrndDiff)
+  end if
+end
+
+on dlgParentScrolled me, argMoveLoc
+  dialogObj.scrollLocOffset = dialogObj.scrollLocOffset + argMoveLoc
+end
+
+on prepareDialogObj me
+  if ancestor.autoList.count() < 2 then
+    dialogBGItemObj = dialogObj.getItem(#BG)
+    if objectp(dialogBGItemObj) then
+      orgDlgInOffsetRect = dialogBGItemObj.getOneProp(#inOffsetRect).duplicate()
+      tmpObjRel = dialogBGItemObj.getOneProp(#rel)
+      repeat with m = 1 to 2
+        tmpObjRel[m] = 0
+      end repeat
+    end if
+  end if
+  dlgSrndDiff = rect(0, 0, 0, 0)
+  if ancestor.ImUpAndRunningAlready = 0 then
+    exit
+  end if
+  if ancestor.autoList.count() > 0 then
+    dialogObj.recalc(#DontPaint)
+  else
+    ancestor.masterObj.invalidateRect(ancestor.calcRect + dlgSrndDiff)
+  end if
+end

@@ -1,0 +1,56 @@
+global gRock
+
+on getECGfxHuman argEventCard_r, argEventCardOptions, argGetOtherObjThanHuman, argDontReturnObjIfForce
+  if voidp(argEventCardOptions) then
+    argEventCardOptions = [:]
+  end if
+  tmpGfx = rgetProp(argEventCard_r, #Gfx)
+  if offset("<", tmpGfx) then
+    if (argDontReturnObjIfForce = #NotIfForced) and offset("Force", tmpGfx) then
+      return 0
+    end if
+    tmpEndOff = offset(">", tmpGfx)
+    if tmpEndOff then
+      tmpGfx = tmpGfx.char[1..tmpEndOff]
+      tmpGfx = trimStringFromChars(tmpGfx, ["<", ">"])
+      obj = rex(tmpGfx)
+    end if
+  else
+    if tmpGfx.char[1] = "#" then
+      obj = gRock.m_classManager.getObjByID(symbol(tmpGfx))
+    else
+      if offset("RealMusician", tmpGfx) or offset("Human", tmpGfx) then
+        if (argDontReturnObjIfForce = #NotIfForced) and offset("Force", tmpGfx) then
+          return 0
+        end if
+        obj = argEventCardOptions[#RealMusician]
+        if voidp(obj) then
+          musID = argEventCardOptions[#HumanID]
+          if voidp(musID) then
+            obj = gRock.m_context.getFocus(#Human)
+            musID = #RMCJerka
+          end if
+          if not objectp(obj) then
+            obj = gRock.m_classManager.getObjByIDAndClass(musID, #Human)
+          end if
+        end if
+      end if
+    end if
+  end if
+  if objectp(obj) then
+    if gRock.m_classManager.hasBaseClass(obj, #Human) or (obj.className = #Human) then
+      return obj
+    else
+      if gRock.m_classManager.hasBaseClass(obj, #place) then
+        human_r = gRock.m_classManager.getObjByIDAndClass(obj.Human, #Human)
+        if objectp(human_r) then
+          return human_r
+        end if
+      end if
+      if argGetOtherObjThanHuman = 1 then
+        return obj
+      end if
+    end if
+  end if
+  return 0
+end

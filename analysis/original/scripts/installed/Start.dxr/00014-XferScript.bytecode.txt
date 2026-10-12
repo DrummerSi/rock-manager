@@ -1,0 +1,129 @@
+property m_SP, m_finalRect
+
+on new me
+  [  0] pushint8 2 .............................. <2>
+  [  3] pusharglist 1 ........................... <2>
+  [  5] extcall 139 ............................. <sprite(2)>
+  [  8] setprop 320 ............................. m_SP = sprite(2)
+  [ 11] getparam 0 .............................. <me>
+  [ 13] pusharglistnoret 1 ...................... <me>
+  [ 15] extcall 2 ............................... return me
+  [ 17] ret
+end
+
+on xfer me
+  [  0] getglobal 51 ............................ <gSystem>
+  [  3] pusharglist 1 ........................... <gSystem>
+  [  5] extcall 50 .............................. <objectp(gSystem)>
+  [  8] not ..................................... <not objectp(gSystem)>
+  [  9] jmpifz [ 13] ............................ if not objectp(gSystem) then
+  [ 12] ret ..................................... exit
+  [ 13] getglobal 51 ............................ <gSystem>
+  [ 16] getobjprop 285 .......................... <gSystem.m_projectPath>
+  [ 19] pushcons 0 .............................. <"Plugins\\">
+  [ 21] joinstr ................................. <gSystem.m_projectPath & "Plugins\\">
+  [ 22] setlocal 0 .............................. tmpPluginsPath = gSystem.m_projectPath & "Plugins\\"
+  [ 24] getlocal 0 .............................. <tmpPluginsPath>
+  [ 26] pusharglist 1 ........................... <tmpPluginsPath>
+  [ 28] extcall 48 .............................. <checkForPlugins(tmpPluginsPath)>
+  [ 31] setlocal 8 .............................. tmpNewPlugs = checkForPlugins(tmpPluginsPath)
+  [ 33] getlocal 8 .............................. <tmpNewPlugs>
+  [ 35] getobjprop 62 ........................... <tmpNewPlugs.count>
+  [ 38] jmpifz [167] ............................ if tmpNewPlugs.count then
+  [ 41] getglobal 51 ............................ <gSystem>
+  [ 44] getobjprop 330 .......................... <gSystem.m_prefs>
+  [ 47] pushsymb 297 ............................ <#xfer>
+  [ 50] pusharglist 2 ........................... <gSystem.m_prefs, #xfer>
+  [ 52] objcall 332 ............................. <gSystem.m_prefs.getaProp(#xfer)>
+  [ 55] setlocal 16 ............................. xferToCast = gSystem.m_prefs.getaProp(#xfer)
+  [ 57] getlocal 16 ............................. <xferToCast>
+  [ 59] pusharglist 1 ........................... <xferToCast>
+  [ 61] extcall 335 ............................. <stringp(xferToCast)>
+  [ 64] not ..................................... <not stringp(xferToCast)>
+  [ 65] jmpifz [ 71] ............................ if not stringp(xferToCast) then / else
+  [ 68] jmp [167]
+  [ 71] pushcons 8 .............................. <"Destination">
+  [ 73] pusharglist 1 ........................... <"Destination">
+  [ 75] extcall 61 .............................. <castLib("Destination")>
+  [ 78] getlocal 16 ............................. <xferToCast>
+  [ 80] setobjprop 64 ........................... castLib("Destination").fileName = xferToCast
+  [ 83] pushcons 16 ............................. <"Destination">
+  [ 85] pusharglist 1 ........................... <"Destination">
+  [ 87] extcall 61 .............................. <castLib("Destination")>
+  [ 90] getobjprop 64 ........................... <castLib("Destination").fileName>
+  [ 93] pusharglist 1 ........................... <castLib("Destination").fileName>
+  [ 95] extcall 257 ............................. <fileStripName(castLib("Destination").fileName)>
+  [ 98] setlocal 24 ............................. tmpStrip1 = fileStripName(castLib("Destination").fileName)
+  [100] getlocal 16 ............................. <xferToCast>
+  [102] setlocal 32 ............................. tmpStrip2 = xferToCast
+  [104] getlocal 24 ............................. <tmpStrip1>
+  [106] getlocal 32 ............................. <tmpStrip2>
+  [108] nteq .................................... <tmpStrip1 <> tmpStrip2>
+  [109] jmpifz [115] ............................ if tmpStrip1 <> tmpStrip2 then / else
+  [112] jmp [167]
+  [115] pushcons 24 ............................. <"Xfer">
+  [117] pusharglistnoret 1 ...................... <"Xfer">
+  [119] extcall 41 .............................. go("Xfer")
+  [122] pushint8 1 .............................. <1>
+  [125] pusharglist 1 ........................... <1>
+  [127] extcall 139 ............................. <sprite(1)>
+  [130] getobjprop 89 ........................... <sprite(1).rect>
+  [133] setprop 321 ............................. m_finalRect = sprite(1).rect
+  [136] getlocal 0 .............................. <tmpPluginsPath>
+  [138] getlocal 8 .............................. <tmpNewPlugs>
+  [140] pushcons 32 ............................. <"Destination">
+  [142] pushsymb 294 ............................ <#updateGraphics>
+  [145] getparam 0 .............................. <me>
+  [147] pusharglist 2 ........................... <[#updateGraphics, me]>
+  [149] pushlist ................................ <[#updateGraphics, me]>
+  [150] pusharglistnoret 4 ...................... <tmpPluginsPath, tmpNewPlugs, "Destination", [#updateGraphics, me]>
+  [152] extcall 49 .............................. xferPlugins(tmpPluginsPath, tmpNewPlugs, "Destination", [#updateGraphics, me])
+  [155] pushcons 40 ............................. <"Destination">
+  [157] pusharglist 1 ........................... <"Destination">
+  [159] extcall 61 .............................. <castLib("Destination")>
+  [162] pushcons 48 ............................. <"Empty">
+  [164] setobjprop 64 ........................... castLib("Destination").fileName = "Empty"
+  [167] ret
+end
+
+on updateGraphics me, argWhat, argPartCopied
+  [  0] getparam 8 .............................. <argWhat>
+  [  2] pushsymb 292 ............................ <#XferMember>
+  [  5] eq ...................................... <argWhat = #XferMember>
+  [  6] jmpifz [ 91] ............................ if argWhat = #XferMember then
+  [  9] getprop 320 ............................. <m_SP>
+  [ 12] getprop 321 ............................. <m_finalRect>
+  [ 15] pushint8 1 .............................. <1>
+  [ 18] pusharglist 2 ........................... <m_finalRect, 1>
+  [ 20] objcall 63 .............................. <m_finalRect[1]>
+  [ 23] getprop 321 ............................. <m_finalRect>
+  [ 26] pushint8 2 .............................. <2>
+  [ 29] pusharglist 2 ........................... <m_finalRect, 2>
+  [ 31] objcall 63 .............................. <m_finalRect[2]>
+  [ 34] getprop 321 ............................. <m_finalRect>
+  [ 37] pushint8 1 .............................. <1>
+  [ 40] pusharglist 2 ........................... <m_finalRect, 1>
+  [ 42] objcall 63 .............................. <m_finalRect[1]>
+  [ 45] getparam 16 ............................. <argPartCopied>
+  [ 47] getprop 321 ............................. <m_finalRect>
+  [ 50] pushint8 3 .............................. <3>
+  [ 53] pusharglist 2 ........................... <m_finalRect, 3>
+  [ 55] objcall 63 .............................. <m_finalRect[3]>
+  [ 58] getprop 321 ............................. <m_finalRect>
+  [ 61] pushint8 1 .............................. <1>
+  [ 64] pusharglist 2 ........................... <m_finalRect, 1>
+  [ 66] objcall 63 .............................. <m_finalRect[1]>
+  [ 69] sub ..................................... <m_finalRect[3] - m_finalRect[1]>
+  [ 70] mul ..................................... <argPartCopied * (m_finalRect[3] - m_finalRect[1])>
+  [ 71] add ..................................... <m_finalRect[1] + (argPartCopied * (m_finalRect[3] - m_finalRect[1]))>
+  [ 72] getprop 321 ............................. <m_finalRect>
+  [ 75] pushint8 4 .............................. <4>
+  [ 78] pusharglist 2 ........................... <m_finalRect, 4>
+  [ 80] objcall 63 .............................. <m_finalRect[4]>
+  [ 83] pusharglist 4 ........................... <m_finalRect[1], m_finalRect[2], m_finalRect[1] + (argPartCopied * (m_finalRect[3] - m_finalRect[1])), m_finalRect[4]>
+  [ 85] extcall 89 .............................. <rect(m_finalRect[1], m_finalRect[2], m_finalRect[1] + (argPartCopied * (m_finalRect[3] - m_finalRect[1])), m_finalRect[4])>
+  [ 88] setobjprop 89 ........................... m_SP.rect = rect(m_finalRect[1], m_finalRect[2], m_finalRect[1] + (argPartCopied * (m_finalRect[3] - m_finalRect[1])), m_finalRect[4])
+  [ 91] pusharglistnoret 0 ...................... <>
+  [ 93] extcall 295 ............................. updateStage()
+  [ 96] ret
+end

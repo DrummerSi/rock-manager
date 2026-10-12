@@ -1,0 +1,481 @@
+property addMouseObjectList, deleteMouseObjectList, mouseObjects, latestMouseButton, busyRepeating, dismissingClicks, cursorChanged, Active, mouseLoc, lastMouseLoc, mouseWasOnStage, stageRect
+global gUseful
+
+on new me
+  [  0] pusharglist 0 ........................... <[:]>
+  [  2] pushproplist ............................ <[:]>
+  [  3] setprop 194 ............................. addMouseObjectList = [:]
+  [  6] pusharglist 0 ........................... <[]>
+  [  8] pushlist ................................ <[]>
+  [  9] setprop 195 ............................. deleteMouseObjectList = []
+  [ 12] pusharglist 0 ........................... <[:]>
+  [ 14] pushproplist ............................ <[:]>
+  [ 15] setprop 20 .............................. mouseObjects = [:]
+  [ 17] getprop 20 .............................. <mouseObjects>
+  [ 19] pusharglistnoret 1 ...................... <mouseObjects>
+  [ 21] extcall 197 ............................. sort(mouseObjects)
+  [ 24] pushsymb 199 ............................ <#none>
+  [ 27] setprop 198 ............................. latestMouseButton = #none
+  [ 30] pushzero ................................ <0>
+  [ 31] setprop 200 ............................. busyRepeating = 0
+  [ 34] pushzero ................................ <0>
+  [ 35] setprop 201 ............................. dismissingClicks = 0
+  [ 38] pushzero ................................ <0>
+  [ 39] pushzero ................................ <0>
+  [ 40] pusharglist 2 ........................... <0, 0>
+  [ 42] extcall 75 .............................. <point(0, 0)>
+  [ 45] setprop 202 ............................. mouseLoc = point(0, 0)
+  [ 48] getprop 202 ............................. <mouseLoc>
+  [ 51] setprop 203 ............................. lastMouseLoc = mouseLoc
+  [ 54] pushzero ................................ <0>
+  [ 55] pushzero ................................ <0>
+  [ 56] pushint8 640 ............................ <640>
+  [ 59] pushint8 480 ............................ <480>
+  [ 62] pusharglist 4 ........................... <0, 0, 640, 480>
+  [ 64] extcall 105 ............................. <rect(0, 0, 640, 480)>
+  [ 67] setprop 204 ............................. stageRect = rect(0, 0, 640, 480)
+  [ 70] pushint8 1 .............................. <1>
+  [ 73] setprop 164 ............................. Active = 1
+  [ 76] getparam 0 .............................. <me>
+  [ 78] pusharglistnoret 1 ...................... <me>
+  [ 80] extcall 32 .............................. return me
+  [ 83] ret
+end
+
+on kill me
+  [  0] pusharglist 0 ........................... <[:]>
+  [  2] pushproplist ............................ <[:]>
+  [  3] setprop 194 ............................. addMouseObjectList = [:]
+  [  6] pusharglist 0 ........................... <[]>
+  [  8] pushlist ................................ <[]>
+  [  9] setprop 195 ............................. deleteMouseObjectList = []
+  [ 12] pusharglist 0 ........................... <[:]>
+  [ 14] pushproplist ............................ <[:]>
+  [ 15] setprop 20 .............................. mouseObjects = [:]
+  [ 17] pushzero ................................ <0>
+  [ 18] pusharglistnoret 1 ...................... <0>
+  [ 20] extcall 32 .............................. return 0
+  [ 23] ret
+end
+
+on activate me, argIsTRUE
+  [  0] getparam 8 .............................. <argIsTRUE>
+  [  2] setprop 164 ............................. Active = argIsTRUE
+  [  5] ret
+end
+
+on addObject me, argObj, argPrio
+  [  0] getparam 16 ............................. <argPrio>
+  [  2] pusharglist 1 ........................... <argPrio>
+  [  4] extcall 104 ............................. <voidp(argPrio)>
+  [  7] jmpifz [ 15] ............................ if voidp(argPrio) then
+  [ 10] pushint8 50 ............................. <50>
+  [ 13] setparam 16 ............................. argPrio = 50
+  [ 15] getprop 200 ............................. <busyRepeating>
+  [ 18] jmpifz [ 36] ............................ if busyRepeating then / else
+  [ 21] getprop 194 ............................. <addMouseObjectList>
+  [ 24] getparam 16 ............................. <argPrio>
+  [ 26] getparam 8 .............................. <argObj>
+  [ 28] pusharglistnoret 3 ...................... <addMouseObjectList, argPrio, argObj>
+  [ 30] extcall 45 .............................. addProp(addMouseObjectList, argPrio, argObj)
+  [ 33] jmp [ 61]
+  [ 36] getprop 20 .............................. <mouseObjects>
+  [ 38] getparam 8 .............................. <argObj>
+  [ 40] pusharglist 2 ........................... <mouseObjects, argObj>
+  [ 42] extcall 181 ............................. <getPos(mouseObjects, argObj)>
+  [ 45] pushzero ................................ <0>
+  [ 46] eq ...................................... <getPos(mouseObjects, argObj) = 0>
+  [ 47] jmpifz [ 61] ............................ if getPos(mouseObjects, argObj) = 0 then
+  [ 50] getprop 20 .............................. <mouseObjects>
+  [ 52] getparam 16 ............................. <argPrio>
+  [ 54] getparam 8 .............................. <argObj>
+  [ 56] pusharglistnoret 3 ...................... <mouseObjects, argPrio, argObj>
+  [ 58] extcall 45 .............................. addProp(mouseObjects, argPrio, argObj)
+  [ 61] ret
+end
+
+on addObjects me
+  [  0] pushint8 1 .............................. <1>
+  [  3] setlocal 0
+  [  5] getlocal 0
+  [  7] getprop 194 ............................. <addMouseObjectList>
+  [ 10] pusharglist 1 ........................... <addMouseObjectList>
+  [ 12] extcall 175 ............................. <count(addMouseObjectList)>
+  [ 15] lteq
+  [ 16] jmpifz [ 74] ............................ repeat with n = 1 to count(addMouseObjectList)
+  [ 19] getprop 194 ............................. <addMouseObjectList>
+  [ 22] getlocal 0 .............................. <n>
+  [ 24] pusharglist 2 ........................... <addMouseObjectList, n>
+  [ 26] extcall 23 .............................. <getAt(addMouseObjectList, n)>
+  [ 28] setlocal 8 .............................. tmpObj = getAt(addMouseObjectList, n)
+  [ 30] getprop 20 .............................. <mouseObjects>
+  [ 32] getlocal 8 .............................. <tmpObj>
+  [ 34] pusharglist 2 ........................... <mouseObjects, tmpObj>
+  [ 36] extcall 181 ............................. <getPos(mouseObjects, tmpObj)>
+  [ 39] pushzero ................................ <0>
+  [ 40] eq ...................................... <getPos(mouseObjects, tmpObj) = 0>
+  [ 41] jmpifz [ 63] ............................ if getPos(mouseObjects, tmpObj) = 0 then
+  [ 44] getprop 20 .............................. <mouseObjects>
+  [ 46] getprop 194 ............................. <addMouseObjectList>
+  [ 49] getlocal 0 .............................. <n>
+  [ 51] pusharglist 2 ........................... <addMouseObjectList, n>
+  [ 53] extcall 207 ............................. <getPropAt(addMouseObjectList, n)>
+  [ 56] getlocal 8 .............................. <tmpObj>
+  [ 58] pusharglistnoret 3 ...................... <mouseObjects, getPropAt(addMouseObjectList, n), tmpObj>
+  [ 60] extcall 45 .............................. addProp(mouseObjects, getPropAt(addMouseObjectList, n), tmpObj)
+  [ 63] pushint8 1
+  [ 66] getlocal 0
+  [ 68] add
+  [ 69] setlocal 0
+  [ 71] endrepeat [  5]
+  [ 74] pusharglist 0 ........................... <[:]>
+  [ 76] pushproplist ............................ <[:]>
+  [ 77] setprop 194 ............................. addMouseObjectList = [:]
+  [ 80] ret
+end
+
+on deleteObject me, argObj
+  [  0] getparam 8 .............................. <argObj>
+  [  2] pushzero ................................ <0>
+  [  3] pusharglistnoret 2 ...................... <argObj, 0>
+  [  5] localcall 2 ............................. activate(argObj, 0)
+  [  7] getprop 200 ............................. <busyRepeating>
+  [ 10] jmpifz [ 26] ............................ if busyRepeating then / else
+  [ 13] getprop 195 ............................. <deleteMouseObjectList>
+  [ 16] getparam 8 .............................. <argObj>
+  [ 18] pusharglistnoret 2 ...................... <deleteMouseObjectList, argObj>
+  [ 20] extcall 183 ............................. add(deleteMouseObjectList, argObj)
+  [ 23] jmp [ 35]
+  [ 26] getprop 20 .............................. <mouseObjects>
+  [ 28] getparam 8 .............................. <argObj>
+  [ 30] pusharglistnoret 2 ...................... <mouseObjects, argObj>
+  [ 32] extcall 182 ............................. deleteOne(mouseObjects, argObj)
+  [ 35] ret
+end
+
+on deleteObjects me
+  [  0] getprop 195 ............................. <deleteMouseObjectList>
+  [  3] peek 0
+  [  5] pusharglist 1
+  [  7] extcall 175
+  [ 10] pushint8 1
+  [ 12] peek 0
+  [ 14] peek 2
+  [ 16] lteq
+  [ 17] jmpifz [ 44] ............................ repeat with tmpObj in deleteMouseObjectList
+  [ 20] peek 2
+  [ 22] peek 1
+  [ 24] pusharglist 2
+  [ 26] extcall 23
+  [ 28] setlocal 0
+  [ 30] getprop 20 .............................. <mouseObjects>
+  [ 32] getlocal 0 .............................. <tmpObj>
+  [ 34] pusharglistnoret 2 ...................... <mouseObjects, tmpObj>
+  [ 36] extcall 182 ............................. deleteOne(mouseObjects, tmpObj)
+  [ 39] pushint8 1
+  [ 41] add
+  [ 42] endrepeat [ 12]
+  [ 44] pop 3
+  [ 46] pusharglist 0 ........................... <[]>
+  [ 48] pushlist ................................ <[]>
+  [ 49] setprop 195 ............................. deleteMouseObjectList = []
+  [ 52] ret
+end
+
+on deleteMouseObjectsConnectedTo me, argObj
+  [  0] getprop 200 ............................. <busyRepeating>
+  [  3] setlocal 0 .............................. tmpBusyRepeating = busyRepeating
+  [  5] pushint8 1 .............................. <1>
+  [  8] setprop 200 ............................. busyRepeating = 1
+  [ 11] getprop 20 .............................. <mouseObjects>
+  [ 13] peek 0
+  [ 15] pusharglist 1
+  [ 17] extcall 175
+  [ 20] pushint8 1
+  [ 22] peek 0
+  [ 24] peek 2
+  [ 26] lteq
+  [ 27] jmpifz [ 65] ............................ repeat with tmpObj in mouseObjects
+  [ 30] peek 2
+  [ 32] peek 1
+  [ 34] pusharglist 2
+  [ 36] extcall 23
+  [ 38] setlocal 8
+  [ 40] getlocal 8 .............................. <tmpObj>
+  [ 42] getobjprop 208 .......................... <tmpObj.reportObject>
+  [ 45] getparam 8 .............................. <argObj>
+  [ 47] eq ...................................... <tmpObj.reportObject = argObj>
+  [ 48] jmpifz [ 59] ............................ if tmpObj.reportObject = argObj then
+  [ 51] getparam 0 .............................. <me>
+  [ 53] getlocal 8 .............................. <tmpObj>
+  [ 55] pusharglistnoret 2 ...................... <me, tmpObj>
+  [ 57] localcall 5 ............................. deleteObject(me, tmpObj)
+  [ 59] pushint8 1
+  [ 61] add
+  [ 62] endrepeat [ 22]
+  [ 65] pop 3
+  [ 67] getlocal 0 .............................. <tmpBusyRepeating>
+  [ 69] setprop 200 ............................. busyRepeating = tmpBusyRepeating
+  [ 72] ret
+end
+
+on activateMouseObjectsOfType me, argType, YesNo
+  [  0] getprop 200 ............................. <busyRepeating>
+  [  3] setlocal 0 .............................. tmpBusyRepeating = busyRepeating
+  [  5] pushint8 1 .............................. <1>
+  [  8] setprop 200 ............................. busyRepeating = 1
+  [ 11] getprop 20 .............................. <mouseObjects>
+  [ 13] peek 0
+  [ 15] pusharglist 1
+  [ 17] extcall 175
+  [ 20] pushint8 1
+  [ 22] peek 0
+  [ 24] peek 2
+  [ 26] lteq
+  [ 27] jmpifz [ 65] ............................ repeat with tmpObj in mouseObjects
+  [ 30] peek 2
+  [ 32] peek 1
+  [ 34] pusharglist 2
+  [ 36] extcall 23
+  [ 38] setlocal 8
+  [ 40] getlocal 8 .............................. <tmpObj>
+  [ 42] getobjprop 210 .......................... <tmpObj.type>
+  [ 45] getparam 8 .............................. <argType>
+  [ 47] eq ...................................... <tmpObj.type = argType>
+  [ 48] jmpifz [ 59] ............................ if tmpObj.type = argType then
+  [ 51] getlocal 8 .............................. <tmpObj>
+  [ 53] getparam 16 ............................. <YesNo>
+  [ 55] pusharglistnoret 2 ...................... <tmpObj, YesNo>
+  [ 57] localcall 2 ............................. activate(tmpObj, YesNo)
+  [ 59] pushint8 1
+  [ 61] add
+  [ 62] endrepeat [ 22]
+  [ 65] pop 3
+  [ 67] getlocal 0 .............................. <tmpBusyRepeating>
+  [ 69] setprop 200 ............................. busyRepeating = tmpBusyRepeating
+  [ 72] ret
+end
+
+on timeTick me
+  [  0] getprop 164 ............................. <Active>
+  [  3] pushzero ................................ <0>
+  [  4] eq ...................................... <Active = 0>
+  [  5] jmpifz [  9] ............................ if Active = 0 then
+  [  8] ret ..................................... exit
+  [  9] getprop 201 ............................. <dismissingClicks>
+  [ 12] pushzero ................................ <0>
+  [ 13] gt ...................................... <dismissingClicks > 0>
+  [ 14] jmpifz [ 27] ............................ if dismissingClicks > 0 then
+  [ 17] getprop 201 ............................. <dismissingClicks>
+  [ 20] pushint8 1 .............................. <1>
+  [ 23] sub ..................................... <dismissingClicks - 1>
+  [ 24] setprop 201 ............................. dismissingClicks = dismissingClicks - 1
+  [ 27] pushint8 1 .............................. <1>
+  [ 30] setprop 200 ............................. busyRepeating = 1
+  [ 33] pusharglist 0 ........................... <>
+  [ 35] thebuiltin 211 .......................... <the mouseH>
+  [ 38] pusharglist 0 ........................... <>
+  [ 40] thebuiltin 212 .......................... <the mouseV>
+  [ 43] pusharglist 2 ........................... <the mouseH, the mouseV>
+  [ 45] extcall 75 .............................. <point(the mouseH, the mouseV)>
+  [ 48] setprop 202 ............................. mouseLoc = point(the mouseH, the mouseV)
+  [ 51] getprop 202 ............................. <mouseLoc>
+  [ 54] getprop 204 ............................. <stageRect>
+  [ 57] pusharglist 2 ........................... <mouseLoc, stageRect>
+  [ 59] extcall 213 ............................. <inside(mouseLoc, stageRect)>
+  [ 62] setlocal 0 .............................. tmpIsOnStage = inside(mouseLoc, stageRect)
+  [ 64] getlocal 0 .............................. <tmpIsOnStage>
+  [ 66] getprop 214 ............................. <mouseWasOnStage>
+  [ 69] not ..................................... <not mouseWasOnStage>
+  [ 70] and ..................................... <tmpIsOnStage and not mouseWasOnStage>
+  [ 71] jmpifz [ 84] ............................ if tmpIsOnStage and not mouseWasOnStage then
+  [ 74] getglobal 66 ............................ <gUseful>
+  [ 77] getobjprop 28 ........................... <gUseful.cursors>
+  [ 79] pusharglistnoret 1 ...................... <gUseful.cursors>
+  [ 81] extcall 215 ............................. display(gUseful.cursors)
+  [ 84] getlocal 0 .............................. <tmpIsOnStage>
+  [ 86] setprop 214 ............................. mouseWasOnStage = tmpIsOnStage
+  [ 89] pusharglist 0 ........................... <>
+  [ 91] extcall 217 ............................. <VOID>
+  [ 94] setprop 216 ............................. cursorChanged = VOID
+  [ 97] getprop 20 .............................. <mouseObjects>
+  [ 99] pusharglist 1 ........................... <mouseObjects>
+  [101] extcall 175 ............................. <count(mouseObjects)>
+  [104] setlocal 8
+  [106] getlocal 8
+  [108] pushint8 1 .............................. <1>
+  [111] gteq
+  [112] jmpifz [156] ............................ repeat with n = count(mouseObjects) down to 1
+  [115] getprop 20 .............................. <mouseObjects>
+  [117] getlocal 8 .............................. <n>
+  [119] pusharglist 2 ........................... <mouseObjects, n>
+  [121] extcall 23 .............................. <getAt(mouseObjects, n)>
+  [123] setlocal 16 ............................. tmpObj = getAt(mouseObjects, n)
+  [125] getlocal 16 ............................. <tmpObj>
+  [127] getprop 202 ............................. <mouseLoc>
+  [130] pusharglist 2 ........................... <tmpObj, mouseLoc>
+  [132] extcall 218 ............................. <check(tmpObj, mouseLoc)>
+  [135] setlocal 24 ............................. tmpCheck = check(tmpObj, mouseLoc)
+  [137] getlocal 24 ............................. <tmpCheck>
+  [139] jmpifz [145] ............................ if tmpCheck then
+  [142] jmp [156] ............................... exit repeat
+  [145] pushint8 -1
+  [148] getlocal 8
+  [150] add
+  [151] setlocal 8
+  [153] endrepeat [106]
+  [156] getglobal 66 ............................ <gUseful>
+  [159] pusharglist 1 ........................... <gUseful>
+  [161] extcall 34 .............................. <objectp(gUseful)>
+  [164] jmpifz [180] ............................ if objectp(gUseful) then
+  [167] getglobal 66 ............................ <gUseful>
+  [170] getobjprop 28 ........................... <gUseful.cursors>
+  [172] getprop 216 ............................. <cursorChanged>
+  [175] pusharglistnoret 2 ...................... <gUseful.cursors, cursorChanged>
+  [177] extcall 219 ............................. setCursor(gUseful.cursors, cursorChanged)
+  [180] getparam 0 .............................. <me>
+  [182] pusharglistnoret 1 ...................... <me>
+  [184] localcall 4 ............................. addObjects(me)
+  [186] getparam 0 .............................. <me>
+  [188] pusharglistnoret 1 ...................... <me>
+  [190] localcall 6 ............................. deleteObjects(me)
+  [192] pushzero ................................ <0>
+  [193] setprop 200 ............................. busyRepeating = 0
+  [196] getprop 202 ............................. <mouseLoc>
+  [199] setprop 203 ............................. lastMouseLoc = mouseLoc
+  [202] ret
+end
+
+on mouseDown me, argPoint
+  [  0] getparam 8 .............................. <argPoint>
+  [  2] setprop 202 ............................. mouseLoc = argPoint
+  [  5] getprop 164 ............................. <Active>
+  [  8] pushzero ................................ <0>
+  [  9] eq ...................................... <Active = 0>
+  [ 10] jmpifz [ 14] ............................ if Active = 0 then
+  [ 13] ret ..................................... exit
+  [ 14] getprop 201 ............................. <dismissingClicks>
+  [ 17] jmpifz [ 21] ............................ if dismissingClicks then
+  [ 20] ret ..................................... exit
+  [ 21] pushint8 1 .............................. <1>
+  [ 24] setprop 200 ............................. busyRepeating = 1
+  [ 27] getprop 198 ............................. <latestMouseButton>
+  [ 30] pushsymb 223 ............................ <#down>
+  [ 33] eq ...................................... <latestMouseButton = #down>
+  [ 34] jmpifz [ 38] ............................ if latestMouseButton = #down then
+  [ 37] ret ..................................... exit
+  [ 38] pushsymb 223 ............................ <#down>
+  [ 41] setprop 198 ............................. latestMouseButton = #down
+  [ 44] getprop 20 .............................. <mouseObjects>
+  [ 46] pusharglist 1 ........................... <mouseObjects>
+  [ 48] extcall 175 ............................. <count(mouseObjects)>
+  [ 51] setlocal 0
+  [ 53] getlocal 0
+  [ 55] pushint8 1 .............................. <1>
+  [ 58] gteq
+  [ 59] jmpifz [ 97] ............................ repeat with n = count(mouseObjects) down to 1
+  [ 62] getprop 20 .............................. <mouseObjects>
+  [ 64] getlocal 0 .............................. <n>
+  [ 66] pusharglist 2 ........................... <mouseObjects, n>
+  [ 68] extcall 23 .............................. <getAt(mouseObjects, n)>
+  [ 70] setlocal 8 .............................. tmpObj = getAt(mouseObjects, n)
+  [ 72] getlocal 8 .............................. <tmpObj>
+  [ 74] getprop 202 ............................. <mouseLoc>
+  [ 77] pusharglist 2 ........................... <tmpObj, mouseLoc>
+  [ 79] extcall 224 ............................. <checkDown(tmpObj, mouseLoc)>
+  [ 82] jmpifz [ 86] ............................ if checkDown(tmpObj, mouseLoc) then
+  [ 85] ret ..................................... exit
+  [ 86] pushint8 -1
+  [ 89] getlocal 0
+  [ 91] add
+  [ 92] setlocal 0
+  [ 94] endrepeat [ 53]
+  [ 97] getparam 0 .............................. <me>
+  [ 99] pusharglistnoret 1 ...................... <me>
+  [101] localcall 4 ............................. addObjects(me)
+  [103] getparam 0 .............................. <me>
+  [105] pusharglistnoret 1 ...................... <me>
+  [107] localcall 6 ............................. deleteObjects(me)
+  [109] pushzero ................................ <0>
+  [110] setprop 200 ............................. busyRepeating = 0
+  [113] ret
+end
+
+on mouseUp me, argPoint
+  [  0] getparam 8 .............................. <argPoint>
+  [  2] setprop 202 ............................. mouseLoc = argPoint
+  [  5] getprop 164 ............................. <Active>
+  [  8] pushzero ................................ <0>
+  [  9] eq ...................................... <Active = 0>
+  [ 10] jmpifz [ 14] ............................ if Active = 0 then
+  [ 13] ret ..................................... exit
+  [ 14] pushint8 1 .............................. <1>
+  [ 17] setprop 200 ............................. busyRepeating = 1
+  [ 20] getprop 198 ............................. <latestMouseButton>
+  [ 23] pushsymb 231 ............................ <#up>
+  [ 26] eq ...................................... <latestMouseButton = #up>
+  [ 27] jmpifz [ 31] ............................ if latestMouseButton = #up then
+  [ 30] ret ..................................... exit
+  [ 31] pushsymb 231 ............................ <#up>
+  [ 34] setprop 198 ............................. latestMouseButton = #up
+  [ 37] pushint8 1 .............................. <1>
+  [ 40] setlocal 0 .............................. tmpOKToClick = 1
+  [ 42] getprop 20 .............................. <mouseObjects>
+  [ 44] pusharglist 1 ........................... <mouseObjects>
+  [ 46] extcall 175 ............................. <count(mouseObjects)>
+  [ 49] setlocal 8
+  [ 51] getlocal 8
+  [ 53] pushint8 1 .............................. <1>
+  [ 56] gteq
+  [ 57] jmpifz [ 99] ............................ repeat with n = count(mouseObjects) down to 1
+  [ 60] getprop 20 .............................. <mouseObjects>
+  [ 62] getlocal 8 .............................. <n>
+  [ 64] pusharglist 2 ........................... <mouseObjects, n>
+  [ 66] extcall 23 .............................. <getAt(mouseObjects, n)>
+  [ 68] setlocal 16 ............................. tmpObj = getAt(mouseObjects, n)
+  [ 70] getlocal 16 ............................. <tmpObj>
+  [ 72] getprop 202 ............................. <mouseLoc>
+  [ 75] getlocal 0 .............................. <tmpOKToClick>
+  [ 77] pusharglist 3 ........................... <tmpObj, mouseLoc, tmpOKToClick>
+  [ 79] extcall 232 ............................. <checkUp(tmpObj, mouseLoc, tmpOKToClick)>
+  [ 82] jmpifz [ 88] ............................ if checkUp(tmpObj, mouseLoc, tmpOKToClick) then
+  [ 85] pushzero ................................ <0>
+  [ 86] setlocal 0 .............................. tmpOKToClick = 0
+  [ 88] pushint8 -1
+  [ 91] getlocal 8
+  [ 93] add
+  [ 94] setlocal 8
+  [ 96] endrepeat [ 51]
+  [ 99] getparam 0 .............................. <me>
+  [101] pusharglistnoret 1 ...................... <me>
+  [103] localcall 4 ............................. addObjects(me)
+  [105] getparam 0 .............................. <me>
+  [107] pusharglistnoret 1 ...................... <me>
+  [109] localcall 6 ............................. deleteObjects(me)
+  [111] pushzero ................................ <0>
+  [112] setprop 200 ............................. busyRepeating = 0
+  [115] ret
+end
+
+on dismissClicks me, argIsTRUE
+  [  0] getparam 8 .............................. <argIsTRUE>
+  [  2] setprop 201 ............................. dismissingClicks = argIsTRUE
+  [  5] ret
+end
+
+on cursorChange me, argWhich
+  [  0] getprop 216 ............................. <cursorChanged>
+  [  3] pusharglist 1 ........................... <cursorChanged>
+  [  5] extcall 104 ............................. <voidp(cursorChanged)>
+  [  8] jmpifz [ 16] ............................ if voidp(cursorChanged) then
+  [ 11] getparam 8 .............................. <argWhich>
+  [ 13] setprop 216 ............................. cursorChanged = argWhich
+  [ 16] ret
+end
+
+on getMouseLoc me
+  [  0] getprop 202 ............................. <mouseLoc>
+  [  3] pusharglistnoret 1 ...................... <mouseLoc>
+  [  5] extcall 32 .............................. return mouseLoc
+  [  8] ret
+end

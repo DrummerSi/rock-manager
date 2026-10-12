@@ -1,0 +1,95 @@
+property itemObj, m_orgClr, m_orgIcon, m_dimmed, m_tmpStoredInstanceList
+
+on new me, argItemObj
+  itemObj = argItemObj
+  m_orgClr = "#999999"
+  m_dimmed = 0
+  return me
+end
+
+on kill me
+  m_tmpStoredInstanceList = 0
+  itemObj = 0
+  return 0
+end
+
+on mouse me, argObj, argWhat
+  if argWhat = #DownOnOther then
+    exit
+  end if
+  if m_dimmed = 1 then
+    exit
+  end if
+  if argWhat = #enter then
+    me.hiliteButton(1)
+  else
+    if argWhat = #Leave then
+      me.hiliteButton(0)
+    else
+      if argWhat = #click then
+        me.hiliteButton(0)
+      end if
+    end if
+  end if
+end
+
+on hiliteButton me, argIsTRUE
+  dlg = itemObj.dialogObj
+  if objectp(dlg) then
+    obj = dlg.getItem(#text)
+    if objectp(obj) then
+      if argIsTRUE = 1 then
+        m_orgClr = obj.getOneProp(#FgColorStr)
+        obj.setOneProp(#FgColorStr, "#FFFFFF")
+      else
+        obj.setOneProp(#FgColorStr, m_orgClr)
+      end if
+    end if
+  end if
+end
+
+on dimButton me, argIsTRUE
+  if argIsTRUE = m_dimmed then
+    exit
+  end if
+  m_dimmed = argIsTRUE
+  dlg = itemObj.dialogObj
+  if objectp(dlg) then
+    obj = dlg.getItem(#text)
+    if m_dimmed then
+      obj.setOneProp(#blend, 50)
+    else
+      obj.setOneProp(#blend, 100)
+    end if
+    obj = dlg.getItem(#BG)
+    if m_dimmed then
+      obj.setOneProp(#windowStyleMemberName, "RockButtonDarkStyle")
+    else
+      obj.setOneProp(#windowStyleMemberName, "RockButtonStyle")
+    end if
+    obj = dlg.getItem(#icon)
+    if voidp(m_orgIcon) then
+      m_orgIcon = obj.getOneProp(#Pic)
+    end if
+    if m_dimmed then
+      obj.setOneProp(#Pic, m_orgIcon & "_dimmed")
+    else
+      obj.setOneProp(#Pic, m_orgIcon)
+    end if
+    if m_dimmed then
+      m_tmpStoredInstanceList = itemObj.scriptInstanceList.duplicate()
+      repeat with n = itemObj.scriptInstanceList.count down to 1
+        if itemObj.scriptInstanceList[n] <> me then
+          itemObj.scriptInstanceList.deleteAt(n)
+        end if
+      end repeat
+    else
+      emptyList(itemObj.scriptInstanceList)
+      repeat with obj in m_tmpStoredInstanceList
+        itemObj.scriptInstanceList.add(obj)
+      end repeat
+      m_tmpStoredInstanceList = 0
+    end if
+    itemObj.setOneProp(#usingMouse, not m_dimmed)
+  end if
+end

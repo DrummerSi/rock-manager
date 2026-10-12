@@ -1,0 +1,52 @@
+property m_startSPNum, m_fullRect, m_stretchSP, m_totalNumReports, m_numReports, m_partDone
+
+on new me, argSP, argTotalNumReports, argExplainStr
+  m_startSPNum = argSP
+  if voidp(m_startSPNum) then
+    m_startSPNum = 120
+    spriteList = member("SpriteList")
+    if spriteList.number > 0 then
+      spriteList = spriteList.text.value
+      if listp(spriteList) then
+        m_startSPNum = spriteList[#Progress]
+      end if
+    end if
+  end if
+  m_partDone = 0.0
+  m_numReports = 0
+  m_totalNumReports = argTotalNumReports
+  if voidp(m_totalNumReports) or (m_totalNumReports < 1) then
+    m_totalNumReports = 1
+  end if
+  SPNum = m_startSPNum
+  sprite(SPNum).member = member("BlackOut")
+  sprite(SPNum).blend = 30
+  sprite(SPNum).rect = rect(0, 0, 1000, 1000)
+  m_fullRect = rect(27, 556, 774, 561)
+  SPNum = SPNum + 1
+  sprite(SPNum).member = member("ProgressBarBGPic")
+  sprite(SPNum).rect = m_fullRect
+  SPNum = SPNum + 1
+  m_stretchSP = sprite(SPNum)
+  m_stretchSP.member = member("ProgressBarPic")
+  return me
+end
+
+on kill me
+  repeat with n = 1 to 3
+    sprite(m_startSPNum + n - 1).member = member("Dummy")
+    sprite(m_startSPNum + n - 1).blend = 100
+    sprite(m_startSPNum + n - 1).stretch = 0
+  end repeat
+  return 0
+end
+
+on progressReport me, argPartDone
+  m_numReports = m_numReports + 1
+  if voidp(argPartDone) then
+    argPartDone = float(m_numReports) / m_totalNumReports
+  end if
+  m_partDone = argPartDone
+  m_stretchSP.rect = rect(m_fullRect[1], m_fullRect[2], (m_partDone * (m_fullRect[3] - m_fullRect[1])) + m_fullRect[1], m_fullRect[4])
+  updateStage()
+end

@@ -1,0 +1,144 @@
+property m_loadHanderInfo
+global gSwitches, gRock
+
+on new me
+  return me
+end
+
+on kill me
+  return 0
+end
+
+on save me
+  retList = [:]
+  repeat with n = 1 to gSwitches.m_saveClasses.count
+    className = gSwitches.m_saveClasses.getPropAt(n)
+    saveConditions = gSwitches.getPropInfo([className], #saveConditions)
+    if saveConditions.length > 0 then
+      saveConditions = gRock.m_executor.m_parseAndCalcObj.parseExpression(saveConditions)
+    else
+      saveConditions = []
+    end if
+    lst = gRock.m_classManager.m_objsByClass.getaProp(className)
+    if not listp(lst) then
+      next repeat
+    end if
+    groupSave = [:]
+    repeat with obj in lst
+      if saveConditions.count > 0 then
+        if gRock.m_executor.m_parseAndCalcObj.calc(saveConditions, [:], VOID, obj) = 0 then
+          next repeat
+        end if
+      end if
+      objSave = me.saveObj(obj, [className])
+      if not symbolp(obj.ID) or (obj.ID = #none) then
+        alert("Unregged object" && string(obj.className))
+        next repeat
+      end if
+      groupSave.addProp(obj.ID, objSave)
+    end repeat
+    retList.addProp(className, groupSave)
+  end repeat
+  return retList
+end
+
+on saveObj me, argObj, argPropPath, argForceSaveAllVars
+  objSave = [:]
+  props = gRock.m_classManager.getPropsInClass(argObj.className)
+  repeat with n = 1 to props.count
+    prop = props.getPropAt(n)
+    argPropPath.add(prop)
+    saveIt = gRock.m_classManager.isSaveProp(argPropPath)
+    val = gRock.m_classManager.getVariable(argObj, prop)
+    if ilk(val) = #instance then
+      if saveIt then
+        tmp = me.saveObj(val, argPropPath, #Force)
+      else
+        tmp = me.saveObj(val, argPropPath, argForceSaveAllVars)
+      end if
+      if tmp.count then
+        objSave.addProp(prop, tmp)
+      end if
+    else
+      if saveIt or (argForceSaveAllVars = #Force) then
+        if ilk(val) = #string then
+          val = fixQuotesForSave(val)
+        end if
+        objSave.addProp(prop, val)
+      end if
+    end if
+    argPropPath.deleteAt(argPropPath.count)
+  end repeat
+  if argObj.handler(#save) then
+    tmp = argObj.save()
+    if tmp.count then
+      mergeLists(objSave, [#save: tmp])
+    end if
+  end if
+  if objectp(argObj.getaProp(#ancestor)) then
+    tmp = me.saveObj(argObj.ancestor, argPropPath, argForceSaveAllVars)
+    if tmp.count then
+      objSave.addProp(#ancestor, tmp)
+    end if
+  end if
+  return objSave
+end
+
+on load me, argList
+  if not listp(argList) then
+    argList = [:]
+  end if
+  m_loadHanderInfo = []
+  repeat with n = 1 to argList.count
+    className = argList.getPropAt(n)
+    lst = argList[n]
+    repeat with m = 1 to lst.count
+      ID = lst.getPropAt(m)
+      obj = gRock.m_classManager.getObjByID(ID)
+      if not objectp(obj) then
+        obj = gRock.m_classManager.createObj(className)
+        obj.ID = ID
+      end if
+      me.loadObj(obj, lst[m])
+    end repeat
+  end repeat
+end
+
+on loadObj me, argObj, argList
+  if not listp(argList) then
+    exit
+  end if
+  tmpSpecialSaved = argList[#save]
+  argList.deleteProp(#save)
+  if argObj.handler(#load) then
+    m_loadHanderInfo.add([argObj, tmpSpecialSaved])
+  else
+    if not voidp(tmpSpecialSaved) then
+      pott("Unused save data", tmpSpecialSaved)
+    end if
+  end if
+  repeat with n = 1 to argList.count
+    prop = argList.getPropAt(n)
+    val = argList[n]
+    if prop = #ancestor then
+      me.loadObj(argObj.ancestor, val)
+      next repeat
+    end if
+    Info = gRock.m_classManager.getVarInfo(argObj.className, prop)
+    if listp(Info) then
+      if gRock.m_classManager.isStdType(Info[1]) then
+        setPropInObjOrAncestor(argObj, prop, val)
+      else
+        me.loadObj(argObj.getaProp(prop), val)
+      end if
+      next repeat
+    end if
+    pott("Prop wrong", argObj.ID, prop)
+  end repeat
+end
+
+on callLoad me
+  repeat with tmp in m_loadHanderInfo
+    tmp[1].load(tmp[2])
+  end repeat
+end

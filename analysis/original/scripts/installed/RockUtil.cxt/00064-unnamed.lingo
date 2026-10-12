@@ -1,0 +1,57 @@
+on renderportraits
+  moodlist = [#Angry, #Annoyed, #normal, #Satisfied, #Happy, #Sad, #Bored]
+  renderThese = ["02_bear", "09_bear", "10_bear", "17_bear"]
+  repeat with n = 1 to 32
+    renderThese.add(convItoS(n, 2))
+  end repeat
+  sizes = ["Large", "Medium"]
+  repeat with size in sizes
+    repeat with n = 1 to renderThese.count
+      tmpCast = "Actor" & renderThese[n]
+      tmpInfo = CPgetActorInfo(tmpCast)
+      if tmpInfo.count = 0 then
+        pott("Actor doesn't exist!", tmpCast)
+        next repeat
+      end if
+      repeat with tmpMood in moodlist
+        xxxRenderGubbe(tmpCast, [#Mood: tmpMood], size)
+      end repeat
+      pott(renderThese[n])
+    end repeat
+  end repeat
+  exit
+  if 1 then
+    noOfActors = 32
+    repeat with tmp_actor = 11 to noOfActors
+      repeat with tmp_mood = 1 to moodlist.count
+        xxxRenderGubbe("Actor" & convItoS(tmp_actor, 2), [#Mood: moodlist[tmp_mood]])
+      end repeat
+    end repeat
+  else
+    tmpList = ["02_bear", "09_bear", "10_bear", "17_bear"]
+    repeat with tmp_actor in tmpList
+      repeat with tmp_mood = 1 to moodlist.count
+        xxxRenderGubbe("Actor" & tmp_actor, [#Mood: moodlist[tmp_mood]])
+      end repeat
+    end repeat
+  end if
+end
+
+on xxxRenderGubbe argFile, argFaceSettings, argSuffix
+  if voidp(argFile) then
+    argFile = "Actor03"
+  end if
+  if voidp(argFaceSettings) then
+    argFaceSettings = [#Mood: #Angry]
+  end if
+  if voidp(argSuffix) then
+    argSuffix = "Medium"
+  end if
+  imgPtr = []
+  script("RenderMusicianScript").new(argFile, argFaceSettings, imgPtr, point(0, 0))
+  tmpCastNum = 9
+  tmpNum = 1 + the number of castMembers of castLib tmpCastNum
+  member = member(tmpNum, tmpCastNum)
+  member = newMember(#bitmap, "Portrait_" & argFile & "_" & string(argFaceSettings[#Mood] & "_" & argSuffix), member)
+  member.image = imgPtr[1]
+end

@@ -1,0 +1,101 @@
+property childObj, isExpanded, dialogObj, scrollThisObj, itemObj
+global gUseful
+
+on new me, argItemObj, argChildObj
+  itemObj = argItemObj
+  childObj = argChildObj
+  if voidp(childObj) then
+    childObj = me
+  end if
+  if itemObj.type <> #Dialog then
+    return 0
+  end if
+  return me
+end
+
+on kill me
+  return 0
+end
+
+on render me
+end
+
+on timeTick me
+  me.expand(0)
+  gUseful.frameTimer.deleteObject(me)
+end
+
+on mouse me, argObj, argWhat
+  if argWhat = #DownOnOther then
+    if isExpanded then
+    end if
+    exit
+  end if
+  if argWhat = #down then
+    if not isExpanded then
+    end if
+  else
+    if argWhat = #click then
+      if isExpanded then
+        gUseful.frameTimer.addObject(me)
+      else
+        me.expand(1)
+      end if
+    else
+      if argWhat = #enter then
+      else
+        if argWhat = #Leave then
+        end if
+      end if
+    end if
+  end if
+end
+
+on expand me, argIsTRUE
+  tmpDlg = itemObj.ancestor.masterObj
+  if argIsTRUE then
+    tmpDialogDataMemberName = "DlgRockScrollSetData"
+    tmpObj = tmpDlg.addItem([#ID: #TmpDroppedDialog, #type: #Dialog, #ch: 100, #dialogDataMemberName: tmpDialogDataMemberName, #inOffsetRect: rect(itemObj.calcRect[1], itemObj.calcRect[2], itemObj.calcRect[3], 0), #rel: [0, 0, 0, #Auto], #usingTopMouse: 1])
+    tmpObj.mouseObj.noPassButton = 0
+    tmpObj.mouseObj.noPassRoll = 0
+    tmpObj.mouseObj.overMouseObj.noPassButton = 0
+    scrollThisObj = tmpObj.dialogObj.getItem(#ScrollThis)
+    tmpScrollWnd = me.createScrollWnd(VOID, tmpObj.ancestor.masterObj)
+    scrollThisObj.attachDlg(tmpScrollWnd)
+    scrollThisObj.scriptInstanceList.add(me)
+    scrollThisObj.setOneProp(#usingTopMouse, 1)
+    scrollThisObj.mouseObj.noPassButton = 0
+    scrollThisObj.mouseObj.noPassRoll = 0
+    scrollThisObj.mouseObj.overMouseObj.noPassButton = 0
+    scrollThisObj.setOneProp(#rel, [0, 0, 0, 0])
+    scrollThisObj.setOneProp(#inOffsetRect, rect(0, 0, itemObj.calcRect[3] - itemObj.calcRect[1] - 50, 100))
+  else
+    tmpDlg.deleteItem(#TmpDroppedDialog)
+  end if
+  isExpanded = argIsTRUE
+end
+
+on createScrollWnd me, argInfoList, argTopWnd, argReportObj
+  global gUseful
+  argInfoList = [[#icon: "icon_film01", #text: "icon_film01!"], [#icon: "icon_text01", #text: "icon_text01!"]]
+  scrDlgObj = script("Dialog").new([#image: argTopWnd.myImagePtr, #OKtoResize: 0, #ID: #DlgDlg])
+  gUseful.frameTimer.deleteObject(scrDlgObj)
+  repeat with n = 1 to argInfoList.count()
+    itemLst = argInfoList[n]
+    ID = itemLst[#ID]
+    if voidp(ID) then
+      ID = symbol("ListItem" & string(n))
+    end if
+    tmpLst = [#ID: ID, #ch: n, #type: #Dialog, #dialogDataMemberName: "DlgScrollItemData"]
+    scrDlgObj.addItem(tmpLst)
+    tmpItemObj = scrDlgObj.getItem(ID)
+    textObj = tmpItemObj.dialogObj.getItem(#text)
+    textObj.setOneProp(#editData, itemLst[#text])
+    tmpItemObj.setOneProp(#inOffsetRect, [0, (n - 1) * 30, 150, 0])
+    tmpItemObj.setOneProp(#rel, [0, 0, 0, #Auto])
+    if objectp(argReportObj) then
+      tmpItemObj.scriptInstanceList.addAt(1, argReportObj)
+    end if
+  end repeat
+  return scrDlgObj
+end

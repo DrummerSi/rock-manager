@@ -1,0 +1,258 @@
+property itemObj, m_orgClr, m_orgIcon, m_dimmed, m_tmpStoredInstanceList
+
+on new me, argItemObj
+  [  0] getparam 8 .............................. <argItemObj>
+  [  2] setprop 564 ............................. itemObj = argItemObj
+  [  5] pushcons 0 .............................. <"#999999">
+  [  7] setprop 1486 ............................ m_orgClr = "#999999"
+  [ 10] pushzero ................................ <0>
+  [ 11] setprop 1487 ............................ m_dimmed = 0
+  [ 14] getparam 0 .............................. <me>
+  [ 16] pusharglistnoret 1 ...................... <me>
+  [ 18] extcall 21 .............................. return me
+  [ 20] ret
+end
+
+on kill me
+  [  0] pushzero ................................ <0>
+  [  1] setprop 1488 ............................ m_tmpStoredInstanceList = 0
+  [  4] pushzero ................................ <0>
+  [  5] setprop 564 ............................. itemObj = 0
+  [  8] pushzero ................................ <0>
+  [  9] pusharglistnoret 1 ...................... <0>
+  [ 11] extcall 21 .............................. return 0
+  [ 13] ret
+end
+
+on mouse me, argObj, argWhat
+  [  0] getparam 16 ............................. <argWhat>
+  [  2] pushsymb 833 ............................ <#DownOnOther>
+  [  5] eq ...................................... <argWhat = #DownOnOther>
+  [  6] jmpifz [ 10] ............................ if argWhat = #DownOnOther then
+  [  9] ret ..................................... exit
+  [ 10] getprop 1487 ............................ <m_dimmed>
+  [ 13] pushint8 1 .............................. <1>
+  [ 16] eq ...................................... <m_dimmed = 1>
+  [ 17] jmpifz [ 21] ............................ if m_dimmed = 1 then
+  [ 20] ret ..................................... exit
+  [ 21] getparam 16 ............................. <argWhat>
+  [ 23] pushsymb 871 ............................ <#enter>
+  [ 26] eq ...................................... <argWhat = #enter>
+  [ 27] jmpifz [ 43] ............................ if argWhat = #enter then / else
+  [ 30] getparam 0 .............................. <me>
+  [ 32] pushint8 1 .............................. <1>
+  [ 35] pusharglistnoret 2 ...................... <me, 1>
+  [ 37] objcall 1484 ............................ me.hiliteButton(1)
+  [ 40] jmp [ 80]
+  [ 43] getparam 16 ............................. <argWhat>
+  [ 45] pushsymb 872 ............................ <#Leave>
+  [ 48] eq ...................................... <argWhat = #Leave>
+  [ 49] jmpifz [ 63] ............................ if argWhat = #Leave then / else
+  [ 52] getparam 0 .............................. <me>
+  [ 54] pushzero ................................ <0>
+  [ 55] pusharglistnoret 2 ...................... <me, 0>
+  [ 57] objcall 1484 ............................ me.hiliteButton(0)
+  [ 60] jmp [ 80]
+  [ 63] getparam 16 ............................. <argWhat>
+  [ 65] pushsymb 858 ............................ <#click>
+  [ 68] eq ...................................... <argWhat = #click>
+  [ 69] jmpifz [ 80] ............................ if argWhat = #click then
+  [ 72] getparam 0 .............................. <me>
+  [ 74] pushzero ................................ <0>
+  [ 75] pusharglistnoret 2 ...................... <me, 0>
+  [ 77] objcall 1484 ............................ me.hiliteButton(0)
+  [ 80] ret
+end
+
+on hiliteButton me, argIsTRUE
+  [  0] getprop 564 ............................. <itemObj>
+  [  3] getobjprop 1193 ......................... <itemObj.dialogObj>
+  [  6] setlocal 0 .............................. dlg = itemObj.dialogObj
+  [  8] getlocal 0 .............................. <dlg>
+  [ 10] pusharglist 1 ........................... <dlg>
+  [ 12] extcall 71 .............................. <objectp(dlg)>
+  [ 15] jmpifz [ 90] ............................ if objectp(dlg) then
+  [ 18] getlocal 0 .............................. <dlg>
+  [ 20] pushsymb 297 ............................ <#text>
+  [ 23] pusharglist 2 ........................... <dlg, #text>
+  [ 25] objcall 1194 ............................ <dlg.getItem(#text)>
+  [ 28] setlocal 8 .............................. obj = dlg.getItem(#text)
+  [ 30] getlocal 8 .............................. <obj>
+  [ 32] pusharglist 1 ........................... <obj>
+  [ 34] extcall 71 .............................. <objectp(obj)>
+  [ 37] jmpifz [ 90] ............................ if objectp(obj) then
+  [ 40] getparam 8 .............................. <argIsTRUE>
+  [ 42] pushint8 1 .............................. <1>
+  [ 45] eq ...................................... <argIsTRUE = 1>
+  [ 46] jmpifz [ 77] ............................ if argIsTRUE = 1 then / else
+  [ 49] getlocal 8 .............................. <obj>
+  [ 51] pushsymb 1214 ........................... <#FgColorStr>
+  [ 54] pusharglist 2 ........................... <obj, #FgColorStr>
+  [ 56] objcall 1226 ............................ <obj.getOneProp(#FgColorStr)>
+  [ 59] setprop 1486 ............................ m_orgClr = obj.getOneProp(#FgColorStr)
+  [ 62] getlocal 8 .............................. <obj>
+  [ 64] pushsymb 1214 ........................... <#FgColorStr>
+  [ 67] pushcons 8 .............................. <"#FFFFFF">
+  [ 69] pusharglistnoret 3 ...................... <obj, #FgColorStr, "#FFFFFF">
+  [ 71] objcall 1195 ............................ obj.setOneProp(#FgColorStr, "#FFFFFF")
+  [ 74] jmp [ 90]
+  [ 77] getlocal 8 .............................. <obj>
+  [ 79] pushsymb 1214 ........................... <#FgColorStr>
+  [ 82] getprop 1486 ............................ <m_orgClr>
+  [ 85] pusharglistnoret 3 ...................... <obj, #FgColorStr, m_orgClr>
+  [ 87] objcall 1195 ............................ obj.setOneProp(#FgColorStr, m_orgClr)
+  [ 90] ret
+end
+
+on dimButton me, argIsTRUE
+  [  0] getparam 8 .............................. <argIsTRUE>
+  [  2] getprop 1487 ............................ <m_dimmed>
+  [  5] eq ...................................... <argIsTRUE = m_dimmed>
+  [  6] jmpifz [ 10] ............................ if argIsTRUE = m_dimmed then
+  [  9] ret ..................................... exit
+  [ 10] getparam 8 .............................. <argIsTRUE>
+  [ 12] setprop 1487 ............................ m_dimmed = argIsTRUE
+  [ 15] getprop 564 ............................. <itemObj>
+  [ 18] getobjprop 1193 ......................... <itemObj.dialogObj>
+  [ 21] setlocal 0 .............................. dlg = itemObj.dialogObj
+  [ 23] getlocal 0 .............................. <dlg>
+  [ 25] pusharglist 1 ........................... <dlg>
+  [ 27] extcall 71 .............................. <objectp(dlg)>
+  [ 30] jmpifz [369] ............................ if objectp(dlg) then
+  [ 33] getlocal 0 .............................. <dlg>
+  [ 35] pushsymb 297 ............................ <#text>
+  [ 38] pusharglist 2 ........................... <dlg, #text>
+  [ 40] objcall 1194 ............................ <dlg.getItem(#text)>
+  [ 43] setlocal 8 .............................. obj = dlg.getItem(#text)
+  [ 45] getprop 1487 ............................ <m_dimmed>
+  [ 48] jmpifz [ 67] ............................ if m_dimmed then / else
+  [ 51] getlocal 8 .............................. <obj>
+  [ 53] pushsymb 1083 ........................... <#blend>
+  [ 56] pushint8 50 ............................. <50>
+  [ 59] pusharglistnoret 3 ...................... <obj, #blend, 50>
+  [ 61] objcall 1195 ............................ obj.setOneProp(#blend, 50)
+  [ 64] jmp [ 80]
+  [ 67] getlocal 8 .............................. <obj>
+  [ 69] pushsymb 1083 ........................... <#blend>
+  [ 72] pushint8 100 ............................ <100>
+  [ 75] pusharglistnoret 3 ...................... <obj, #blend, 100>
+  [ 77] objcall 1195 ............................ obj.setOneProp(#blend, 100)
+  [ 80] getlocal 0 .............................. <dlg>
+  [ 82] pushsymb 1172 ........................... <#BG>
+  [ 85] pusharglist 2 ........................... <dlg, #BG>
+  [ 87] objcall 1194 ............................ <dlg.getItem(#BG)>
+  [ 90] setlocal 8 .............................. obj = dlg.getItem(#BG)
+  [ 92] getprop 1487 ............................ <m_dimmed>
+  [ 95] jmpifz [113] ............................ if m_dimmed then / else
+  [ 98] getlocal 8 .............................. <obj>
+  [100] pushsymb 1489 ........................... <#windowStyleMemberName>
+  [103] pushcons 16 ............................. <"RockButtonDarkStyle">
+  [105] pusharglistnoret 3 ...................... <obj, #windowStyleMemberName, "RockButtonDarkStyle">
+  [107] objcall 1195 ............................ obj.setOneProp(#windowStyleMemberName, "RockButtonDarkStyle")
+  [110] jmp [125]
+  [113] getlocal 8 .............................. <obj>
+  [115] pushsymb 1489 ........................... <#windowStyleMemberName>
+  [118] pushcons 24 ............................. <"RockButtonStyle">
+  [120] pusharglistnoret 3 ...................... <obj, #windowStyleMemberName, "RockButtonStyle">
+  [122] objcall 1195 ............................ obj.setOneProp(#windowStyleMemberName, "RockButtonStyle")
+  [125] getlocal 0 .............................. <dlg>
+  [127] pushsymb 1235 ........................... <#icon>
+  [130] pusharglist 2 ........................... <dlg, #icon>
+  [132] objcall 1194 ............................ <dlg.getItem(#icon)>
+  [135] setlocal 8 .............................. obj = dlg.getItem(#icon)
+  [137] getprop 1490 ............................ <m_orgIcon>
+  [140] pusharglist 1 ........................... <m_orgIcon>
+  [142] extcall 68 .............................. <voidp(m_orgIcon)>
+  [145] jmpifz [161] ............................ if voidp(m_orgIcon) then
+  [148] getlocal 8 .............................. <obj>
+  [150] pushsymb 1173 ........................... <#Pic>
+  [153] pusharglist 2 ........................... <obj, #Pic>
+  [155] objcall 1226 ............................ <obj.getOneProp(#Pic)>
+  [158] setprop 1490 ............................ m_orgIcon = obj.getOneProp(#Pic)
+  [161] getprop 1487 ............................ <m_dimmed>
+  [164] jmpifz [186] ............................ if m_dimmed then / else
+  [167] getlocal 8 .............................. <obj>
+  [169] pushsymb 1173 ........................... <#Pic>
+  [172] getprop 1490 ............................ <m_orgIcon>
+  [175] pushcons 32 ............................. <"_dimmed">
+  [177] joinstr ................................. <m_orgIcon & "_dimmed">
+  [178] pusharglistnoret 3 ...................... <obj, #Pic, m_orgIcon & "_dimmed">
+  [180] objcall 1195 ............................ obj.setOneProp(#Pic, m_orgIcon & "_dimmed")
+  [183] jmp [199]
+  [186] getlocal 8 .............................. <obj>
+  [188] pushsymb 1173 ........................... <#Pic>
+  [191] getprop 1490 ............................ <m_orgIcon>
+  [194] pusharglistnoret 3 ...................... <obj, #Pic, m_orgIcon>
+  [196] objcall 1195 ............................ obj.setOneProp(#Pic, m_orgIcon)
+  [199] getprop 1487 ............................ <m_dimmed>
+  [202] jmpifz [287] ............................ if m_dimmed then / else
+  [205] getprop 564 ............................. <itemObj>
+  [208] getobjprop 1182 ......................... <itemObj.scriptInstanceList>
+  [211] pusharglist 1 ........................... <itemObj.scriptInstanceList>
+  [213] objcall 44 .............................. <itemObj.scriptInstanceList.duplicate()>
+  [216] setprop 1488 ............................ m_tmpStoredInstanceList = itemObj.scriptInstanceList.duplicate()
+  [219] getprop 564 ............................. <itemObj>
+  [222] pushsymb 1182 ........................... <#scriptInstanceList>
+  [225] pusharglist 2 ........................... <itemObj, #scriptInstanceList>
+  [227] objcall 32 .............................. <itemObj.scriptInstanceList.count>
+  [230] setlocal 16
+  [232] getlocal 16
+  [234] pushint8 1 .............................. <1>
+  [237] gteq
+  [238] jmpifz [284] ............................ repeat with n = itemObj.scriptInstanceList.count down to 1
+  [241] getprop 564 ............................. <itemObj>
+  [244] getobjprop 1182 ......................... <itemObj.scriptInstanceList>
+  [247] getlocal 16 ............................. <n>
+  [249] pusharglist 2 ........................... <itemObj.scriptInstanceList, n>
+  [251] objcall 34 .............................. <itemObj.scriptInstanceList[n]>
+  [254] getparam 0 .............................. <me>
+  [256] nteq .................................... <itemObj.scriptInstanceList[n] <> me>
+  [257] jmpifz [273] ............................ if itemObj.scriptInstanceList[n] <> me then
+  [260] getprop 564 ............................. <itemObj>
+  [263] getobjprop 1182 ......................... <itemObj.scriptInstanceList>
+  [266] getlocal 16 ............................. <n>
+  [268] pusharglistnoret 2 ...................... <itemObj.scriptInstanceList, n>
+  [270] objcall 100 ............................. itemObj.scriptInstanceList.deleteAt(n)
+  [273] pushint8 -1
+  [276] getlocal 16
+  [278] add
+  [279] setlocal 16
+  [281] endrepeat [232]
+  [284] jmp [354]
+  [287] getprop 564 ............................. <itemObj>
+  [290] getobjprop 1182 ......................... <itemObj.scriptInstanceList>
+  [293] pusharglistnoret 1 ...................... <itemObj.scriptInstanceList>
+  [295] extcall 744 ............................. emptyList(itemObj.scriptInstanceList)
+  [298] getprop 1488 ............................ <m_tmpStoredInstanceList>
+  [301] peek 0
+  [303] pusharglist 1
+  [305] extcall 32
+  [308] pushint8 1
+  [310] peek 0
+  [312] peek 2
+  [314] lteq
+  [315] jmpifz [348] ............................ repeat with obj in m_tmpStoredInstanceList
+  [318] peek 2
+  [320] peek 1
+  [322] pusharglist 2
+  [324] extcall 34
+  [327] setlocal 8
+  [329] getprop 564 ............................. <itemObj>
+  [332] getobjprop 1182 ......................... <itemObj.scriptInstanceList>
+  [335] getlocal 8 .............................. <obj>
+  [337] pusharglistnoret 2 ...................... <itemObj.scriptInstanceList, obj>
+  [339] objcall 50 .............................. itemObj.scriptInstanceList.add(obj)
+  [342] pushint8 1
+  [344] add
+  [345] endrepeat [310]
+  [348] pop 3
+  [350] pushzero ................................ <0>
+  [351] setprop 1488 ............................ m_tmpStoredInstanceList = 0
+  [354] getprop 564 ............................. <itemObj>
+  [357] pushsymb 1177 ........................... <#usingMouse>
+  [360] getprop 1487 ............................ <m_dimmed>
+  [363] not ..................................... <not m_dimmed>
+  [364] pusharglistnoret 3 ...................... <itemObj, #usingMouse, not m_dimmed>
+  [366] objcall 1195 ............................ itemObj.setOneProp(#usingMouse, not m_dimmed)
+  [369] ret
+end

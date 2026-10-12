@@ -1,0 +1,96 @@
+property m_waitingToSpeak, m_numFramesLeft
+global gRock, gUseful
+
+on new me
+  [  0] getglobal 12 ............................ <gUseful>
+  [  2] getobjprop 65 ........................... <gUseful.frameTimer>
+  [  5] getparam 0 .............................. <me>
+  [  7] pusharglistnoret 2 ...................... <gUseful.frameTimer, me>
+  [  9] objcall 282 ............................. gUseful.frameTimer.addObject(me)
+  [ 12] pushzero ................................ <0>
+  [ 13] setprop 2615 ............................ m_waitingToSpeak = 0
+  [ 16] getparam 0 .............................. <me>
+  [ 18] pusharglistnoret 1 ...................... <me>
+  [ 20] extcall 69 .............................. return me
+  [ 23] ret
+end
+
+on kill me
+  [  0] getglobal 12 ............................ <gUseful>
+  [  2] getobjprop 65 ........................... <gUseful.frameTimer>
+  [  5] getparam 0 .............................. <me>
+  [  7] pusharglistnoret 2 ...................... <gUseful.frameTimer, me>
+  [  9] objcall 280 ............................. gUseful.frameTimer.deleteObject(me)
+  [ 12] pushzero ................................ <0>
+  [ 13] pusharglistnoret 1 ...................... <0>
+  [ 15] extcall 69 .............................. return 0
+  [ 18] ret
+end
+
+on Speak me, argSndName
+  [  0] getparam 8 .............................. <argSndName>
+  [  2] pushcons 0 .............................. <EMPTY>
+  [  4] eq ...................................... <argSndName = EMPTY>
+  [  5] getparam 8 .............................. <argSndName>
+  [  7] pusharglist 1 ........................... <argSndName>
+  [  9] extcall 13 .............................. <stringp(argSndName)>
+  [ 11] not ..................................... <not stringp(argSndName)>
+  [ 12] or ...................................... <(argSndName = EMPTY) or not stringp(argSndName)>
+  [ 13] jmpifz [ 59] ............................ if (argSndName = EMPTY) or not stringp(argSndName) then / else
+  [ 16] getglobal 23 ............................ <gRock>
+  [ 18] getobjprop 79 ........................... <gRock.m_context>
+  [ 21] pushsymb 2616 ........................... <#Speaker>
+  [ 24] pusharglist 2 ........................... <gRock.m_context, #Speaker>
+  [ 26] objcall 146 ............................. <gRock.m_context.getFocus(#Speaker)>
+  [ 29] setlocal 0 .............................. faceObj = gRock.m_context.getFocus(#Speaker)
+  [ 31] getlocal 0 .............................. <faceObj>
+  [ 33] pusharglist 1 ........................... <faceObj>
+  [ 35] extcall 8 ............................... <objectp(faceObj)>
+  [ 37] jmpifz [ 52] ............................ if objectp(faceObj) then
+  [ 40] getlocal 0 .............................. <faceObj>
+  [ 42] pushcons 8 .............................. <EMPTY>
+  [ 44] pushsymb 2617 ........................... <#Mp3>
+  [ 47] pusharglistnoret 3 ...................... <faceObj, EMPTY, #Mp3>
+  [ 49] objcall 2618 ............................ faceObj.say(EMPTY, #Mp3)
+  [ 52] pushzero ................................ <0>
+  [ 53] setprop 2619 ............................ m_numFramesLeft = 0
+  [ 56] jmp [ 70]
+  [ 59] getparam 8 .............................. <argSndName>
+  [ 61] setprop 2615 ............................ m_waitingToSpeak = argSndName
+  [ 64] pushint8 2 .............................. <2>
+  [ 67] setprop 2619 ............................ m_numFramesLeft = 2
+  [ 70] ret
+end
+
+on timeTick me
+  [  0] getprop 2619 ............................ <m_numFramesLeft>
+  [  3] pushzero ................................ <0>
+  [  4] gt ...................................... <m_numFramesLeft > 0>
+  [  5] jmpifz [ 67] ............................ if m_numFramesLeft > 0 then
+  [  8] getprop 2619 ............................ <m_numFramesLeft>
+  [ 11] pushint8 1 .............................. <1>
+  [ 14] sub ..................................... <m_numFramesLeft - 1>
+  [ 15] setprop 2619 ............................ m_numFramesLeft = m_numFramesLeft - 1
+  [ 18] getprop 2619 ............................ <m_numFramesLeft>
+  [ 21] pushzero ................................ <0>
+  [ 22] eq ...................................... <m_numFramesLeft = 0>
+  [ 23] jmpifz [ 67] ............................ if m_numFramesLeft = 0 then
+  [ 26] getglobal 23 ............................ <gRock>
+  [ 28] getobjprop 79 ........................... <gRock.m_context>
+  [ 31] pushsymb 2616 ........................... <#Speaker>
+  [ 34] pusharglist 2 ........................... <gRock.m_context, #Speaker>
+  [ 36] objcall 146 ............................. <gRock.m_context.getFocus(#Speaker)>
+  [ 39] setlocal 0 .............................. faceObj = gRock.m_context.getFocus(#Speaker)
+  [ 41] getlocal 0 .............................. <faceObj>
+  [ 43] pusharglist 1 ........................... <faceObj>
+  [ 45] extcall 8 ............................... <objectp(faceObj)>
+  [ 47] jmpifz [ 63] ............................ if objectp(faceObj) then
+  [ 50] getlocal 0 .............................. <faceObj>
+  [ 52] getprop 2615 ............................ <m_waitingToSpeak>
+  [ 55] pushsymb 2617 ........................... <#Mp3>
+  [ 58] pusharglistnoret 3 ...................... <faceObj, m_waitingToSpeak, #Mp3>
+  [ 60] objcall 2618 ............................ faceObj.say(m_waitingToSpeak, #Mp3)
+  [ 63] pushzero ................................ <0>
+  [ 64] setprop 2615 ............................ m_waitingToSpeak = 0
+  [ 67] ret
+end

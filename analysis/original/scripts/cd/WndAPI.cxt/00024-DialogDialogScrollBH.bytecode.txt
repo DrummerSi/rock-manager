@@ -1,0 +1,174 @@
+property ancestor, scrollThisObj
+
+on new me, argItemObj
+  [  0] pushcons 0 .............................. <"DialogScrollMainBH">
+  [  2] pusharglist 1 ........................... <"DialogScrollMainBH">
+  [  4] extcall 74 .............................. <script("DialogScrollMainBH")>
+  [  7] getparam 8 .............................. <argItemObj>
+  [  9] getparam 0 .............................. <me>
+  [ 11] pusharglist 3 ........................... <script("DialogScrollMainBH"), argItemObj, me>
+  [ 13] objcall 0 ............................... <script("DialogScrollMainBH").new(argItemObj, me)>
+  [ 15] setprop 247 ............................. ancestor = script("DialogScrollMainBH").new(argItemObj, me)
+  [ 18] getparam 0 .............................. <me>
+  [ 20] pusharglist 1 ........................... <me>
+  [ 22] objcall 668 ............................. <me.findScrollObj()>
+  [ 25] setprop 616 ............................. scrollThisObj = me.findScrollObj()
+  [ 28] getprop 616 ............................. <scrollThisObj>
+  [ 31] pusharglist 1 ........................... <scrollThisObj>
+  [ 33] extcall 105 ............................. <objectp(scrollThisObj)>
+  [ 36] jmpifz [ 48] ............................ if objectp(scrollThisObj) then
+  [ 39] getprop 616 ............................. <scrollThisObj>
+  [ 42] getobjprop 122 .......................... <scrollThisObj.dialogObj>
+  [ 45] setprop 616 ............................. scrollThisObj = scrollThisObj.dialogObj
+  [ 48] getprop 616 ............................. <scrollThisObj>
+  [ 51] pusharglist 1 ........................... <scrollThisObj>
+  [ 53] extcall 105 ............................. <objectp(scrollThisObj)>
+  [ 56] not ..................................... <not objectp(scrollThisObj)>
+  [ 57] jmpifz [ 67] ............................ if not objectp(scrollThisObj) then
+  [ 60] pushcons 8 .............................. <"Scroll not found">
+  [ 62] pusharglistnoret 1 ...................... <"Scroll not found">
+  [ 64] extcall 126 ............................. put "Scroll not found"
+  [ 67] getparam 0 .............................. <me>
+  [ 69] pusharglistnoret 1 ...................... <me>
+  [ 71] extcall 96 .............................. return me
+  [ 74] ret
+end
+
+on kill me
+  [  0] getprop 247 ............................. <ancestor>
+  [  3] pusharglist 1 ........................... <ancestor>
+  [  5] objcall 1 ............................... <ancestor.kill()>
+  [  7] setprop 247 ............................. ancestor = ancestor.kill()
+  [ 10] pushzero ................................ <0>
+  [ 11] pusharglistnoret 1 ...................... <0>
+  [ 13] extcall 96 .............................. return 0
+  [ 16] ret
+end
+
+on getItemSize me, argItemCoord
+  [  0] getprop 247 ............................. <ancestor>
+  [  3] getobjprop 648 .......................... <ancestor.defaultItemSize>
+  [  6] pusharglistnoret 1 ...................... <ancestor.defaultItemSize>
+  [  8] extcall 96 .............................. return ancestor.defaultItemSize
+  [ 11] ret
+end
+
+on scrollPaint me
+  [  0] ret
+end
+
+on scrollRender me
+  [  0] getparam 0 .............................. <me>
+  [  2] pusharglist 1 ........................... <me>
+  [  4] objcall 668 ............................. <me.findScrollObj()>
+  [  7] setprop 616 ............................. scrollThisObj = me.findScrollObj()
+  [ 10] getprop 616 ............................. <scrollThisObj>
+  [ 13] getobjprop 122 .......................... <scrollThisObj.dialogObj>
+  [ 16] setprop 616 ............................. scrollThisObj = scrollThisObj.dialogObj
+  [ 19] getprop 247 ............................. <ancestor>
+  [ 22] getprop 616 ............................. <scrollThisObj>
+  [ 25] getobjprop 88 ........................... <scrollThisObj.surroundRect>
+  [ 28] pusharglist 1 ........................... <scrollThisObj.surroundRect>
+  [ 30] extcall 64 .............................. <getRectSize(scrollThisObj.surroundRect)>
+  [ 33] setobjprop 59 ........................... ancestor.size = getRectSize(scrollThisObj.surroundRect)
+  [ 36] getprop 247 ............................. <ancestor>
+  [ 39] getobjprop 646 .......................... <ancestor.scrollTLPixels>
+  [ 42] inv ..................................... <-ancestor.scrollTLPixels>
+  [ 43] getprop 616 ............................. <scrollThisObj>
+  [ 46] getobjprop 89 ........................... <scrollThisObj.scrollLocOffset>
+  [ 49] sub ..................................... <-ancestor.scrollTLPixels - scrollThisObj.scrollLocOffset>
+  [ 50] setlocal 0 .............................. tmp = -ancestor.scrollTLPixels - scrollThisObj.scrollLocOffset
+  [ 52] getprop 616 ............................. <scrollThisObj>
+  [ 55] getlocal 0 .............................. <tmp>
+  [ 57] pusharglistnoret 2 ...................... <scrollThisObj, tmp>
+  [ 59] objcall 32 .............................. scrollThisObj.scroll(tmp)
+  [ 62] ret
+end
+
+on findScrollObj me
+  [  0] pushsymb 177 ............................ <#ScrollThis>
+  [  3] setlocal 0 .............................. tmpScrollID = #ScrollThis
+  [  5] getprop 247 ............................. <ancestor>
+  [  8] getobjprop 581 .......................... <ancestor.itemObj>
+  [ 11] setlocal 8 .............................. tmpItemObj = ancestor.itemObj
+  [ 13] getlocal 8 .............................. <tmpItemObj>
+  [ 15] pusharglist 1 ........................... <tmpItemObj>
+  [ 17] extcall 41 .............................. <voidp(tmpItemObj)>
+  [ 20] jmpifz [ 29] ............................ if voidp(tmpItemObj) then
+  [ 23] pushzero ................................ <0>
+  [ 24] pusharglistnoret 1 ...................... <0>
+  [ 26] extcall 96 .............................. return 0
+  [ 29] pushint8 1 .............................. <1>
+  [ 32] jmpifz [201] ............................ repeat while 1
+  [ 35] getlocal 8 .............................. <tmpItemObj>
+  [ 37] getobjprop 134 .......................... <tmpItemObj.type>
+  [ 40] pushsymb 121 ............................ <#Dialog>
+  [ 43] eq ...................................... <tmpItemObj.type = #Dialog>
+  [ 44] jmpifz [ 65] ............................ if tmpItemObj.type = #Dialog then
+  [ 47] getlocal 8 .............................. <tmpItemObj>
+  [ 49] getobjprop 46 ........................... <tmpItemObj.ID>
+  [ 52] getlocal 0 .............................. <tmpScrollID>
+  [ 54] eq ...................................... <tmpItemObj.ID = tmpScrollID>
+  [ 55] jmpifz [ 65] ............................ if tmpItemObj.ID = tmpScrollID then
+  [ 58] getlocal 8 .............................. <tmpItemObj>
+  [ 60] pusharglistnoret 1 ...................... <tmpItemObj>
+  [ 62] extcall 96 .............................. return tmpItemObj
+  [ 65] getlocal 8 .............................. <tmpItemObj>
+  [ 67] getobjprop 247 .......................... <tmpItemObj.ancestor>
+  [ 70] getobjprop 248 .......................... <tmpItemObj.ancestor.masterObj>
+  [ 73] getlocal 0 .............................. <tmpScrollID>
+  [ 75] pusharglist 2 ........................... <tmpItemObj.ancestor.masterObj, tmpScrollID>
+  [ 77] objcall 28 .............................. <tmpItemObj.ancestor.masterObj.getItem(tmpScrollID)>
+  [ 79] setlocal 16 ............................. tmp = tmpItemObj.ancestor.masterObj.getItem(tmpScrollID)
+  [ 81] getlocal 16 ............................. <tmp>
+  [ 83] pusharglist 1 ........................... <tmp>
+  [ 85] extcall 105 ............................. <objectp(tmp)>
+  [ 88] jmpifz [110] ............................ if objectp(tmp) then
+  [ 91] getlocal 16 ............................. <tmp>
+  [ 93] getobjprop 134 .......................... <tmp.type>
+  [ 96] pushsymb 121 ............................ <#Dialog>
+  [ 99] eq ...................................... <tmp.type = #Dialog>
+  [100] jmpifz [110] ............................ if tmp.type = #Dialog then
+  [103] getlocal 16 ............................. <tmp>
+  [105] pusharglistnoret 1 ...................... <tmp>
+  [107] extcall 96 .............................. return tmp
+  [110] getlocal 8 .............................. <tmpItemObj>
+  [112] getobjprop 247 .......................... <tmpItemObj.ancestor>
+  [115] getobjprop 248 .......................... <tmpItemObj.ancestor.masterObj>
+  [118] getobjprop 110 .......................... <tmpItemObj.ancestor.masterObj.dlgItemParent>
+  [121] setlocal 8 .............................. tmpItemObj = tmpItemObj.ancestor.masterObj.dlgItemParent
+  [123] getlocal 8 .............................. <tmpItemObj>
+  [125] pusharglist 1 ........................... <tmpItemObj>
+  [127] extcall 105 ............................. <objectp(tmpItemObj)>
+  [130] not ..................................... <not objectp(tmpItemObj)>
+  [131] jmpifz [198] ............................ if not objectp(tmpItemObj) then
+  [134] getprop 247 ............................. <ancestor>
+  [137] getobjprop 581 .......................... <ancestor.itemObj>
+  [140] getobjprop 247 .......................... <ancestor.itemObj.ancestor>
+  [143] getobjprop 248 .......................... <ancestor.itemObj.ancestor.masterObj>
+  [146] pusharglist 1 ........................... <ancestor.itemObj.ancestor.masterObj>
+  [148] objcall 35 .............................. <ancestor.itemObj.ancestor.masterObj.getTopWindow()>
+  [151] setlocal 24 ............................. tmpObj = ancestor.itemObj.ancestor.masterObj.getTopWindow()
+  [153] getlocal 24 ............................. <tmpObj>
+  [155] getlocal 0 .............................. <tmpScrollID>
+  [157] pusharglist 2 ........................... <tmpObj, tmpScrollID>
+  [159] objcall 28 .............................. <tmpObj.getItem(tmpScrollID)>
+  [161] setlocal 24 ............................. tmpObj = tmpObj.getItem(tmpScrollID)
+  [163] getlocal 24 ............................. <tmpObj>
+  [165] pusharglist 1 ........................... <tmpObj>
+  [167] extcall 105 ............................. <objectp(tmpObj)>
+  [170] jmpifz [192] ............................ if objectp(tmpObj) then
+  [173] getlocal 24 ............................. <tmpObj>
+  [175] getobjprop 134 .......................... <tmpObj.type>
+  [178] pushsymb 121 ............................ <#Dialog>
+  [181] eq ...................................... <tmpObj.type = #Dialog>
+  [182] jmpifz [192] ............................ if tmpObj.type = #Dialog then
+  [185] getlocal 24 ............................. <tmpObj>
+  [187] pusharglistnoret 1 ...................... <tmpObj>
+  [189] extcall 96 .............................. return tmpObj
+  [192] pushzero ................................ <0>
+  [193] pusharglistnoret 1 ...................... <0>
+  [195] extcall 96 .............................. return 0
+  [198] endrepeat [ 29]
+  [201] ret
+end

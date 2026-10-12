@@ -1,0 +1,62 @@
+property ancestor, m_dlgChooser, m_val, m_textItemObj, m_propToChange, m_objToChange
+global gDir, gRock
+
+on new me, argOptions
+  argOptions[#child] = me
+  argOptions[#ReportTo] = me
+  ancestor = script("DlgEventCardAncestorScript").new(argOptions)
+  dialog_r = ancestor.m_dialogInfoObj_r
+  dialog_r.ButtonOK.name = ancestor.m_eventCard_r.ButtonOK.name
+  if dialog_r.ButtonOK.name.length <= 1 then
+    dialog_r.ButtonOK.name = "OK!!!"
+  end if
+  dialog_r.ButtonOK.Gfx = ancestor.m_eventCard_r.ButtonOK.Gfx
+  dialog_r.ButtonCancel.name = ancestor.m_eventCard_r.ButtonCancel.name
+  dialog_r.ButtonCancel.Gfx = ancestor.m_eventCard_r.ButtonCancel.Gfx
+  obj = ancestor.m_objDlg.getItem(#bottom)
+  obj.setOneProp(#inOffsetRect, rect(0, 7, 0, 0))
+  obj.setOneProp(#rel, [[#top, #Mid], [#top, 4], #Auto, #Auto])
+  obj.setOneProp(#topLeftMeansWhat, [#Mid, 0])
+  obj.attachDlg(VOID, member("DlgRockTextUpAndDownData").text.value)
+  m_dlgChooser = obj.dialogObj
+  m_textItemObj = m_dlgChooser.getItem(#text)
+  m_val = 1000
+  m_textItemObj.setOneProp(#editData, string(m_val))
+  obj = ancestor.m_objDlg.addItem([#ID: #ButtonOKCancel, #type: #Dialog, #dialogDataMemberName: "DlgButtonPairData", #rel: [[#top, #Mid], [#bottom, 4], #Auto, #Auto], #TopLeftMeans: [#Mid, 0]])
+  ancestor.finishUp(#TitleAndButtons)
+  return me
+end
+
+on kill me
+  dialog_r = ancestor.m_dialogInfoObj_r
+  ancestor.kill()
+  return 0
+end
+
+on Report me, argObj, argWhat
+end
+
+on mouse me, argObj, argWhat, argOption
+  if objectp(argOption) then
+    if argWhat = #click then
+      ID = argOption.getOneProp(#ID)
+      IDStr = string(ID)
+      if offset("arrow", IDStr) then
+        if ID = #ArrowUp then
+          m_val = m_val + 500
+        else
+          m_val = m_val - 500
+        end if
+        obj = m_dlgChooser.getItem(#text)
+        if objectp(obj) then
+          obj.setOneProp(#editData, string(m_val))
+        end if
+        exit
+      else
+        if ID = #ButtonOK then
+        end if
+      end if
+      ancestor.mouse(argObj, argWhat, argOption)
+    end if
+  end if
+end
