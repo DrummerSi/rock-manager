@@ -1,0 +1,77 @@
+property m_dlg, m_master, m_ctrls, m_type, m_ctrlDefs, m_fxObj
+
+on new me, argMasterFXObj, argFXType, argFXObj
+  m_master = argMasterFXObj
+  m_type = argFXType
+  m_fxObj = argFXObj
+  m_dlg = script("Dialog").new([#image: m_master.m_dlg.myImagePtr, #OKtoResize: 0])
+  itemLists = []
+  gfxList = m_fxObj.getGFX()
+  knobIDs = []
+  repeat with n = 1 to gfxList.count
+    ID = gfxList.getPropAt(n)
+    lst = gfxList[n]
+    tmpLoc = lst[#loc]
+    if lst[#type] = #Knob then
+      itemLists.add([#ID: ID, #ch: n, #type: #Pic, #ink: 36, #Pic: "small_ratt01_0000", #inOffsetRect: rect(tmpLoc, point(0, 0)), #rel: [0, 0, #Auto, #Auto], #topLeftMeansWhat: [#Reg, #Reg]])
+      knobIDs.add(lst[#ID])
+      next repeat
+    end if
+    if lst[#type] = #button then
+      tmpPic = lst[#Pic]
+      if voidp(tmpPic) then
+        tmpPic = "button_mute01"
+      end if
+      itemLists.add([#ID: ID, #ch: n, #type: #button, #ink: 36, #Pic: tmpPic, #PicDownName: "1", #inOffsetRect: rect(tmpLoc, point(0, 0)), #rel: [0, 0, #Auto, #Auto], #Toggle: 1, #topLeftMeansWhat: [#Reg, #Reg]])
+      next repeat
+    end if
+    if lst[#type] = #Pic then
+      itemLists.add([#ID: ID, #ch: n, #type: #Pic, #ink: 8, #Pic: lst[#Pic], #inOffsetRect: rect(tmpLoc, point(0, 0)), #rel: [0, 0, #Auto, #Auto], #usingMouse: 0])
+    end if
+  end repeat
+  m_dlg.rawCreate(itemLists)
+  m_ctrls = [:]
+  repeat with n = 1 to gfxList.count
+    ID = gfxList.getPropAt(n)
+    val = m_fxObj.getGfxVal(ID)
+    if voidp(val) then
+      next repeat
+    end if
+    itemObj = m_dlg.getItem(ID)
+    type = gfxList[ID][#type]
+    if type = #Knob then
+      BH = script("DialogKnobBH").new(itemObj, [#ReportTo: me, #ID: ID, #firstFrame: "small_ratt01_0000", #val: val, #numFrames: 64])
+      m_ctrls[ID] = BH
+      itemObj.scriptInstanceList.addAt(1, BH)
+    else
+      if type = #button then
+        itemObj.isDown = val
+        itemObj.scriptInstanceList.addAt(1, me)
+      else
+        if type = #Pic then
+          itemObj.setOneProp(#Pic, val)
+        end if
+      end if
+    end if
+    m_fxObj.Report(me, ID, val)
+  end repeat
+  return me
+end
+
+on kill me
+  return 0
+end
+
+on mouse me, argObj, argWhat, argOption
+  if argWhat = #click then
+    if objectp(argOption) then
+      if argOption[#type] = #button then
+        m_fxObj.Report(me, argOption.ID, argOption.isDown)
+      end if
+    end if
+  end if
+end
+
+on Report me, argObj, argWhat, argOption
+  m_fxObj.Report(me, argObj.ID, argOption)
+end

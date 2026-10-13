@@ -1,0 +1,86 @@
+property m_mixerObj, m_spriteList, m_startedHere, m_CP, m_waveRenderer, m_objDialogsMaster, m_interfaceBar, m_dlgOKButton, m_waitForECObj, m_progressObj
+global gUseful, gRock
+
+on new me
+  set the mouseUpScript to "VirtualMouseUp"
+  set the mouseDownScript to "VirtualMouseDown"
+  set the keyUpScript to "VirtualKeyUp"
+  set the keyDownScript to "VirtualKeyDown"
+  m_spriteList = member("SpriteList").text.value
+  if not listp(m_spriteList) then
+    m_spriteList = [#InterfaceBarSpriteList: [#BandMemberIcons: 6, #BG: 11, #Rehearsal: 12, #MoneyText: 13, #MoneyVal: 14, #DateText: 15, #DateVal: 16, #CredMeter: 17, #MainMenu: 18], #MasterVol: 26, #ButtonPlay: 27, #ButtonStop: 28, #StudioPic: 29, #ButtonOK: 31, #channels: 40, #Dialogs: 101, #FX: 133, #Watcher: 136, #Console: 138, #Diagram: 140]
+  end if
+  return me
+end
+
+on init me
+  global gRock
+  gUseful.setSoundSystem(#xtra)
+  gUseful.soundObj.soundPath = gRock.m_paths.getPath(#sound)
+  m_interfaceBar = script("InterfaceBarScript").new(0)
+  m_interfaceBar.init()
+  m_interfaceBar.redrawAfterLoad()
+  m_objDialogsMaster = script("DialogsMasterScript").new(m_spriteList[#Dialogs])
+  m_startedHere = not objectp(gRock.m_context.getFocus(#Studio))
+  m_waveRenderer = script("WaveRenderScript").new()
+  m_mixerObj = script("MixerScript").new()
+  gRock.m_context.setContext(#Mixer)
+  gRock.m_gameTimer.activate(0)
+  m_dlgOKButton = script("DlgMixerScript").new()
+  gRock.m_eventCardsManager.allowEventCardsWithProp(#ShowInMixer, 0, 1)
+  gRock.m_msgManager.msg(#EnterMixer)
+  m_waitForECObj = script("WaitForEventCardsScript").new(0, 0, [#object: me, #handler: #startMixer])
+end
+
+on startMovie me
+end
+
+on startMixer me
+  m_mixerObj.prepareFirstTimePlay()
+  if objectp(m_waitForECObj) then
+    m_waitForECObj = m_waitForECObj.kill()
+  end if
+end
+
+on kill me
+  global gRock
+  if objectp(m_waitForECObj) then
+    m_waitForECObj = m_waitForECObj.kill()
+  end if
+  if objectp(m_dlgOKButton) then
+    m_dlgOKButton = m_dlgOKButton.kill()
+  end if
+  m_interfaceBar = m_interfaceBar.kill()
+  m_waveRenderer.deleteDecodedFiles()
+  m_waveRenderer = m_waveRenderer.kill()
+  if objectp(m_CP) then
+    m_CP = m_CP.kill()
+  end if
+  m_mixerObj = m_mixerObj.kill()
+  gRock.m_eventCardsManager.allowEventCardsWithProp(#ShowInMixer, 0, 0)
+  gRock.m_msgManager.msg(#leavemixer)
+  m_objDialogsMaster = m_objDialogsMaster.kill()
+  if objectp(m_progressObj) then
+    m_progressObj = m_progressObj.kill()
+  end if
+  gUseful.setSoundSystem(#Director)
+end
+
+on progressInit me, argNumFiles
+  if objectp(m_progressObj) then
+    m_progressObj = m_progressObj.kill()
+  end if
+  if argNumFiles < 2 then
+    exit
+  end if
+  m_progressObj = script("FakeDlgProgressBarScript").new(VOID, argNumFiles)
+end
+
+on progressReport me, arg
+  if objectp(m_progressObj) then
+    m_progressObj.progressReport()
+    if m_progressObj.m_partDone = 1 then
+      m_progressObj = m_progressObj.kill()
+    end if
+  end if
+end

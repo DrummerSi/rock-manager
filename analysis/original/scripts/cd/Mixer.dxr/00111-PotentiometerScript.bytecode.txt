@@ -1,0 +1,258 @@
+property dragging, firstFrame, val, numFrames, SP, sendSP, command, Absolute, reportObj, ID, mouseObj, minMaxObj
+
+on new me, argReportObj, argFirstFrame, argNumFrames, argSPNum, argLoc, argID, argMinMaxObj
+  [  0] getparam 8 .............................. <argReportObj>
+  [  2] setprop 291 ............................. reportObj = argReportObj
+  [  5] getparam 16 ............................. <argFirstFrame>
+  [  7] pushzero ................................ <0>
+  [  8] pushint8 10 ............................. <10>
+  [ 11] get 9 ................................... <the number of member argFirstFrame>
+  [ 13] setprop 371 ............................. firstFrame = the number of member argFirstFrame
+  [ 16] pushzero ................................ <0>
+  [ 17] setprop 372 ............................. val = 0
+  [ 20] getparam 24 ............................. <argNumFrames>
+  [ 22] setprop 373 ............................. numFrames = argNumFrames
+  [ 25] pushzero ................................ <0>
+  [ 26] setprop 374 ............................. dragging = 0
+  [ 29] getparam 32 ............................. <argSPNum>
+  [ 31] pusharglist 1 ........................... <argSPNum>
+  [ 33] extcall 222 ............................. <sprite(argSPNum)>
+  [ 36] setprop 292 ............................. SP = sprite(argSPNum)
+  [ 39] getprop 292 ............................. <SP>
+  [ 42] getparam 40 ............................. <argLoc>
+  [ 44] setobjprop 223 .......................... SP.loc = argLoc
+  [ 47] getprop 371 ............................. <firstFrame>
+  [ 50] pusharglist 1 ........................... <firstFrame>
+  [ 52] extcall 55 .............................. <member(firstFrame)>
+  [ 55] pusharglist 1 ........................... <member(firstFrame)>
+  [ 57] extcall 287 ............................. <getMemberRect(member(firstFrame))>
+  [ 60] getparam 40 ............................. <argLoc>
+  [ 62] getparam 40 ............................. <argLoc>
+  [ 64] pusharglist 2 ........................... <argLoc, argLoc>
+  [ 66] extcall 230 ............................. <rect(argLoc, argLoc)>
+  [ 69] add ..................................... <getMemberRect(member(firstFrame)) + rect(argLoc, argLoc)>
+  [ 70] setlocal 0 .............................. tmpRect = getMemberRect(member(firstFrame)) + rect(argLoc, argLoc)
+  [ 72] pushcons 0 .............................. <"DragMouseScript">
+  [ 74] pusharglist 1 ........................... <"DragMouseScript">
+  [ 76] extcall 20 .............................. <script("DragMouseScript")>
+  [ 78] getparam 0 .............................. <me>
+  [ 80] getlocal 0 .............................. <tmpRect>
+  [ 82] pushsymb 897 ............................ <#cursorRoll>
+  [ 85] pushsymb 1208 ........................... <#DragH>
+  [ 88] pushsymb 895 ............................ <#layer>
+  [ 91] pushint8 70 ............................. <70>
+  [ 94] pusharglist 4 ........................... <[#cursorRoll: #DragH, #layer: 70]>
+  [ 96] pushproplist ............................ <[#cursorRoll: #DragH, #layer: 70]>
+  [ 97] pusharglist 4 ........................... <script("DragMouseScript"), me, tmpRect, [#cursorRoll: #DragH, #layer: 70]>
+  [ 99] extcall 0 ............................... <new(script("DragMouseScript"), me, tmpRect, [#cursorRoll: #DragH, #layer: 70])>
+  [101] setprop 375 ............................. mouseObj = new(script("DragMouseScript"), me, tmpRect, [#cursorRoll: #DragH, #layer: 70])
+  [104] getparam 56 ............................. <argMinMaxObj>
+  [106] setprop 376 ............................. minMaxObj = argMinMaxObj
+  [109] getprop 376 ............................. <minMaxObj>
+  [112] pusharglist 1 ........................... <minMaxObj>
+  [114] extcall 14 .............................. <objectp(minMaxObj)>
+  [116] jmpifz [150] ............................ if objectp(minMaxObj) then
+  [119] getprop 376 ............................. <minMaxObj>
+  [122] pusharglist 0 ........................... <>
+  [124] extcall 125 ............................. <VOID>
+  [127] pusharglist 0 ........................... <>
+  [129] extcall 125 ............................. <VOID>
+  [132] pusharglist 0 ........................... <>
+  [134] extcall 125 ............................. <VOID>
+  [137] pushzero ................................ <0>
+  [138] getprop 373 ............................. <numFrames>
+  [141] pushint8 1 .............................. <1>
+  [144] sub ..................................... <numFrames - 1>
+  [145] pusharglistnoret 6 ...................... <minMaxObj, VOID, VOID, VOID, 0, numFrames - 1>
+  [147] objcall 377 ............................. minMaxObj.setParams(VOID, VOID, VOID, 0, numFrames - 1)
+  [150] getparam 0 .............................. <me>
+  [152] pushzero ................................ <0>
+  [153] pusharglistnoret 2 ...................... <me, 0>
+  [155] objcall 370 ............................. me.setVal(0)
+  [158] getparam 0 .............................. <me>
+  [160] pusharglistnoret 1 ...................... <me>
+  [162] extcall 11 .............................. return me
+  [164] ret
+end
+
+on kill me
+  [  0] getprop 376 ............................. <minMaxObj>
+  [  3] pusharglist 1 ........................... <minMaxObj>
+  [  5] extcall 14 .............................. <objectp(minMaxObj)>
+  [  7] jmpifz [ 20] ............................ if objectp(minMaxObj) then
+  [ 10] getprop 376 ............................. <minMaxObj>
+  [ 13] pusharglist 1 ........................... <minMaxObj>
+  [ 15] objcall 3 ............................... <minMaxObj.kill()>
+  [ 17] setprop 376 ............................. minMaxObj = minMaxObj.kill()
+  [ 20] getprop 375 ............................. <mouseObj>
+  [ 23] pusharglist 1 ........................... <mouseObj>
+  [ 25] objcall 3 ............................... <mouseObj.kill()>
+  [ 27] setprop 375 ............................. mouseObj = mouseObj.kill()
+  [ 30] pushzero ................................ <0>
+  [ 31] setprop 291 ............................. reportObj = 0
+  [ 34] pushzero ................................ <0>
+  [ 35] pusharglistnoret 1 ...................... <0>
+  [ 37] extcall 11 .............................. return 0
+  [ 39] ret
+end
+
+on mouse me, argObj, argWhat
+  [  0] getparam 16 ............................. <argWhat>
+  [  2] pushsymb 226 ............................ <#down>
+  [  5] eq ...................................... <argWhat = #down>
+  [  6] jmpifz [ 30] ............................ if argWhat = #down then / else
+  [  9] pusharglist 0 ........................... <>
+  [ 11] thebuiltin 381 .......................... <the mouseH>
+  [ 14] pusharglist 0 ........................... <>
+  [ 16] thebuiltin 382 .......................... <the mouseV>
+  [ 19] pusharglist 2 ........................... <the mouseH, the mouseV>
+  [ 21] extcall 110 ............................. <point(the mouseH, the mouseV)>
+  [ 24] setprop 374 ............................. dragging = point(the mouseH, the mouseV)
+  [ 27] jmp [135]
+  [ 30] getparam 16 ............................. <argWhat>
+  [ 32] pushsymb 383 ............................ <#stillDown>
+  [ 35] eq ...................................... <argWhat = #stillDown>
+  [ 36] jmpifz [ 96] ............................ if argWhat = #stillDown then / else
+  [ 39] pusharglist 0 ........................... <>
+  [ 41] thebuiltin 381 .......................... <the mouseH>
+  [ 44] pusharglist 0 ........................... <>
+  [ 46] thebuiltin 382 .......................... <the mouseV>
+  [ 49] pusharglist 2 ........................... <the mouseH, the mouseV>
+  [ 51] extcall 110 ............................. <point(the mouseH, the mouseV)>
+  [ 54] setlocal 0 .............................. tmp = point(the mouseH, the mouseV)
+  [ 56] getlocal 0 .............................. <tmp>
+  [ 58] getprop 374 ............................. <dragging>
+  [ 61] sub ..................................... <tmp - dragging>
+  [ 62] setlocal 8 .............................. tmpDiff = tmp - dragging
+  [ 64] getlocal 0 .............................. <tmp>
+  [ 66] setprop 374 ............................. dragging = tmp
+  [ 69] getlocal 8 .............................. <tmpDiff>
+  [ 71] pushint8 1 .............................. <1>
+  [ 74] pusharglist 2 ........................... <tmpDiff, 1>
+  [ 76] extcall 70 .............................. <getAt(tmpDiff, 1)>
+  [ 79] setlocal 16 ............................. tmpDiffY = getAt(tmpDiff, 1)
+  [ 81] getparam 0 .............................. <me>
+  [ 83] getprop 372 ............................. <val>
+  [ 86] getlocal 16 ............................. <tmpDiffY>
+  [ 88] add ..................................... <val + tmpDiffY>
+  [ 89] pusharglistnoret 2 ...................... <me, val + tmpDiffY>
+  [ 91] localcall 5 ............................. setVal(me, val + tmpDiffY)
+  [ 93] jmp [135]
+  [ 96] getparam 16 ............................. <argWhat>
+  [ 98] pushsymb 298 ............................ <#click>
+  [101] eq ...................................... <argWhat = #click>
+  [102] jmpifz [135] ............................ if argWhat = #click then
+  [105] getprop 291 ............................. <reportObj>
+  [108] pusharglist 1 ........................... <reportObj>
+  [110] extcall 14 .............................. <objectp(reportObj)>
+  [112] jmpifz [135] ............................ if objectp(reportObj) then
+  [115] getprop 291 ............................. <reportObj>
+  [118] getparam 0 .............................. <me>
+  [120] pushsymb 171 ............................ <#Released>
+  [123] getparam 0 .............................. <me>
+  [125] pusharglist 1 ........................... <me>
+  [127] objcall 369 ............................. <me.getVal()>
+  [130] pusharglistnoret 4 ...................... <reportObj, me, #Released, me.getVal()>
+  [132] objcall 44 .............................. reportObj.Report(me, #Released, me.getVal())
+  [135] ret
+end
+
+on getVal me
+  [  0] getprop 376 ............................. <minMaxObj>
+  [  3] pusharglist 1 ........................... <minMaxObj>
+  [  5] extcall 14 .............................. <objectp(minMaxObj)>
+  [  7] jmpifz [ 28] ............................ if objectp(minMaxObj) then / else
+  [ 10] getprop 376 ............................. <minMaxObj>
+  [ 13] getprop 372 ............................. <val>
+  [ 16] pusharglist 2 ........................... <minMaxObj, val>
+  [ 18] objcall 386 ............................. <minMaxObj.conv(val)>
+  [ 21] pusharglistnoret 1 ...................... <minMaxObj.conv(val)>
+  [ 23] extcall 11 .............................. return minMaxObj.conv(val)
+  [ 25] jmp [ 35]
+  [ 28] getprop 372 ............................. <val>
+  [ 31] pusharglistnoret 1 ...................... <val>
+  [ 33] extcall 11 .............................. return val
+  [ 35] ret
+end
+
+on setMinMaxRelVal me, argVal
+  [  0] getparam 8 .............................. <argVal>
+  [  2] getprop 376 ............................. <minMaxObj>
+  [  5] getobjprop 387 .......................... <minMaxObj.outMin>
+  [  8] sub ..................................... <argVal - minMaxObj.outMin>
+  [  9] pusharglist 1 ........................... <argVal - minMaxObj.outMin>
+  [ 11] extcall 279 ............................. <float(argVal - minMaxObj.outMin)>
+  [ 14] getprop 376 ............................. <minMaxObj>
+  [ 17] getobjprop 388 .......................... <minMaxObj.outMax>
+  [ 20] getprop 376 ............................. <minMaxObj>
+  [ 23] getobjprop 387 .......................... <minMaxObj.outMin>
+  [ 26] sub ..................................... <minMaxObj.outMax - minMaxObj.outMin>
+  [ 27] pusharglist 1 ........................... <minMaxObj.outMax - minMaxObj.outMin>
+  [ 29] extcall 279 ............................. <float(minMaxObj.outMax - minMaxObj.outMin)>
+  [ 32] div ..................................... <float(argVal - minMaxObj.outMin) / float(minMaxObj.outMax - minMaxObj.outMin)>
+  [ 33] setlocal 0 .............................. tmpVal = float(argVal - minMaxObj.outMin) / float(minMaxObj.outMax - minMaxObj.outMin)
+  [ 35] getlocal 0 .............................. <tmpVal>
+  [ 37] getprop 373 ............................. <numFrames>
+  [ 40] mul ..................................... <tmpVal * numFrames>
+  [ 41] setlocal 0 .............................. tmpVal = tmpVal * numFrames
+  [ 43] getparam 0 .............................. <me>
+  [ 45] getlocal 0 .............................. <tmpVal>
+  [ 47] pushsymb 389 ............................ <#NoReport>
+  [ 50] pusharglistnoret 3 ...................... <me, tmpVal, #NoReport>
+  [ 52] objcall 370 ............................. me.setVal(tmpVal, #NoReport)
+  [ 55] ret
+end
+
+on setVal me, argVal, argOption
+  [  0] getparam 8 .............................. <argVal>
+  [  2] setprop 372 ............................. val = argVal
+  [  5] getprop 372 ............................. <val>
+  [  8] getprop 373 ............................. <numFrames>
+  [ 11] gteq .................................... <val >= numFrames>
+  [ 12] jmpifz [ 28] ............................ if val >= numFrames then / else
+  [ 15] getprop 373 ............................. <numFrames>
+  [ 18] pushint8 1 .............................. <1>
+  [ 21] sub ..................................... <numFrames - 1>
+  [ 22] setprop 372 ............................. val = numFrames - 1
+  [ 25] jmp [ 40]
+  [ 28] getprop 372 ............................. <val>
+  [ 31] pushzero ................................ <0>
+  [ 32] lt ...................................... <val < 0>
+  [ 33] jmpifz [ 40] ............................ if val < 0 then
+  [ 36] pushzero ................................ <0>
+  [ 37] setprop 372 ............................. val = 0
+  [ 40] getprop 292 ............................. <SP>
+  [ 43] getprop 371 ............................. <firstFrame>
+  [ 46] getprop 372 ............................. <val>
+  [ 49] add ..................................... <firstFrame + val>
+  [ 50] pusharglist 1 ........................... <firstFrame + val>
+  [ 52] extcall 55 .............................. <member(firstFrame + val)>
+  [ 55] setobjprop 55 ........................... SP.member = member(firstFrame + val)
+  [ 58] getprop 376 ............................. <minMaxObj>
+  [ 61] pusharglist 1 ........................... <minMaxObj>
+  [ 63] extcall 14 .............................. <objectp(minMaxObj)>
+  [ 65] jmpifz [ 84] ............................ if objectp(minMaxObj) then / else
+  [ 68] getprop 376 ............................. <minMaxObj>
+  [ 71] getprop 372 ............................. <val>
+  [ 74] pusharglist 2 ........................... <minMaxObj, val>
+  [ 76] objcall 386 ............................. <minMaxObj.conv(val)>
+  [ 79] setlocal 0 .............................. tmpVal = minMaxObj.conv(val)
+  [ 81] jmp [ 89]
+  [ 84] getprop 372 ............................. <val>
+  [ 87] setlocal 0 .............................. tmpVal = val
+  [ 89] getparam 16 ............................. <argOption>
+  [ 91] pushsymb 389 ............................ <#NoReport>
+  [ 94] nteq .................................... <argOption <> #NoReport>
+  [ 95] getprop 291 ............................. <reportObj>
+  [ 98] pusharglist 1 ........................... <reportObj>
+  [100] extcall 14 .............................. <objectp(reportObj)>
+  [102] and ..................................... <(argOption <> #NoReport) and objectp(reportObj)>
+  [103] jmpifz [121] ............................ if (argOption <> #NoReport) and objectp(reportObj) then
+  [106] getprop 291 ............................. <reportObj>
+  [109] getparam 0 .............................. <me>
+  [111] pushsymb 259 ............................ <#changed>
+  [114] getlocal 0 .............................. <tmpVal>
+  [116] pusharglistnoret 4 ...................... <reportObj, me, #changed, tmpVal>
+  [118] objcall 44 .............................. reportObj.Report(me, #changed, tmpVal)
+  [121] ret
+end

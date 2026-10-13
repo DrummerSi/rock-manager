@@ -1,0 +1,86 @@
+property m_dlg, m_fxDlgObjs, m_fxObjs, m_channel
+global gDir
+
+on new me, argChannelObj, argFXObjs
+  m_channel = argChannelObj
+  m_fxObjs = argFXObjs
+  if not listp(m_fxObjs) then
+    m_fxObjs = [:]
+  end if
+  if m_fxObjs.count() = 0 then
+    m_fxObjs.addProp(#delay, [#type: #delay])
+    m_fxObjs.addProp(#phaser, [#type: #phaser])
+  end if
+  m_dlg = script("Dialog").new([#AttachImageToMember: #temp, #StartSpriteNum: gDir.m_spriteList[#FX], #NumSprites: 2, #OKtoResize: 1])
+  sprite(gDir.m_spriteList[#FX]).ink = 8
+  lst = member("DlgRockData").text.value
+  m_dlg.rawCreate(lst)
+  obj = m_dlg.getItem(#BG)
+  if objectp(obj) then
+    obj.setOneProp(#rel, [0, 0, [#ZYXSrnd, 3], [#ZYXSrnd, 4]])
+    obj.setOneProp(#inOffsetRect, rect(0, 0, 10, 16))
+  end if
+  obj = m_dlg.getItem(#close)
+  if objectp(obj) then
+    obj.scriptInstanceList.addAt(1, me)
+  end if
+  return me
+end
+
+on init me
+  m_fxDlgObjs = []
+  lastRel = 0
+  extraSpace = 30
+  if 1 then
+    repeat with n = 1 to m_fxObjs.count()
+      fxObj = m_fxObjs[n]
+      fxType = m_fxObjs.getPropAt(n)
+      obj = script("FXChannel").new(me, fxType, fxObj)
+      lst = [#ID: symbol("FX" & string(n)), #type: #Dialog, #inOffsetRect: rect(6, extraSpace, 0, 0), #rel: [0, lastRel, #Auto, #Auto], #dialogDataMemberName: "DlgSimpleData"]
+      newObj = m_dlg.addItem(lst)
+      newObj.attachDlg(obj.m_dlg)
+      m_fxDlgObjs.add(obj)
+      lastRel = [lst[#ID], 4]
+      extraSpace = 0
+    end repeat
+    lst = [#ID: #ButtonOK, #type: #Pic, #Pic: "TmpOKPic", #inOffsetRect: rect(40, 10, 0, 0), #rel: [0, lastRel, #Auto, #Auto], #ink: 36]
+    obj = m_dlg.addItem(lst)
+    obj.scriptInstanceList.addAt(1, me)
+  end if
+  m_dlg.renderAtLoc(point(100, 100))
+end
+
+on kill me
+  repeat with obj in m_fxDlgObjs
+    obj.kill()
+  end repeat
+  m_fxDlgObjs = []
+  if objectp(m_dlg) then
+    m_dlg = m_dlg.kill()
+  end if
+  return me
+end
+
+on mouse me, argObj, argWhat, argOption
+  if argWhat = #click then
+    if objectp(argOption) then
+      if argOption.ID = #close then
+        if objectp(m_channel) then
+          m_channel.Report(me, m_fxObjs)
+        end if
+        me.kill()
+      else
+        if argOption.ID = #ButtonOK then
+          repeat with obj in m_fxDlgObjs
+            tmpLst = m_fxObjs[obj[#m_type]]
+            mergeLists(tmpLst, obj.getSettings(), #Replace)
+          end repeat
+          if objectp(m_channel) then
+            m_channel.Report(me, m_fxObjs)
+          end if
+          me.kill()
+        end if
+      end if
+    end if
+  end if
+end

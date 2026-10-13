@@ -1,0 +1,51 @@
+global gSnds, gWait, gUseful
+
+on CPTest
+  gUseful.setSoundSystem(#xtra)
+  fullFileName = "D:\Dok\Rock\Music\Rendered\01Dr1mrg.wav"
+  gSnds = []
+  gSnds.add(dsNewSound("D:\Dok\Rock\Music\Rendered\01Dr1mrg.wav", 0))
+  gSnds.add(dsNewSound("D:\Dok\Rock\Music\Rendered\01Bs1mrg.wav", 0))
+  gSnds.add(dsNewSound("D:\Dok\Rock\Music\Rendered\01Gt1mrg.wav", 0))
+  gSnds.add(dsNewSound("D:\Dok\Rock\Music\Rendered\01Kb1mrg.wav", 0))
+  gSnds.add(dsNewSound("D:\Dok\Rock\Music\Rendered\01Gt2mrg.wav", 0))
+  gSnds.add(dsNewSound("D:\Dok\Rock\Music\Rendered\01Kb2mrg.wav", 0))
+  gSnds.add(dsNewSound("D:\Dok\Rock\Music\Rendered\01Dr1mrg.wav", 0))
+  pott(gSnds)
+  gWait = the milliSeconds + 100
+  dsSetPosition(gSnds[gSnds.count], 50 * 44100 / 1000)
+end
+
+on cpstart
+  repeat with n = 1 to gSnds.count
+    ID = gSnds[n]
+    if (n <> 1) and (n <> gSnds.count) then
+      dsSetVolume(ID, -2000)
+    end if
+    dsPlay(ID)
+  end repeat
+end
+
+on cpstart2
+  repeat with ID in gSnds
+    dsSetPosition(ID, 0)
+  end repeat
+end
+
+on cpx
+  repeat with ID in gSnds
+    dsStop(ID)
+    dsDelSound(ID)
+  end repeat
+  gSnds = []
+  gWait = 0
+end
+
+on idle
+  if gWait then
+    if the milliSeconds > gWait then
+      gWait = 0
+      cpstart()
+    end if
+  end if
+end

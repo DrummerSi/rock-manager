@@ -1,3 +1,5 @@
+import type { Contract, Demo, Recording, RecordingRules, Style } from './recording';
+import { validRecordingProgress } from './recording';
 export const SLOT_INSTRUMENTS = [
   ['Guitar', 'Keyboards'], ['Guitar', 'Keyboards'], ['Drums'], ['Bass'], ['Vocals'],
 ] as const;
@@ -7,17 +9,33 @@ export const SLOT_NAMES = ['Guitar / keys', 'Guitar / keys', 'Drums', 'Bass', 'V
 export interface Musician {
   id: string; name: string; age: number; salary: number; description: string; genre: string;
   musicality: number; mood: number; health: number; skills: Record<string, number>;
+  instrumentGraphics?: Record<string, string | null>;
+  charisma?: number;
+  style?: Style;
+  smallPortrait?: string;
 }
 export interface BandMember { musicianId: string; instrument: Instrument }
+export interface Song { id: string; name: string; description: string; genre: string; price: number; royalty: number; quality: number }
 export interface GameState {
   version: 1; missionId: 'Mission01'; started: boolean; bandName: string; money: number;
   day: number; startDate: string; band: (BandMember | null)[]; muted: boolean;
+  ownedSongs: string[]; selectedSong: string | null;
+  tutorialEnabled: boolean; seenTutorials: string[];
+  recording: Recording | null; demo: Demo | null; contract: Contract | null;
 }
 
 export function newGame(startMoney: number, date = new Date()): GameState {
   const startDate = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
   return { version: 1, missionId: 'Mission01', started: false, bandName: 'Unnamed band', money: startMoney,
-    day: 0, startDate, band: Array.from({ length: 5 }, () => null), muted: true };
+    day: 0, startDate, band: Array.from({ length: 5 }, () => null), muted: true, ownedSongs: [], selectedSong: null,
+    tutorialEnabled: true, seenTutorials: [], recording: null, demo: null, contract: null };
+}
+
+export function licenseSong(state: GameState, songs: Song[], id: string): GameState {
+  const song = songs.find((s) => s.id === id);
+  if (!song || state.ownedSongs.includes(id)) throw new Error('This song is unavailable.');
+  if (state.money < song.price) throw new Error('You cannot afford this license.');
+  return { ...state, money: state.money - song.price, ownedSongs: [...state.ownedSongs, id], selectedSong: id };
 }
 
 export function candidates(state: GameState, musicians: Musician[], slot: number): Musician[] {
@@ -56,7 +74,7 @@ export function calendarDate(state: GameState): string {
   return new Intl.DateTimeFormat('en-GB', { day: '2-digit', month: 'short', year: 'numeric', timeZone: 'UTC' }).format(date);
 }
 
-export function validSave(value: unknown, musicians: Musician[]): value is GameState {
+export function validSave(value: unknown, musicians: Musician[], songs?: Song[], rules?: RecordingRules): value is GameState {
   if (!value || typeof value !== 'object') return false;
   const s = value as Partial<GameState>;
   if (s.version !== 1 || s.missionId !== 'Mission01' || typeof s.started !== 'boolean'
@@ -65,6 +83,13 @@ export function validSave(value: unknown, musicians: Musician[]): value is GameS
     || typeof s.startDate !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(s.startDate)
     || !Number.isFinite(Date.parse(s.startDate)) || !Array.isArray(s.band) || s.band.length !== 5) return false;
   const seen = new Set<string>();
+  if (typeof s.tutorialEnabled !== 'boolean' || !Array.isArray(s.seenTutorials)
+    || s.seenTutorials.some((id) => typeof id !== 'string' || !/^ECOCMis1[A-Za-z0-9]+$/.test(id))
+    || new Set(s.seenTutorials).size !== s.seenTutorials.length) return false;
+  if (!Array.isArray(s.ownedSongs) || new Set(s.ownedSongs).size !== s.ownedSongs.length
+    || s.ownedSongs.some((id) => typeof id !== 'string' || (songs && !songs.some((song) => song.id === id)))
+    || (s.selectedSong !== null && !s.ownedSongs.includes(s.selectedSong!))) return false;
+  if (!validRecordingProgress(s as GameState, musicians, rules)) return false;
   return s.band.every((member, slot) => {
     if (member === null) return true;
     if (!member || typeof member !== 'object') return false;

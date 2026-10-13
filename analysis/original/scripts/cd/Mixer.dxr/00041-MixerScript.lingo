@@ -1,0 +1,553 @@
+property channelObjs, sortedByInstrument, m_song_r, m_sequencer, m_volController, m_noiseSndObj, m_studio_r, m_masterVolFact, m_buttonObjs, m_musiciansPlaying
+global gDir, gUseful, gRock
+
+on new me
+  global gRock, gDir
+  m_masterVolFact = 0.5
+  m_song_r = gRock.m_context.getFocus(#Song)
+  if voidp(m_song_r) then
+    pott("NO SONG")
+    tmp = #Sng19
+    m_song_r = gRock.m_classManager.getObjByID(tmp)
+    gRock.m_context.setFocus(#Song, m_song_r)
+  end if
+  m_studio_r = gRock.m_context.getFocus(#Studio)
+  if voidp(m_studio_r) then
+    m_studio_r = gRock.m_classManager.getObjByID(#Studio02)
+    gRock.m_context.setFocus(#Studio, m_studio_r)
+  end if
+  band_r = gRock.m_classManager.getObjByID(#Band)
+  if band_r.members.count() = 0 then
+    pott("NO BAND MEMBERS")
+    tmpObjs = gRock.m_classManager.getObjsOfClass(#RealMusician)
+    if tmpObjs.count = 0 then
+      alert("No musicians loaded! Quitting!")
+      quit()
+    end if
+    tmpMax = 5
+    if tmpObjs.count < tmpMax then
+      tmpMax = tmpObjs.count
+    end if
+    tmp = [[#RMCConny, #Guitar], [#RMCGurra, #Bass], [#RMCGullan, #Drums], [#RMCPernille, #Vocals]]
+    repeat with tmpLst in tmp
+      band_r.members.add(tmpLst[1])
+      tmpObj = gRock.m_classManager.getObjByID(tmpLst[1])
+      tmpObj.NowPlaying = tmpLst[2]
+    end repeat
+  end if
+  bandMemberObjs = []
+  repeat with tmpID in band_r.members
+    bandMemberObjs.add(gRock.m_classManager.getObjByID(tmpID))
+  end repeat
+  availLoops = m_song_r.loops.duplicate()
+  loops_r = gRock.m_classManager.getObjsOfClass(#loop)
+  repeat with loop_r in loops_r
+    if loop_r.BelongsToSong = m_song_r.ID then
+      if availLoops.getPos(loop_r.ID) = 0 then
+        availLoops.add(loop_r.ID)
+      end if
+    end if
+  end repeat
+  sortedByInstrument = [:]
+  repeat with tmpLoopID in availLoops
+    loopObj_r = gRock.m_classManager.getObjByID(tmpLoopID)
+    tmpLst = sortedByInstrument.getaProp(loopObj_r.Instrument)
+    if voidp(tmpLst) then
+      tmpLst = []
+      sortedByInstrument.addProp(loopObj_r.Instrument, tmpLst)
+    end if
+    tmpLst.add(loopObj_r)
+  end repeat
+  defaultMixID = rgetProp(m_song_r, #MixerDefault)
+  if not symbolp(defaultMixID) then
+    pott("NO DEF MIX ID")
+  else
+    defaultMixObj_r = gRock.m_classManager.getObjByIDAndClass(defaultMixID, #MixerSettings)
+    if not objectp(defaultMixObj_r) then
+      pott("NO DEF MIX OBJ", defaultMixID)
+      loops = rgetProp(m_song_r, #loops)
+      channelInfoObjs = []
+      repeat with LoopID in loops
+        loopObj_r = gRock.m_classManager.getObjByIDAndClass(LoopID, #loop)
+        channelInfoObjs.add([#LoopID: LoopID, #vol: 0.69999999999999996, #Pan: 0.0])
+      end repeat
+    else
+      channelIDs = rgetProp(defaultMixObj_r, #channels)
+      channelInfoObjs = []
+      repeat with ID in channelIDs
+        channel_r = gRock.m_classManager.getObjByIDAndClass(ID, #channel)
+        if objectp(channel_r) then
+          channelInfoObjs.add(channel_r)
+          next repeat
+        end if
+        pott("Err, wrong channelInfo ID in DefMix", ID)
+      end repeat
+    end if
+  end if
+  m_sequencer = script("PlaySequenceScript").new()
+  m_sequencer.m_bpm = rgetProp(m_song_r, #BPM)
+  if voidp(m_sequencer.m_bpm) then
+    m_sequencer.m_bpm = 120.0
+  end if
+  m_sequencer.m_numBars = m_song_r.numBars
+  m_sequencer.m_beatSignature = m_song_r.TimeSignature
+  if m_studio_r.quality < 0.90000000000000002 then
+  end if
+  perChannelSettings = []
+  tmpLoopsWithMixSetting = [:]
+  tmpInstrumentsWithMixSetting = [:]
+  repeat with channel_r in channelInfoObjs
+    tmpLoopsWithMixSetting.addProp(channel_r.LoopID, channel_r)
+    loop_r = gRock.m_classManager.getObjByIDAndClass(channel_r.LoopID, #loop)
+    lst = tmpInstrumentsWithMixSetting.getaProp(loop_r.Instrument)
+    if not listp(lst) then
+      lst = []
+      tmpInstrumentsWithMixSetting.addProp(loop_r.Instrument, lst)
+    end if
+    lst.add(channel_r)
+  end repeat
+  tmpUnusedLoopsByInstrument = sortedByInstrument.duplicate()
+  importance = [:]
+  importance.sort()
+  unusedMusicians = []
+  musiciansMix = [:]
+  repeat with mus_r in bandMemberObjs
+    lst = tmpInstrumentsWithMixSetting.getaProp(mus_r.NowPlaying)
+    if voidp(lst) then
+      lst = []
+    end if
+    if lst.count then
+      channel_r = lst[1]
+      tmpImportance = channelInfoObjs.getPos(channel_r)
+      importance.addProp(tmpImportance, mus_r)
+      musiciansMix.addProp(mus_r, channel_r)
+      lst.deleteAt(1)
+      tmpLoops = tmpUnusedLoopsByInstrument.getaProp(mus_r.NowPlaying)
+      loop_r = gRock.m_classManager.getObjByIDAndClass(channel_r.LoopID, #loop)
+      tmpLoops.deleteOne(loop_r)
+      next repeat
+    end if
+    unusedMusicians.add(mus_r)
+  end repeat
+  repeat with n = 1 to importance.count
+    mus_r = importance[n]
+    channel_r = musiciansMix.getaProp(mus_r)
+    loop_r = gRock.m_classManager.getObjByIDAndClass(channel_r.LoopID, #loop)
+    perChannelSettings.add([#Musician: mus_r, #ChInfo: channel_r, #loop: loop_r])
+  end repeat
+  repeat with mus_r in unusedMusicians
+    tmpLoops = tmpUnusedLoopsByInstrument.getaProp(mus_r.NowPlaying)
+    if voidp(tmpLoops) then
+      tmpLoops = []
+    end if
+    if tmpLoops.count then
+      loop_r = tmpLoops[1]
+      tmpLoops.deleteAt(1)
+    else
+      loop_r = sortedByInstrument.getaProp(mus_r.NowPlaying)[1]
+    end if
+    perChannelSettings.add([#Musician: mus_r, #loop: loop_r])
+  end repeat
+  repeat with n = perChannelSettings.count down to m_studio_r.NumChannels + 1
+    perChannelSettings.deleteAt(n)
+  end repeat
+  repeat with n = perChannelSettings.count + 1 to m_studio_r.NumChannels
+    perChannelSettings.add([#Musician: 0, #loop: 0])
+  end repeat
+  repeat with n = channelInfoObjs.count + 1 to m_studio_r.NumChannels
+    channel_r = gRock.m_classManager.createObj(#channel)
+    channel_r.ID = gRock.m_classManager.genUniqueID(channel_r)
+    channel_r.LoopID = #none
+    channel_r.vol = 0.0
+    channel_r.Mute = 1
+    channel_r.Pan = 0.0
+    channelInfoObjs.add(channel_r)
+  end repeat
+  internalChannelOrder = [#Drums, #Bass, #Guitar, #Keyboards, #Vocals]
+  sortedByInternal = [:]
+  sortedByInternal.sort()
+  repeat with visualChNr = 1 to perChannelSettings.count
+    Info = perChannelSettings[visualChNr]
+    if objectp(Info[#loop]) then
+      sortedByInternal.addProp(internalChannelOrder.getPos(Info[#loop].Instrument), visualChNr)
+      next repeat
+    end if
+    sortedByInternal.addProp(99, visualChNr)
+  end repeat
+  repeat with n = 1 to sortedByInternal.count
+    visualChNr = sortedByInternal[n]
+    Info = perChannelSettings[visualChNr]
+    Info[#internalPrio] = n
+  end repeat
+  m_musiciansPlaying = [:]
+  channelObjs = []
+  prioSortedChannelObjs = [:]
+  tmpSPNum = gDir.m_spriteList[#channels]
+  repeat with visualChNr = 1 to m_studio_r.NumChannels
+    infoList = perChannelSettings[visualChNr]
+    mus_r = infoList[#Musician]
+    m_musiciansPlaying.addProp(visualChNr, mus_r)
+    loop_r = infoList[#loop]
+    channel_r = infoList[#ChInfo]
+    chObj = script("ChannelScript").new(me, tmpSPNum, point(321 + ((visualChNr - 1) * 60), 103), visualChNr, infoList[#internalPrio])
+    chObj.setMusician(mus_r)
+    channelObjs.add(chObj)
+    prioSortedChannelObjs.addProp(infoList[#internalPrio], chObj)
+    tmpSPNum = tmpSPNum + chObj.getNumSPs()
+  end repeat
+  repeat with n = 1 to prioSortedChannelObjs.count
+    chObj = prioSortedChannelObjs[n]
+    visualChNr = chObj.channelNum
+    infoList = perChannelSettings[visualChNr]
+    loop_r = infoList[#loop]
+    if objectp(loop_r) then
+      chObj.prepareLoop(loop_r)
+    end if
+    if objectp(channel_r) then
+      chObj.setSetting(#vol, channel_r.vol * 100, #Gfx)
+      chObj.setSetting(#Pan, channel_r.Pan * 100, #Gfx)
+      next repeat
+    end if
+    if objectp(loop_r) then
+      chObj.setSetting(#vol, 70, #Gfx)
+      chObj.setSetting(#Pan, 0, #Gfx)
+      next repeat
+    end if
+    chObj.setSetting(#vol, 70, #Gfx)
+    chObj.setSetting(#Pan, 0, #Gfx)
+  end repeat
+  tmpSPNum = gDir.m_spriteList[#MasterVol]
+  tmpMinMaxObj = new(script("MinMaxScript"), 0.0, 0.90000000000000002)
+  m_volController = new(script("PotentiometerScript"), me, "large_ratt01_0000", 64, tmpSPNum, sprite(tmpSPNum).loc, #MasterVol, tmpMinMaxObj)
+  m_volController.setMinMaxRelVal(m_masterVolFact)
+  m_buttonObjs = [:]
+  tmpSPNum = gDir.m_spriteList[#ButtonPlay]
+  tmpObj = script("ButtonScript").new(me, "button_playback_play01", sprite(tmpSPNum).loc, tmpSPNum, [#ID: #play, #states: [#down: 1], #SPUse: 1, #Toggle: 1, #layer: 50])
+  m_buttonObjs.addProp(#play, tmpObj)
+  tmpSPNum = gDir.m_spriteList[#ButtonStop]
+  tmpObj = script("ButtonScript").new(me, "button_playback_stop01", sprite(tmpSPNum).loc, tmpSPNum, [#ID: #stop, #states: [#down: 1], #SPUse: 1, #Toggle: 1, #layer: 50])
+  m_buttonObjs.addProp(#stop, tmpObj)
+  return me
+end
+
+on kill me
+  m_musiciansPlaying = [:]
+  sortedByInstrument = 0
+  m_song_r = 0
+  m_studio_r = 0
+  repeat with tmpObj in channelObjs
+    tmpObj.kill()
+  end repeat
+  pott("EEEE!")
+  channelsObjs = []
+  repeat with tmpObj in m_buttonObjs
+    tmpObj.kill()
+  end repeat
+  m_buttonObjs = [:]
+  if objectp(m_sequencer) then
+    m_sequencer = m_sequencer.kill()
+  end if
+  if objectp(m_noiseSndObj) then
+    m_noiseSndObj = m_noiseSndObj.kill()
+  end if
+  if objectp(m_volController) then
+    m_volController = m_volController.kill()
+  end if
+  return 0
+end
+
+on prepareFirstTimePlay me
+  global gDir
+  gDir.m_waveRenderer.m_doWhatWhenDoneList = [#ReportTo: me, #handler: #firstTimePlay]
+  gDir.m_waveRenderer.renderQueue()
+end
+
+on firstTimePlay me
+  global gDir
+  repeat with channelObj in channelObjs
+    channelObj.play()
+  end repeat
+  gDir.m_dlgOKButton.allowClick(1)
+  m_sequencer.prepare()
+  me.play()
+end
+
+on playSoon me
+  script("WaitForNextFrameScript").new(VOID, [#call, #play, me])
+end
+
+on play me
+  m_buttonObjs[#play].setState(#down)
+  m_buttonObjs[#play].activate(0)
+  m_buttonObjs[#stop].setState(#normal)
+  m_buttonObjs[#stop].activate(1)
+  repeat with tmpObj in channelObjs
+    tmpObj.play()
+  end repeat
+  m_sequencer.play()
+end
+
+on stop me
+  m_buttonObjs[#stop].setState(#down)
+  m_buttonObjs[#stop].activate(0)
+  m_buttonObjs[#play].setState(#normal)
+  m_buttonObjs[#play].activate(1)
+  m_sequencer.stop()
+  repeat with tmpObj in channelObjs
+    tmpObj.stop()
+  end repeat
+end
+
+on changeMusician me, argChannelNr, argMus_r
+  m_musiciansPlaying.setaProp(argChannelNr, argMus_r)
+end
+
+on getInstrumentsAvailableAsLoops me
+  tmp = []
+  repeat with n = 1 to sortedByInstrument.count()
+    tmp.add(sortedByInstrument.getPropAt(n))
+  end repeat
+  return tmp
+end
+
+on getLoops me, argInstrument
+  tmp = sortedByInstrument.getaProp(argInstrument)
+  if voidp(tmp) then
+    tmp = []
+  end if
+  return tmp
+end
+
+on getFreeLoops me, argInstrument
+  tmpByInstr = sortedByInstrument.getaProp(argInstrument)
+  tmpByInstr = tmpByInstr.duplicate()
+  tmpList = []
+  repeat with tmpObj in channelObjs
+    if tmpObj.loopObj_r = argInstrument then
+      tmpByInstr.deleteOne(tmpObj.loopObj_r)
+    end if
+  end repeat
+  return tmpByInstr
+end
+
+on timeTick me
+end
+
+on setFreq me, argVal
+end
+
+on mouse me, argObj, argWhat
+  if argWhat = #click then
+    if argObj.ID = #stop then
+      me.stop()
+    else
+      if argObj.ID = #play then
+        me.play()
+      end if
+    end if
+  end if
+end
+
+on createMixDown me
+  tmpMixList = []
+  repeat with tmpObj in channelObjs
+    tmp = tmpObj.getMixDownParams()
+    if listp(tmp) then
+      tmpMixList.add(tmp)
+    end if
+  end repeat
+  mixMixDown(tmpMixList, m_sequencer.getSequenceLength(#Secs), gRock.m_paths.getPath(#RenderedMusic) & "mixdown.wav")
+end
+
+on Report me, argObj, argWhat, argOptions
+  if argObj = m_volController then
+    m_masterVolFact = argOptions
+    repeat with channelObj in channelObjs
+      channelObj.setSetting(#vol)
+    end repeat
+  end if
+end
+
+on getChannelObj me, argChannelNum
+  if (argChannelNum > 0) and (argChannelNum <= channelObjs.count()) then
+    return channelObjs[argChannelNum]
+  end if
+end
+
+on calcResult me
+  me.createMixDown()
+  me.calcMusiciansReactions()
+  me.calcAlbumSettings()
+end
+
+on calcAlbumSettings me
+  album_r = gRock.m_classManager.createObj(#album)
+  album_r.ID = gRock.m_classManager.genUniqueID(album_r)
+  band_r = gRock.m_context.getFocus(#Band)
+  band_r.calcStyleMix()
+  gRock.m_classManager.copy(m_song_r.StyleMix, album_r.MusicStyle)
+  album_r.SongType = m_song_r.SongType
+  numUsedChannels = 0
+  qualityList = [:]
+  repeat with n = 1 to channelObjs.count()
+    chObj = channelObjs[n]
+    if not objectp(chObj.m_loopObj_r) then
+      next repeat
+    end if
+    if chObj.getSetting(#Mute) = 1 then
+      next repeat
+    end if
+    if not objectp(chObj.channelMusicianObj.m_musician_r) then
+      next repeat
+    end if
+    vol = chObj.getSetting(#vol)
+    vol = vol / 100.0
+    if vol > 0.29999999999999999 then
+      weight = 1.0
+    else
+      weight = vol / 0.29999999999999999
+    end if
+    if vol > 0 then
+      numUsedChannels = numUsedChannels + 1
+    end if
+    instrumentID = chObj.m_loopObj_r.Instrument
+    if instrumentID = #Vocals then
+      weight = weight * 1.30000000000000004
+    end if
+    Musicality = rgetProp(chObj.channelMusicianObj.m_musician_r, #Musicality)
+    if objectp(Musicality) then
+      Musicality = Musicality.Current
+    end if
+    qualityList.addProp(weight, Musicality)
+    tmpStyleMix = rCreateCopy(chObj.m_loopObj_r.StyleMix)
+    gRock.m_classManager.multiply(tmpStyleMix, weight)
+    gRock.m_classManager.add(album_r.MusicStyle, tmpStyleMix)
+  end repeat
+  tuneDebug("ChannelsQuality", qualityList)
+  channelsQuality = calcAverage(qualityList)
+  calcMixerSettingEffectsOnResult(channelObjs, album_r)
+  musician_r = band_r.getMusicianPlaying(#Vocals)
+  if objectp(musician_r) then
+    rCalcObjsAverage(album_r.MusicStyle, [1.0: album_r.MusicStyle, 0.20000000000000001: musician_r.MusicStyle])
+  end if
+  numUsedChannelsQualityChangeList = [-0.29999999999999999, -0.20000000000000001, -0.10000000000000001, 0.0, 0, 1, 0.14999999999999999, 0.20000000000000001]
+  if numUsedChannels > numUsedChannelsQualityChangeList.count then
+    numChQualityChange = numUsedChannelsQualityChangeList[numUsedChannelsQualityChangeList.count]
+  else
+    numChQualityChange = numUsedChannelsQualityChangeList[numUsedChannels]
+  end if
+  album_r.quality = numChQualityChange + calcAverage([0.25: m_song_r.quality, 1: channelsQuality, 0.25: m_studio_r.quality])
+  if album_r.quality < 0 then
+    album_r.quality = 0
+  else
+    if album_r.quality > 1 then
+      album_r.quality = 1
+    end if
+  end if
+  tmpProps = gRock.m_classManager.getPropsInClass(album_r.MusicStyle.className)
+  repeat with propNr = 1 to tmpProps.count
+    prop = tmpProps.getPropAt(propNr)
+    val = rgetProp(album_r.MusicStyle, prop)
+    if val < 0 then
+      rsetPropSimple(album_r.MusicStyle, prop, 0)
+      next repeat
+    end if
+    if val > 1 then
+      rsetPropSimple(album_r.MusicStyle, prop, 1)
+    end if
+  end repeat
+  rCalcObjsAverage(album_r.ImageStyle, [1.0: band_r.MusicStyle])
+  tuneDebug("Quality: Song", m_song_r.quality, "Channels", channelsQuality, "Studio", m_studio_r.quality, "NumChannels:", numChQualityChange, "Total", album_r.quality)
+  tuneDebugObject(album_r.MusicStyle, "MusicStyle")
+  tuneDebug("SongType", album_r.SongType)
+  album_r.recorded(m_song_r)
+end
+
+on calcMusiciansReactions me
+  band_r = gRock.m_context.getFocus(#Band)
+  musicians_r = []
+  repeat with n = 1 to band_r.members.count
+    musID = band_r.members[n]
+    musician_r = gRock.m_classManager.getObjByIDAndClass(musID, #RealMusician)
+    musicians_r.add(musician_r)
+  end repeat
+  whoNormallyPlaysInstrument = [:]
+  repeat with n = 1 to musicians_r.count
+    musician_r = musicians_r[n]
+    othersPlayingThat = whoNormallyPlaysInstrument.getaProp(musician_r.NowPlaying)
+    if voidp(othersPlayingThat) then
+      othersPlayingThat = []
+      whoNormallyPlaysInstrument.setaProp(musician_r.NowPlaying, othersPlayingThat)
+    end if
+    othersPlayingThat.add(musician_r)
+  end repeat
+  volPerMusician = [:]
+  bandTotalVol = 0.0
+  repeat with n = 1 to channelObjs.count()
+    chObj = channelObjs[n]
+    if not objectp(chObj.m_loopObj_r) then
+      next repeat
+    end if
+    if chObj.getSetting(#Mute) = 1 then
+      next repeat
+    end if
+    if chObj.getSetting(#vol) = 0 then
+      next repeat
+    end if
+    if not objectp(chObj.channelMusicianObj.m_musician_r) then
+      next repeat
+    end if
+    vol = chObj.getSetting(#vol)
+    whosPlaying_r = chObj.channelMusicianObj.m_musician_r
+    Instrument = chObj.m_loopObj_r.Instrument
+    if whosPlaying_r.className = #StudioMusician then
+      if 0 then
+        normallyPlays = whoNormallyPlaysInstrument.getaProp(Instrument)
+        if listp(normallyPlays) then
+          repeat with musician_r in normallyPlays
+            angryFact = -0.20000000000000001 * (whosPlaying_r.Selfperception + 1) / 2
+            rCreateModifier(#StudioMusician, musician_r.ID, #Mood, angryFact, 10)
+            pott("Studiomusician is playing my instrument!", musician_r.ID)
+          end repeat
+        end if
+      end if
+      next repeat
+    end if
+    totVol = volPerMusician.getaProp(whosPlaying_r)
+    if voidp(totVol) then
+      totVol = 0.0
+    end if
+    totVol = totVol + vol
+    volPerMusician.setaProp(whosPlaying_r, totVol)
+    bandTotalVol = bandTotalVol + vol
+  end repeat
+  repeat with musician_r in musicians_r
+    if voidp(volPerMusician.getaProp(musician_r)) then
+      volPerMusician.addProp(musician_r, 0)
+    end if
+  end repeat
+  if volPerMusician.count = 0 then
+  else
+    averageVol = bandTotalVol / volPerMusician.count
+    angriestVolMusician_r = 0
+    worstVolFraction = 1
+    repeat with musician_r in musicians_r
+      angryThreshold = (0.34999999999999998 * (musician_r.Selfperception + 1)) + 0.10000000000000001
+      volFraction = volPerMusician.getaProp(musician_r) / averageVol
+      pott("Angry?", musician_r.ID, angryThreshold, volFraction, volPerMusician.getaProp(musician_r), averageVol)
+      if volFraction < angryThreshold then
+        tmp = volFraction / angryThreshold
+        if tmp < worstVolFraction then
+          worstVolFraction = tmp
+          angriestVolMusician_r = musician_r
+        end if
+      end if
+    end repeat
+    if objectp(angriestVolMusician_r) then
+      angryFact = 0.20000000000000001
+      rCreateModifier(#StudioLowVol, angriestVolMusician_r.ID, #Mood, angryFact, 10)
+      pott("Angry card", angriestVolMusician_r.ID)
+      gRock.m_eventCardsManager.tryNewShowEventCard(#ECOCArtistLow, [#EventCardOptions: [#HumanID: angriestVolMusician_r.ID]])
+    end if
+  end if
+end

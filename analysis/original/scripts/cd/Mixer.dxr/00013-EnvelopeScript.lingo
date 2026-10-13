@@ -1,0 +1,89 @@
+property points, myRect, SPNum, mouseMasterObj, mouseObj
+
+on new me, argReportObj, argSPNum, argRect
+  tmpInitLvl = 0.5
+  points = [:]
+  sort(points)
+  points.addProp(0, tmpInitLvl)
+  points.addProp(1, tmpInitLvl)
+  SPNum = argSPNum
+  myRect = new(script("RectScript"), argRect)
+  mouseMasterObj = new(script("MouseObjectManager"))
+  return me
+end
+
+on kill me
+  if objectp(mouseObj) then
+    mouseObj = mouseObj.kill()
+  end if
+  mouseMasterObj = mouseMasterObj.kill()
+  myRect = myRect.kill()
+  return 0
+end
+
+on mouse me, argObj, argWhat
+  if argObj = mouseObj then
+    if argWhat = #click then
+      tmpLoc = point(the mouseH, the mouseV)
+      tmp = myRect.getWhereInRectFact(tmpLoc)
+      points.addProp(tmp[1], tmp[2])
+      me.render()
+    end if
+  else
+  end if
+end
+
+on render me
+  tmpSP1 = sprite(SPNum + 1)
+  tmpSP1.trails = 1
+  tmpSP2 = sprite(SPNum + 2)
+  tmpSP2.trails = 1
+  sprite(SPNum).visible = 0
+  sprite(SPNum).visible = 1
+  tmpLoc1 = [points.getPropAt(1), points[1]]
+  tmpPoint1 = myRect.getWhereInRectPix(tmpLoc1)
+  repeat with n = 2 to count(points)
+    tmpLoc2 = [points.getPropAt(n), points[n]]
+    tmpPoint2 = myRect.getWhereInRectPix(tmpLoc2)
+    drawALine(tmpPoint1, tmpPoint2, tmpSP1)
+    tmpSP2.loc = tmpPoint1
+    updateStage()
+    tmpPoint1 = tmpPoint2
+  end repeat
+  tmpSP2.loc = tmpPoint1
+end
+
+on getValueAt me, argTime, argTotalTime
+  if voidp(argTotalTime) then
+    argTotalTime = 1.0
+  end if
+  tmpFact = argTime / float(argTotalTime)
+  points.addProp(tmpFact, -1)
+  tmpPos = points.getPos(-1)
+  points.deleteOne(-1)
+  if tmpPos = 1 then
+    tmpPos = 2
+  end if
+  tmpVal = me.interpolate(tmpFact, [points.getPropAt(tmpPos - 1), points[tmpPos - 1]], [points.getPropAt(tmpPos), points[tmpPos]])
+  return tmpVal
+end
+
+on interpolate me, argVal, argPair1, argPair2
+  tmpDiff = argPair2 - argPair1
+  tmpDiffY = tmpDiff[2]
+  argVal = argVal - argPair1[1]
+  tmpFact = argVal / tmpDiff[1]
+  return (tmpFact * tmpDiff[2]) + argPair1[2]
+end
+
+on display me, argIsTRUE
+  if argIsTRUE then
+    mouseObj = new(script("MouseObject"), me, myRect.getRect())
+    sprite(SPNum).member = member("EnvelopePic")
+    sprite(SPNum).loc = myRect.topLeft
+  else
+    if objectp(mouseObj) then
+      mouseObj = mouseObj.kill()
+    end if
+  end if
+end

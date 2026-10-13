@@ -1,7 +1,116 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import data from '../src/generated/game-data.json';
-import { advanceDay, calendarDate, candidates, newGame, recruit, validSave } from '../src/game/model';
+import { advanceDay, calendarDate, candidates, licenseSong, newGame, recruit, validSave } from '../src/game/model';
+import { initialCityAnimation, tickCityAnimation } from '../src/game/city-animation';
+import { chooseSessionMusician, contractOffers, defaultEffects, evaluateDemo, finishRecording, signContract, startRecording, updateChannel } from '../src/game/recording';
+
+function recordingBand() {
+  let state = newGame(100000, new Date(2001, 2, 13));
+  for (const [slot, id, instrument] of [[0, 'RMCJerka', 'Guitar'], [1, 'RMCTony', 'Guitar'], [2, 'RMCRaymond', 'Drums'],
+    [3, 'RMCGurra', 'Bass'], [4, 'RMCSussie', 'Vocals']] as const) state = recruit(state, data.musicians, slot, id, instrument);
+  return licenseSong(state, data.songs, 'Sng01');
+}
+
+test('studios require a band, licensed song and funds; rental is charged once and saved while mixing', () => {
+  assert.throws(() => startRecording(licenseSong(newGame(100000), data.songs, 'Sng01'), data.tutorialGameplay, 'Studio01', 'Sng01'));
+  const band = recordingBand();
+  assert.throws(() => startRecording(band, data.tutorialGameplay, 'Studio01', 'Sng03'));
+  assert.throws(() => startRecording({ ...band, money: 5999 }, data.tutorialGameplay, 'Studio01', 'Sng01'));
+  const paid = startRecording(band, data.tutorialGameplay, 'Studio01', 'Sng01');
+  assert.equal(paid.money, 83000);
+  assert.equal(paid.day, 0, 'The original freezes game time while mixing; no invented recording delay');
+  assert.equal(paid.recording?.channels.length, 5);
+  assert.throws(() => startRecording(paid, data.tutorialGameplay, 'Studio01', 'Sng01'));
+  assert.ok(validSave(JSON.parse(JSON.stringify(paid)), data.musicians, data.songs, data.tutorialGameplay));
+  assert.equal(startRecording(band, data.tutorialGameplay, 'Studio04', 'Sng01').recording?.channels.length, 4);
+  assert.equal(startRecording(licenseSong(band, data.songs, 'Sng02'), data.tutorialGameplay, 'Studio01', 'Sng01').selectedSong, 'Sng01');
+});
+
+test('demo quality uses recovered weighted musicality, channel count and studio/song contributions', () => {
+  const paid = startRecording(recordingBand(), data.tutorialGameplay, 'Studio01', 'Sng01');
+  const finished = finishRecording(paid, data.tutorialGameplay, data.musicians, data.songs);
+  // Weighted band musicality: vocals .6*1.3 plus .7,.3,.5,.6 over weight5.3.
+  const expected = (0.25 * 0.4 + 2.88 / 5.3 + 0.25 * 0.5) / 1.5;
+  assert.ok(Math.abs(finished.demo!.quality - expected) < 1e-12);
+  assert.equal(finished.money, paid.money);
+  assert.equal(finished.recording, null);
+  assert.equal(finished.demo!.songType, 0.7);
+  const muted = updateChannel(paid, 0, { muted: true }, data.tutorialGameplay);
+  assert.equal(finishRecording(muted, data.tutorialGameplay, data.musicians, data.songs).demo!.songType, 0.35);
+  let silent = paid;
+  for (let i = 0; i < 5; i++) silent = updateChannel(silent, i, { volume: 0 }, data.tutorialGameplay);
+  assert.throws(() => finishRecording(silent, data.tutorialGameplay, data.musicians, data.songs));
+});
+
+test('session musician selection charges on replacement, not re-selection, and rejects unaffordable fees', () => {
+  const paid = startRecording(recordingBand(), data.tutorialGameplay, 'Studio01', 'Sng01');
+  const chosen = chooseSessionMusician(paid, data.tutorialGameplay, 0, 'Stud04');
+  assert.equal(chosen.money, paid.money - 16000);
+  assert.equal(chooseSessionMusician(chosen, data.tutorialGameplay, 0, 'Stud04').money, chosen.money);
+  assert.ok(finishRecording(chosen, data.tutorialGameplay, data.musicians, data.songs).demo!.quality > finishRecording(paid, data.tutorialGameplay, data.musicians, data.songs).demo!.quality);
+  assert.throws(() => chooseSessionMusician({ ...paid, money: 15999 }, data.tutorialGameplay, 0, 'Stud04'));
+  assert.throws(() => chooseSessionMusician(paid, data.tutorialGameplay, 0, 'Stud01'));
+  assert.equal(chooseSessionMusician(chosen, data.tutorialGameplay, 0, null).recording?.channels[0].musicianId, 'RMCSussie');
+});
+
+test('labels judge style, song type and quality; negotiation links royalty to advance and signing pays once', () => {
+  const demo = finishRecording(startRecording(recordingBand(), data.tutorialGameplay, 'Studio01', 'Sng01'), data.tutorialGameplay, data.musicians, data.songs);
+  const rebel = data.tutorialGameplay.labels.find((l) => l.id === 'Record01')!;
+  const rainbow = data.tutorialGameplay.labels.find((l) => l.id === 'Record03')!;
+  assert.equal(evaluateDemo(demo, rebel, data.musicians).accepted, true);
+  assert.equal(evaluateDemo(demo, rainbow, data.musicians).accepted, false);
+  assert.throws(() => signContract(demo, rainbow, data.musicians, 4));
+  const offers = contractOffers(rebel, 0.6555066918439012);
+  assert.equal(offers.length, 11);
+  assert.deepEqual(offers[0], { advance: 70000, royalty: 0.05 });
+  assert.deepEqual(offers[10], { advance: 40000, royalty: 0.15 });
+  const signed = signContract(demo, rebel, data.musicians, 5);
+  assert.equal(signed.money, demo.money + offers[5].advance);
+  assert.equal(signed.contract!.albums, 3);
+  assert.throws(() => signContract(signed, rebel, data.musicians, 5));
+  assert.ok(validSave(JSON.parse(JSON.stringify(signed)), data.musicians, data.songs, data.tutorialGameplay));
+  assert.equal(validSave({ ...signed, contract: { ...signed.contract, signedDay: -1 } }, data.musicians, data.songs, data.tutorialGameplay), false);
+});
+
+test('saved effects retain their normalized ranges and reject corrupt settings without changing demo quality', () => {
+  const paid = startRecording(recordingBand(), data.tutorialGameplay, 'Studio01', 'Sng01');
+  const effects = defaultEffects(); effects.delay.active = true; effects.delay.mix = 1; effects.timeShift.mode = true;
+  const edited = updateChannel(paid, 1, { effects }, data.tutorialGameplay);
+  assert.ok(validSave(JSON.parse(JSON.stringify(edited)), data.musicians, data.songs, data.tutorialGameplay));
+  assert.equal(finishRecording(edited, data.tutorialGameplay, data.musicians, data.songs).demo!.quality,
+    finishRecording(paid, data.tutorialGameplay, data.musicians, data.songs).demo!.quality);
+  assert.throws(() => updateChannel(paid, 1, { effects: { ...effects, delay: { ...effects.delay, decay: 2 } } }, data.tutorialGameplay));
+  const corrupt = { ...paid, recording: { ...paid.recording, channels: paid.recording!.channels.map((c, i) => i === 1 ? { ...c, effects: null } : c) } };
+  assert.equal(validSave(corrupt, data.musicians, data.songs, data.tutorialGameplay), false);
+});
+
+test('city frame scripts retain three-tick cadence, long pauses and looping order', () => {
+  const sequence = [{ offset: 14, pause: 450 }, { offset: 0, pause: 0 }, { offset: 1, pause: 0 }];
+  let state = tickCityAnimation(initialCityAnimation(), sequence);
+  assert.equal(state.offset, 14);
+  for (let i = 0; i < 1350; i++) state = tickCityAnimation(state, sequence);
+  assert.equal(state.offset, 14);
+  assert.equal(state.pause, 0);
+  for (let i = 0; i < 3; i++) state = tickCityAnimation(state, sequence);
+  assert.equal(state.offset, 0);
+  for (let i = 0; i < 3; i++) state = tickCityAnimation(state, sequence);
+  assert.equal(state.offset, 1);
+  for (let i = 0; i < 3; i++) state = tickCityAnimation(state, sequence);
+  assert.equal(state.offset, 14);
+});
+
+test('licensing uses recovered price, prevents duplicates, rejects unavailable and unaffordable songs', () => {
+  const licensed = licenseSong(newGame(100000), data.songs, 'Sng01');
+  assert.equal(licensed.money, 89000);
+  assert.deepEqual(licensed.ownedSongs, ['Sng01']);
+  assert.equal(licensed.selectedSong, 'Sng01');
+  assert.throws(() => licenseSong(licensed, data.songs, 'Sng01'));
+  assert.throws(() => licenseSong(newGame(100), data.songs, 'Sng01'));
+  assert.throws(() => licenseSong(newGame(100000), data.songs, 'Sng03'));
+  assert.ok(validSave(licensed, data.musicians, data.songs));
+  assert.equal(validSave({ ...licensed, selectedSong: 'Sng02' }, data.musicians, data.songs), false);
+});
 
 test('Mission01 starts with recovered funds and filters candidates by the original position rules', () => {
   const state = newGame(data.mission.startMoney, new Date(2001, 2, 13));

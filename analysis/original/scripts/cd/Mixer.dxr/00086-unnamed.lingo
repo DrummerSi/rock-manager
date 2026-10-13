@@ -1,0 +1,96 @@
+on calcMixerSettingEffectsOnResult argChannelObjs, argAlbum_r
+  SongType = 0.0
+  quality = 0.0
+  musStyle_r = argAlbum_r.MusicStyle
+  usedInst = [#Guitar: 0, #Bass: 0, #Keyboards: 0, #Vocals: 0, #Drums: 0]
+  repeat with n = 1 to argChannelObjs.count
+    chObj = argChannelObjs[n]
+    if not objectp(chObj.m_loopObj_r) then
+      next repeat
+    end if
+    if chObj.getSetting(#Mute) = 1 then
+      next repeat
+    end if
+    if not objectp(chObj.channelMusicianObj.m_musician_r) then
+      next repeat
+    end if
+    vol = chObj.getSetting(#vol)
+    vol = vol / 100.0
+    if vol < 0.20000000000000001 then
+      next repeat
+    end if
+    instrumentID = chObj.m_loopObj_r.Instrument
+    tmp = usedInst.getaProp(instrumentID)
+    if voidp(tmp) then
+      tmp = 0
+    end if
+    usedInst.setaProp(instrumentID, tmp + 1)
+  end repeat
+  if (usedInst.getaProp(#Guitar) = 0) and (usedInst.getaProp(#Keyboards) = 0) and (usedInst.getaProp(#Bass) = 1) then
+    SongType = SongType - 0.10000000000000001
+  end if
+  if (usedInst.getaProp(#Guitar) = 0) and (usedInst.getaProp(#Keyboards) = 0) and (usedInst.getaProp(#Bass) = 0) then
+    SongType = SongType - 0.20000000000000001
+    quality = quality - 0.29999999999999999
+    musStyle_r.Metal = musStyle_r.Metal - 0.20000000000000001
+    musStyle_r.rock = musStyle_r.rock - 0.10000000000000001
+  end if
+  if (usedInst.getaProp(#Guitar) = 0) and (usedInst.getaProp(#Keyboards) >= 1) then
+    musStyle_r.Metal = musStyle_r.Metal - 0.29999999999999999
+    musStyle_r.rock = musStyle_r.rock - 0.10000000000000001
+  end if
+  if usedInst.getaProp(#Guitar) = 2 then
+    musStyle_r.Metal = musStyle_r.Metal + 0.10000000000000001
+    musStyle_r.rock = musStyle_r.rock + 0.10000000000000001
+  else
+    if usedInst.getaProp(#Guitar) >= 3 then
+      musStyle_r.Metal = musStyle_r.Metal + 0.10000000000000001
+      musStyle_r.rock = musStyle_r.rock + 0.10000000000000001
+    end if
+  end if
+  if usedInst.getaProp(#Bass) = 0 then
+    quality = quality - 0.10000000000000001
+  else
+    if usedInst.getaProp(#Bass) = 2 then
+    else
+      if usedInst.getaProp(#Bass) >= 3 then
+        SongType = SongType - 0.10000000000000001
+      end if
+    end if
+  end if
+  if usedInst.getaProp(#Drums) = 0 then
+    SongType = SongType - 0.10000000000000001
+    quality = quality - 0.10000000000000001
+    musStyle_r.Boring = musStyle_r.Boring + 0.10000000000000001
+  else
+    if usedInst.getaProp(#Drums) = 2 then
+      musStyle_r.Metal = musStyle_r.Metal + 0.10000000000000001
+      musStyle_r.Dance = musStyle_r.Dance + 0.10000000000000001
+    else
+      if usedInst.getaProp(#Drums) >= 3 then
+        SongType = SongType - 0.20000000000000001
+        quality = quality - 0.10000000000000001
+      end if
+    end if
+  end if
+  if usedInst.getaProp(#Keyboards) = 1 then
+    musStyle_r.Pop = musStyle_r.Pop + 0.10000000000000001
+  else
+    if usedInst.getaProp(#Keyboards) = 2 then
+      musStyle_r.Pop = musStyle_r.Pop + 0.20000000000000001
+    else
+      if usedInst.getaProp(#Keyboards) >= 3 then
+        SongType = SongType - 0.14999999999999999
+        musStyle_r.Pop = musStyle_r.Pop + 0.20000000000000001
+      end if
+    end if
+  end if
+  if usedInst.getaProp(#Vocals) = 0 then
+    SongType = SongType - 0.14999999999999999
+    musStyle_r.Boring = musStyle_r.Boring + 0.10000000000000001
+    SongType = SongType - 0.20000000000000001
+    quality = quality - 0.20000000000000001
+  end if
+  argAlbum_r.SongType = argAlbum_r.SongType + SongType
+  argAlbum_r.quality = argAlbum_r.quality + quality
+end

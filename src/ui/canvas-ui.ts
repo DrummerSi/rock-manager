@@ -1,4 +1,6 @@
 import Phaser from 'phaser';
+import data from '../generated/game-data.json';
+import { cursorStyle } from './cursors';
 
 export const COLORS = { panel: 0x321d2d, cream: '#eee4ce', muted: '#c2b6b3', gold: '#dfc18a', border: 0x6c5864 };
 
@@ -13,40 +15,73 @@ export function text(scene: Phaser.Scene, parent: Phaser.GameObjects.Container, 
   return label;
 }
 
+export function title(scene: Phaser.Scene, parent: Phaser.GameObjects.Container, x: number, y: number,
+  label: string, icon: string): Phaser.GameObjects.Text {
+  const key = `ui-${icon}`;
+  const image = scene.add.image(x + 8, y, key).setOrigin(0, 0);
+  parent.add(image);
+  return text(scene, parent, x + 10 + image.width, y + 5, label, 14, '#ffffff')
+    .setFontFamily('Courier New').setFontStyle('bold');
+}
+
 export function frame(scene: Phaser.Scene, parent: Phaser.GameObjects.Container, x: number, y: number,
-  width: number, height: number, kind: 'button' | 'panel' = 'panel'): Phaser.GameObjects.Container {
+  width: number, height: number, kind: 'button' | 'panel' | 'dialog' | 'inner' = 'panel', dimmed = false): Phaser.GameObjects.Container {
   const group = scene.add.container(x, y);
   parent.add(group);
-  group.add(scene.add.rectangle(0, 0, width, height, kind === 'button' ? 0x222222 : COLORS.panel).setOrigin(0));
-  const corner = kind === 'button' ? 14 : 8;
+  width = Math.round(width); height = Math.round(height);
+  const cacheKey = `frame:${kind}:${width}:${height}:${dimmed}`;
+  if (scene.textures.exists(cacheKey)) {
+    group.add(scene.add.image(0, 0, cacheKey).setOrigin(0)); return group;
+  }
+  const canvas = scene.textures.createCanvas(cacheKey, width, height)!;
+  const ctx = canvas.getContext(); ctx.imageSmoothingEnabled = false;
+  const textureSize = (side: string) => scene.textures.get(dimmed && kind === 'button' && scene.textures.exists(`button-dark-${side}`)
+    ? `button-dark-${side}` : `${kind}-${side}`).getSourceImage() as HTMLImageElement;
+  const tl = textureSize('TL'), tr = textureSize('TR'), bl = textureSize('BL'), br = textureSize('BR');
+  ctx.fillStyle = kind === 'button' || kind === 'inner' ? '#000000' : kind === 'panel' ? '#313131' : '#555555';
+  ctx.fillRect(kind === 'button' ? 14 : 3, kind === 'button' ? 2 : kind === 'dialog' ? 25 : 3,
+    width - (kind === 'button' ? 32 : 6), height - (kind === 'button' ? 8 : kind === 'dialog' ? 28 : 6));
   const image = (side: string, px: number, py: number, w?: number, h?: number) => {
-    const img = scene.add.image(px, py, `${kind}-${side}`).setOrigin(0);
-    if (w !== undefined && h !== undefined) img.setDisplaySize(w, h);
-    group.add(img);
+    const img = textureSize(side);
+    if ((w ?? img.width) <= 0 || (h ?? img.height) <= 0) return;
+    ctx.drawImage(img, px, py, w ?? img.width, h ?? img.height);
   };
-  image('T', corner, 0, width - corner * 2, kind === 'button' ? 2 : 5);
-  image('B', corner, height - (kind === 'button' ? 7 : 5), width - corner * 2, kind === 'button' ? 7 : 5);
-  image('L', 0, corner, kind === 'button' ? 2 : 5, height - corner * 2);
-  image('R', width - (kind === 'button' ? 6 : 4), corner, kind === 'button' ? 6 : 4, height - corner * 2);
-  image('TL', 0, 0); image('TR', width - (kind === 'button' ? 18 : 7), 0);
-  image('BL', 0, height - (kind === 'button' ? 19 : 8));
-  image('BR', width - (kind === 'button' ? 18 : 7), height - (kind === 'button' ? 19 : 8));
+  // Director composes corners first, then stretches the four edge spans.
+  image('TL', 0, 0); image('TR', width - tr.width, 0);
+  image('BL', 0, height - bl.height); image('BR', width - br.width, height - br.height);
+  image('T', tl.width, 0, width - tl.width - tr.width, textureSize('T').height);
+  image('B', bl.width, height - textureSize('B').height, width - bl.width - br.width, textureSize('B').height);
+  image('L', 0, tl.height, textureSize('L').width, height - tl.height - bl.height);
+  image('R', width - textureSize('R').width, tr.height, textureSize('R').width, height - tr.height - br.height);
+  canvas.refresh();
+  group.add(scene.add.image(0, 0, cacheKey).setOrigin(0));
   return group;
 }
 
 export function button(scene: Phaser.Scene, parent: Phaser.GameObjects.Container, x: number, y: number,
-  width: number, label: string, action: () => void, enabled = true, height = 38): Phaser.GameObjects.Container {
-  const group = frame(scene, parent, x, y, width, height, 'button');
-  const caption = text(scene, group, width / 2, height / 2 - 1, label, 14, enabled ? COLORS.cream : '#776f72');
-  caption.setOrigin(0.5);
+  width: number, label: string, action: () => void, enabled = true, height = 33, icon?: string): Phaser.GameObjects.Container {
+  // The cap pair is 14+19px tall. Oversizing the fixed-size 14px controls
+  // opened transparent bands between the caps and their narrow side strips.
+  height = Math.min(height, 33);
+  const group = frame(scene, parent, x, y, width, height, 'button', !enabled);
+  let captionX = 9;
+  if (icon && scene.textures.exists(`ui-${icon}`)) {
+    const registration = data.iconRegistrations[icon as keyof typeof data.iconRegistrations];
+    const image = scene.add.image(8, 13 - (registration?.regY ?? 0), `ui-${icon}`).setOrigin(0).setAlpha(enabled ? 1 : 0.5);
+    group.add(image); captionX = 9 + image.width;
+  }
+  const caption = text(scene, group, captionX, 6, label, 14, enabled ? '#aaaaaa' : '#555555');
+  caption.setOrigin(0).setLineSpacing(0);
+  caption.setFontFamily('Courier New').setFontStyle('bold');
   const hit = scene.add.rectangle(0, 0, width, height, 0xffffff, 0).setOrigin(0);
   group.add(hit);
   if (enabled) {
-    hit.setInteractive({ useHandCursor: true });
-    hit.on('pointerover', () => caption.setColor(COLORS.gold));
-    hit.on('pointerout', () => { caption.setColor(COLORS.cream); group.setAlpha(1); });
-    hit.on('pointerdown', () => group.setAlpha(0.8));
-    hit.on('pointerup', () => { group.setAlpha(1); action(); });
+    let pressed = false;
+    hit.setInteractive({ cursor: cursorStyle('active') });
+    hit.on('pointerover', () => caption.setColor('#f5f5f5'));
+    hit.on('pointerout', () => { pressed = false; caption.setColor('#aaaaaa'); caption.y = 6; });
+    hit.on('pointerdown', () => { pressed = true; caption.y = 7; });
+    hit.on('pointerup', () => { const activate = pressed; pressed = false; caption.y = 6; if (activate) action(); });
   }
   return group;
 }

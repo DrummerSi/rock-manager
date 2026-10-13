@@ -1,0 +1,179 @@
+property m_dlg, m_master, m_ctrls, m_type, m_ctrlDefs, m_fxObj
+
+on new me, argMasterFXObj, argFXType, argFXObj
+  m_master = argMasterFXObj
+  m_type = argFXType
+  m_fxObj = argFXObj
+  m_dlg = script("Dialog").new([#image: m_master.m_dlg.myImagePtr, #OKtoResize: 0])
+  itemLists = []
+  name = string(argFXType)
+  if argFXType = #delay then
+    bgPic = "background_mixer_effect_delay01"
+    m_ctrlDefs = [#Active: [#ID: #Active, #type: #button, #name: EMPTY, #val: 0, #loc: point(60, 10)], #Mix: [#ID: #Mix, #type: #Knob, #range: [#min: 0.0, #max: 1.0], #name: "Mix", #val: 0.5, #loc: point(170, 0)], #time: [#ID: #time, #type: #Knob, #range: [#min: 0.0, #max: 1.0], #name: "Time", #val: 0.0, #loc: point(210, 0)], #TimeDisplay: [#ID: #TimeDisplay, #type: #Pic, #Pic: "NoteText", #name: "Time", #val: EMPTY, #loc: point(175, 5)], #Decay: [#ID: #Decay, #type: #Knob, #range: [#min: 0, #max: 1.0], #name: "Decay", #val: 0.29999999999999999, #loc: point(275, 0)]]
+  else
+    if argFXType = #phaser then
+      bgPic = "background_mixer_effect_3inone01"
+      m_ctrlDefs = [#Active: [#ID: #Active, #type: #button, #name: EMPTY, #val: 0, #loc: point(19, 17)], #Mix: [#ID: #Mix, #type: #Knob, #range: [#min: 0.0, #max: 1.0], #name: "Mix", #val: 0.5, #loc: point(130, 0)], #depth: [#ID: #depth, #type: #Knob, #range: [#min: 0, #max: 10], #name: "Depth", #val: 2.0, #loc: point(233, 0)], #freq: [#ID: #freq, #type: #Knob, #range: [#min: 0.0, #max: 2.5], #name: "Freq", #val: 1.0, #loc: point(273, 0)]]
+      bgPic = "background_mixer_effect_3inone01"
+    else
+      if argFXType = #Chorus then
+        bgPic = "background_mixer_effect_3inone01"
+        m_ctrlDefs = [#Active: [#ID: #Active, #type: #button, #name: EMPTY, #val: 0, #loc: point(19, 17)], #Mix: [#ID: #Mix, #type: #Knob, #range: [#min: 0.0, #max: 1.0], #name: "Mix", #val: 0.5, #loc: point(130, 0)], #depth: [#ID: #depth, #type: #Knob, #range: [#min: 0, #max: 10], #name: "Depth", #val: 2.0, #loc: point(233, 0)], #freq: [#ID: #freq, #type: #Knob, #range: [#min: 0.0, #max: 2.5], #name: "Freq", #val: 1.0, #loc: point(273, 0)]]
+      else
+        if argFXType = #reverb then
+          m_ctrlDefs = [#Mix: [#ID: #freq, #type: #Knob, #range: [#min: 0, #max: 100], #name: "Mix", #val: 50]]
+        else
+          if argFXType = #Dist then
+            bgPic = "background_mixer_effect_distortion01"
+            m_ctrlDefs = [#Mix: [#ID: #freq, #type: #Knob, #range: [#min: 0, #max: 100], #name: "Mix", #val: 50]]
+          end if
+        end if
+      end if
+    end if
+  end if
+  repeat with n = 1 to m_ctrlDefs.count()
+    Info = m_ctrlDefs[n]
+    val = m_fxObj[Info[#ID]]
+    if (m_type = #delay) and (Info[#ID] = #time) then
+      if stringp(val) then
+        val = me.convDelayTime(val)
+      end if
+    end if
+    if not voidp(val) then
+      Info[#val] = val
+    end if
+    rng = Info[#range]
+    if listp(rng) then
+      diff = rng[#max] - rng[#min]
+      Info[#val] = float(float(Info[#val]) - rng[#min]) / diff
+    end if
+  end repeat
+  itemLists.add([#ID: #BG, #ch: 1, #type: #Pic, #Pic: bgPic, #inOffsetRect: [0, 0, 0, 0], #rel: [0, 0, #Auto, #Auto]])
+  tmpLoc = point(30, 0)
+  knobIDs = []
+  repeat with n = 1 to m_ctrlDefs.count()
+    lst = m_ctrlDefs[n]
+    if not voidp(lst[#loc]) then
+      tmpLoc = lst[#loc]
+    end if
+    if lst[#type] = #Knob then
+      itemLists.add([#ID: lst[#ID], #type: #Pic, #ink: 36, #Pic: "small_ratt01_0000", #inOffsetRect: rect(tmpLoc, point(0, 0)), #rel: [0, 0, #Auto, #Auto], #topLeftMeansWhat: [#Reg, #Reg]])
+      knobIDs.add(lst[#ID])
+      next repeat
+    end if
+    if lst[#type] = #button then
+      itemLists.add([#ID: lst[#ID], #type: #button, #ink: 36, #Pic: "button_mute01", #PicDownName: "1", #inOffsetRect: rect(tmpLoc, point(0, 0)), #rel: [0, 0, #Auto, #Auto], #Toggle: 1])
+      next repeat
+    end if
+    if lst[#type] = #Pic then
+      itemLists.add([#ID: lst[#ID], #type: #Pic, #ink: 36, #Pic: lst[#Pic], #inOffsetRect: rect(tmpLoc, point(0, 0)), #rel: [0, 0, #Auto, #Auto]])
+    end if
+  end repeat
+  m_ctrls = [:]
+  m_dlg.rawCreate(itemLists)
+  repeat with ID in knobIDs
+    obj = m_dlg.getItem(ID)
+    Info = m_ctrlDefs[ID]
+    val = Info[#val]
+    if (m_type = #delay) and (Info[#ID] = #time) then
+      me.displayDelayTime(me.convDelayTime(val))
+    else
+      if (m_type = #phaser) and (Info[#ID] = #freq) then
+        val = 1.0 - val
+      end if
+    end if
+    BH = script("DialogKnobBH").new(obj, [#ReportTo: me, #ID: ID, #firstFrame: "small_ratt01_0000", #val: val, #numFrames: 64])
+    m_ctrls[ID] = BH
+    obj.scriptInstanceList.addAt(1, BH)
+  end repeat
+  ID = #Active
+  obj = m_dlg.getItem(ID)
+  if objectp(obj) then
+    Info = m_ctrlDefs[ID]
+    Info = m_ctrlDefs[ID]
+    val = Info[#val]
+    obj.isDown = val
+    obj.scriptInstanceList.addAt(1, me)
+  end if
+  return me
+end
+
+on kill me
+  return 0
+end
+
+on mouse me, argObj, argWhat, argOption
+  if argWhat = #click then
+    if objectp(argOption) then
+      if argOption[#ID] = #Active then
+      end if
+    end if
+  end if
+end
+
+on Report me, argObj, argWhat, argOption
+  if m_type = #delay then
+    if argObj[#ID] = #time then
+      me.displayDelayTime(me.convDelayTime(argOption))
+    end if
+  end if
+end
+
+on displayDelayTime me, argStr
+  if member("NoteText").text <> argStr then
+    member("NoteText").text = argStr
+  end if
+  itemObj = m_dlg.getItem(#TimeDisplay)
+  itemObj.setOneProp(#Pic, member("NoteText"))
+end
+
+on convDelayTime me, argVal
+  lst = ["4", "4T", "8", "8T", "16", "16T", "32"]
+  if stringp(argVal) then
+    Pos = lst.getPos(argVal)
+    if Pos = 0 then
+      return 0
+    end if
+    return float(Pos - 1) / (lst.count - 1)
+  else
+    Nr = integer(argVal * (lst.count - 1)) + 1
+    return lst[Nr]
+  end if
+end
+
+on changeTimeShiftFX me, argFX
+  if argFX = #Chorus then
+    tmp = [#Mix: [#range: [#min: 0.0, #max: 1.0], #val: 0.5], #depth: [#range: [#min: 0, #max: 10], #val: 2.0], #freq: [#range: [#min: 0.0, #max: 2.5], #val: 1.0]]
+  else
+    if argFX = #phaser then
+      tmp = [#Mix: [#range: [#min: 0.0, #max: 1.0], #val: 0.5], #depth: [#range: [#min: 0, #max: 10], #val: 2.0], #freq: [#range: [#min: 0.0, #max: 2.5], #val: 1.0]]
+    end if
+  end if
+end
+
+on getSettings me
+  lst = [:]
+  repeat with n = 1 to m_ctrls.count()
+    tmpID = m_ctrls.getPropAt(n)
+    tmpDef = m_ctrlDefs[tmpID]
+    if tmpDef[#type] = #Knob then
+      val = m_ctrls[n].getVal()
+      if (m_type = #delay) and (tmpID = #time) then
+        val = me.convDelayTime(val)
+      else
+        if (m_type = #phaser) and (tmpID = #freq) then
+          val = 1.0 - val
+        end if
+        rng = tmpDef[#range]
+        diff = rng[#max] - rng[#min]
+        val = (val * diff) + rng[#min]
+      end if
+      lst.addProp(m_ctrls[n][#ID], val)
+    end if
+  end repeat
+  if m_type = #phaser then
+  end if
+  obj = m_dlg.getItem(#Active)
+  lst.addProp(#Active, obj.isDown)
+  return lst
+end
