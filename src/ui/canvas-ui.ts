@@ -1,12 +1,13 @@
 import Phaser from 'phaser';
-import data from '../generated/game-data.json';
+import data from '../generated/game-data.json' with { type: 'json' };
 import { cursorStyle } from './cursors';
+import { nativeText } from './native-text';
 
 export const COLORS = { panel: 0x321d2d, cream: '#eee4ce', muted: '#c2b6b3', gold: '#dfc18a', border: 0x6c5864 };
 
 export function text(scene: Phaser.Scene, parent: Phaser.GameObjects.Container, x: number, y: number,
   content: string, size = 16, color = COLORS.cream, width?: number): Phaser.GameObjects.Text {
-  const label = scene.add.text(x, y, content, {
+  const label = nativeText(scene, x, y, content, {
     fontFamily: 'Arial, sans-serif', fontSize: `${size}px`, color,
     wordWrap: width ? { width, useAdvancedWrap: true } : undefined,
     lineSpacing: 4,
@@ -25,11 +26,11 @@ export function title(scene: Phaser.Scene, parent: Phaser.GameObjects.Container,
 }
 
 export function frame(scene: Phaser.Scene, parent: Phaser.GameObjects.Container, x: number, y: number,
-  width: number, height: number, kind: 'button' | 'panel' | 'dialog' | 'inner' = 'panel', dimmed = false): Phaser.GameObjects.Container {
+  width: number, height: number, kind: 'button' | 'panel' | 'dialog' | 'inner' | 'outer' = 'panel', dimmed = false, fillColor?: string): Phaser.GameObjects.Container {
   const group = scene.add.container(x, y);
   parent.add(group);
   width = Math.round(width); height = Math.round(height);
-  const cacheKey = `frame:${kind}:${width}:${height}:${dimmed}`;
+  const cacheKey = `frame:${kind}:${width}:${height}:${dimmed}:${fillColor ?? 'default'}`;
   if (scene.textures.exists(cacheKey)) {
     group.add(scene.add.image(0, 0, cacheKey).setOrigin(0)); return group;
   }
@@ -38,7 +39,7 @@ export function frame(scene: Phaser.Scene, parent: Phaser.GameObjects.Container,
   const textureSize = (side: string) => scene.textures.get(dimmed && kind === 'button' && scene.textures.exists(`button-dark-${side}`)
     ? `button-dark-${side}` : `${kind}-${side}`).getSourceImage() as HTMLImageElement;
   const tl = textureSize('TL'), tr = textureSize('TR'), bl = textureSize('BL'), br = textureSize('BR');
-  ctx.fillStyle = kind === 'button' || kind === 'inner' ? '#000000' : kind === 'panel' ? '#313131' : '#555555';
+  ctx.fillStyle = fillColor ?? (kind === 'button' || kind === 'inner' ? '#000000' : kind === 'panel' || kind === 'outer' ? '#313131' : '#555555');
   ctx.fillRect(kind === 'button' ? 14 : 3, kind === 'button' ? 2 : kind === 'dialog' ? 25 : 3,
     width - (kind === 'button' ? 32 : 6), height - (kind === 'button' ? 8 : kind === 'dialog' ? 28 : 6));
   const image = (side: string, px: number, py: number, w?: number, h?: number) => {

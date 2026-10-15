@@ -1,7 +1,7 @@
 param([int]$ProcessId, [string]$OutputPath = 'analysis/original/runtime/window.png', [switch]$VisibleCapture, [long]$WindowHandle = 0)
 $ErrorActionPreference = 'Stop'
 Add-Type -AssemblyName System.Drawing
-Add-Type @'
+if (-not ('RockWindowCapture' -as [type])) { Add-Type @'
 using System;
 using System.Runtime.InteropServices;
 public static class RockWindowCapture {
@@ -12,8 +12,11 @@ public static class RockWindowCapture {
  [DllImport("user32.dll")] public static extern bool SetForegroundWindow(IntPtr h);
  [DllImport("user32.dll")] public static extern IntPtr GetForegroundWindow();
  [DllImport("user32.dll")] public static extern uint GetWindowThreadProcessId(IntPtr h, out uint process);
+ [DllImport("user32.dll")] public static extern bool SetProcessDPIAware();
 }
 '@
+}
+[RockWindowCapture]::SetProcessDPIAware() | Out-Null
 $gameProcess = Get-Process -Id $ProcessId
 $handle = $gameProcess.MainWindowHandle
 if ($WindowHandle) { $handle = [IntPtr]$WindowHandle }

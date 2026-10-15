@@ -163,3 +163,24 @@ test('calendar advancement crosses a leap day without timezone drift', () => {
   assert.equal(calendarDate(state), '29 Feb 2000');
   assert.equal(calendarDate({ ...state, day: 2 }), '01 Mar 2000');
 });
+
+import { bookRelease, defaultDesign, designCost } from '../src/game/design';
+test('cover booking charges only once, requires a signed demo, preserves artwork and permits tomorrow', () => {
+ const demo=finishRecording(startRecording(recordingBand(),data.tutorialGameplay,'Studio01','Sng01'),data.tutorialGameplay,data.musicians,data.songs);
+ const label=data.tutorialGameplay.labels.find(l=>l.id==='Record01')!;
+ const signed=signContract(demo,label,data.musicians,5);
+ const selection=['DEDBGCurtain','DEDArtists01','DEDEfffect04','DEDFont03'];
+ assert.equal(designCost(selection),3500);assert.equal(designCost(defaultDesign()),0);
+ assert.throws(()=>bookRelease(demo,data.musicians,selection,1));
+ assert.throws(()=>bookRelease({...signed,money:3499},data.musicians,selection,1));
+ assert.throws(()=>bookRelease(signed,data.musicians,selection,0));
+ assert.throws(()=>bookRelease(signed,data.musicians,['bad',...selection.slice(1)],1));
+ const booked=bookRelease(signed,data.musicians,selection,1);
+ assert.equal(booked.money,signed.money-3500);assert.equal(booked.album?.releaseDay,1);
+ assert.deepEqual(booked.demo,signed.demo);assert.equal(signed.album,null);
+ assert.throws(()=>bookRelease(booked,data.musicians,selection,6));
+ assert.ok(validSave(JSON.parse(JSON.stringify(booked)),data.musicians,data.songs,data.tutorialGameplay));
+ assert.equal(validSave({...booked,album:{...booked.album,cost:0}},data.musicians,data.songs,data.tutorialGameplay),false);
+ const next=advanceDay(booked,data.musicians).state;assert.equal(next.day,next.album?.releaseDay);assert.equal(next.money,booked.money);
+ assert.equal(bookRelease(signed,data.musicians,defaultDesign(),6).album?.quality,Math.max(0,signed.demo!.quality-.05));
+});

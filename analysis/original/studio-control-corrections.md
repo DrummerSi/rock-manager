@@ -2,6 +2,14 @@
 
 The earlier tutorial walkthrough missed control fidelity and inactive Settings.
 
+Current native-reference correction: see studio-validation.md. Fourteen user
+captures now establish original visual states. The mixer needs its original
+outer dialog and rack rails; these are restored, superseding the earlier
+removal below. Settings dimensions/buttons follow captured geometry, fixed
+black stat-label glyphs come from the original screenshot, and the WebGL camera
+matches RGB555 output. Dynamic fonts, animated faces and legacy audio equality
+remain unverified.
+
 Follow-up correction, 2026-10-13: the previous implementation also discarded
 the populated alpha plane in the mixer's 32-bit BITDs. White-matte replacement
 does not preserve soft edges, shadows or the active mute/power glow. Recovery

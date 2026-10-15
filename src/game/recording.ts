@@ -1,4 +1,6 @@
+import { effectiveMusicians, bandmateOccupied } from './bandmates';
 import type { GameState, Instrument, Musician, Song } from './model';
+import originalText from './original-text.json' with {type:'json'};
 
 export type Style = Record<string, number>;
 export interface ChannelEffects {
@@ -38,6 +40,8 @@ export function bandStyle(state: GameState, musicians: Musician[]): Style {
 export function startRecording(state: GameState, rules: RecordingRules, studioId: string, songId: string): GameState {
   const studio = rules.studios.find((s) => s.id === studioId);
   if (!studio || !state.ownedSongs.includes(songId) || !state.band.some(Boolean)) throw new Error('Hire at least one musician and buy a song license before recording.');
+  if (state.band.some(member => member && state.bandmates.training.some(t => !t.completed && t.musicianId === member.musicianId && t.startDay <= state.day && state.day < t.startDay + t.duration)))
+    throw new Error('A band member is away on training or holiday. Wait until the band is complete before recording.');
   if (state.contract) throw new Error('This demo is already signed to a label.');
   if (state.recording) throw new Error('Finish the current recording session first.');
   if (state.money < studio.price) throw new Error('You cannot afford this studio.');
@@ -87,6 +91,7 @@ export function finishRecording(state: GameState, rules: RecordingRules, musicia
   if (!recording) throw new Error('No recording session.');
   const studio = rules.studios.find((s) => s.id === recording.studioId)!;
   const song = songs.find((s) => s.id === recording.songId)!;
+  musicians = effectiveMusicians(state, musicians);
   const active = recording.channels.filter((c) => c.musicianId && !c.muted && c.volume > 0);
   if (!active.length) throw new Error('Turn up at least one channel with a musician before finishing the demo.');
   let sum = 0, weight = 0;
@@ -110,26 +115,58 @@ export function finishRecording(state: GameState, rules: RecordingRules, musicia
   return { ...state, recording: null, demo: { ...recording, quality, songType, imageStyle: bandStyle(state, musicians), recordedDay: state.day } };
 }
 
-export function evaluateDemo(state: GameState, label: Label, musicians: Musician[]): { accepted: boolean; like: number; reason: string; targetId: string } {
-  if (!state.demo) return { accepted: false, like: 0, reason: 'Record a demo before approaching a label.', targetId: '' };
+export type DemoReasonKind = 'quality' | 'SongType' | 'StyleMix' | 'StyleMixTotal' | 'LiveReputation' | 'NoDemo';
+type FeedbackScore = {score:number;path:string[]};
+export interface DemoEvaluation {accepted:boolean;like:number;reason:string;targetId:string;reasonKind:DemoReasonKind;reasonPath:string[]}
+const feedbackTranslations = new Map(Object.entries(originalText.translations).map(([key,value])=>[key.toLowerCase(),value]));
+const feedbackString=(key:string)=>feedbackTranslations.get(key.toLowerCase())??feedbackTranslations.get('sziddemofbhopeless')!;
+/** Native DlgRecordRefuseScript selects audio from the worst reason, never the rendered prose. */
+export function demoRefusalVoice(labelId:string,reasonKind:DemoReasonKind,alreadyContracted=false):string {
+  const suffix=alreadyContracted?'cb0800x':({quality:'cb0300x',LiveReputation:'cb0400x',SongType:'cb0500x',StyleMix:'cb0600x'} as Partial<Record<DemoReasonKind,string>>)[reasonKind]??'cb0200z';
+  return 'r'+labelId.slice(-2)+suffix;
+}
+function nativeDemoFeedback(scores:FeedbackScore[],like:number,penalty:number,labelName:string,reputation:number):string {
+  const quality=scores.find(s=>s.path[0]==='quality')!,total=scores.find(s=>s.path[0]==='StyleMixTotal')!;
+  const song=scores.find(s=>s.path[0]==='SongType')??{score:.01,path:['SongType','ignore']};
+  const style=scores.filter(s=>s.path[0]==='StyleMix').sort((a,b)=>a.score-b.score)[0]??{score:1,path:['StyleMixTotal']};
+  const comment=(item:FeedbackScore)=>{
+    // comesBeforeValInList returns the first threshold above the score.
+    const level=item.score < -10?'Bad3':item.score < -1?'Bad2':item.score < 0?'Bad1':item.score < .5?'Good1':'Good2';
+    return feedbackString('szidDemoFb'+item.path.join('')+level);
+  };
+  let result='';const comments:{kind:'Good'|'Bad';value:string}[]=[];
+  if(quality.score>0){
+    if(style.score>=0){if(song.score<=0){comments.push({kind:'Good',value:comment(quality.score>total.score?quality:total)},{kind:'Bad',value:comment(song)});}}
+    else comments.push({kind:'Good',value:comment(quality)},{kind:'Bad',value:comment(style.score<=song.score?style:song)});
+  }else if(style.score>=0)comments.push({kind:'Good',value:comment(total)},{kind:'Bad',value:comment(song.score<quality.score?song:quality)});
+  else if(like>-.5){for(const item of [style,song,quality].sort((a,b)=>a.score-b.score).slice(0,2))comments.push({kind:'Bad',value:comment(item)});}
+  else result=feedbackString('szidDemoFbHopeless');
+  if(comments.length){result=feedbackString('szidDemoFb'+comments.map(c=>c.kind).join(''));const counts={Good:0,Bad:0};for(const c of comments){const key=c.kind.toLowerCase()+(++counts[c.kind]);result=result.replaceAll('<'+key+'>',c.value);}}
+  result=result.replaceAll('<¤CPlace.Name>',labelName);
+  if(reputation<.3&&penalty>-.3)result+=(result?' ':'')+feedbackString(result?'szidDemoFbLiveReputation':'szidDemoFbLiveReputationOnly');
+  return result;
+}
+export function evaluateDemo(state: GameState, label: Label, musicians: Musician[]): DemoEvaluation {
+  if (!state.demo) return { accepted: false, like: 0, reason: 'Record a demo before approaching a label.', targetId: '',reasonKind:'NoDemo',reasonPath:['NoDemo'] };
   const demo = state.demo, music = bandStyle(state, musicians);
   const toleranceScore = (center: number, tolerance: number, actual: number) => tolerance >= 2 ? 1 : 1 - Math.abs(center - actual) / tolerance;
   const results = label.targets.map((target) => {
-    const styleScores = styles.filter((s) => target.tolerance[s] > 0).map((s) => ({ score: toleranceScore(target.style[s], target.tolerance[s], (music[s] + demo.imageStyle[s]) / 2), reason: `Your band's ${s === 'Boring' ? 'musical image' : s + ' style'} does not fit this label.` }));
+    const styleScores = styles.filter((s) => target.tolerance[s] > 0).map((s) => ({ score: toleranceScore(target.style[s], target.tolerance[s], (music[s] + demo.imageStyle[s]) / 2), path:['StyleMix',s,(music[s]+demo.imageStyle[s])/2>target.style[s]?'Hi':'Lo'] }));
     const styleScore = styleScores.reduce((sum, s) => sum + s.score, 0) / (styleScores.length || 1);
     const difference = demo.quality - target.minimumQuality;
     const qualityScore = difference < 0 ? difference * 2 : difference / (difference + 0.1);
-    const scores = [...styleScores, { score: styleScore, reason: 'Your band does not fit this label’s musical style.' },
-      { score: qualityScore, reason: 'The demo needs stronger musicians or a better studio.' }];
+    const scores:FeedbackScore[] = [...styleScores, { score: styleScore,path:['StyleMixTotal'] },
+      { score: qualityScore,path:['quality'] }];
     const likes = [styleScore, qualityScore];
     if (target.songTypeTolerance > 0) {
       const score = toleranceScore(target.songType, target.songTypeTolerance, demo.songType);
-      scores.push({ score, reason: 'Try a different song or arrangement for this label.' }); likes.push(score);
+      scores.push({ score,path:['SongType',demo.songType>target.songType?'Hi':'Lo'] }); likes.push(score);
     }
     const penalty = scores.reduce((sum, s) => sum + Math.min(0, s.score), 0);
     scores.sort((a, b) => a.score - b.score);
-    return { accepted: penalty >= -1e-9, like: likes.reduce((sum, s) => sum + s, 0) / likes.length,
-      reason: scores[0].reason, targetId: target.id };
+    const accepted=penalty>=-1e-9,like=likes.reduce((sum,s)=>sum+s,0)/likes.length;
+    return { accepted,like,reason:accepted?'':nativeDemoFeedback(scores,like,penalty,label.name,state.publicity.liveReputation),targetId:target.id,
+      reasonKind:scores[0].path[0] as DemoReasonKind,reasonPath:[...scores[0].path] };
   });
   // Original chooses the target with highest overall liking, not lowest penalty.
   return results.sort((a, b) => b.like - a.like)[0];

@@ -1,10 +1,12 @@
+import { NativeText } from './native-text';
 import Phaser from 'phaser';
-import data from '../generated/game-data.json';
+import data from '../generated/game-data.json' with { type: 'json' };
 import type { GameState, Musician, Song } from '../game/model';
 import type { Label, MixChannel, Studio } from '../game/recording';
 import { button, frame, text, title } from './canvas-ui';
 import { cursorStyle } from './cursors';
 import { nativeKnob, nativeToggle, registeredImage } from './mixer-controls';
+import { nativeChooser } from './native-chooser';
 import { defaultEffects } from '../game/recording';
 import type { ChannelEffects } from '../game/recording';
 
@@ -36,12 +38,10 @@ export function studioWindow(scene: Phaser.Scene, layer: Phaser.GameObjects.Cont
   caption(scene, layer, 411, 252, 'Description').setFontFamily('Verdana').setFontSize(11).setFontStyle('bold');
   caption(scene, layer, 411, 272, studio.description, 234).setFontFamily('Arial').setFontSize(11).setLineSpacing(1);
   const song = songs.find((s) => s.id === songId);
-  caption(scene, layer, 150, 379, 'Song').setFontFamily('Verdana').setFontSize(11).setFontStyle('bold');
-  frame(scene, layer, 150, 401, 205, 34, 'inner');
-  caption(scene, layer, 159, 410, song?.name ?? 'No licensed song', 191).setFontFamily('Verdana').setFontSize(11);
   const position = songs.findIndex((s) => s.id === songId);
-  clickImage(image(scene, layer, 358, 400, 'small-arrow-up'), () => chooseSong(songs[(position + songs.length - 1) % songs.length].id), songs.length > 1);
-  clickImage(image(scene, layer, 358, 416, 'small-arrow-down'), () => chooseSong(songs[(position + 1) % songs.length].id), songs.length > 1);
+  nativeChooser(scene, layer, {x:150,y:379,label:'Song',value:song?.name ?? 'No licensed song',textRight:200,
+    previous:()=>chooseSong(songs[position-1].id),next:()=>chooseSong(songs[position+1].id),
+    previousEnabled:position>0,nextEnabled:position>=0&&position<songs.length-1});
   // DlgStudioData: pair centered on InfoDlg, 23px below ChooseSong's top.
   button(scene, layer, 385, 402, 135, 'Record', start, Boolean(song) && state.band.some(Boolean) && state.money >= studio.price && !state.contract, 33, 'microphone');
   button(scene, layer, 526, 402, 132, 'Cancel', close, true, 33, 'cancel');
@@ -51,7 +51,11 @@ export function mixerWindow(scene: Phaser.Scene, layer: Phaser.GameObjects.Conta
   playing: boolean, master: number, change: (index: number, patch: Partial<MixChannel>) => void,
   settings: (index: number) => void, preview: () => void, stop: () => void, volume: (value: number) => void, finish: () => void): void {
   // ChannelScript and DlgMixerScript positions, with their unscaled original art.
-  layer.add(scene.add.rectangle(60, 127, 681, 383, 0x555555).setOrigin(0));
+  // Native capture 002: the desk sits inside a 701x417 Director dialog.
+  frame(scene, layer, 51, 91, 701, 417, 'dialog');
+  title(scene, layer, 51, 92, '', 'mixer-title');
+  image(scene, layer, 279, 149, 'background_mixer_rack01');
+  image(scene, layer, 279, 418, 'background_mixer_rack01');
   image(scene, layer, 67, 127, 'background_mixer_control01');
   image(scene, layer, 114, 145, `${studio.id.toLowerCase()}_environment01`).setDisplaySize(113, 89);
   caption(scene, layer, 79, 262, song.name, 187).setFontSize(11);
@@ -98,7 +102,7 @@ export function mixerWindow(scene: Phaser.Scene, layer: Phaser.GameObjects.Conta
     layer.add(track); track.on('pointerdown', setVolume);
     layer.bringToTop(thumb);
   });
-  button(scene, layer, 132, 451, 116, 'OK', finish, true, 33, 'accept');
+  button(scene, layer, 132, 458, 76, 'OK', finish, true, 33, 'accept');
 }
 
 function studioMusicianSheet(scene: Phaser.Scene, parent: Phaser.GameObjects.Container, x: number, y: number,
@@ -111,8 +115,12 @@ function studioMusicianSheet(scene: Phaser.Scene, parent: Phaser.GameObjects.Con
   image(scene, layer, 124, 124, 'musician-frame');
   const portrait = image(scene, layer, 127, 127, member ? `portrait-${member.id}` : 'portrait-studio-musician');
   if (channel.instrument !== 'Vocals' && choose) clickImage(portrait, choose);
-  caption(scene, layer, 234, 126, (member?.name ?? hired?.name ?? '').split(' ')[0], 160).setFontFamily('Arial').setFontSize(14).setFontStyle('bold');
-  caption(scene, layer, 234, 154, `Age: ${member?.age ?? hired?.age ?? ''}\nStyle: ${member?.genre ?? hired?.genre ?? '-'}\nSkill:\nCharisma:`, 160).setFontFamily('Arial').setFontSize(11).setLineSpacing(1);
+  caption(scene, layer, 234, 128, (member?.name ?? hired?.name ?? '').split(' ')[0], 160).setColor('#000000').setFontFamily('Verdana').setFontSize(11).setFontStyle('bold');
+  // The original GDI labels are aliased glyphs. Preserve their native lettering
+  // instead of regenerating these fixed English strings through browser fonts.
+  ['age', 'style', 'skill', 'star-quality'].forEach((label, i) => image(scene, layer, 234, 150 + i * 14, `native-studio-label-${label}`));
+  caption(scene, layer, 314, 150, String(member?.age ?? hired?.age ?? ''), 80).setColor('#000000').setFontFamily('Verdana').setFontSize(11);
+  caption(scene, layer, 314, 164, member?.genre ?? hired?.genre ?? '-', 80).setColor('#000000').setFontFamily('Verdana').setFontSize(11);
   const nativeMeter = (y: number, fraction: number) => {
     const x = 314, bg = data.tutorialMedia.find((m) => m.key === 'meter02_background01')!;
     image(scene, layer, x, y, bg.key);
@@ -123,6 +131,7 @@ function studioMusicianSheet(scene: Phaser.Scene, parent: Phaser.GameObjects.Con
     if (middle) image(scene, layer, left + 3, y + bg.regY - parts[1].regY, parts[1].key).setDisplaySize(middle, parts[1].height);
     image(scene, layer, left + 3 + middle, y + bg.regY - parts[2].regY, parts[2].key);
   };
+  for (const object of layer.list) if (object instanceof NativeText) object.setNativeAntialias(false);
   nativeMeter(182, member?.musicality ?? hired?.musicality ?? 0);
   nativeMeter(196, member?.charisma ?? hired?.charisma ?? 0);
   return layer;
@@ -133,7 +142,7 @@ export function channelSettingsWindow(scene: Phaser.Scene, layer: Phaser.GameObj
   musician: () => void, preview: () => void, close: () => void): void {
   const hasShift = availableEffects.includes('FXTimeShift');
   const bottom = hasShift ? 448 : 395;
-  frame(scene, layer, 102, 77, 358, bottom - 77 + 48, 'dialog');
+  frame(scene, layer, 102, 77, 312, bottom - 77 + 54, 'dialog');
   title(scene, layer, 102, 77, 'Settings', 'mixer-title');
   studioMusicianSheet(scene, layer, 117, 114, musicians, channel, musician);
   let effects = structuredClone(channel.effects ?? defaultEffects());
@@ -141,31 +150,29 @@ export function channelSettingsWindow(scene: Phaser.Scene, layer: Phaser.GameObj
   const row = (kind: 'delay' | 'timeShift', y: number) => {
     image(scene, layer, 118, y, kind === 'delay' ? 'background_mixer_effect_delay01' : 'background_mixer_effect_timeshift01');
     nativeToggle(scene, layer, 178, y + 36, 'button_mute01', 'button_mute02', effects[kind].active, (active) => { effects[kind].active = active; update(); });
-    nativeKnob(scene, layer, 279, y, false, 0, 1, effects[kind].mix, (mix) => { effects[kind].mix = mix; update(); });
+    nativeKnob(scene, layer, 279, y, false, 0, 1, effects[kind].mix, (mix) => { effects[kind].mix = mix; update(); }, '', true);
     if (kind === 'delay') {
       const notes = ['32', '16T', '16', '8T', '8', '4T', '4'];
-      const note = caption(scene, layer, 295, y + 7, notes[Math.round(effects.delay.time * 6)]).setFontSize(10);
-      nativeKnob(scene, layer, 323, y, false, 0, 1, effects.delay.time, (time) => { effects.delay.time = time; note.setText(notes[Math.round(time * 6)]); update(); });
-      nativeKnob(scene, layer, 388, y, false, 0, 1, effects.delay.decay, (decay) => { effects.delay.decay = decay; update(); });
+      const note = caption(scene, layer, 289, y + 5, notes[Math.round(effects.delay.time * 6)]).setFontSize(10).setColor('#00ff00');
+      nativeKnob(scene, layer, 323, y, false, 0, 1, effects.delay.time, (time) => { effects.delay.time = time; note.setText(notes[Math.round(time * 6)]); update(); }, '', true);
+      nativeKnob(scene, layer, 388, y, false, 0, 1, effects.delay.decay, (decay) => { effects.delay.decay = decay; update(); }, '', true);
     } else {
       nativeToggle(scene, layer, 270, y + 26, 'button_switch01', 'button_switch02', effects.timeShift.mode, (mode) => { effects.timeShift.mode = mode; update(); });
-      nativeKnob(scene, layer, 356, y, false, 0, 1, effects.timeShift.depth, (depth) => { effects.timeShift.depth = depth; update(); });
-      nativeKnob(scene, layer, 395, y, false, 0, 1, effects.timeShift.freq, (freq) => { effects.timeShift.freq = freq; update(); });
+      nativeKnob(scene, layer, 356, y, false, 0, 1, effects.timeShift.depth, (depth) => { effects.timeShift.depth = depth; update(); }, '', true);
+      nativeKnob(scene, layer, 395, y, false, 0, 1, effects.timeShift.freq, (freq) => { effects.timeShift.freq = freq; update(); }, '', true);
     }
   };
   row('delay', 257);
   if (hasShift) row('timeShift', 310);
   const y = hasShift ? 383 : 330;
-  caption(scene, layer, 118, y, 'Music loop');
-  frame(scene, layer, 118, y + 20, 238, 27, 'inner');
+  const instrumentKey = { Guitar: 'guitar', Keyboards: 'keyboards', Bass: 'bass', Drums: 'drums', Vocals: 'vocals' }[channel.instrument];
   const loop = data.tutorialGameplay.loops.find((l) => l.id === channel.loopId)!;
-  caption(scene, layer, 124, y + 27, loop.name, 226).setFontSize(11);
   const loops = data.tutorialGameplay.loops.filter((l) => l.songId === state.recording!.songId && l.instrument === channel.instrument);
   const loopIndex = loops.findIndex((l) => l.id === channel.loopId);
-  clickImage(image(scene, layer, 360, y + 17, 'small-arrow-up'), () => cycle(-1), loopIndex > 0);
-  clickImage(image(scene, layer, 360, y + 35, 'small-arrow-down'), () => cycle(1), loopIndex < loops.length - 1);
-  button(scene, layer, 118, bottom, 159, 'Preview', preview, true, 33, 'preview');
-  button(scene, layer, 297, bottom, 125, 'OK', close, true, 33, 'accept');
+  nativeChooser(scene,layer,{x:118,y,label:'Loop',value:loop.name,icon:`ui-${instrumentKey}`,textRight:238,
+    previous:()=>cycle(-1),next:()=>cycle(1),previousEnabled:loopIndex>0,nextEnabled:loopIndex<loops.length-1});
+  button(scene, layer, 147, bottom, 125, 'Preview', preview, true, 33, 'preview');
+  button(scene, layer, 275, bottom, 76, 'OK', close, true, 33, 'accept');
 }
 
 export function labelWindow(scene: Phaser.Scene, layer: Phaser.GameObjects.Container, state: GameState, label: Label, submit: () => void, close: () => void): void {

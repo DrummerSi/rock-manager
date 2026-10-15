@@ -1,14 +1,17 @@
 import { test, expect, type Page } from '@playwright/test';
+const baseURL=process.env.PLAYWRIGHT_BASE_URL??'http://127.0.0.1:5173';
+test.afterEach(async ({page}) => { if (!page.isClosed()) await page.goto('about:blank'); });
 import { createRequire } from 'node:module';
 import type { GameState } from '../../src/game/model';
 import { candidates } from '../../src/game/model';
 import { newGame, recruit, licenseSong } from '../../src/game/model';
-import { startRecording } from '../../src/game/recording';
+import { startRecording, evaluateDemo } from '../../src/game/recording';
 const data: typeof import('../../src/generated/game-data.json') = createRequire(import.meta.url)('../../src/generated/game-data.json');
 const { PNG } = createRequire(import.meta.url)('pngjs');
 const { readFileSync } = createRequire(import.meta.url)('node:fs');
 
-async function snapshot(page: Page): Promise<GameState & { modal: string | null; backgroundModal: string | null; recruitOffset: number; recruitMaxOffset: number; tutorialId: string | null; tutorialButtonY: number; availablePlaces: string[]; cityFrames: { name: string; offset: number; visible: boolean }[]; selectedStudioId: string; selectedLabelId: string; offerIndex: number; previewPlaying: boolean; running: boolean; mixerKnobs: { name: string; key: string; x: number; y: number; anchorX: number; anchorY: number }[] }> {
+type SourceLayout = {id:string;bounds:{x:number;y:number;width:number;height:number};start?:{x:number;y:number};begin?:{x:number;y:number};buy?:{x:number;y:number};ok?:{x:number;y:number};cancel?:{x:number;y:number};close?:{x:number;y:number};selectRows?:{id:string;x:number;y:number}[]};
+async function snapshot(page: Page): Promise<GameState & { sourceLayout?:SourceLayout; modal: string | null; backgroundModal: string | null; recruitOffset: number; recruitMaxOffset: number; tutorialId: string | null; tutorialButtonY: number; availablePlaces: string[]; cityFrames: { name: string; offset: number; visible: boolean }[]; selectedStudioId: string; selectedLabelId: string; offerIndex: number; previewPlaying: boolean; running: boolean; mixerKnobs: { name: string; key: string; x: number; y: number; anchorX: number; anchorY: number }[] }> {
   return page.evaluate(() => (window as unknown as { __rockManager: { snapshot(): never } }).__rockManager.snapshot());
 }
 async function click(page: Page, x: number, y: number, dismiss = true): Promise<void> {
@@ -28,16 +31,45 @@ async function startMission(page: Page, dismiss = true): Promise<void> {
   await click(page, 320, 371);
   expect((await snapshot(page)).modal).toBe('missions');
   await page.screenshot({ path: 'test-results/missions.png' });
-  await click(page, 620, 512);
+  const chooser=(await snapshot(page)).sourceLayout!;
+  expect(chooser.id).toBe('DlgMissionChoose');
+  await click(page, chooser.start!.x, chooser.start!.y);
   expect((await snapshot(page)).modal).toBe('briefing');
   await page.screenshot({ path: 'test-results/briefing.png' });
-  await click(page, 628, 514, dismiss);
+  const briefing=(await snapshot(page)).sourceLayout!;
+  expect(briefing.id).toBe('DlgMissionIntro');
+  await click(page, briefing.begin!.x, briefing.begin!.y, dismiss);
+}
+
+async function buyFirstSong(page:Page,dismiss=true):Promise<void>{
+  const before=await snapshot(page),layout=before.sourceLayout!;
+  expect(before.modal).toBe('publisher');expect(layout.id).toBe('DlgPublish');
+  // Native publisher opens with no song selected: the license control is disabled.
+  await click(page,layout.buy!.x,layout.buy!.y,false);
+  expect((await snapshot(page)).ownedSongs).toEqual(before.ownedSongs);
+  expect((await snapshot(page)).money).toBe(before.money);
+  expect((await snapshot(page)).modal).toBe('publisher');
+  const row=layout.selectRows!.find(row=>row.id==='Sng01');expect(row).toBeTruthy();
+  await click(page,row!.x,row!.y,false);
+  const selected=(await snapshot(page)).sourceLayout!;
+  await click(page,selected.buy!.x,selected.buy!.y,dismiss);
+}
+async function confirmMixerExit(page:Page,dismiss=true):Promise<void>{
+  expect((await snapshot(page)).modal).toBe('finish-demo');
+  const layout=(await snapshot(page)).sourceLayout!;expect(layout.id).toBe('DlgMixerExit');
+  await click(page,layout.ok!.x,layout.ok!.y,dismiss);
+}
+async function discardDemo(page:Page,confirm:boolean):Promise<void>{
+  expect((await snapshot(page)).modal).toBe('replace-demo');
+  const buttons=await page.evaluate(()=>(window as any).__rockManager.snapshot().eventCardButtons);
+  const point=confirm?buttons.confirm:buttons.cancel;expect(point).toBeTruthy();
+  await click(page,point.x,point.y);
 }
 
 test('canvas opening, recruitment, payday and persistence work without HTML controls', async ({ page }) => {
   const errors: string[] = [];
   page.on('pageerror', (e) => errors.push(e.message));
-  await page.goto('http://127.0.0.1:5173');
+  await page.goto(baseURL);
   await page.waitForFunction(() => '__rockManager' in window);
   expect((await snapshot(page)).modal).toBe('menu');
   await expect(page.locator('canvas')).toHaveCount(1);
@@ -72,30 +104,30 @@ test('canvas opening, recruitment, payday and persistence work without HTML cont
   await click(page, 400, 547);
   expect((await snapshot(page)).band[0]?.musicianId).toBe('RMCJerka');
   expect((await snapshot(page)).money).toBe(100000);
-  await click(page, 648, 518);
-  await click(page, 230, 460);
+  await hireThroughCanvas(page,4,'RMCSussie');
+  await click(page,648,518); // Original one-time name reminder leaves band underneath.
+  await click(page,648,518);
+  await click(page,230,460);
   expect((await snapshot(page)).modal).toBe('publisher');
   await page.screenshot({ path: 'test-results/publisher.png' });
-  await click(page, 628, 518);
+  await buyFirstSong(page);
   expect((await snapshot(page)).modal).toBeNull();
   expect((await snapshot(page)).money).toBe(89000);
   expect((await snapshot(page)).ownedSongs).toEqual(['Sng01']);
   await click(page, 306, 40);
-  await click(page, 610, 474);
-  expect((await snapshot(page)).modal).toBe('songs');
-  await click(page, 628, 518);
+  expect((await snapshot(page)).modal).toBe('rehearsal');
   expect((await snapshot(page)).selectedSong).toBe('Sng01');
   await page.screenshot({ path: 'test-results/licensed-rehearsal.png' });
   await click(page, 648, 518);
   for (let i = 0; i < 7; i++) await click(page, 720, 581);
   expect((await snapshot(page)).day).toBe(7);
-  expect((await snapshot(page)).money).toBe(88870);
+  expect((await snapshot(page)).money).toBe(88490);
   expect((await snapshot(page)).ownedSongs).toEqual(['Sng01']);
   await page.reload();
   await page.waitForFunction(() => '__rockManager' in window);
   expect((await snapshot(page)).modal).toBe('menu');
   expect((await snapshot(page)).band[0]?.musicianId).toBe('RMCJerka');
-  expect((await snapshot(page)).money).toBe(88870);
+  expect((await snapshot(page)).money).toBe(88490);
   await click(page, 170, 371);
   await click(page, 306, 40);
   await click(page, 150, 517);
@@ -127,7 +159,7 @@ test('complete canvas tutorial hires a band, buys a song, mixes a demo and negot
   const errors: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));
   page.on('console', (message) => { if (/Texture key.*not found|Failed to load resource/.test(message.text())) errors.push(message.text()); });
-  await page.goto('http://127.0.0.1:5173');
+  await page.goto(baseURL);
   await page.waitForFunction(() => '__rockManager' in window);
   await startMission(page);
   await click(page, 306, 40);
@@ -142,7 +174,7 @@ test('complete canvas tutorial hires a band, buys a song, mixes a demo and negot
   expect((await snapshot(page)).tutorialId).toBe('ECOCMis1IntroducePublisher');
   await page.keyboard.press('Enter');
   await click(page, 230, 460);
-  await click(page, 628, 518, false);
+  await buyFirstSong(page, false);
   expect((await snapshot(page)).tutorialId).toBe('ECOCMis1IntroduceStudio');
   await page.keyboard.press('Enter');
   await click(page, 707, 350);
@@ -180,7 +212,7 @@ test('complete canvas tutorial hires a band, buys a song, mixes a demo and negot
   expect((await snapshot(page)).tutorialId).toBeNull();
   await click(page, 190, 466, false);
   expect((await snapshot(page)).backgroundModal).toBe('mixer');
-  await click(page, 632, 510, false);
+  await confirmMixerExit(page, false);
   expect((await snapshot(page)).demo?.quality).toBeGreaterThan(0.5);
   expect((await snapshot(page)).tutorialId).toBe('ECOCMis1IntroduceLabel');
   await page.screenshot({ path: 'test-results/tutorial-label.png' });
@@ -230,28 +262,39 @@ test('a poor demo is rejected, the retry tutorial appears, and cancelling a repl
   test.setTimeout(60000);
   const errors: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));
-  await page.goto('http://127.0.0.1:5173');
+  await page.goto(baseURL);
   await page.waitForFunction(() => '__rockManager' in window);
   await startMission(page);
   await click(page, 306, 40);
   await hireThroughCanvas(page, 0, 'RMCJerka');
-  await click(page, 680, 518);
+  await hireThroughCanvas(page,4,'RMCSussie');
+  await click(page,680,518);
+  await click(page,680,518);
   await click(page, 230, 460);
-  await click(page, 628, 518);
+  await buyFirstSong(page);
   for (let i = 0; i < 3; i++) await click(page, 65, 572);
   await click(page, 180, 377);
   expect((await snapshot(page)).selectedStudioId).toBe('Studio04');
   await click(page, 449, 418);
   expect((await snapshot(page)).money).toBe(87000);
+  await click(page,320,324); // Mute singer for the deliberately poor one-track demo.
   await click(page, 190, 466);
-  await click(page, 632, 510);
+  await confirmMixerExit(page);
   expect((await snapshot(page)).demo?.quality).toBe(0);
   await click(page, 351, 340);
   await click(page, 240, 488);
   expect((await snapshot(page)).modal).toBe('rejection');
   expect((await snapshot(page)).backgroundModal).toBe('label');
+  const refusal=(await snapshot(page)).sourceLayout!;
+  expect(refusal.id).toBe('DlgRecordRefuse');
+  const refusalTexts=await page.evaluate(()=>(window as any).__rockManager.snapshot().dialogTexts.map((entry:{text:string})=>entry.text).join('\n'));
+  const refusalState=await snapshot(page),refusalLabel=data.tutorialGameplay.labels.find(label=>label.id===refusalState.selectedLabelId)!;
+  const originalFeedback=evaluateDemo(refusalState,refusalLabel,data.musicians).reason;
+  expect(originalFeedback.length).toBeGreaterThan(0);
+  expect(refusalTexts).toContain(originalFeedback);
+  expect(refusalTexts).not.toContain('The demo needs stronger musicians or a better studio.');
   await page.screenshot({ path: 'test-results/demo-rejected.png' });
-  await click(page, 220, 510, false);
+  await click(page, refusal.close!.x, refusal.close!.y, false);
   expect((await snapshot(page)).tutorialId).toBe('ECOCMis1NoContract');
   await page.screenshot({ path: 'test-results/tutorial-retry.png' });
   await page.keyboard.press('Enter');
@@ -260,32 +303,35 @@ test('a poor demo is rejected, the retry tutorial appears, and cancelling a repl
   await click(page, 180, 377);
   await click(page, 449, 418);
   expect((await snapshot(page)).modal).toBe('replace-demo');
-  await click(page, 150, 510);
+  await discardDemo(page,false);
   expect((await snapshot(page)).modal).toBe('studio');
   expect((await snapshot(page)).money).toBe(87000);
   await click(page, 449, 418);
-  await click(page, 632, 510);
+  await discardDemo(page,true);
   expect((await snapshot(page)).modal).toBe('mixer');
   expect((await snapshot(page)).money).toBe(85000);
   // Original DlgMixerChooseMusicianScript charges on OK, never on row selection.
-  await click(page, 313, 156);
+  await click(page, 373, 156);
   expect((await snapshot(page)).modal).toBe('settings');
   await click(page, 175, 170);
   expect((await snapshot(page)).modal).toBe('session');
-  expect((await snapshot(page)).backgroundModal).toBe('mixer');
+  expect((await snapshot(page)).backgroundModal).toBe('settings');
+  await click(page, 192, 410);
+  expect((await snapshot(page)).modal).toBe('session');
+  expect((await snapshot(page)).previewPlaying).toBe(false);
   await click(page, 420, 400);
   expect((await snapshot(page)).modal).toBe('session');
-  expect((await snapshot(page)).recording!.channels[0].musicianId).toBe('RMCJerka');
+  expect((await snapshot(page)).recording!.channels[1].musicianId).toBe('RMCJerka');
   expect((await snapshot(page)).money).toBe(85000);
   await page.screenshot({ path: 'test-results/session-musician.png' });
   await click(page, 568, 518);
   expect((await snapshot(page)).modal).toBe('settings');
   expect((await snapshot(page)).money).toBe(85000);
-  expect((await snapshot(page)).recording!.channels[0].musicianId).toBe('RMCJerka');
+  expect((await snapshot(page)).recording!.channels[1].musicianId).toBe('RMCJerka');
   await click(page, 175, 170);
   await click(page, 420, 400);
   await click(page, 375, 518);
-  expect((await snapshot(page)).recording!.channels[0].musicianId).toBe('Stud04');
+  expect((await snapshot(page)).recording!.channels[1].musicianId).toBe('Stud04');
   expect((await snapshot(page)).money).toBe(69000);
   await click(page, 175, 170);
   await click(page, 375, 518);
@@ -302,12 +348,12 @@ test('mixer Settings opens, effects preview works, mute updates without rebuildi
   expect(alpha.filter((a) => a === 0)).toHaveLength(60);
   expect(alpha.filter((a) => a > 0 && a < 255)).toHaveLength(255);
   let state = newGame(100000);
-  for (const [slot, id, instrument] of [[0, 'RMCJerka', 'Guitar'], [1, 'RMCTony', 'Guitar'], [2, 'RMCRaymond', 'Drums'], [3, 'RMCGurra', 'Bass'], [4, 'RMCSussie', 'Vocals']] as const) state = recruit(state, data.musicians, slot, id, instrument);
+  for (const [slot, id, instrument] of [[0, 'RMCJerka', 'Guitar'], [1, 'RMCTony', 'Guitar'], [2, 'RMCGullan', 'Drums'], [3, 'RMCGurra', 'Bass'], [4, 'RMCSussie', 'Vocals']] as const) state = recruit(state, data.musicians, slot, id, instrument);
   state = startRecording(licenseSong({ ...state, started: true, tutorialEnabled: false }, data.songs, 'Sng01'), data.tutorialGameplay, 'Studio01', 'Sng01');
   await page.addInitScript((save) => localStorage.setItem('rock-manager.mission01.v1', JSON.stringify(save)), state);
   const errors: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));
-  await page.goto('http://127.0.0.1:5173');
+  await page.goto(baseURL);
   await page.waitForFunction(() => '__rockManager' in window);
   await click(page, 170, 371);
   const anchors = (s: Awaited<ReturnType<typeof snapshot>>) => s.mixerKnobs.map(({ name, anchorX, anchorY }) => ({ name, anchorX, anchorY }));
@@ -344,12 +390,12 @@ test('mixer Settings opens, effects preview works, mute updates without rebuildi
   await expect.poll(async () => (await snapshot(page)).previewPlaying).toBe(true);
   expect(await playback(page)).toMatchObject({ mode: 'instrument', tracks: [{ channel: 0, loop: false }] });
   expect((await playback(page)).tracks).toHaveLength(1);
-  await click(page, 358, 463);
+  await click(page, 310, 463);
   expect((await snapshot(page)).modal).toBe('mixer');
-  expect((await snapshot(page)).previewPlaying).toBe(false);
-  expect((await playback(page)).tracks).toHaveLength(0);
-  await click(page, 100, 397);
+  // ClosedFX renders the edited loop and schedules Mixer.playSoon: the old
+  // one-shot is cancelled and the complete synchronized mix resumes.
   await expect.poll(async () => (await snapshot(page)).previewPlaying).toBe(true);
+  await expect.poll(async () => (await playback(page)).mode).toBe('mix');
   const mix = await playback(page);
   expect(mix.mode).toBe('mix');
   expect(mix.tracks).toHaveLength(5);
@@ -357,12 +403,28 @@ test('mixer Settings opens, effects preview works, mute updates without rebuildi
   expect(mix.tracks.every((t) => t.loop)).toBe(true);
   await click(page, 152, 397);
   expect((await snapshot(page)).recording!.channels[0].effects?.delay.active).toBe(true);
+  await click(page, 380, 197);
+  expect((await snapshot(page)).recording!.channels[1].musicianId).toBe('RMCGullan');
+  await page.screenshot({ path: 'test-results/mixer-settings-native-reference.png' });
+  const native = PNG.sync.read(readFileSync('analysis/original/runtime/reference/stage/native-006.png'));
+  const current = PNG.sync.read(await page.screenshot());
+  const difference = (x: number, y: number, width: number, height: number) => {
+    let error = 0;
+    for (let row = y; row < y + height; row++) for (let column = x; column < x + width; column++) {
+      const offset = (row * 800 + column) * 4;
+      for (let component = 0; component < 3; component++) error += Math.abs(native.data[offset + component] - current.data[offset + component]);
+    }
+    return error / (width * height * 3);
+  };
+  // Compare fixed regions, excluding changing skill values and animated faces.
+  expect(difference(410, 104, 4, 395)).toBeLessThan(3);
+  expect(difference(234, 150, 80, 58)).toBeLessThan(1);
   expect(errors).toEqual([]);
 });
 
 test('original instrument audio produces audible delay, chorus and phaser output, and previews end once', async ({ page }) => {
   test.setTimeout(60000);
-  await page.goto('http://127.0.0.1:5173');
+  await page.goto(baseURL);
   const metrics = await page.evaluate(async () => {
     const modulePath = '/src/game/recording-audio.ts';
     const { RecordingAudio } = await import(/* @vite-ignore */ modulePath);
@@ -390,7 +452,7 @@ test('original instrument audio produces audible delay, chorus and phaser output
 });
 
 test('recruitment stays over the band; wheel, thumb drag and track clicks scroll the actual list', async ({ page }) => {
-  await page.goto('http://127.0.0.1:5173');
+  await page.goto(baseURL);
   await page.waitForFunction(() => '__rockManager' in window);
   await startMission(page);
   await click(page, 306, 40);
@@ -400,7 +462,8 @@ test('recruitment stays over the band; wheel, thumb drag and track clicks scroll
   expect((await snapshot(page)).modal).toBe('recruit');
   const portrait = PNG.sync.read(readFileSync('public/assets/portrait-RMCJerka.png'));
   const rendered = PNG.sync.read(await page.screenshot({ clip: { x: 328, y: 141, width: 93, height: 98 } }));
-  expect(Array.from(rendered.data.subarray(0, 12))).toEqual(Array.from(portrait.data.subarray(0, 12)));
+  const rgb555 = Array.from(portrait.data.subarray(0, 12) as Uint8Array).map((value, index) => index % 4 === 3 ? value : ((value >> 3) << 3) | ((value >> 3) >> 2));
+  expect(Array.from(rendered.data.subarray(0, 12))).toEqual(rgb555);
   await page.mouse.move(450, 403);
   await page.mouse.wheel(0, 120);
   await page.waitForTimeout(100);
@@ -434,7 +497,7 @@ test('recruitment stays over the band; wheel, thumb drag and track clicks scroll
 });
 
 test('city layers animate, dialogs pause them, and native cursors follow unlocked hotspots', async ({ page }) => {
-  await page.goto('http://127.0.0.1:5173');
+  await page.goto(baseURL);
   await page.waitForFunction(() => '__rockManager' in window);
   await startMission(page);
   expect((await snapshot(page)).availablePlaces).toEqual([]);
@@ -450,7 +513,9 @@ test('city layers animate, dialogs pause them, and native cursors follow unlocke
   const paused = (await snapshot(page)).cityFrames;
   await page.waitForTimeout(350);
   expect((await snapshot(page)).cityFrames).toEqual(paused);
-  await click(page, 680, 518);
+  await hireThroughCanvas(page,4,'RMCSussie');
+  await click(page,680,518);
+  await click(page,680,518);
   expect((await snapshot(page)).availablePlaces).toEqual(['publish01']);
   await page.mouse.move(230, 460);
   await page.waitForTimeout(100);
@@ -465,7 +530,7 @@ test('older saves keep their band and cash when song fields are migrated', async
     version: 1, missionId: 'Mission01', started: true, bandName: 'Old band', money: 42000, day: 3,
     startDate: '2001-03-13', band: [{ musicianId: 'RMCJerka', instrument: 'Guitar' }, null, null, null, null], muted: true,
   })));
-  await page.goto('http://127.0.0.1:5173');
+  await page.goto(baseURL);
   await page.waitForFunction(() => '__rockManager' in window);
   const state = await snapshot(page);
   expect(state.bandName).toBe('Old band');
@@ -477,11 +542,10 @@ test('older saves keep their band and cash when song fields are migrated', async
 
 test('dialogs pause the running clock, and corrupted saves recover to the opening menu', async ({ page }) => {
   await page.addInitScript(() => localStorage.setItem('rock-manager.mission01.v1', '{bad json'));
-  await page.goto('http://127.0.0.1:5173');
+  await page.goto(baseURL);
   await page.waitForFunction(() => '__rockManager' in window);
   expect((await snapshot(page)).money).toBe(100000);
   await startMission(page);
-  await click(page, 575, 581);
   expect((await snapshot(page)).running).toBe(true);
   await click(page, 306, 40);
   await page.waitForTimeout(3200);
@@ -498,7 +562,7 @@ test('dialogs pause the running clock, and corrupted saves recover to the openin
 });
 
 test('native recruitment scroll controls change the candidate actually hired', async ({ page }) => {
-  await page.goto('http://127.0.0.1:5173');
+  await page.goto(baseURL);
   await page.waitForFunction(() => '__rockManager' in window);
   await startMission(page);
   await click(page, 306, 40);
@@ -512,7 +576,7 @@ test('native recruitment scroll controls change the candidate actually hired', a
 });
 
 test('Mission01 tutorial cards follow recovered events, block input and persist acknowledgements', async ({ page }) => {
-  await page.goto('http://127.0.0.1:5173');
+  await page.goto(baseURL);
   await page.waitForFunction(() => '__rockManager' in window);
   await startMission(page, false);
   expect((await snapshot(page)).tutorialId).toBe('ECOCMis1IntroduceCity');
@@ -526,13 +590,20 @@ test('Mission01 tutorial cards follow recovered events, block input and persist 
   await click(page, 150, 435, false);
   expect((await snapshot(page)).modal).toBe('rehearsal');
   await click(page, 400, (await snapshot(page)).tutorialButtonY + 18, false);
-  await click(page, 680, 518, false);
+  await click(page,680,518,false);
+  expect((await snapshot(page)).tutorialId).toBe('ECOCNeedSinger');
+  await page.keyboard.press('Enter');
+  await hireThroughCanvas(page,4,'RMCSussie');
+  await click(page,680,518,false);
+  expect((await snapshot(page)).tutorialId).toBe('ECOCForgetBandName');
+  await page.keyboard.press('Enter');
+  await click(page,680,518,false);
   expect((await snapshot(page)).tutorialId).toBe('ECOCMis1IntroducePublisher');
   await page.screenshot({ path: 'test-results/tutorial-publisher.png' });
   await click(page, 400, (await snapshot(page)).tutorialButtonY + 18, false);
   await page.keyboard.press('Space');
   await click(page, 230, 460, false);
-  await click(page, 628, 518, false);
+  await buyFirstSong(page, false);
   expect((await snapshot(page)).tutorialId).toBe('ECOCMis1IntroduceStudio');
   await page.screenshot({ path: 'test-results/tutorial-studio.png' });
   const day = (await snapshot(page)).day;
@@ -540,7 +611,7 @@ test('Mission01 tutorial cards follow recovered events, block input and persist 
   expect((await snapshot(page)).day).toBe(day);
   await click(page, 400, (await snapshot(page)).tutorialButtonY + 18, false);
   expect((await snapshot(page)).seenTutorials).toEqual([
-    'ECOCMis1IntroduceCity', 'ECOCMis1IntroduceRehearsal', 'ECOCMis1IntroducePublisher', 'ECOCMis1IntroduceStudio',
+    'ECOCMis1IntroduceCity', 'ECOCMis1IntroduceRehearsal', 'ECOCNeedSinger', 'ECOCForgetBandName', 'ECOCMis1IntroducePublisher', 'ECOCMis1IntroduceStudio',
   ]);
   await page.reload();
   await page.waitForFunction(() => '__rockManager' in window);

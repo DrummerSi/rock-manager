@@ -14,6 +14,14 @@ const rawUi = JSON.parse(fs.readFileSync(path.join(root, 'ui-raw-bitmaps.json'),
 const cityEvidence = JSON.parse(fs.readFileSync(path.join(root, 'city-animation-evidence.json'), 'utf8'));
 const tutorialMedia = JSON.parse(fs.readFileSync(path.join(root, 'tutorial-media-evidence.json'), 'utf8')).recovered;
 const tutorialGameplay = JSON.parse(fs.readFileSync(path.join(root, 'tutorial-gameplay-evidence.json'), 'utf8'));
+const nativeStudioLabels = JSON.parse(fs.readFileSync(path.join(root, 'native-studio-text-evidence.json'), 'utf8'));
+for (const entry of nativeStudioLabels.recovered) {
+  const filename = `${entry.key}.png`;
+  fs.copyFileSync(path.join(root, entry.path), path.join(destination, filename));
+  images[entry.key] = filename;
+  provenance.push({ ...entry, source: nativeStudioLabels.source, sourceSHA256: nativeStudioLabels.sourceSHA256,
+    screenshot: nativeStudioLabels.screenshot, screenshotSHA256: nativeStudioLabels.screenshotSHA256, importRule: nativeStudioLabels.rule });
+}
 for (const entry of tutorialMedia) {
   const key = entry.name.replaceAll(' ', '_').toLowerCase();
   const filename = `${key}.png`;
@@ -87,7 +95,7 @@ function select(key, name, width) {
     const png = PNG.sync.read(fs.readFileSync(sourcePath));
     for (let i = 3; i < png.data.length; i += 4) png.data[i] = 255;
     fs.writeFileSync(path.join(destination, filename), PNG.sync.write(png));
-  } else if (/^(panel|dialog|inner|city-sprite)-/.test(key)) {
+  } else if (/^(panel|dialog|inner|outer|city-sprite)-/.test(key)) {
     const png = PNG.sync.read(fs.readFileSync(sourcePath));
     // The surround tiles have a white matte, used as a color key by Director.
     for (let i = 0; i < png.data.length; i += 4) {
@@ -96,7 +104,7 @@ function select(key, name, width) {
     fs.writeFileSync(path.join(destination, filename), PNG.sync.write(png));
   } else fs.copyFileSync(sourcePath, path.join(destination, filename));
   images[key] = filename;
-  provenance.push({ key, ...entry, importRule: raw ? `Retained raw BITD interleaved ${raw.depth}-bit; ui-raw-bitmaps.json` : key === 'hud' ? 'Director opaque copy ink' : /^(panel|dialog|inner)-/.test(key) ? 'white matte color key' : 'unchanged recovered PNG' });
+  provenance.push({ key, ...entry, importRule: raw ? `Retained raw BITD interleaved ${raw.depth}-bit; ui-raw-bitmaps.json` : key === 'hud' ? 'Director opaque copy ink' : /^(panel|dialog|inner|outer)-/.test(key) ? 'white matte color key' : 'unchanged recovered PNG' });
 }
 
 select('city', 'city_background01');
@@ -126,6 +134,8 @@ select('meter-fill', 'meter01_line01');
 select('scroll-up', 'RockScrollArrowUp');
 select('scroll-down', 'RockScrollArrowDown');
 select('scroll-thumb', 'RockScrollBarPic');
+select('activity-arrowleft', 'ArrowLeft');
+select('activity-arrowright', 'ArrowRight');
 select('small-arrow-up', 'RockSmallArrowUp');
 select('small-arrow-down', 'RockSmallArrowDown');
 for (const [key, name] of Object.entries({ accept: 'icon_accept01', cancel: 'icon_cancel01', rename: 'icon_text01', effect: 'icon_effect01', globe: 'icon_globe01', skull: 'icon_skull01', megaphone: 'icon_megaphone01', microphone: 'icon_microphone01', note: 'icon_note01', garbage: 'icon_garbage can01', cd: 'icon_cd02',
@@ -143,6 +153,7 @@ for (const side of ['TL', 'TR', 'BL', 'BR', 'T', 'B', 'L', 'R']) {
   select(`dialog-${side}`, `RockDialogEdge${side}`);
   select(`inner-${side}`, `RockFrame2Edge${side}`);
 }
+for (const side of ['TL','TR','BL','BR','T','B','L','R']) select(`outer-${side}`, `RockFrame1Edge${side}`);
 for (const side of ['TL', 'TR', 'BL', 'BR']) select(`button-dark-${side}`, `RockButtonDarkEdge${side}`);
 
 const musicians = fixture.availableMusicians.map((m) => {
@@ -156,10 +167,10 @@ const musicians = fixture.availableMusicians.map((m) => {
   const genres = Object.entries(m.MusicStyle).sort((a, b) => Number(b[1]) - Number(a[1]));
   return {
     id: m.ID, name: m.name, age: Number(m.Age), salary: Number(m.WantedSalary),
-    description: m.comment, genre: genres[0][0], musicality: Number(m.Musicality.Current),
+    description: m.comment, genre: m.Genre || genres[0][0], musicality: Number(m.Musicality.Current),
     style: Object.fromEntries(Object.entries(m.MusicStyle).map(([key, value]) => [key, Number(value)])),
     smallPortrait: `portrait_${m.Gfx.toLowerCase()}_small`,
-    mood: Number(m.Mood?.Current ?? 0.65), health: Number(m.Health?.Current ?? 1), charisma: Number(m.Charisma?.Current ?? m.Charisma ?? 0), skills, instrumentGraphics: m.InstrumentGFX ?? {},
+    gender: m.Gender ?? 'Male', mood: Number(m.Mood?.Current ?? 0.65), health: Number(m.Health?.Current ?? 1), charisma: Number(m.Charisma?.Current ?? m.Charisma ?? 0), skills, instrumentGraphics: m.InstrumentGFX ?? {},
   };
 });
 fs.copyFileSync(path.join(root, 'media/audio-sample/CityAmbience01.wav'), path.join(destination, 'city-ambience.wav'));
@@ -167,24 +178,86 @@ const songTable = JSON.parse(fs.readFileSync(path.join(root, 'data/DataSongs00.j
 const allowedSongs = fixture.mission.AvailableSongs.match(/Sng\d+/g);
 const songs = songTable.ID.flatMap((id, i) => allowedSongs.includes(id) ? [{ id, name: songTable.name[i],
   description: songTable.comment[i], genre: songTable.Genre[i], price: Number(songTable.PriceModel.BasePrice[i]),
-  royalty: Number(songTable.PriceModel.Royalty[i]), quality: Number(songTable.quality[i]) }] : []);
-const gameData = {
+  royalty: Number(songTable.PriceModel.Royalty[i]), quality: Number(songTable.quality[i]), songType:Number(songTable.SongType[i]) }] : []);
+const designEvidence = JSON.parse(fs.readFileSync(path.join(root, 'design-assets-evidence.json'), 'utf8'));
+const designTable = JSON.parse(fs.readFileSync(path.join(root, 'data/DataDesignAndStage00.json'), 'utf8')).data;
+const row = (value, index) => Array.isArray(value) ? value[index] : Object.fromEntries(Object.entries(value).map(([key, column]) => [key, row(column, index)]));
+const elements = designTable.DesignElement.ID.map((id, i) => { const r = row(designTable.DesignElement, i); return { id, name: r.name, gfx: r.Gfx, price: Number(r.price), quality: Number(r.quality), style: Object.fromEntries(Object.entries(r.Style).map(([k,v]) => [k, Number(v)])) }; });
+const categories = ['DCDesignBG','DCDesignArtist','DCDesignFX','DCDesignFont'].map(id => { const r = row(designTable.DesignCategory, designTable.DesignCategory.ID.indexOf(id)); return { id, name: r.name, gfx: r.Gfx, elements: [...r.elements.matchAll(/#(\w+)/g)].map(m => m[1]) }; });
+const bitmaps = designEvidence.recovered.filter(e => !e.key.startsWith('Font')).map(entry => {
+ const key = 'design-' + entry.name; const filename = key + '.png'; fs.copyFileSync(path.join(root, entry.path), path.join(destination, filename)); images[key] = filename; provenance.push({ ...entry, key }); return { ...entry, key };
+});
+const fonts = designEvidence.fonts.map(f => { const key = 'design-font-' + f.id; const filename = key + '.png'; fs.copyFileSync(path.join(root, f.atlas.path), path.join(destination, filename)); images[key] = filename; const { rawMetrics, ...metrics } = f; return { ...metrics, key }; });
+images['ui-calendar-title'] = images['design-icon_calendar01'];
+images['ui-camera'] = images['design-icon_camera01']; images['ui-calendar'] = images['design-icon_calendar02'];
+const design = { elements, categories, bitmaps, fonts, palettes: designEvidence.palettes, charReplacements: designEvidence.charReplacements,
+ layouts: JSON.parse(fs.readFileSync(path.join(root, 'design-layouts-evidence.json'), 'utf8')).layouts };
+const activityEvidence = JSON.parse(fs.readFileSync(path.join(root,'activity-assets-evidence.json'),'utf8'));
+const activityBitmaps = [...activityEvidence.recovered,...activityEvidence.composites].map(entry=>{
+ const key='activity-'+entry.name.replaceAll(' ','_').toLowerCase();const filename=key+'.png';fs.copyFileSync(path.join(root,entry.path),path.join(destination,filename));images[key]=filename;provenance.push({...entry,key});return {...entry,key};
+});
+const activityTables=JSON.parse(fs.readFileSync(path.join(root,'activity-rules-evidence.json'),'utf8')).tables;
+for(const name of activityBitmaps.filter(b=>b.name.toLowerCase().startsWith('icon_')).map(b=>b.name)){
+ const key='activity-'+name.replaceAll(' ','_').toLowerCase();if(images[key])images['ui-activity-'+name.replaceAll(' ','_').toLowerCase()]=images[key];
+}
+const activities={bitmaps:activityBitmaps,tables:activityTables,liveLayouts:JSON.parse(fs.readFileSync(path.join(root,'activity-live-layouts-evidence.json'),'utf8')).layouts};
+const nativeFonts = JSON.parse(fs.readFileSync(path.join(root,'native-font-evidence.json'),'utf8').replace(/^\uFEFF/,''));
+for (const entry of nativeFonts.atlases) {
+ const key='native-font-'+entry.id, filename=key+'.png';
+ fs.copyFileSync(path.join(root,entry.path),path.join(destination,filename)); images[key]=filename;
+ provenance.push({ key, path:entry.path, sha256:entry.sha256, importRule:nativeFonts.method });
+}
+const actorAnimation=JSON.parse(fs.readFileSync(path.join(root,'actor-animation-evidence.json'),'utf8'));
+const sourceWindowAssets=JSON.parse(fs.readFileSync(path.join(root,'source-window-assets.json'),'utf8'));
+for(const entry of sourceWindowAssets.recovered){
+ const key='source-window-'+entry.name.replaceAll(' ','_').toLowerCase(), filename=key+'-'+entry.pngSHA256.slice(0,12)+'.png';
+ fs.copyFileSync(path.join(root,entry.path),path.join(destination,filename));images[key]=filename;
+ provenance.push({key,path:entry.path,sha256:entry.pngSHA256,importRule:`Original source window bitmap, ink${entry.ink}`});
+}
+const missionEndingAssets=JSON.parse(fs.readFileSync(path.join(root,'mission-ending-layout-evidence.json'),'utf8'));
+for(const entry of missionEndingAssets.recovered){
+ const key='mission-ending-'+entry.name.replaceAll(' ','_').toLowerCase(), filename=key+'-'+entry.pngSHA256.slice(0,12)+'.png';
+ fs.copyFileSync(path.join(root,entry.path),path.join(destination,filename));images[key]=filename;
+ provenance.push({key,path:entry.path,sha256:entry.pngSHA256,importRule:'Original Mission01 ending art/icons with source ink36'});
+}
+for (const portrait of actorAnimation.staticPortraits ?? []) {
+ const filename=portrait.textureKey+'.png';
+ fs.copyFileSync(path.join(root,portrait.path),path.join(destination,filename)); images[portrait.textureKey]=filename;
+ provenance.push({key:portrait.textureKey,path:portrait.path,sha256:portrait.pngSHA256,importRule:'Original mood-specific Director portrait'});
+}
+for (const portrait of actorAnimation.portraits) {
+ const filename=portrait.atlas.textureKey+'-'+portrait.atlas.sha256.slice(0,12)+'.png';
+ fs.copyFileSync(path.join(root,portrait.atlas.path),path.join(destination,filename)); images[portrait.atlas.textureKey]=filename;
+ provenance.push({key:portrait.atlas.textureKey,path:portrait.atlas.path,sha256:portrait.atlas.sha256,importRule:'Original Director actor layers with source registration points'});
+}
+const gameData = { design, activities, sourceWindowBitmaps:sourceWindowAssets.recovered.map(({name,width,height,regX,regY})=>({name,width,height,regX,regY,key:'source-window-'+name.replaceAll(' ','_').toLowerCase()})),
   city: cityEvidence, cityFrame: cityFrame.masks.map(({ key, x, y }) => ({ key, x, y })), cursors,
   tutorialGameplay, tutorialMedia: tutorialMedia.map(({ name, width, height, regX, regY }) => ({ key: name.replaceAll(' ', '_').toLowerCase(), width, height, regX, regY })),
   iconRegistrations: Object.fromEntries([...provenance.filter((p) => p.key.startsWith('ui-')).map((p) => [p.key.slice(3),
     JSON.parse(fs.readFileSync(path.join(root, 'ui-icon-registrations.json'), 'utf8')).registrations.find((r) => r.name === p.originalMemberName) ?? { regX: 0, regY: 0 }]),
+    ...['camera','calendar'].map(key => [key, bitmaps.find(b => b.name === (key === 'calendar' ? 'icon_calendar02' : 'icon_camera01'))]),
     ...Object.entries(tutorialIcons).map(([key, name]) => [key, tutorialMedia.find((m) => m.name.replaceAll(' ', '_').toLowerCase() === name)])]),
   mission: { id: 'Mission01', name: fixture.mission.name, startMoney: Number(fixture.mission.StartMoney),
     intro: fixture.mission.IntroText.replaceAll('\\n', '\n'),
     objectives: ['Put a band together', 'Get a song license', 'Record a demo', 'Sign a record contract', 'Make the Top 10'] },
-  musicians, songs, images, missions: JSON.parse(fs.readFileSync(path.join(root, 'data/missions.json'), 'utf8')).missions.filter((m) => m.name).map((m) => ({ id: m.ID, name: m.name })),
+  musicians, songs, images, missions: JSON.parse(fs.readFileSync(path.join(root, 'data/missions.json'), 'utf8')).missions.filter((m) => m.name).map((m) => ({ id: m.ID, name: m.name, comment:m.comment, gfx:m.Gfx })),
   tutorials: JSON.parse(fs.readFileSync(path.join(root, 'opening-ui-evidence.json'), 'utf8')).cards,
-  menuText: JSON.parse(fs.readFileSync(path.join(root, 'opening-ui-evidence.json'), 'utf8')).menuText,
+  menuText: (() => { const t=JSON.parse(fs.readFileSync('src/game/original-text.json','utf8')).translations; return {title:t.szidMainMenuHeadline,text:t.szidMainMenuComment,authority:'Original English Translation.txt',source:'V:/Data/Translation.txt'}; })(),
   instrumentSprites: instrumentSprites.map(({ name, regX, regY }) => ({ name, regX, regY })),
   hotspots: [...fs.readFileSync(path.join(root, 'data/city-hotspots.txt'), 'utf8')
     .matchAll(/#(\w+)\s*:\s*rect\((\d+),\s*(\d+),\s*(\d+),\s*(\d+)\)/g)]
     .map((m) => ({ id: m[1], rect: m.slice(2).map(Number) })),
 };
+for (const [source, target] of [['source-confirmations.json','source-confirmations.json'],['feedback-audio-evidence.json','feedback-audio.json'],['actor-animation-evidence.json','actor-animation.json'],['native-font-evidence.json','native-fonts.json']]) fs.copyFileSync(path.join(root,source),path.join('src/generated',target));
 fs.writeFileSync('src/generated/game-data.json', JSON.stringify(gameData, null, 2));
 fs.writeFileSync(path.join(destination, 'provenance.json'), JSON.stringify(provenance, null, 2));
-console.log(`Prepared ${Object.keys(images).length} original images, ${musicians.length} musicians and one audio track.`);
+
+
+const feedback = JSON.parse(fs.readFileSync(path.join(root, 'feedback-audio-evidence.json'), 'utf8'));
+const sourceAudio = JSON.parse(fs.readFileSync(path.join(root, 'source-window-audio-evidence.json'), 'utf8'));
+fs.writeFileSync('src/generated/source-window-audio.json', JSON.stringify({recovered:sourceAudio.recovered.map(({key,path})=>({key,path}))},null,2));
+fs.mkdirSync(path.join(destination, 'feedback'), { recursive: true });
+for (const entry of feedback.recovered) fs.copyFileSync(path.join(root,entry.path), path.join(destination,'feedback',path.basename(entry.path)));
+for (const entry of sourceAudio.recovered) fs.copyFileSync(path.join(root,entry.path), path.join(destination,'feedback',path.basename(entry.path)));
+
+console.log(`Prepared ${Object.keys(images).length} original images, ${musicians.length} musicians, ambience and ${feedback.recovered.length} feedback audio files.`);

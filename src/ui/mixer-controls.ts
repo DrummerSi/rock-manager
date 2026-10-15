@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import data from '../generated/game-data.json';
+import data from '../generated/game-data.json' with { type: 'json' };
 import { cursorStyle } from './cursors';
 
 export function registeredImage(scene: Phaser.Scene, parent: Phaser.GameObjects.Container, anchorX: number, anchorY: number, key: string): Phaser.GameObjects.Image {
@@ -14,10 +14,10 @@ export function setRegisteredTexture(sprite: Phaser.GameObjects.Image, anchorX: 
   sprite.setData('anchor', { x: anchorX, y: anchorY });
 }
 export function nativeKnob(scene: Phaser.Scene, parent: Phaser.GameObjects.Container, anchorX: number, anchorY: number,
-  large: boolean, min: number, max: number, initial: number, changed: (value: number) => void, name = ''): void {
+  large: boolean, min: number, max: number, initial: number, changed: (value: number) => void, name = '', dialogKnob = false): void {
   const prefix = `${large ? 'large' : 'small'}_ratt01_`;
   const key = (frame: number) => prefix + String(Math.round(frame)).padStart(4, '0');
-  let value = Phaser.Math.Clamp((initial - min) / (max - min) * 64, 0, 63), start = value, startX = 0;
+  let value = Phaser.Math.Clamp((initial - min) / (max - min) * (dialogKnob ? 63 : 64), 0, 63), start = value, startX = 0;
   const sprite = registeredImage(scene, parent, anchorX, anchorY, key(value)).setName(name);
   const first = data.tutorialMedia.find((m) => m.key === prefix + '0000')!;
   // A stationary hit box avoids texture-size changes moving the drag target.
@@ -29,9 +29,10 @@ export function nativeKnob(scene: Phaser.Scene, parent: Phaser.GameObjects.Conta
     setRegisteredTexture(sprite, anchorX, anchorY, key(value));
     changed(min + value / 63 * (max - min));
   };
-  // PotentiometerScript uses horizontal motion, one frame per mouse pixel.
+  // PotentiometerScript uses one frame/pixel; FX DialogKnobBH uses half
+  // a frame/pixel and initializes against numFrames-1 rather than numFrames.
   hit.on('dragstart', (pointer: Phaser.Input.Pointer) => { start = value; startX = pointer.x; });
-  hit.on('drag', (pointer: Phaser.Input.Pointer) => set(start + pointer.x - startX));
+  hit.on('drag', (pointer: Phaser.Input.Pointer) => set(start + (pointer.x - startX) / (dialogKnob ? 2 : 1)));
   hit.on('wheel', (_pointer: Phaser.Input.Pointer, _dx: number, dy: number) => set(value + (dy < 0 ? 1 : -1)));
 }
 export function nativeToggle(scene: Phaser.Scene, parent: Phaser.GameObjects.Container, anchorX: number, anchorY: number,

@@ -1,4 +1,4 @@
-import data from '../generated/game-data.json';
+import data from '../generated/game-data.json' with { type: 'json' };
 export type CursorKind = 'default' | 'active' | 'building';
 export function cursorStyle(kind: CursorKind): string {
   const cursor = data.cursors[kind];

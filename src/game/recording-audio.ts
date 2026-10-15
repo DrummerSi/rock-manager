@@ -1,10 +1,14 @@
 import { defaultEffects } from './recording';
 import type { MixChannel } from './recording';
+import { audioData } from './audio-data';
 
 /** Original stems on one musical clock. Legacy musician jitter and Xtra DSP are not bit-exact. */
 export class RecordingAudio {
   private context?: AudioContext | OfflineAudioContext;
   private buffers = new Map<string, AudioBuffer>();
+  private loading = new Map<string, Promise<AudioBuffer>>();
+  private output?: GainNode;
+  private muted = false;
   private tracks: { index: number; filename: string; duration: number; source: AudioBufferSourceNode; gain: GainNode; pan: StereoPannerNode;
     delay: DelayNode; feedback: GainNode; dry: GainNode; wet: GainNode;
     shiftDelay: DelayNode; shiftDry: GainNode; shiftWet: GainNode; phaseWet: GainNode;
@@ -16,6 +20,7 @@ export class RecordingAudio {
   playing = false;
   constructor(context?: AudioContext | OfflineAudioContext) { this.context = context; }
   get diagnostics() { return { mode: this.previewChannel === null ? 'mix' : 'instrument', tracks: this.tracks.map((t) => ({ channel: t.index, file: t.filename, duration: t.duration, loop: t.source.loop })) }; }
+  setMuted(value: boolean): void { this.muted=value; if(this.output)this.output.gain.value=value?0:1; }
 
   async play(channels: MixChannel[], filenames: (string | null)[], bpm = 120, options: { previewChannel?: number; bars?: number; beatsPerBar?: number; sourceEnds?: (number | null)[] } = {}): Promise<boolean> {
     this.stop();
@@ -23,13 +28,18 @@ export class RecordingAudio {
     this.bpm = bpm;
     const generation = this.generation;
     const context = this.context ??= new AudioContext();
-    if (context instanceof AudioContext) await context.resume();
+    try {
+    if (typeof AudioContext !== 'undefined' && context instanceof AudioContext) await context.resume();
+    if(generation!==this.generation)return false;
+    if(!this.output){this.output=context.createGain();this.output.gain.value=this.muted?0:1;this.output.connect(context.destination);}
     const buffers = await Promise.all(filenames.map(async (filename) => {
       if (!filename) return null;
       if (!this.buffers.has(filename)) {
-        const response = await fetch(`${import.meta.env.BASE_URL}assets/music/${filename}`);
-        if (!response.ok) throw new Error(`Unable to load track ${filename}.`);
-        this.buffers.set(filename, await context.decodeAudioData(await response.arrayBuffer()));
+        let pending=this.loading.get(filename);
+        if(!pending){pending=audioData(`music/${filename}`)
+          .then(bytes=>context.decodeAudioData(bytes)).then(buffer=>{this.buffers.set(filename,buffer);return buffer;})
+          .finally(()=>this.loading.delete(filename));this.loading.set(filename,pending);}
+        await pending;
       }
       return this.buffers.get(filename)!;
     }));
@@ -56,7 +66,7 @@ export class RecordingAudio {
       const filters = [500, 900, 1600, 2300].map((frequency) => { const f = context.createBiquadFilter(); f.type = 'allpass'; f.frequency.value = frequency; phaseDepth.connect(f.frequency); return f; });
       bus.connect(filters[0]); for (let i = 1; i < filters.length; i++) filters[i - 1].connect(filters[i]);
       filters[filters.length - 1].connect(phaseWet).connect(shiftBus);
-      shiftBus.connect(gain).connect(pan).connect(context.destination);
+      shiftBus.connect(gain).connect(pan).connect(this.output!);
       if (source.loop) source.start(start); else source.start(start, 0, sourceEnd);
       if (!source.loop) source.onended = () => { if (generation === this.generation) this.stop(); };
       return [{ index, filename: filenames[index]!, duration, source, gain, pan, delay, feedback, dry, wet, shiftDelay, shiftDry, shiftWet, phaseWet, lfo, depth, phaseLfo, phaseDepth,
@@ -64,6 +74,12 @@ export class RecordingAudio {
     });
     this.playing = true; this.update(channels);
     return true;
+    } catch(error) {
+      // A superseded request must not reject into the caller's stop handler:
+      // otherwise an old fetch failure cuts off the new, already playing mix.
+      if(generation!==this.generation)return false;
+      this.stop(); throw error;
+    }
   }
 
   update(channels: MixChannel[], master = this.master): void {
@@ -104,5 +120,5 @@ export class RecordingAudio {
     this.tracks = [];
   }
 
-  destroy(): void { this.stop(); if (this.context instanceof AudioContext) void this.context.close(); }
+  destroy(): void { this.stop(); if (typeof AudioContext !== 'undefined' && this.context instanceof AudioContext) void this.context.close(); }
 }

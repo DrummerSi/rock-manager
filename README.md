@@ -1,6 +1,6 @@
 # Rock Manager recreation
 
-A browser-first TypeScript/Phaser 3 recreation of the opening of Rock Manager's Mission01. Every game screen, control, dialog and text input is rendered inside one 800×600 canvas. HTML only hosts the canvas and fits it to the window.
+A browser-first TypeScript/Phaser 3 recreation of Rock Manager's Mission01. Every game screen, control, dialog and text input is rendered inside one 800×600 canvas. HTML only hosts the canvas and fits it to the window.
 
 ## Run in a browser
 
@@ -28,9 +28,12 @@ npm run preview
 6. Buy a song license at Melody Publishing, then visit Strawberry Studios or Garage Studio. Rental is paid once on entering the mixer.
 7. Drag volume sliders vertically and turn knobs by dragging horizontally. Mute uses the original pressed/unpressed sprites. Click Settings, a portrait or an instrument to open the channel window: choose tracks, adjust effects and use Preview. Click the portrait inside Settings to choose a session musician for non-vocal channels. Session fees are paid immediately. Play/Stop preview the recovered Ogg stems.
 8. Click OK to finish the demo, then approach Rebel Records or Rainbow Records. A label can reject the demo based on band style, song type or quality. Try a different lineup, song or studio after rejection.
-9. Negotiate the advance/royalty trade-off in Contract Proposal. OK signs the contract and pays the advance; Cancel leaves it unsigned. Leaving the label shows the original cover-design introduction, which marks the next development stage.
+9. Negotiate the advance/royalty trade-off in Contract Proposal. OK signs the contract and pays the advance; Cancel leaves it unsigned. Leaving the label introduces cover design.
 
-Arrow keys, the bottom arrows, or hovering near the city's horizontal edges scroll the panorama. Escape opens/closes the menu. Space toggles the clock. Sound and fullscreen controls are canvas buttons.
+10. Visit the design studio, select the cover layers and schedule a release. Send free press kits to Radio FM, City News and Zer0 Magazine; book store promotion and gigs while the release approaches.
+11. Advance time and check the Record Store sales chart. Entering its Top 10 triggers success one day later. Radio chart position alone does not win. The ending shows economy, concert and review points and survives reload. OK returns to mission selection; later missions remain unavailable.
+
+Arrow keys, the bottom arrows, or hovering near the city's horizontal edges scroll the panorama. Escape opens/closes the menu. Space toggles the clock. M toggles sound, F11 toggles fullscreen and F1 opens help; these browser controls leave the original four-button main menu intact.
 
 Progress automatically saves in browser storage. Reloading offers Continue. New mission asks for confirmation before replacing progress. Invalid saves fall back to the briefing. Desktop and browser saves currently occupy separate webview/browser origins.
 
@@ -63,20 +66,20 @@ Fonts load before Phaser starts, using hashed, pinned files from the installed W
 
 Opening flow now starts at the main menu, with Continue/New game/Web site/Quit in the recovered horizontal layout, followed by mission selection and briefing. Only Mission01 can be played; the original website entry is disabled. Quit saves and returns to the menu in this browser-first implementation. Sound/fullscreen/help below the original row are recreation controls. The menu autosave notice is translated from the installed Swedish fallback strings; its original English wording is not recovered.
 
-Mission01 tutorial cards use recovered English text and event triggers through city, rehearsal, publisher, studio, mixer, labels, rejection/retry and the post-contract cover introduction. They block input, pause time and persist acknowledgements. Reloading resumes a paid mixer session without charging rental again, and restores an unacknowledged label introduction. Existing started saves migrate with tutorials disabled to preserve their current flow. Thirteen cards and their trigger rules are retained in `analysis/original/opening-ui-evidence.json`; media, charts and calendar tutorials await their gameplay systems. Popup width/font metrics remain approximate, while height follows rendered content and the source center point (400,305). REA opened the original EXE successfully; its native UI capture tool targets macOS and cannot capture this Windows Director game.
+Mission01 guidance uses recovered English cards through the city, rehearsal, publisher, studio, mixer, labels, cover design, venue, media, chart, calendar and advance steps. Rehearsal exit now requires a vocalist and reminds you once to name the band. Cards block input, pause time and persist acknowledgment days. Training and tutorial cards use original content-sized layouts, centered at(400,305), instead of large fixed windows. Existing saves retain progress. See [the fidelity correction evidence](analysis/original/fidelity-corrections.md) for source rules, repaired tutorial edges and remaining layout limits.
 
 Visual fidelity pass: dialog borders now use RockDialog tiles and black title bars; raw 16-bit border BITD payloads are decoded correctly rather than treated as RLE. Button tiles follow native corner-first composition, with original icons, grey/white captions and disabled corners. The city header uses recovered BandIcons/MoneyDisplay/DateDisplay coordinates; rehearsal has silhouettes and a framed album panel; recruitment has portrait/instrument rows, native scroll arrows and two meters. Sound is accessible in the menu. Raw 32-bit inset frame tiles are now decoded and used directly.
 
 `analysis/ui-review/index.html` compares captured screens with bundled original help screenshots. These reduced-resolution references do not establish pixel-perfect fidelity. To regenerate after browser tests, run `node scripts/build-ui-review.mjs` (requires the original installed help images). Raw border evidence is in `analysis/original/ui-raw-bitmaps.json`; normal builds use retained bytes without requiring the original installation.
 
-Implemented: briefing, animated scrolling city, original HUD and recovered surround masks, corrected button tiles, rehearsal diagram/instrument sprites, layered recruitment, nine recruitable musicians, five positions, naming, song licensing/selection, studios, mixer controls and audio previews, paid session musicians, demo quality, label acceptance/rejection, linked contract offers and signing, tutorial progression through the first contract, payroll, local saves, ambience and fullscreen. Existing saves migrate automatically.
+Implemented: briefing, animated scrolling city, original HUD and recovered surround masks, corrected button tiles, rehearsal diagram/instrument sprites, layered recruitment, nine recruitable musicians, five positions, naming, song licensing/selection, studios, mixer controls and audio previews, paid session musicians, demo quality, label acceptance/rejection, linked contract offers and signing, tutorial progression through release, promotion and sales-chart completion, payroll, local saves, ambience and fullscreen. Existing saves migrate automatically.
 
-This milestone reaches the first record contract; it does not complete Mission01’s Top 10 objective. Cover design, release, gigs, media, sales, chart success and musician needs/relationships remain unimplemented. Delay and timeshift settings use WebAudio implementations of the original control ranges; the legacy Xtra DSP is not bit-exact. Slice jitter and musician reactions remain unimplemented. Label office actors use recovered static poses. Existing signed demos cannot yet be discarded and re-recorded, although the original permits that after a warning. Live reputation/hype bonuses are zero until those systems exist. Dialog sizes and legacy font rasterization remain approximate; bundled help screenshots do not establish pixel-perfect runtime fidelity.
+Mission01 supports cover design, release, gigs, promotion, dated sales/charts and bandmate needs, relationships, gifts and training. Mission01 now ends after the original one-day delay following Record Store sales Top10 entry, with recovered ending artwork/text and score accounting. Unpaid mandatory wages and losing all singers have failure paths. The broader random event engine and later missions remain unfinished. The tutorial advance card explains the implemented signing advance; additional conditional label advances are not implemented. Original office and musician layers animate to recovered speech cues. Mixer delay/timeshift use WebAudio and are not bit-exact legacy Xtra DSP. Exact original text rasterization and all layout metrics remain unverified; matching fixed regions does not establish whole-game equivalence.
 
 Recovered behavior used here:
 
 - Dialog geometry, registration points and button compositing: `analysis/original/ui-layout-recovery.json` and `.md`.
-- Mission song catalog and license terms: `DataSongs00.json`, `DataBuildings00.json`, Mission01.AvailableSongs; purchase/filtering: `scripts/cd/Main.dxr/00029-DlgPublishScript.lingo`. Royalty rates are displayed; sales accounting is not yet implemented.
+- Mission song catalog and license terms: `DataSongs00.json`, `DataBuildings00.json`, Mission01.AvailableSongs; purchase/filtering: `scripts/cd/Main.dxr/00029-DlgPublishScript.lingo`. Royalty rates and dated sales accounting are implemented.
 
 - Mission01 funds, candidate data and briefing: `analysis/original/data/mission01-recovered.json`.
 - Positions, eligibility and salary sorting: `analysis/original/scripts/cd/Main.dxr/00015-DlgRehearsal01ChooseScript.lingo`.
@@ -98,13 +101,39 @@ The HUD's unused alpha byte is set opaque during import, matching Director's ink
 
 ## Checks
 
+The current studio comparison ledger is in
+[analysis/original/studio-validation.md](analysis/original/studio-validation.md).
+Fourteen original Windows captures are indexed in
+[the native reference gallery](analysis/original/runtime/reference/index.html).
+They now guide mixer/Settings geometry, original fixed-label glyphs and RGB555
+WebGL output. Fixed image regions pass native comparisons; dynamic fonts, audio
+and complete runtime equivalence remain unverified. The original
+musician chooser confirmation flow now selects first and hires/charges only on
+OK; Cancel leaves both cash and the channel unchanged.
+
+Original sleeve design and release booking are now playable with recovered backgrounds, musician poses, effects and fourteen bitmap logo fonts. Confirming books a future release and charges once; saved covers reopen read-only. See [the Design Studio validation notes](analysis/original/design-validation.md).
+
+Venues/gigs, radio and newspaper promotion, Record Store campaigns, audience exposure and sales/charts are now connected. Press kits belong to individual reporters; adverts and gigs use a shared calendar. Concerts settle once, and royalties repay the signing advance before paying the band. Click the Date display to inspect bookings. Existing saves retain their band, contract and cover when publicity state is added.
+
+Source rules and remaining fidelity limits are in [publicity-validation.md](analysis/original/publicity-validation.md). Neutral source actor composites are used for media portraits; the remaining original random character events and additional media requests remain unfinished.
+
 ```powershell
 npm test
 npm run test:browser
 npm run build
 ```
 
-Simulation checks cover recruitment/payroll, studio prerequisites and one-time rental, quality weighting, session fees, label rejection, offer rounding, signing and save validation. Browser checks complete the tutorial through a negotiated contract, resume paid recording after reload, recover pending tutorial cards, exercise rejection/retry and cancellation, verify mixer/audio controls and check the earlier hiring/clock/cursor behavior. Screenshots go under `test-results/`.
+Simulation checks cover cover design/release booking, recruitment/payroll, studio prerequisites and one-time rental, quality weighting, session fees, label rejection, offer rounding, signing and save validation. Browser checks cover gigs, cancellations, press kits, gifts, advertising, newspapers, store promotion, dated sales, result acknowledgements, charts and save migration. They also complete cover selection, cancelled booking, dragging a release date, one-time costs and reload; they also complete the tutorial through a negotiated contract, resume paid recording after reload, recover pending tutorial cards, exercise rejection/retry and cancellation, verify mixer/audio controls and check the earlier hiring/clock/cursor behavior. Screenshots go under `test-results/`. The fresh-game completion test follows a normal100000 budget through release/promotion to the sales-chart ending without injecting game state; separate fixtures cover failure branches. See [Mission01 completion evidence](analysis/original/mission01-completion-validation.md).
 
-Browser tests use installed Edge on Windows when available. Otherwise install Playwright Chromium (`npx playwright install chromium`) or set `PLAYWRIGHT_EXECUTABLE_PATH` to an existing Chromium browser.
+Browser tests use installed Edge on Windows when available. If automatic temporary-server shutdown hangs on Windows, run `npm run dev` in another terminal and set `$env:PLAYWRIGHT_EXTERNAL_SERVER='1'` before testing. Otherwise install Playwright Chromium (`npx playwright install chromium`) or set `PLAYWRIGHT_EXECUTABLE_PATH` to an existing Chromium browser.
 
+
+Original English media/label greetings, gift/press-kit reactions and concert crowd feedback now play from recovered SWA streams (retained unchanged as MP3). Sound is enabled by default; legacy saves migrate once, preserving band/cash/progress, and subsequent Sound off choices persist. Time runs automatically at the source nominal three seconds per day, pauses in dialogs/tutorials and when the tab is hidden, and resumes on return to the city. See [feedback audio provenance](analysis/original/feedback-audio-evidence.json). Browser audio diagnostics report decoded-file RMS and live output RMS; these checks do not prove physical speaker output or complete native visual equivalence.
+
+The source UI audit now retains115 original Director dialog definitions, bitmap registrations and text-template settings. Main menu, briefing, publisher, name field, mixer exit, refusal and press reviews use these recovered layouts; artist/action, media, design and booking controls have specific source corrections. See [the source audit and limits](analysis/original/ui-source-audit-2026-10-14.md). Original CD narration, five publisher previews, studio entrance cues and review/failure effects are recovered and connected. Scrolling preserves the current publisher preview; closing its window stops it. City ambience stops under windows. These assets are prepared locally, so browser playback does not require the CD.
+
+For faster playtest startup, only graphics and city ambience preload. Speech, effects, song previews and instrument tracks load when used and stay cached in memory for reuse during that visit. Full audio preloading is deferred until staged loading and asset bundling are addressed. See [loading history and verification](analysis/audio-preloading-validation.md).
+
+Bandmate windows now play original character speech with source-cue lip syncing. Gifts, booked training/holidays, praise/slander and firing are playable and saved; training affects subsequent recordings and gigs. English mood/health feedback and training completion cards use recovered original localization. Exact font masks are verified for several venue/media samples, while antialiased title/HUD text remains a documented fidelity limit. See [bandmate/font validation](analysis/original/bandmate-font-validation.md).
+
+Rehearsal now uses original mood-specific portraits and the native album status fields. Play song previews the recorded mix and stops when the band window closes; song selection belongs in the studio. Actor decoding now follows the native live-score ink36 rule: every matching white pixel is transparent, including enclosed regions. The prior exterior-only matte was incorrect. See [animation transparency evidence](analysis/original/animation-white-artifacts.md). The audio export includes training completion voices and original lip-sync cues. Five focused browser checks compare painted portraits with source bitmaps, inspect compact cards, enforce rehearsal guidance and verify playback.
