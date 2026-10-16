@@ -1,6 +1,8 @@
+![RockManager logo](/public/assets/logo.png)
+
 # Rock Manager recreation
 
-A browser-first TypeScript/Phaser 3 recreation of Rock Manager’s first three available scenarios: First Steps (Mission01), A Family Affair (Mission03), and Hey Princess (Mission04). Every game screen, control, dialog and text input is rendered inside one 800×600 canvas. HTML only hosts the canvas and fits it to the window.
+A browser-first TypeScript/Phaser 3 recreation of Rock Manager’s game mechanics. Every game screen, control, dialog and text input is rendered inside one 800×600 canvas. HTML only hosts the canvas and fits it to the window.
 
 ## Run in a browser
 
@@ -27,32 +29,7 @@ Original extracted images remain intact. Frames retain their dimensions and alph
 
 Mission song previews preload as compressed audio during initial loading and before a new mission briefing. Selecting a studio song warms only that song's loops and eligible vocal variants, with four downloads at a time. Record waits for missing stems before charging or entering the mixer; failed downloads can be retried. Playback and mixdown reuse those downloaded bytes, and unused variants remain undecoded.
 
-## Play this milestone
-
-1. Read the First Steps briefing and begin the mission.
-2. Click Rehearsal in the original top bar.
-3. Choose one of five band positions. Select a candidate and instrument, then recruit them. Candidates are filtered by recovered skills and ordered by weekly salary.
-4. Name the band using the canvas text field. Enter saves; Escape cancels. Ctrl/Cmd+A clears the current draft.
-5. Return to the city. Play advances a day every three seconds; Advance one day steps manually. Wages are charged every seventh day. Dialogs pause time.
-6. Buy a song license at Melody Publishing, then visit Strawberry Studios or Garage Studio. Rental is paid once on entering the mixer.
-7. Drag volume sliders vertically and turn knobs by dragging horizontally. Mute uses the original pressed/unpressed sprites. Click Settings, a portrait or an instrument to open the channel window: choose tracks, adjust effects and use Preview. Click the portrait inside Settings to choose a session musician for non-vocal channels. Session fees are paid immediately. Play/Stop preview the recovered Ogg stems.
-8. Click OK to finish the demo, then approach Rebel Records or Rainbow Records. A label can reject the demo based on band style, song type or quality. Try a different lineup, song or studio after rejection.
-9. Negotiate the advance/royalty trade-off in Contract Proposal. OK signs the contract and pays the advance; Cancel leaves it unsigned. Leaving the label introduces cover design.
-
-10. Visit the design studio, select the cover layers and schedule a release. Send free press kits to Radio FM, City News and Zer0 Magazine; book store promotion and gigs while the release approaches.
-11. Advance time and check the Record Store sales chart. Entering its Top 10 triggers success one day later. Radio chart position alone does not win. The ending shows economy, concert and review points and survives reload. OK returns to mission selection; Mission03 and Mission04 can also be selected; later missions remain unavailable.
-
-Arrow keys, the bottom arrows, or hovering near the city's horizontal edges scroll the panorama. Escape opens/closes the menu. Space toggles the clock. M toggles sound, F11 toggles fullscreen and F1 opens help; these browser controls leave the original four-button main menu intact.
-
-Progress automatically saves in browser storage. Reloading offers Continue. New mission asks for confirmation before replacing progress. Invalid saves fall back to the briefing. Desktop and browser saves currently occupy separate webview/browser origins.
-
-## Additional missions
-
-Select **A Family Affair** or **Hey Princess** from New game. Starting bands, cash, owned songs, restricted recruits and buildings come from the original mission tables and CD snapshots. There is no Mission02 entry in the original catalog.
-
-A Family Affair starts Morning Glory with Nille and Lelle, Supermarket Love and a prearranged Global Records contract. Record and submit a demo without receiving a second advance, manage the brothers’ morale, and reach the fixed day-70 charity concert. Hey Princess starts with Nadia; build the band, record and release an album, and promote it until the original TV invitation arrives. Accept it, confirm the appointment in the calendar, and complete the appearance. Story choices, musician departures, endings and appointments persist in the current save.
-
-These are playable reconstructions of the principal mission paths. The original intro audio and recovered pictures are used, but complete animated cutscene staging is unfinished. Sergey Shipping Inc. now exposes the original service categories: loans, scandals, miscellaneous promotion and chart tampering, staged deaths, legal advice and security. Services retain their prices, delays and consequences. Mission04’s reporter-romance branch is still incomplete. Video production is available at Herkules Film after the sleeve introduction: choose one of the 11 original storyboards, book the shoot, then deliver the completed video through TV24’s Video action. Shooting occupies the band; TV24 evaluates rotation the following day and weekly thereafter. Source quirks and interpretation limits are recorded in [Mission03 findings](analysis/original/mission03-findings.md) and [Mission04 findings](analysis/original/mission04-findings.md). The TV trigger uses raw weighted hype ≥0.15 plus its delay. The original Agenda maps raw 0–0.33 to 0–100%, so this displays as 45%, matching the briefing.
+## Additional
 
 Graphics and city ambience load at startup. Speech, previews and recording stems load when needed and remain cached in memory for the session; the larger mission audio library is not downloaded before the menu.
 
@@ -158,3 +135,8 @@ For faster playtest startup, only graphics and city ambience preload. Speech, ef
 Bandmate windows now play original character speech with source-cue lip syncing. Gifts, booked training/holidays, praise/slander and firing are playable and saved; training affects subsequent recordings and gigs. English mood/health feedback and training completion cards use recovered original localization. Exact font masks are verified for several venue/media samples, while antialiased title/HUD text remains a documented fidelity limit. See [bandmate/font validation](analysis/original/bandmate-font-validation.md).
 
 Rehearsal now uses original mood-specific portraits and the native album status fields. Play song previews the recorded mix and stops when the band window closes; song selection belongs in the studio. Actor decoding now follows the native live-score ink36 rule: every matching white pixel is transparent, including enclosed regions. The prior exterior-only matte was incorrect. See [animation transparency evidence](analysis/original/animation-white-artifacts.md). The audio export includes training completion voices and original lip-sync cues. Five focused browser checks compare painted portraits with source bitmaps, inspect compact cards, enforce rehearsal guidance and verify playback.
+
+
+## AI Use
+
+Codex AI, alongside REA (https://rea.tools/) was used to analyse the original 2001 game binary, and recreate it in Typescript for use on the web
