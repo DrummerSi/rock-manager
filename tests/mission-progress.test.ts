@@ -68,7 +68,7 @@ test('original ending text, artwork references and scores retain evidence; no un
   assert.match(ending.text, /The Source Band are destined/);
   assert.equal(ending.picture, 'Mission01_success01');
   assert.equal(ending.originalNextMissionId, 'Mission02');
-  assert.equal(ending.nextPlayableMissionId, null);
+  assert.equal(ending.nextPlayableMissionId, 'Mission03');
 });
 test('objectives distinguish a licensed song, completed demo, signed contract and released cover from missing content', () => {
   const state = initial(), goals = missionObjectives(state);

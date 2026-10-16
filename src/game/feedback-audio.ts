@@ -1,3 +1,4 @@
+import videoRules from './video-rules.json';
 import evidence from '../generated/feedback-audio.json';
 import { audioData } from './audio-data';
 
@@ -90,7 +91,7 @@ export class FeedbackAudio {
   }
   choose(keys: readonly string[]) { if (keys.length) void this.play(keys[Math.floor(Math.random() * keys.length)]); }
   template(template: string) {
-    const variable = /[xz]$/i.test(template), max = /z$/i.test(template) ? 5 : 3;
+    const variable = /[xyz]$/i.test(template), max = /z$/i.test(template) ? 5 : /y$/i.test(template) ? 3 : 2;
     const prefix = variable ? template.slice(0, -1).toLowerCase() : template.toLowerCase();
     const keys = [...this.entries.values()].filter(entry => variable
       ? entry.key.toLowerCase().startsWith(prefix) && /^[1-5]$/.test(entry.key.slice(prefix.length)) && Number(entry.key.slice(prefix.length)) <= max
@@ -98,11 +99,15 @@ export class FeedbackAudio {
     this.choose(keys);
   }
   greeting(id: string, mood = .5) {
-    const cue = evidence.semanticCues[id as keyof typeof evidence.semanticCues];
+    const cue = evidence.semanticCues[id as keyof typeof evidence.semanticCues]??(id==='Media01'?videoRules.speech:undefined);
     if (cue) this.choose(mood < .35 ? cue.greeting.Angry : mood >= .65 ? cue.greeting.Happy : cue.greeting.normal);
   }
+  labelSpeech(id:string,kind:'contractGreeting'|'contract'|'nextContract') {
+    const cue=evidence.semanticCues[id as keyof typeof evidence.semanticCues];
+    if(cue&&kind in cue)this.choose((cue as unknown as Record<string,{Happy:string[]}>)[kind].Happy);
+  }
   gift(id: string, amount: number, kit: boolean) {
-    const cue = evidence.semanticCues[id as keyof typeof evidence.semanticCues];
+    const cue = evidence.semanticCues[id as keyof typeof evidence.semanticCues]??(id==='Media01'?videoRules.speech:undefined);
     if (cue && 'gift' in cue) this.choose(kit ? cue.pressKit : amount <= -.2 ? cue.gift.BribeHi : amount < 0 ? cue.gift.BribeLo : cue.gift.otherwise);
   }
   concert(venue: string, satisfaction: number, fill: number) {

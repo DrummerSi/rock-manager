@@ -78,3 +78,16 @@ test('registered original narration/previews use their exact prepared file and s
   assert.equal(context.gains.at(-1)!.gain.value,.85);audio.destroy();
  }finally{restore();}
 });
+
+
+test('original speech selectors use two X, three Y and five Z variants',()=>{
+ const audio=new FeedbackAudio();let selected:readonly string[]=[];
+ audio.choose=(keys)=>{selected=keys;};
+ audio.registerSources(Array.from({length:5},(_,i)=>({key:'selector-test'+(i+1),path:'unused'})));
+ for(const [selector,count]of [['x',2],['y',3],['z',5]]as const){
+  audio.template('selector-test'+selector);
+  assert.equal(selected.length,count);
+  assert.deepEqual(selected.map(key=>Number(key.slice(-1))).sort(),Array.from({length:count},(_,i)=>i+1));
+ }
+ audio.destroy();
+});

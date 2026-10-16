@@ -39,7 +39,8 @@ export function createActorPortrait(scene: Phaser.Scene, layer: Phaser.GameObjec
   const scaleY = (options.height ?? portrait.height) / portrait.height;
   group.setScale(scaleX, scaleY);
   const images = ['background', 'body', 'eyes', 'mouth'].map(() => {
-    const image = scene.add.image(0, 0, textureKey, 'background01').setOrigin(0);
+    const initialFrame=frames.background01?'background01':Object.keys(frames)[0];
+    const image = scene.add.image(0, 0, textureKey, initialFrame).setOrigin(0);
     group.add(image);
     return image;
   });
@@ -51,7 +52,10 @@ export function createActorPortrait(scene: Phaser.Scene, layer: Phaser.GameObjec
     if (!frame) { image.setVisible(false); return; }
     image.setTexture(textureKey, name).setPosition(portrait.anchor[0] - frame.regX, portrait.anchor[1] - frame.regY).setVisible(true);
   };
-  const moveName = (index: number) => `moves_${String(index).padStart(4, '0')}`;
+  const moveName = (index: number) => {
+    const suffix=String(index).padStart(4,'0');
+    return frames[`moves_${suffix}`]?`moves_${suffix}`:`moves01_${suffix}`;
+  };
   const idle = () => {
     const state = evidence.moodStates[mood];
     show(images[0], 'background01');

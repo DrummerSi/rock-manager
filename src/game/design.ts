@@ -14,14 +14,18 @@ export interface Album {
     designedDay: number;
     releaseDay: number;
 }
-export const defaultDesign = (): DesignSelection => data.design.categories.map(c => c.elements[0]);
+/** M05.dat replaces DCDesignFont.elements with [#DEDFirewolf]. */
+export const designCategories = (missionId?:string) => data.design.categories.map(c=>c.id==='DCDesignFont'&&missionId==='Mission05'?{...c,elements:['DEDFirewolf']}:c);
+export const defaultDesign = (missionId?:string): DesignSelection => designCategories(missionId).map(c => c.elements[0]);
 export function designElements(selection: DesignSelection) {
-    if (selection.length !== 4 || selection.some((id, i) => !data.design.categories[i].elements.includes(id)))
+    if (selection.length !== 4 || selection.some((id, i) => !data.design.categories[i].elements.includes(id)&&!(i===3&&id==='DEDFirewolf')))
         throw new Error('This cover selection is unavailable.');
     return selection.map(id => data.design.elements.find(e => e.id === id)!);
 }
 export const designCost = (selection: DesignSelection) => designElements(selection).reduce((sum, e) => sum + e.price, 0);
 export function bookRelease(state: GameState, musicians: Musician[], selection: DesignSelection, releaseDay: number): GameState {
+    if(state.missionId==='Mission05')selection=selection.map((id,i)=>i===3?'DEDFirewolf':id);
+    if(state.contract?.approved===false)throw new Error('Get your label’s approval before scheduling the release.');
     if (!state.demo || !state.contract || state.demo.songId !== state.contract.songId)
         throw new Error('Sign a record contract before scheduling this album.');
     if (state.album)

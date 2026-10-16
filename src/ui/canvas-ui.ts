@@ -16,13 +16,37 @@ export function text(scene: Phaser.Scene, parent: Phaser.GameObjects.Container, 
   return label;
 }
 
+/** Accept original Director member names as well as existing semantic UI aliases. */
+export function uiIconKey(scene:Phaser.Scene,name:string):string|undefined {
+  if(!name||name.toLowerCase()==='dummy')return undefined;
+  const normalized=name.replaceAll(' ','_').toLowerCase();
+  return [`ui-${name}`,`ui-${normalized}`,`ui-activity-${normalized}`,name,normalized,`activity-${normalized}`,`design-${name}`].find(key=>scene.textures.exists(key));
+}
+
 export function title(scene: Phaser.Scene, parent: Phaser.GameObjects.Container, x: number, y: number,
   label: string, icon: string): Phaser.GameObjects.Text {
-  const key = `ui-${icon}`;
-  const image = scene.add.image(x + 8, y, key).setOrigin(0, 0);
-  parent.add(image);
-  return text(scene, parent, x + 10 + image.width, y + 5, label, 14, '#ffffff')
+  const key = uiIconKey(scene,icon);
+  const image = key?scene.add.image(x + 8, y, key).setOrigin(0, 0):undefined;
+  if(image)parent.add(image);
+  return text(scene, parent, x + 10 + (image?.width??0), y + 5, label, 14, '#ffffff')
     .setFontFamily('Courier New').setFontStyle('bold');
+}
+
+/** DlgInfoFrameData -> DlgHeadlineData + DlgFramedPicMiniData.
+ * Uses the original RockFrame1, RockFrame2 and RockSrndHead edge sprites.
+ */
+export function infoFrame(scene:Phaser.Scene,parent:Phaser.GameObjects.Container,x:number,y:number,
+  contentWidth:number,contentHeight:number,label:string,icon?:string):{x:number;y:number}{
+  const group=scene.add.container(x,y);parent.add(group);
+  frame(scene,group,0,22,contentWidth+19,contentHeight+19,'outer');
+  frame(scene,group,5,27,contentWidth+9,contentHeight+9,'inner');
+  const image=icon?scene.add.image(2,0,`ui-${icon}`).setOrigin(0):null;
+  const heading=nativeText(scene,image?image.x+image.width+2:2,7,label,{
+    fontFamily:'Verdana',fontSize:'11px',fontStyle:'bold',color:'#eeeeee',
+  }).setNativeAntialias(false);
+  frame(scene,group,0,3,Math.ceil(heading.x+heading.width+5),Math.ceil(heading.height+11),'panel');
+  if(image)group.add(image);group.add(heading);
+  return{x:x+9,y:y+31};
 }
 
 export function frame(scene: Phaser.Scene, parent: Phaser.GameObjects.Container, x: number, y: number,
@@ -66,9 +90,11 @@ export function button(scene: Phaser.Scene, parent: Phaser.GameObjects.Container
   height = Math.min(height, 33);
   const group = frame(scene, parent, x, y, width, height, 'button', !enabled);
   let captionX = 9;
-  if (icon && scene.textures.exists(`ui-${icon}`)) {
-    const registration = data.iconRegistrations[icon as keyof typeof data.iconRegistrations];
-    const image = scene.add.image(8, 13 - (registration?.regY ?? 0), `ui-${icon}`).setOrigin(0).setAlpha(enabled ? 1 : 0.5);
+    const iconKey=icon?uiIconKey(scene,icon):undefined;
+    if (iconKey) {
+      const registration = data.iconRegistrations[icon as keyof typeof data.iconRegistrations]
+        ??data.activities.bitmaps.find(b=>b.key===iconKey||'ui-'+b.key===iconKey);
+      const image = scene.add.image(8, 13 - (registration?.regY ?? 0), iconKey).setOrigin(0).setAlpha(enabled ? 1 : 0.5);
     group.add(image); captionX = 9 + image.width;
   }
   const caption = text(scene, group, captionX, 6, label, 14, enabled ? '#aaaaaa' : '#555555');

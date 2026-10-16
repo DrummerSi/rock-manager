@@ -17,7 +17,11 @@ export function composeCover(scene: Phaser.Scene, name: string, band: (BandMembe
     if (artist.id !== 'DEDArtists04') {
         const members = band.flatMap(m => m ? [m] : []);
         const pattern = members.map(m => m.instrument === 'Drums' ? 'drums' : m.instrument === 'Vocals' ? 'vocals' : 'other').sort();
-        const layout = data.design.layouts.find(l => [...l.pattern].sort().join(',') === pattern.join(','));
+        // A partial/reconfigured band need not match one of ActorsDesignData's
+        // eight exact patterns. Keep the original full-band positions available
+        // instead of silently dropping the entire artist layer.
+        const layout = data.design.layouts.find(l => [...l.pattern].sort().join(',') === pattern.join(','))
+            ?? data.design.layouts[0];
         if (layout) {
             const assigned = new Map<string, BandMember>();
             for (const m of members) {
@@ -51,6 +55,9 @@ export function composeCover(scene: Phaser.Scene, name: string, band: (BandMembe
     }
     else
         full(fx.gfx);
+    // makeAlbumCover handles list-valued Gfx before the font branch:
+    // [#Loc:point(12,-25), #Pic:"firewolflogo01"], copying source rect(0,0,300,300).
+    if(font.id==='DEDFirewolf')ctx.drawImage(source('design-firewolflogo01'),12,-25);
     const fontIndex = Number(font.id.match(/(\d+)$/)?.[1]) - 1;
     if (fontIndex >= 0) {
         const f = data.design.fonts[fontIndex], widths = f.widths as Record<string, number>, kern = f.kerning as Record<string, Record<string, number>>;

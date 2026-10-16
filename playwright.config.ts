@@ -4,6 +4,7 @@ import { existsSync } from 'node:fs';
 const edge = 'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe';
 export default defineConfig({
   testDir: './tests/browser',
+  outputDir: './test-results/runs',
   workers: 1,
   use: { viewport: { width: 800, height: 600 }, headless: true,
     launchOptions: { executablePath: process.env.PLAYWRIGHT_EXECUTABLE_PATH ?? (existsSync(edge) ? edge : undefined) } },

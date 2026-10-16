@@ -10,6 +10,12 @@ function band() {
   return { ...state, bandmates: defaultBandmates(state, data.musicians) };
 }
 const advance = (state: ReturnType<typeof band>, day: number) => advanceBandmates({ ...state, day }, data.musicians) as ReturnType<typeof band>;
+test('a gig does not send musicians away, but still prevents overlapping training',()=>{
+  const state=band();state.publicity.concerts.push({id:'gig',venueId:'Live01',startDay:2,duration:1,completed:false});
+  assert.equal(bandmateOccupied({...state,day:2},'RMCJerka'),false);
+  assert.ok(availableBandmateActions({...state,day:2},'RMCJerka','ActCatMusicianGifts').length>0);
+  assert.throws(()=>trainBandmate(state,'RMCJerka','ActTrainMusicality',1),/dates/);
+});
 test('physical gift follows recipient taste, hides permanently, and native mood bonus fades daily', () => {
   const before = band(), snapshot = JSON.stringify(before);
   const gifted = giveBandmateGift(before, 'RMCJerka', 'ActGiftPants') as ReturnType<typeof band>;

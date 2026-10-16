@@ -1,15 +1,17 @@
+import {currentVideo} from '../game/video';
 import { pressReviewWindow } from './press-review-window';
 import { concertImage } from './concert-picture';
 import type { Musician } from '../game/model';
 import Phaser from 'phaser';
 import data from '../generated/game-data.json' with { type: 'json' };
 import type { GameState } from '../game/model';
-import { PUBLICITY_RULES, type ConcertResult, type Review, type AdvertBooking, type ConcertBooking } from '../game/publicity';
-import { button, frame, text, title } from './canvas-ui';
-import { nativeAgenda, originalImageKey, type AgendaEntry } from './agenda';
+import { PUBLICITY_RULES, albumHype, type ConcertResult, type Review, type AdvertBooking, type ConcertBooking } from '../game/publicity';
+import { button, frame, infoFrame, text, title } from './canvas-ui';
+import { nativeAgenda, originalImageKey, trainingAgendaFormat, type AgendaEntry } from './agenda';
 import { cursorStyle } from './cursors';
 import { NativeText } from './native-text';
 import { nativeChooser } from './native-chooser';
+import {missionDefinition} from '../game/mission-catalog';
 import originalText from '../game/original-text.json' with { type: 'json' };
 const caption = (s: Phaser.Scene, l: Phaser.GameObjects.Container, x: number, y: number, value: string, size = 11, width?: number) => text(s, l, x, y, value, size, '#eeeeee', width).setFontFamily('Verdana').setFontStyle('').setLineSpacing(1);
 // Director formats pictures to a fixed text rectangle. Keep dynamic translated
@@ -45,8 +47,13 @@ function click(image: Phaser.GameObjects.Image, action: () => void, enabled = tr
 } let pressed = false; image.setInteractive({ cursor: cursorStyle('active') }); image.on('pointerdown', () => { pressed = true; }); image.on('pointerout', () => { pressed = false; }); image.on('pointerup', () => { if (pressed)
     action(); pressed = false; }); }
 export function activityEvents(state: GameState): AgendaEntry[] {
+    const video=currentVideo(state);
     return [
-        ...state.bandmates.training.map(t => ({id:t.id,kind:'training' as const,name:data.activities.tables.Action.find(a => a.ID===t.actionId)?.name ?? 'Training',startDay:t.startDay,duration:t.duration})),
+        ...(state.gangsta?.security??[]).map((e,i)=>({id:'security-'+i,kind:'security' as const,name:'Body Guards',startDay:e.startDay,duration:e.duration})),
+        ...(state.tour?[{id:'band-tour',kind:'concert' as const,formatId:'AgFmBandTour',name:'World Tour',startDay:state.tour.startDay,duration:state.tour.duration}]:[]),
+        ...(video?[{id:'video-production',kind:'video' as const,name:'Video',startDay:video.startDay,duration:video.duration}]:[]),
+        ...(state.scenario?.appointments??[]).map(a=>({id:a.id,kind:'concert' as const,formatId:a.kind==='prison'?'AgFmPrison':a.kind==='hospital'?'AgFmHospital':a.kind==='award'?'AgFmAward':undefined,name:a.kind==='prison'?'Prison':a.kind==='hospital'?'Hospital':a.kind==='award'?'Award':a.kind==='television'?'Stars of Cheese — TV24':'Global Aid — Colosseum',startDay:a.startDay,duration:a.duration})),
+        ...state.bandmates.training.map(t => ({id:t.id,kind:'training' as const,formatId:trainingAgendaFormat(t.actionId),name:data.activities.tables.Action.find(a => a.ID===t.actionId)?.name ?? 'Training',startDay:t.startDay,duration:t.duration})),
         ...(state.album ? [{ id: 'album-release', kind: 'release' as const, name: 'Album release', startDay: state.album.releaseDay, duration: 1 }] : []),
         ...state.publicity.concerts.map((c: ConcertBooking) => ({ id: c.id, kind: 'concert' as const, name: PUBLICITY_RULES.venues.find(v => v.id === c.venueId)?.name ?? 'Concert', startDay: c.startDay, duration: c.duration })),
         ...state.publicity.adverts.map((a: AdvertBooking) => ({ id: a.id, kind: 'advert' as const, name: PUBLICITY_RULES.adverts.find(v => v.id === a.advertId)?.name ?? 'Advert', startDay: a.startDay, duration: a.duration })),
@@ -76,7 +83,7 @@ export function mediaWindow(scene: Phaser.Scene, layer: Phaser.GameObjects.Conta
     frame(scene, layer, 207, 46, 362, 505, 'dialog');
     title(scene, layer, 207, 46, media.name, iconName(source.icon));
     pic(scene, layer, 224, 81, 'frame02 large environment');
-    pic(scene, layer, 227, 84, mediaId.toLowerCase() + '-neutral');
+    if(mediaId!=='Media01')pic(scene, layer, 227, 84, mediaId.toLowerCase() + '-neutral');
     infoPanel(scene, layer, 227, 310, 317, 56, 'Comment', source.icon.replace(/01$/, '02'));
     fittedCaption(scene, layer, 236, 341, clean(media.description), 298, 17, 11, 'Verdana');
     const categories = ids(source.Actions).map(id => data.activities.tables.ActionCategory.find(c => c.ID === id)!);
@@ -87,7 +94,8 @@ export function mediaWindow(scene: Phaser.Scene, layer: Phaser.GameObjects.Conta
     frame(scene, layer, 232, 394, 270, 90, 'inner');
     categories.slice(offset, offset + 2).forEach((category, index) => {
         const y = 396 + index * 44, reporter = state.publicity.reporters.find(r => r.mediaId === mediaId);
-        const disabled = category.ID === 'ActCatMediaPresskit' && (!state.album || reporter?.kit === `${state.demo?.songId}:${state.demo?.recordedDay}`);
+        const key=`${state.demo?.songId}:${state.demo?.recordedDay}`;
+        const disabled = category.ID === 'ActCatMediaVideo' ? (!currentVideo(state)?.completed||reporter?.videoKit===key) : category.ID === 'ActCatMediaPresskit' && (!state.album || reporter?.kit === key);
         const bitmap = data.activities.bitmaps.find(b => b.name.toLowerCase() === category.Gfx.toLowerCase());
         const icon = pic(scene, layer, 257 - (bitmap?.regX ?? 18), y + 21 - (bitmap?.regY ?? 19), category.Gfx);
         if (disabled)
@@ -154,16 +162,39 @@ export function concertBookWindow(scene: Phaser.Scene, layer: Phaser.GameObjects
     button(scene, layer, 385, 382, 109, 'Cancel', cancel, true, 33, 'cancel');
 }
 export function agendaWindow(scene: Phaser.Scene, layer: Phaser.GameObjects.Container, state: GameState, firstDay: number, scroll: (direction: number) => void, close: () => void): void {
-    frame(scene, layer, 160, 124, 473, 246, 'dialog');
-    title(scene, layer, 160, 124, 'Agenda', 'calendar-title');
-    nativeAgenda(scene, layer, state, 180, 159, firstDay, activityEvents(state), null, scroll);
-    button(scene, layer, 357, 322, 81, 'OK', close, true, 33, 'accept');
+    // Main.dxr DlgAdminScript / DlgAdminData: one combined Admin screen.
+    frame(scene,layer,170,80,478,494,'dialog');
+    const album=infoFrame(scene,layer,190,113,188,98,'Album Info','cd');
+    const objectives=infoFrame(scene,layer,420,113,188,84,'Objectives','activity-icon_effect02');
+    const debt=(state.publicity.earlierAlbumRoyalties??0)+state.publicity.grossRoyalties-state.publicity.paidRoyalties-(state.contract?.advance??0);
+    const rows:[string,string][]=[
+        ['copies sold',state.demo?Math.ceil(state.publicity.totalSales).toLocaleString('en-GB'):'-'],
+        ['royalty',state.contract?(state.contract.royalty*100).toFixed(1)+'%':'-'],
+        ['Revenue',state.contract&&state.demo?cash(state.publicity.grossRoyalties):'-'],
+        ['Advance',state.contract?cash(state.contract.advance):'-'],
+        [debt<=0?'Recoup':'Earned',state.demo&&state.contract?cash(debt):'-'],
+        ['All albums',(state.publicity.earlierAlbumSales??0)+state.publicity.totalSales?Math.ceil((state.publicity.earlierAlbumSales??0)+state.publicity.totalSales).toLocaleString('en-GB'):'-'],
+    ];
+    caption(scene,layer,album.x,album.y,state.demo?data.songs.find(s=>s.id===state.demo!.songId)?.name??'-':'-',11,188).setFontStyle('bold');
+    rows.forEach(([label,value],i)=>{caption(scene,layer,album.x,album.y+14*(i+1),label);caption(scene,layer,album.x+96,album.y+14*(i+1),value);});
+    caption(scene,layer,objectives.x,objectives.y,missionDefinition(state.missionId).objectives.join('\n'),11,188).setLineSpacing(0);
+    const key=state.demo?`${state.demo.songId}:${state.demo.recordedDay}`:null;
+    const history=[...(state.agendaHistory??[]).filter(p=>p.day<state.day),{day:state.day,balance:state.money,albumKey:key,hype:albumHype(state),sales:state.publicity.totalSales}];
+    const albumHistory=history.filter(p=>key&&p.albumKey===key);
+    const graphs=[{name:'Balance',color:0x276078,points:history.map(p=>({day:p.day,value:p.balance}))},
+        ...(state.demo?[
+            {name:'CDs sold',color:0x93640c,points:albumHistory.map(p=>({day:p.day,value:p.sales}))},
+            {name:'Album hype',color:0xcc3333,percent:true,points:albumHistory.map(p=>({day:p.day,value:p.hype}))},
+        ]:[])];
+    nativeAgenda(scene,layer,state,190,262,firstDay,activityEvents(state),null,scroll,()=>true,graphs);
+    button(scene,layer,379,521,81,'OK',close,true,33,'accept');
 }
 export function mediaActionWindow(scene: Phaser.Scene, layer: Phaser.GameObjects.Container, state: GameState, mediaId: string, actionId: string, choose: (direction: number) => void, confirm: () => void, cancel: () => void): void {
     const source = data.activities.tables.Action.find(a => a.ID === actionId)!, media = PUBLICITY_RULES.media.find(m => m.id === mediaId)!;
-    const kit = actionId === 'ActMediaGivePressKit';
+    const video=actionId==='ActMediaTVGiveVideoClip';
+    const kit = actionId === 'ActMediaGivePressKit'||video;
     frame(scene, layer, 100, 100, 340, 243, 'dialog');
-    title(scene, layer, 100, 100, kit ? 'Press Kit' : 'Gifts', iconName(kit ? 'icon_cd01' : 'icon_present_red01'));
+    title(scene, layer, 100, 100, video?'Video':kit ? 'Press Kit' : 'Gifts', iconName(video?'icon_film01':kit ? 'icon_cd01' : 'icon_present_red01'));
     pic(scene, layer, 119, 139, 'portrait_frame_large01');
     const bitmap = data.activities.bitmaps.find(b => b.name.toLowerCase() === source.Gfx.toLowerCase())!;
     pic(scene, layer, 171 - bitmap.regX!, 190 - bitmap.regY!, source.Gfx);

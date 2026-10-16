@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { button, frame, title } from './canvas-ui';
+import { button, frame, title, uiIconKey } from './canvas-ui';
 import { nativeText } from './native-text';
 import { originalImageKey } from './agenda';
 
@@ -8,6 +8,7 @@ export interface EventCardOptions {
     text: string;
     icon?: string;
     portraitKey?: string;
+    animatedPortrait?: boolean;
     pictureKind?: 'human' | 'album' | 'concert' | 'illustration';
     pictureRegistration?: {x:number; y:number};
     caption?: string;
@@ -19,6 +20,9 @@ export interface EventCardOptions {
     cancelIcon?: string;
     onConfirm: () => void;
     onCancel?: () => void;
+    thirdLabel?:string;
+    thirdIcon?:string;
+    onThird?:()=>void;
 }
 export interface EventCardBounds {
     bounds: Phaser.Geom.Rectangle;
@@ -54,6 +58,7 @@ export function renderEventCard(scene: Phaser.Scene, parent: Phaser.GameObjects.
         content.add(scene.add.image(0,0,originalImageKey(scene,'portrait_frame_large01')).setOrigin(0));
         const registration=options.pictureRegistration??{x:46,y:49};
         const image=scene.add.image(49-registration.x,52-registration.y,options.portraitKey!).setOrigin(0);
+        image.setVisible(!options.animatedPortrait);
         if(options.pictureKind==='album'||options.pictureKind==='concert')image.setDisplaySize(93,98);
         content.add(image);
         pictureBounds=new Phaser.Geom.Rectangle(image.x,image.y,image.displayWidth,image.displayHeight);
@@ -63,30 +68,37 @@ export function renderEventCard(scene: Phaser.Scene, parent: Phaser.GameObjects.
             portraitHeight=caption.y+caption.height;
         }
     }
-    const contentWidth=infoX+infoWidth, contentHeight=Math.ceil(Math.max(infoHeight,portraitHeight));
+    const confirmLabel=options.confirmLabel??'OK', confirmIcon=options.confirmIcon??'accept';
+    const measureButton=(label:string,icon:string)=>{
+        const caption=nativeText(scene,0,0,label,{fontFamily:'Courier New',fontSize:'14px',fontStyle:'bold'});
+        const key=uiIconKey(scene,icon);
+        const width=Math.ceil(29+(key?scene.textures.get(key).getSourceImage().width:0)+caption.width);
+        caption.destroy();return width;
+    };
+    const buttonWidth=measureButton(confirmLabel,confirmIcon);
+    const cancelLabel=options.cancelLabel??'Cancel',cancelIcon=options.cancelIcon??'cancel';
+    const cancelWidth=options.onCancel?measureButton(cancelLabel,cancelIcon):0;
+    const thirdLabel=options.thirdLabel??'',thirdIcon=options.thirdIcon??'cancel';
+    const thirdWidth=options.onThird?measureButton(thirdLabel,thirdIcon):0;
+    const pairWidth=buttonWidth+(options.onCancel?4+cancelWidth:0)+(options.onThird?4+thirdWidth:0);
+    const contentWidth=Math.max(infoX+infoWidth,pairWidth), contentHeight=Math.ceil(Math.max(infoHeight,portraitHeight));
     const width=17+contentWidth+20, height=46+contentHeight+13+33+20;
     const x=Math.round(400-width/2), y=Math.round(305-height/2);
     parent.setData('eventCardBounds',{x,y,width,height});
     const window=scene.add.container(x,y); parent.add(window);
     frame(scene,window,0,0,width,height,'dialog',false,'#505050');
-    const icon=(options.icon??'icon_megaphone01').replace(/^icon_/,'').replace(/01$/,'');
-    title(scene,window,0,0,options.windowTitle??options.headline,icon);
+    const originalIcon=options.icon??'icon_megaphone01';
+    title(scene,window,0,0,options.windowTitle??options.headline,originalIcon);
     content.setPosition(17,46);window.add(content);
-    const confirmLabel=options.confirmLabel??'OK', confirmIcon=options.confirmIcon??'accept';
-    const measureButton=(label:string,icon:string)=>{
-        const caption=nativeText(scene,0,0,label,{fontFamily:'Courier New',fontSize:'14px',fontStyle:'bold'});
-        const width=Math.ceil(29+scene.textures.get('ui-'+icon).getSourceImage().width+caption.width);
-        caption.destroy();return width;
-    };
-    const buttonWidth=measureButton(confirmLabel,confirmIcon), localButtonY=46+contentHeight+13;
-    const cancelLabel=options.cancelLabel??'Cancel',cancelIcon=options.cancelIcon??'cancel';
-    const cancelWidth=options.onCancel?measureButton(cancelLabel,cancelIcon):0;
-    const pairWidth=buttonWidth+(options.onCancel?4+cancelWidth:0);
+    const localButtonY=46+contentHeight+13;
     const localButtonX=17+(contentWidth-pairWidth)/2;
     button(scene,window,localButtonX,localButtonY,buttonWidth,confirmLabel,options.onConfirm,true,33,confirmIcon);
     if(options.onCancel)button(scene,window,localButtonX+buttonWidth+4,localButtonY,cancelWidth,cancelLabel,options.onCancel,true,33,cancelIcon);
+    const thirdX=localButtonX+buttonWidth+(options.onCancel?4+cancelWidth:0)+4;
+    if(options.onThird)button(scene,window,thirdX,localButtonY,thirdWidth,thirdLabel,options.onThird,true,33,thirdIcon);
     parent.setData('eventCardButtons',{confirm:{x:x+localButtonX+buttonWidth/2,y:y+localButtonY+16},
-        ...(options.onCancel?{cancel:{x:x+localButtonX+buttonWidth+4+cancelWidth/2,y:y+localButtonY+16}}:{})});
+        ...(options.onCancel?{cancel:{x:x+localButtonX+buttonWidth+4+cancelWidth/2,y:y+localButtonY+16}}:{}),
+        ...(options.onThird?{third:{x:x+thirdX+thirdWidth/2,y:y+localButtonY+16}}:{})});
     return {bounds:new Phaser.Geom.Rectangle(x,y,width,height),buttonY:y+localButtonY,
         buttonCenter:new Phaser.Math.Vector2(x+localButtonX+buttonWidth/2,y+localButtonY+16),
         portraitRect:pictureBounds?new Phaser.Geom.Rectangle(x+17+pictureBounds.x,y+46+pictureBounds.y,pictureBounds.width,pictureBounds.height):undefined};

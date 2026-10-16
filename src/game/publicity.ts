@@ -1,11 +1,15 @@
+import {missionSpend} from './scenario78';
 import { bandmateOccupied } from './bandmates';
-import rawRules from './publicity-rules.json' with { type: 'json' };
+import {missionDefinition} from './mission-catalog';
+import sourceRules from './publicity-rules.json' with { type: 'json' };
 import type { GameState, Musician } from './model';
-import { bandStyle, type Style } from './recording';
+import { bandStyle, evaluateDemo, type Style } from './recording';
 
+import videoRules from './video-rules.json' with {type:'json'};
+const rawRules={...sourceRules,media:[...sourceRules.media,videoRules.media],reporters:[...sourceRules.reporters,videoRules.reporter],adverts:[...sourceRules.adverts,...videoRules.adverts]};
 export const PUBLICITY_RULES = rawRules;
 export interface GroupPublicity { id: string; bandHype: number; bandExposure: number; albumHype: number; albumExposure: number; willBuy: number; bought: number; likes: number }
-export interface ReporterPublicity { mediaId: string; kit: string | null; albumLike: number; mood: number; bribes: number; ads: number; avoid: number; nextPlaylistDay: number; rotation: number; rotationEndDay: number; modifiers: { amount: number; endDay: number }[] }
+export interface ReporterPublicity { mediaId: string; kit: string | null; videoKit?:string|null; albumLike: number; mood: number; bribes: number; ads: number; avoid: number; nextPlaylistDay: number; rotation: number; rotationEndDay: number; modifiers: { amount: number; endDay: number }[] }
 export interface ConcertBooking { id: string; venueId: string; startDay: number; duration: number; completed: boolean }
 export interface AdvertBooking { id: string; advertId: string; mediaId: string; startDay: number; duration: number; completed: boolean }
 export interface ConcertResult { id: string; concertId: string; venueId: string; day: number; audience: number; satisfaction: number; income: number; rent: number; cancelled: boolean }
@@ -15,6 +19,7 @@ export interface PublicityState {
   seed: number; lastDay: number; nextId: number; albumKey: string | null; liveReputation: number;
   groups: GroupPublicity[]; reporters: ReporterPublicity[]; concerts: ConcertBooking[]; adverts: AdvertBooking[];
   concertResults: ConcertResult[]; reviews: Review[]; exposures: Exposure[]; seenResults: string[];
+  earlierAlbumSales?:number;earlierAlbumRoyalties?:number;
   salesHistory: { day: number; sales: number }[]; totalSales: number; grossRoyalties: number; paidRoyalties: number; advanceRepaid: number;
   chart: number; radioChart: number; chartDay: number; top10Day: number | null;
   chartSongs: { id: string; movementId: string; life: number }[];
@@ -31,6 +36,12 @@ const freshness = (state: GameState) => clamp(1 - 0.006 * (state.day - (state.de
 const albumQuality = (state: GameState) => state.album?.quality ?? state.demo?.quality ?? 0;
 const imageStyle = (state: GameState) => state.album?.imageStyle ?? state.demo?.imageStyle ?? {};
 const ordinal = (state: GameState) => Math.floor(Date.parse(`${state.startDate}T00:00:00Z`) / 86400000) + state.day;
+
+// OneGraphScript: the original percentage legend maps raw 0..0.33 to 0..100.
+export const displayAlbumHype = (raw: number): number => Math.round(raw / .33 * 100);
+export function albumHype(state:GameState):number {
+  return Math.max(0,rawRules.groups.reduce((sum,g)=>sum+g.size*(state.publicity.groups.find(v=>v.id===g.id)?.albumHype??0),0)/rawRules.groups.reduce((sum,g)=>sum+g.size,0));
+}
 
 export function defaultPublicity(state?: Pick<GameState, 'day'>): PublicityState {
   const p: PublicityState = { seed: 0x524f434b, lastDay: state?.day ?? 0, nextId: 1, albumKey: null, liveReputation: 0,
@@ -84,36 +95,50 @@ function reach(ids: string[]) {
 
 export function venueAcceptance(state: PublicGame, musicians: Musician[], venueId: string) {
   const venue = rawRules.venues.find(v => v.id === venueId);
+  if(missionDefinition(state.missionId).neverPlaces.includes(venueId)&&!(state.missionId==='Mission03'&&venueId==='Live05'&&state.demo))return {accepted:false,like:0,reason:'This venue is unavailable in this mission.'};
   if (!venue || !state.demo || !state.band.some(Boolean)) return { accepted: false, like: 0, reason: 'Put together a band and record a demo before booking a gig.' };
   const targets = venue.targets.map(id => rawRules.targets.find(t => t.id === id)!).map(t => liking(state, musicians, t, 0, true, 0.3)).sort((a, b) => b.like - a.like);
   const best = targets[0], bandHype = mean(state.publicity.groups.map(g => g.bandHype));
   const accepted = best.penalty + 0.2 * state.publicity.liveReputation + 0.01 * bandHype >= -1e-9;
   return { accepted, like: accepted && best.like < 0 ? 0.01 : best.like,
-    reason: accepted ? '' : 'Your demo does not fit this venue. Improve the band’s style, recording or live reputation.' };
+    reason: accepted ? '' : evaluateDemo(state,{name:venue.name,targets:venue.targets.map(id=>rawRules.targets.find(t=>t.id===id)!)},musicians,0).reason };
+}
+
+/** DlgLive checks nearest concerts around today's date before opening Book. */
+export function venueBookingIssue(state:GameState,musicians:Musician[],venueId:string):{cardId:string;reason?:string}|null {
+  if(!state.band.some(Boolean))return {cardId:'ECConcertBookNoBand'};
+  if(!state.demo)return {cardId:'ECConcertBookNoDemo'};
+  const venue=rawRules.venues.find(v=>v.id===venueId)!;
+  if(state.publicity.concerts.some(c=>c.venueId===venueId&&c.startDay<=state.day&&c.startDay>state.day-venue.spacing))return {cardId:'ECOCVenueBookTooSoon'};
+  if(state.publicity.concerts.some(c=>c.venueId===venueId&&!c.completed&&c.startDay>state.day&&c.startDay<state.day+venue.spacing))return {cardId:'ECOCVenueBookUpcoming'};
+  if(state.money<venue.rent)return {cardId:'ECOCNoMoneyWarning'};
+  const accepted=venueAcceptance(state,musicians,venueId);return accepted.accepted?null:{cardId:'ECOCVenueNotLikeStyle',reason:accepted.reason};
 }
 
 /** Source resource intersections: concerts and releases both require NotOnTour. Ads require none. */
-export function canBookCalendar(state: PublicGame, kind: 'concert' | 'advert' | 'release', startDay: number, duration = 1): boolean {
+export function canBookCalendar(state: PublicGame, kind: 'concert' | 'advert' | 'release' | 'video', startDay: number, duration = 1): boolean {
   if (!Number.isSafeInteger(startDay) || !Number.isSafeInteger(duration) || startDay <= state.day || startDay > state.day + 100 || duration < 1 || duration > 100) return false;
   const overlaps = (start: number, days: number, day: number) => start <= day && day < start + days;
   for (let day = startDay; day < startDay + duration; day++) {
+    if(kind!=='advert'&&state.tour&&!state.tour.completed&&state.tour.startDay<=day&&day<(state.tour.returnDay??state.tour.startDay+state.tour.duration))return false;
+    if((kind==='concert'||kind==='video')&&state.scenario?.appointments.some(a=>!a.completed&&a.startDay<=day&&day<a.startDay+a.duration))return false;
     const concerts = state.publicity.concerts.filter(c => !c.completed && overlaps(c.startDay, c.duration, day));
     const adverts = state.publicity.adverts.filter(a => !a.completed && overlaps(a.startDay, a.duration, day));
     const release = state.album && overlaps(state.album.releaseDay, 1, day) ? 1 : 0;
-    if (concerts.length + adverts.length + release >= 4) return false;
-    if (kind === 'concert' && state.band.some(member => member && bandmateOccupied(state, member.musicianId, day))) return false;
-    if (kind !== 'advert' && (concerts.length || release)) return false;
+    if (concerts.length + adverts.length + release + (state.gangsta?.security.filter(e=>overlaps(e.startDay,e.duration,day)).length??0) + (state.video&&!state.video.completed&&overlaps(state.video.startDay,state.video.duration,day)?1:0) >= 4) return false;
+    if ((kind === 'concert'||kind==='video') && state.band.some(member => member && bandmateOccupied(state, member.musicianId, day))) return false;
+    if (kind !== 'advert' && (concerts.length || (kind!=='video'&&release))) return false;
   }
   return true;
 }
 
 export function bookConcert<T extends PublicGame>(state: T, musicians: Musician[], venueId: string, startDay: number): T {
   const venue = rawRules.venues.find(v => v.id === venueId);
-  if (!venue) throw new Error('This venue is unavailable in Mission01.');
+  if (!venue) throw new Error('This venue is unavailable in this mission.');
   const acceptance = venueAcceptance(state, musicians, venueId);
   if (!acceptance.accepted) throw new Error(acceptance.reason);
   if (!canBookCalendar(state, 'concert', startDay)) throw new Error('The band or calendar is already occupied on that day.');
-  if (state.publicity.concerts.some(c => c.venueId === venueId && Math.abs(c.startDay - startDay) < venue.spacing)) throw new Error(`Leave at least ${venue.spacing} days between gigs at this venue.`);
+  if (venueBookingIssue(state,musicians,venueId)) throw new Error('Venue booking refused.');
   if (state.money < venue.rent) throw new Error('You cannot afford this venue.');
   const p = structuredClone(state.publicity);
   p.concerts.push({ id: newId(p, 'concert'), venueId, startDay, duration: 1, completed: false });
@@ -128,7 +153,7 @@ export function bookAdvert<T extends PublicGame>(state: T, advertId: string, sta
   if (state.money < price) throw new Error('You cannot afford this campaign.');
   const p = structuredClone(state.publicity);
   p.adverts.push({ id: newId(p, 'advert'), advertId, mediaId: advert.mediaId, startDay, duration, completed: false });
-  return { ...state, money: state.money - price, publicity: p };
+  return missionSpend({ ...state, money: state.money - price, publicity: p },'media',price);
 }
 
 export function givePressKit<T extends PublicGame>(state: T, mediaId: string, musicians: Musician[] = []): T {
@@ -145,6 +170,16 @@ export function givePressKit<T extends PublicGame>(state: T, mediaId: string, mu
   return { ...state, publicity: p };
 }
 
+/** ActMediaTVGiveVideoClip: a separate #Video press-kit entry, free, playlist tomorrow. */
+export function giveVideo<T extends PublicGame>(state:T,mediaId='Media01'):T {
+  const key=keyFor(state),video=state.video;
+  if(mediaId!=='Media01'||!video?.completed||video.albumKey!==key)throw new Error('Finish shooting a video before delivering it to TV24.');
+  const p=structuredClone(state.publicity),reporter=p.reporters.find(r=>r.mediaId===mediaId)!;
+  if(reporter.videoKit===key)throw new Error('TV24 already has this video.');
+  reporter.videoKit=key;reporter.nextPlaylistDay=state.day+1;
+  return {...state,publicity:p};
+}
+
 export function giveGift<T extends PublicGame>(state: T, actionId: string, mediaId: string): T {
   const gift = rawRules.gifts.find(g => g.id === actionId), source = rawRules.reporters.find(r => r.mediaId === mediaId);
   if (!gift || !source || !state.album) throw new Error('This gift or recipient is unavailable.');
@@ -156,7 +191,7 @@ export function giveGift<T extends PublicGame>(state: T, actionId: string, media
   if (change > 0) reporter.bribes = next;
   reporter.mood += 0.1 * change;
   reporter.modifiers.push({ amount: change, endDay: state.day + 10 });
-  return { ...state, money: state.money - gift.price, publicity: p };
+  return missionSpend({ ...state, money: state.money - gift.price, publicity: p },'media',gift.price);
 }
 
 function expose(p: PublicityState, event: Exposure, signed: boolean) {
@@ -176,8 +211,9 @@ function addExposure(p: PublicityState, state: GameState, id: string, duration: 
     quality: Object.fromEntries(rawRules.groups.map(g => [g.id, quality(g)])), albumKey: keyFor(state) });
 }
 
-function performConcert(state: PublicGame, musicians: Musician[], concert: ConcertBooking): number {
-  const p = state.publicity, venue = rawRules.venues.find(v => v.id === concert.venueId)!;
+type ConcertVenue=Pick<typeof rawRules.venues[number],'id'|'targets'|'size'|'rent'|'ticketPrice'|'royalty'|'regulars'>;
+function performConcert(state: PublicGame, musicians: Musician[], concert: ConcertBooking, tour?:{venue:ConcertVenue;populationFactor:number;stageQuality:number}): number {
+  const p = state.publicity, venue = tour?.venue??rawRules.venues.find(v => v.id === concert.venueId)!;
   const result: ConcertResult = { id: newId(p, 'result'), concertId: concert.id, venueId: concert.venueId, day: state.day,
     audience: 0, satisfaction: 0, income: 0, rent: venue.rent, cancelled: false };
   concert.completed = true;
@@ -185,7 +221,7 @@ function performConcert(state: PublicGame, musicians: Musician[], concert: Conce
   const reaches = reach(venue.targets), totalReach = Object.values(reaches).reduce((a, b) => a + b, 0);
   const wanted = rawRules.groups.map((g, i) => {
     const guaranteed = totalReach ? venue.size * venue.regulars * reaches[g.id] / totalReach : 0;
-    const additional = clamp(reaches[g.id] * p.groups[i].bandHype * 0.02 * (1 + 0.3 * p.liveReputation) * freshness(state)) * g.size;
+    const additional = clamp(reaches[g.id] * (tour?.populationFactor??1) * p.groups[i].bandHype * 0.02 * (1 + 0.3 * p.liveReputation) * freshness(state)) * g.size;
     return guaranteed + additional;
   });
   const totalWanted = wanted.reduce((a, b) => a + b, 0), filled = Math.min(1.3, totalWanted / venue.size);
@@ -195,16 +231,23 @@ function performConcert(state: PublicGame, musicians: Musician[], concert: Conce
   const weight = members.reduce((sum, v) => sum + influence[v.b.instrument], 0);
   const performance = clamp((members.reduce((sum, v) => sum + influence[v.b.instrument] * (0.5 * v.m.musicality + 0.4 * (v.m.charisma ?? 0) + 0.6 * v.m.mood) / 1.5, 0) / weight - 0.2) / 0.55) * crowdFactor;
   const quality = Object.fromEntries(rawRules.groups.map((g, i) => [g.id, Math.min(1, (4 * performance + liking(state, musicians, g, 1, true, 0.3).like) / 5)]));
-  const satisfaction = totalWanted >= 1 ? Math.min(1, rawRules.groups.reduce((sum, g, i) => sum + quality[g.id] * wanted[i] / totalWanted, 0) + (random(p) * 0.2 - 0.1)) : 0;
+  const satisfaction = totalWanted >= 1 ? Math.min(1, rawRules.groups.reduce((sum, g, i) => sum + quality[g.id] * wanted[i] / totalWanted, 0) + (random(p) * 0.2 - 0.1)+.2*(tour?.stageQuality??0)) : 0;
   result.audience = Math.min(venue.size, totalWanted); result.satisfaction = Math.max(0, satisfaction);
   result.income = Math.round(result.audience * venue.ticketPrice * venue.royalty);
   p.liveReputation = clamp(p.liveReputation + clamp((satisfaction - 0.2) * totalWanted / 500, -0.5, 0.5), -1, 1);
-  p.exposures.push({ id: newId(p, 'gigExpo'), startDay: state.day, duration: 1, intensity: 1,
+  if(!tour)p.exposures.push({ id: newId(p, 'gigExpo'), startDay: state.day, duration: 1, intensity: 1,
     reach: Object.fromEntries(rawRules.groups.map((g, i) => [g.id, totalWanted ? wanted[i] / totalWanted : 0])), quality, albumKey: keyFor(state) });
   p.concertResults.push(result);
   return result.income;
 }
 
+export function performTourConcert(state:GameState,musicians:Musician[],city:{ID:string;MediaTargets:string;size:string;PopulationFactor:string;PreferredPriceModel:{UnitPrice:string}},stageQuality:number):ConcertResult {
+  const venue={id:city.ID,targets:[...city.MediaTargets.matchAll(/#(\w+)/g)].map(m=>m[1]),size:Number(city.size),rent:0,ticketPrice:Number(city.PreferredPriceModel.UnitPrice),royalty:1,regulars:0};
+  performConcert(state,musicians,{id:'tour'+city.ID+state.day,venueId:city.ID,startDay:state.day,duration:1,completed:false},{venue,populationFactor:Number(city.PopulationFactor),stageQuality});
+  return state.publicity.concertResults.pop()!;
+}
+
+export function reporterBandLike(state:GameState,mediaId:string):number{const r=state.publicity.reporters.find(r=>r.mediaId===mediaId);return r?(r.albumLike+r.mood+r.modifiers.reduce((sum,m)=>sum+m.amount,0))/2+.3*(freshness(state)-1):0;}
 function reportersTick(state: PublicGame, musicians: Musician[]) {
   const p = state.publicity;
   if (!state.album) return;
@@ -214,7 +257,7 @@ function reportersTick(state: PublicGame, musicians: Musician[]) {
     reporter.modifiers = reporter.modifiers.filter(m => m.endDay > state.day);
     const mood = reporter.mood + reporter.modifiers.reduce((sum, m) => sum + m.amount, 0);
     const likes = (reporter.albumLike + mood) / 2 + 0.3 * (freshness(state) - 1);
-    if (reporter.kit !== keyFor(state) || reporter.avoid > 0) continue;
+    if ((media.type==='TV'?reporter.videoKit:reporter.kit) !== keyFor(state) || reporter.avoid > 0) continue;
     if (media.type === 'Paper' && !p.reviews.some(r => r.mediaId === reporter.mediaId) && state.day < state.album.releaseDay + 15) {
       if (1 + Math.floor(random(p) * 100) <= 100 * likes / 15) {
         random(p); // Source computes then overwrites the initial +/-0.1 review result.
@@ -225,12 +268,16 @@ function reportersTick(state: PublicGame, musicians: Musician[]) {
         addExposure(p, state, review.id, 2, 0.3, media.targets, () => ratingQuality);
       }
     }
-    if (media.type === 'Radio' && reporter.nextPlaylistDay > 0 && state.day >= reporter.nextPlaylistDay) {
+    if ((media.type === 'Radio'||media.type==='TV') && reporter.nextPlaylistDay > 0 && state.day >= reporter.nextPlaylistDay) {
       const totalHype = Math.max(0, rawRules.groups.reduce((sum, g, i) => sum + g.size * p.groups[i].albumHype, 0) / rawRules.groups.reduce((sum, g) => sum + g.size, 0));
-      const rotation = likes + (totalHype - source.minimumHype) / (0.5 - source.minimumHype);
+      let rotation = likes + (totalHype - source.minimumHype) / (0.5 - source.minimumHype);
+      const video=media.type==='TV'&&state.video?.completed&&state.video.albumKey===keyFor(state)?videoRules.concepts.find(v=>v.id===state.video!.conceptId):undefined;
+      if(media.type==='TV'&&!video)continue;
+      const videoQuality=video?video.quality-(state.video?.qualityPenalty??0):0;
+      if(video)rotation=(rotation+.2*videoQuality)/1.2;
       reporter.rotation = rotation >= 0 ? 0.2 * rotation : 0;
       reporter.rotationEndDay = state.day + 7; reporter.nextPlaylistDay = state.day + 7;
-      if (rotation >= 0) addExposure(p, state, newId(p, 'rotation'), 7, reporter.rotation, media.targets, g => Math.max(-1, liking(state, musicians, g, 0.2, true, 0.3).like));
+      if (rotation >= 0) addExposure(p, state, newId(p, 'rotation'), 7, reporter.rotation, media.targets, g => Math.max(-1, liking(state, musicians, g, 0.2, true, 0.3).like)+videoQuality*.3);
     }
   }
 }
@@ -278,11 +325,12 @@ export function chartRows(state: PublicGame, mediaId = 'Media05'): ChartRow[] {
     const last = state.publicity.chartPrevious[mediaId]?.indexOf(s.id) ?? -1;
     return { id: s.id, name: source.name, bandName: source.bandName, position: i + 1, lastWeekPosition: last < 0 ? 0 : last + 1, mine: false, rating: media.chartThresholds[i] };
   });
-  const rating = media.type === 'Store' ? state.publicity.chartSales : state.publicity.chartRotation;
-  const eligible = state.album && (media.type !== 'Store' || state.day >= state.album.releaseDay && rating > 0);
+  let rating = media.type === 'Store' ? state.publicity.chartSales : media.type==='TV'?(state.publicity.reporters.find(r=>r.mediaId===mediaId)?.rotation??0)/.2:state.publicity.chartRotation;
+  if(media.type==='Store'&&state.gangsta?.tamper)rating=state.gangsta.tamperRating;
+  const eligible = state.album && (media.type !== 'Store' || state.day >= state.album.releaseDay && rating > 0) && (media.type!=='TV'||state.video?.completed&&state.video.albumKey===keyFor(state));
   if (eligible) rows.push({ id: 'playerAlbum', name: rawRules.songs.find(s => s.id === state.album!.songId)?.name ?? state.album!.songId,
     bandName: state.album!.bandName, position: 0, lastWeekPosition: state.publicity.chartPrevious[mediaId]?.includes('playerAlbum') ? state.publicity.chartPrevious[mediaId].indexOf('playerAlbum') + 1 : 0, mine: true, rating });
-  return rows.sort((a, b) => b.rating - a.rating).slice(0, 10).map((r, i) => ({ ...r, position: i + 1 }));
+  return rows.sort((a, b) => b.rating - a.rating || Number(b.mine)-Number(a.mine)).slice(0, 10).map((r, i) => ({ ...r, position: i + 1 }));
 }
 
 /** Called after the parent increments day. Repeated calls at the same day are no-ops. */
@@ -296,7 +344,7 @@ export function advancePublicity<T extends PublicGame>(state: T, musicians: Musi
     if (p.albumKey !== key) {
       p.albumKey = key;
       for (const g of p.groups) { g.albumHype = 0; g.albumExposure = 0; g.willBuy = 0; g.bought = 0; g.likes = 0; }
-      p.reviews = []; p.salesHistory = []; p.totalSales = 0; p.grossRoyalties = 0; p.paidRoyalties = 0; p.advanceRepaid = 0; p.chart = 0; p.radioChart = 0;
+      p.reviews = []; p.salesHistory = []; p.totalSales = 0; p.grossRoyalties = 0; p.advanceRepaid = Math.min(current.contract?.advance??0,p.earlierAlbumRoyalties??0); p.chart = 0; p.radioChart = 0;
     }
     for (const c of p.concerts) if (!c.completed && day >= c.startDay + c.duration) money += performConcert(current, musicians, c);
     for (const a of p.adverts) {
@@ -321,19 +369,19 @@ export function advancePublicity<T extends PublicGame>(state: T, musicians: Musi
       p.totalSales += sales;
       const songwriter = rawRules.songs.find(s => s.id === current.album!.songId)?.royalty ?? 0;
       p.grossRoyalties = p.totalSales * 18 * (1 - songwriter) * current.contract!.royalty;
-      p.advanceRepaid = Math.min(current.contract!.advance, p.grossRoyalties);
-      const entitlement = p.grossRoyalties - p.advanceRepaid;
+      p.advanceRepaid = Math.min(current.contract!.advance, (p.earlierAlbumRoyalties??0)+p.grossRoyalties);
+      const entitlement = (p.earlierAlbumRoyalties??0)+p.grossRoyalties - p.advanceRepaid;
       // ClassPlayer.transactMoney rounds the transferred amount, while the label
       // tracks exact entitlement in PayedToPlayer (fractional accounts preserved).
       const payment = Math.max(0, entitlement - p.paidRoyalties); money += Math.round(payment); p.paidRoyalties += payment;
     }
     p.salesHistory.push({ day, sales });
     if (ordinal(current) % 7 === 0 || p.chartDay < 0 && released) {
-      for (const mediaId of ['Media02', 'Media05']) p.chartPrevious[mediaId] = chartRows(current, mediaId).map(r => r.id);
+      for (const mediaId of ['Media01', 'Media02', 'Media05']) p.chartPrevious[mediaId] = chartRows(current, mediaId).map(r => r.id);
       prepareCharts(p, ordinal(current) % 7 === 0);
       const week = p.salesHistory.filter(s => s.day > day - 7).reduce((sum, s) => sum + s.sales, 0);
       const store = rawRules.media.find(m => m.id === 'Media05')!;
-      p.chart = released && week > 0 ? rank(week, store.chartThresholds) : 0;
+      p.chart = released&&current.gangsta?.tamper?1+store.chartThresholds.filter(t=>t>current.gangsta!.tamperRating).length:released && week > 0 ? rank(week, store.chartThresholds) : 0;
       const radio = p.reporters.find(r => r.mediaId === 'Media02')!;
       // Reporter.getAlbumRotation reports normalized rotation, not the 0.2-scaled exposure intensity.
       p.radioChart = current.album ? rank(radio.rotation / 0.2, rawRules.media.find(m => m.id === 'Media02')!.chartThresholds) : 0;
@@ -348,14 +396,15 @@ export function advancePublicity<T extends PublicGame>(state: T, musicians: Musi
 
 export function validPublicity(state: GameState & { publicity?: PublicityState }): boolean {
   const p = state.publicity;
+  if(p&&[p.earlierAlbumSales??0,p.earlierAlbumRoyalties??0].some(n=>!Number.isFinite(n)||n<0))return false;
   if (!p || !Number.isInteger(p.seed) || p.seed < 0 || p.seed > 0xffffffff || !Number.isSafeInteger(p.lastDay) || p.lastDay < 0 || p.lastDay > state.day
     || !Number.isSafeInteger(p.nextId) || p.nextId < 1 || !Number.isFinite(p.liveReputation) || Math.abs(p.liveReputation) > 1) return false;
   if (!Array.isArray(p.groups) || p.groups.length !== rawRules.groups.length || !p.groups.every((g, i) => g.id === rawRules.groups[i].id
     && ['bandHype', 'albumHype', 'likes'].every(k => Number.isFinite(g[k as keyof GroupPublicity]))
     && Math.abs(g.bandHype) <= 1 && Math.abs(g.albumHype) <= 1
     && [g.bandExposure, g.albumExposure, g.willBuy, g.bought].every(n => Number.isFinite(n) && n >= 0))) return false;
-  if (!Array.isArray(p.reporters) || p.reporters.length !== 3 || !p.reporters.every((r, i) => r.mediaId === rawRules.reporters[i].mediaId
-    && (r.kit === null || typeof r.kit === 'string') && [r.albumLike, r.mood, r.bribes, r.ads, r.avoid, r.rotation].every(Number.isFinite)
+  if (!Array.isArray(p.reporters) || p.reporters.length !== rawRules.reporters.length || !p.reporters.every((r, i) => r.mediaId === rawRules.reporters[i].mediaId
+    && (r.kit === null || typeof r.kit === 'string') && (r.videoKit===undefined||r.videoKit===null||typeof r.videoKit==='string') && [r.albumLike, r.mood, r.bribes, r.ads, r.avoid, r.rotation].every(Number.isFinite)
     && Array.isArray(r.modifiers) && r.modifiers.every(m => Number.isFinite(m.amount) && Number.isSafeInteger(m.endDay)))) return false;
   if (![p.concerts, p.adverts, p.concertResults, p.reviews, p.exposures, p.salesHistory, p.seenResults].every(Array.isArray)) return false;
   if (!Array.isArray(p.chartSongs) || !p.chartSongs.every(s => rawRules.chartSongs.some(v => v.id === s.id) && rawRules.chartMovements.some(v => v.id === s.movementId) && Number.isSafeInteger(s.life) && s.life >= 0)

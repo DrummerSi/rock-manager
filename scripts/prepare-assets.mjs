@@ -4,12 +4,23 @@ import { PNG } from 'pngjs';
 
 const root = path.resolve('analysis/original');
 const fixture = JSON.parse(fs.readFileSync(path.join(root, 'data/mission01-recovered.json'), 'utf8'));
+const missionCatalog=JSON.parse(fs.readFileSync('src/game/mission-catalog.json','utf8'));
+const activeMissions=missionCatalog.missions.filter(m=>m.playable||['Mission05','Mission06','Mission07','Mission08'].includes(m.id));
+const rosterIds=new Set(missionCatalog.missions.filter(m=>m.playable||['Mission05','Mission06','Mission07','Mission08'].includes(m.id)).flatMap(m=>m.availableMusicians));
+const columnRow=(value,index)=>Array.isArray(value)?value[index]:value&&typeof value==='object'?Object.fromEntries(Object.entries(value).map(([key,child])=>[key,columnRow(child,index)])):value;
+const musicianTable=JSON.parse(fs.readFileSync(path.join(root,'data/DataMusicians00.json'),'utf8')).data.RealMusician;
 const media = JSON.parse(fs.readFileSync(path.join(root, 'media-manifest.json'), 'utf8'));
 const destination = path.resolve('public/assets');
 fs.mkdirSync(destination, { recursive: true });
 fs.mkdirSync('src/generated', { recursive: true });
+// Publisher ownership and record-company menus come from DataBuildings00, not the mission song pool.
+const businessSource=JSON.parse(fs.readFileSync(path.join(root,'data/DataBuildings00.json'),'utf8'));
+const business={source:businessSource.source,sourceSHA256:businessSource.sha256,publishers:businessSource.data.Publish.ID.map((_,i)=>{const p=columnRow(businessSource.data.Publish,i);return{id:p.ID,name:p.name,songs:[...p.Songs.matchAll(/#(\w+)/g)].map(m=>m[1])};}),labels:businessSource.data.Record.ID.map((_,i)=>{const r=columnRow(businessSource.data.Record,i);return{id:r.ID,actions:[...r.Actions.matchAll(/#(\w+)/g)].map(m=>m[1])};})};
+fs.writeFileSync('src/generated/music-business.json',JSON.stringify(business,null,2)+'\n');
 const images = {};
 const provenance = [];
+const tourAssets=JSON.parse(fs.readFileSync(path.join(root,'tour-assets-evidence.json'),'utf8'));
+for(const entry of tourAssets.recovered){const filename=entry.key+'.png';fs.copyFileSync(path.join(root,entry.path),path.join(destination,filename));images[entry.key]=filename;provenance.push(entry);}
 const rawUi = JSON.parse(fs.readFileSync(path.join(root, 'ui-raw-bitmaps.json'), 'utf8')).recovered;
 const cityEvidence = JSON.parse(fs.readFileSync(path.join(root, 'city-animation-evidence.json'), 'utf8'));
 const tutorialMedia = JSON.parse(fs.readFileSync(path.join(root, 'tutorial-media-evidence.json'), 'utf8')).recovered;
@@ -34,7 +45,11 @@ for (const [key, name] of Object.entries(tutorialIcons)) {
   images[`ui-${key}`] = images[name];
 }
 fs.mkdirSync(path.join(destination, 'music'), { recursive: true });
-for (const audio of tutorialGameplay.audio) fs.copyFileSync(path.join(root, 'media/tutorial-audio', audio.file), path.join(destination, 'music', audio.file));
+for (const audio of tutorialGameplay.audio) {
+  const source=path.join(root,'media/tutorial-audio',audio.file),target=path.join(destination,'music',audio.file);
+  // Retained audio is immutable; avoid rewriting identical files held open by a player.
+  if(!fs.existsSync(target)||!fs.readFileSync(source).equals(fs.readFileSync(target)))fs.copyFileSync(source,target);
+}
 const cityFrame = JSON.parse(fs.readFileSync(path.join(root, 'city-frame-evidence.json'), 'utf8'));
 for (const mask of cityFrame.masks) {
   const raw = Buffer.from(mask.rawHex, 'hex');
@@ -147,6 +162,14 @@ const uiMetadata = JSON.parse(fs.readFileSync(path.join(root, 'ui-layout-recover
 const instrumentSprites = uiMetadata.filter((m) => m.name?.startsWith('instrumentpos_') && m.regX !== undefined
   && !['instrumentpos_background01', 'instrumentpos_portrait_frames01'].includes(m.name));
 for (const sprite of instrumentSprites) select(sprite.name, sprite.name);
+for(const id of ['Studio02','Studio03'])select(id.toLowerCase()+'_environment01',id+'_environment01');
+for(let i=2;i<=12;i++){const name='storyboard'+String(i).padStart(2,'0');select('activity-'+name,name);}
+for(const name of ['live05_environment01','live05_feedback_background01',...Array.from({length:4},(_,i)=>'live05_feedback_foreground0'+(i+1))])select('activity-'+name,name);
+for(const color of ['01','04'])for(const state of [1,2])for(const part of [1,2,3]){const name=`slider${color}_${state}_${part}`;select('activity-'+name,name);}
+select('activity-live_smashed_demo01','live smashed demo01');
+select('activity-image_video01_small01','image_video01_small01');
+select('activity-tmplargeagendabg', 'TmpLargeAgendaBG');
+for(let i=0;i<=20;i++)select('pie01_'+String(i).padStart(4,'0'),'pie01_'+String(i).padStart(4,'0'));
 for (const side of ['TL', 'TR', 'BL', 'BR', 'T', 'B', 'L', 'R']) select(`button-${side}`, `RockButtonEdge${side}`);
 for (const side of ['TL', 'TR', 'BL', 'BR', 'T', 'B', 'L', 'R']) select(`panel-${side}`, `RockSrndEdge${side}`);
 for (const side of ['TL', 'TR', 'BL', 'BR', 'T', 'B', 'L', 'R']) {
@@ -156,7 +179,7 @@ for (const side of ['TL', 'TR', 'BL', 'BR', 'T', 'B', 'L', 'R']) {
 for (const side of ['TL','TR','BL','BR','T','B','L','R']) select(`outer-${side}`, `RockFrame1Edge${side}`);
 for (const side of ['TL', 'TR', 'BL', 'BR']) select(`button-dark-${side}`, `RockButtonDarkEdge${side}`);
 
-const musicians = fixture.availableMusicians.map((m) => {
+const allMusicians = musicianTable.ID.map((_,i)=>columnRow(musicianTable,i)).filter(m=>rosterIds.has(m.ID)).map((m) => {
   select(`portrait-${m.ID}`, `Portrait_${m.Gfx}_normal_Large`);
   select(`icon-${m.ID}`, `Portrait_${m.Gfx}_normal_Medium`);
   select(`portrait_${m.Gfx.toLowerCase()}_small`, `portrait_${m.Gfx}_small`);
@@ -173,9 +196,10 @@ const musicians = fixture.availableMusicians.map((m) => {
     gender: m.Gender ?? 'Male', mood: Number(m.Mood?.Current ?? 0.65), health: Number(m.Health?.Current ?? 1), charisma: Number(m.Charisma?.Current ?? m.Charisma ?? 0), skills, instrumentGraphics: m.InstrumentGFX ?? {},
   };
 });
+const musicians=allMusicians.filter(m=>fixture.availableMusicians.some(original=>original.ID===m.id));
 fs.copyFileSync(path.join(root, 'media/audio-sample/CityAmbience01.wav'), path.join(destination, 'city-ambience.wav'));
 const songTable = JSON.parse(fs.readFileSync(path.join(root, 'data/DataSongs00.json'), 'utf8')).data.Song;
-const allowedSongs = fixture.mission.AvailableSongs.match(/Sng\d+/g);
+const allowedSongs = [...new Set(activeMissions.flatMap(m=>m.availableSongs))];
 const songs = songTable.ID.flatMap((id, i) => allowedSongs.includes(id) ? [{ id, name: songTable.name[i],
   description: songTable.comment[i], genre: songTable.Genre[i], price: Number(songTable.PriceModel.BasePrice[i]),
   royalty: Number(songTable.PriceModel.Royalty[i]), quality: Number(songTable.quality[i]), songType:Number(songTable.SongType[i]) }] : []);
@@ -209,9 +233,12 @@ for (const entry of nativeFonts.atlases) {
 }
 const actorAnimation=JSON.parse(fs.readFileSync(path.join(root,'actor-animation-evidence.json'),'utf8'));
 const sourceWindowAssets=JSON.parse(fs.readFileSync(path.join(root,'source-window-assets.json'),'utf8'));
+const missionAssets=JSON.parse(fs.readFileSync(path.join(root,'mission34-assets.json'),'utf8'));
+sourceWindowAssets.recovered.push(...missionAssets.recovered);
 for(const entry of sourceWindowAssets.recovered){
  const key='source-window-'+entry.name.replaceAll(' ','_').toLowerCase(), filename=key+'-'+entry.pngSHA256.slice(0,12)+'.png';
  fs.copyFileSync(path.join(root,entry.path),path.join(destination,filename));images[key]=filename;
+ if(entry.key)images[entry.key]=filename;
  provenance.push({key,path:entry.path,sha256:entry.pngSHA256,importRule:`Original source window bitmap, ink${entry.ink}`});
 }
 const missionEndingAssets=JSON.parse(fs.readFileSync(path.join(root,'mission-ending-layout-evidence.json'),'utf8'));
@@ -240,7 +267,7 @@ const gameData = { design, activities, sourceWindowBitmaps:sourceWindowAssets.re
   mission: { id: 'Mission01', name: fixture.mission.name, startMoney: Number(fixture.mission.StartMoney),
     intro: fixture.mission.IntroText.replaceAll('\\n', '\n'),
     objectives: ['Put a band together', 'Get a song license', 'Record a demo', 'Sign a record contract', 'Make the Top 10'] },
-  musicians, songs, images, missions: JSON.parse(fs.readFileSync(path.join(root, 'data/missions.json'), 'utf8')).missions.filter((m) => m.name).map((m) => ({ id: m.ID, name: m.name, comment:m.comment, gfx:m.Gfx })),
+  musicians, allMusicians, songs, images, missions: missionCatalog.missions,
   tutorials: JSON.parse(fs.readFileSync(path.join(root, 'opening-ui-evidence.json'), 'utf8')).cards,
   menuText: (() => { const t=JSON.parse(fs.readFileSync('src/game/original-text.json','utf8')).translations; return {title:t.szidMainMenuHeadline,text:t.szidMainMenuComment,authority:'Original English Translation.txt',source:'V:/Data/Translation.txt'}; })(),
   instrumentSprites: instrumentSprites.map(({ name, regX, regY }) => ({ name, regX, regY })),
@@ -255,6 +282,7 @@ fs.writeFileSync(path.join(destination, 'provenance.json'), JSON.stringify(prove
 
 const feedback = JSON.parse(fs.readFileSync(path.join(root, 'feedback-audio-evidence.json'), 'utf8'));
 const sourceAudio = JSON.parse(fs.readFileSync(path.join(root, 'source-window-audio-evidence.json'), 'utf8'));
+sourceAudio.recovered.push(...missionAssets.audio,...JSON.parse(fs.readFileSync(path.join(root,'mission34-audio.json'),'utf8')).previews);
 fs.writeFileSync('src/generated/source-window-audio.json', JSON.stringify({recovered:sourceAudio.recovered.map(({key,path})=>({key,path}))},null,2));
 fs.mkdirSync(path.join(destination, 'feedback'), { recursive: true });
 for (const entry of feedback.recovered) fs.copyFileSync(path.join(root,entry.path), path.join(destination,'feedback',path.basename(entry.path)));

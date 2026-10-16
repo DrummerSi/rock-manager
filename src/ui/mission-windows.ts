@@ -19,7 +19,7 @@ export function missionResultWindow(scene:Phaser.Scene,parent:Phaser.GameObjects
   // Re-add text after the surround so it is painted above the source background.
   parent.bringToTop(body);
   title(scene,parent,x,y,ending.title,'effect');
-  const pic=(px:number,py:number,name:string)=>{const image=scene.add.image(px,py,'mission-ending-'+name.replaceAll(' ','_').toLowerCase()).setOrigin(0);parent.add(image);return image;};
+  const pic=(px:number,py:number,name:string)=>{const suffix=name.replaceAll(' ','_').toLowerCase(),key=scene.textures.exists('mission-ending-'+suffix)?'mission-ending-'+suffix:'source-window-'+suffix;const image=scene.add.image(px,py,key).setOrigin(0);parent.add(image);return image;};
   pic(x+22,y+49,'frame02 large environment');
   pic(x+32,y+42,ending.picture);
   const score=ending.score,scoreX=x+396,width=219;

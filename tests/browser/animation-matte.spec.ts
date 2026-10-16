@@ -5,17 +5,19 @@ import {readFileSync} from 'node:fs';
 const require=createRequire(import.meta.url), {PNG}=require('pngjs');
 const evidence=require('../../src/generated/actor-animation.json');
 
-test('original ink36 leaves no stray white pixels in all 17 animated portraits',async({page})=>{
+test('original ink36 leaves no stray white pixels in all recovered animated portraits',async({page})=>{
   test.setTimeout(120000);
   // The score's live FaceAnim layers120..124 all use ink36 with white index0.
   // This checks painted WebGL output, not merely the decoded images or state.
   // The previous exterior-only matte fails this sweep with >1,600 white pixels/frame.
   const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));
-  await page.setViewportSize({width:1280,height:680});
+  await page.setViewportSize({width:1440,height:960});
   await page.goto(testBaseURL + '/tests/browser/fixtures/actor-animation.html');
   await page.waitForFunction(()=>(window as any).__actorAudit?.ready);
+  const dimensions=await page.evaluate(()=>(window as any).__actorAudit.dimensions);await page.setViewportSize(dimensions);
   const regions=await page.evaluate(()=>(window as any).__actorAudit.regions);
-  expect(regions).toHaveLength(17);
+  for(const region of regions){expect(region.x).toBeGreaterThanOrEqual(0);expect(region.y).toBeGreaterThanOrEqual(0);expect(region.x+region.width,region.id).toBeLessThanOrEqual(dimensions.width);expect(region.y+region.height,region.id).toBeLessThanOrEqual(dimensions.height);}
+  expect(regions).toHaveLength(evidence.portraits.length);
   const covered=new Map<string,Set<string>>();
   const checkPixels=async(label:string)=>{
     await page.evaluate(()=>new Promise<void>(resolve=>requestAnimationFrame(()=>requestAnimationFrame(()=>resolve()))));

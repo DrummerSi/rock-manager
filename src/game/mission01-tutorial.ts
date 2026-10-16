@@ -23,7 +23,7 @@ export function mission01RehearsalExit(state: GameState, musicians: Musician[], 
 
 /** Original event-card IDs in pending order; callers show one card and persist its acknowledgment. */
 export function pendingMission01Guidance(state: GameState, context: Mission01GuidanceContext = {}): string[] {
-  if (!state.started || !state.tutorialEnabled) return [];
+  if (state.missionId!=='Mission01'||!state.started || !state.tutorialEnabled) return [];
   const unseen = (id: string) => !state.seenTutorials.includes(id);
   const seen = (id: string) => !unseen(id);
   const days = context.acknowledgedDays ?? {};

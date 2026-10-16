@@ -5,7 +5,7 @@ import data from '../generated/game-data.json' with { type: 'json' };
 import type { Instrument, Musician, GameState } from '../game/model';
 import { button, frame, text, title } from './canvas-ui';
 import { cursorStyle } from './cursors';
-import { nativeAgenda, originalImageKey, type AgendaEntry } from './agenda';
+import { nativeAgenda, originalImageKey, trainingAgendaFormat, type AgendaEntry } from './agenda';
 
 const cash = (n: number) => '$' + n.toLocaleString('en-GB');
 const clean = (value: string) => value.replaceAll('\x96', '–').trim();
@@ -77,9 +77,10 @@ export function bandmateWindow(scene: Phaser.Scene, layer: Phaser.GameObjects.Co
 
 export function bandmateActionWindow(scene: Phaser.Scene, layer: Phaser.GameObjects.Container, state: GameState,
   categoryId: string, actionId: string, canUse: boolean, change: (direction: number) => void, confirm: () => void, cancel: () => void,
-  arrows: {previousEnabled?:boolean;nextEnabled?:boolean;actionCount?:number} = {}): void {
+  arrows: {previousEnabled?:boolean;nextEnabled?:boolean;actionCount?:number;price?:number} = {}): void {
   const category = data.activities.tables.ActionCategory.find(c => c.ID === categoryId)!;
   const action = data.activities.tables.Action.find(a => a.ID === actionId)!;
+  const price=arrows.price??Number(action.price);
   const x = 112, y = 126;
   frame(scene, layer, x, y, 340, 243, 'dialog');
   title(scene, layer, x, y, category.name, 'activity-' + category.Gfx.replaceAll(' ', '_').toLowerCase());
@@ -88,12 +89,12 @@ export function bandmateActionWindow(scene: Phaser.Scene, layer: Phaser.GameObje
   picture(scene, layer, x + 71 - (bitmap.regX ?? 0), y + 90 - (bitmap.regY ?? 0), action.Gfx);
   const name = caption(scene, layer, x + 138, y + 35, action.name.trim(), 11, 182).setFontStyle('bold');
   const description = caption(scene, layer, x + 138, name.y + name.height + 13, clean(action.comment), 11, 182);
-  if (Number(action.price) > 0) caption(scene, layer, x + 138, description.y + description.height + 13, 'Price: ' + cash(Number(action.price)));
+  if(price!==0)caption(scene,layer,x+138,description.y+description.height+13,(price<0?'Money amount: ':'Price: ')+cash(Math.abs(price)));
   if((arrows.actionCount??[...category.Actions.matchAll(/#(\w+)/g)].length)>1){
     hit(picture(scene, layer, x + 19, y + 189, 'ArrowLeft'), () => change(-1), arrows.previousEnabled!==false);
     hit(picture(scene, layer, x + 276, y + 189, 'ArrowRight'), () => change(1), arrows.nextEnabled!==false);
   }
-  button(scene, layer, x + 75, y + 189, 77, 'OK', confirm, canUse && state.money >= Number(action.price), 33, 'accept');
+  button(scene, layer, x + 75, y + 189, 77, 'OK', confirm, canUse && state.money >= price, 33, 'accept');
   button(scene, layer, x + 156, y + 189, 109, 'Cancel', cancel, true, 33, 'cancel');
 }
 
@@ -111,7 +112,7 @@ export function bandmateTrainingWindow(scene: Phaser.Scene, layer: Phaser.GameOb
   caption(scene, layer, 281, 125, action.name, 11, 333).setFontStyle('bold');
   caption(scene, layer, 281, 151, clean(action.comment), 11, 333);
   caption(scene, layer, 281, 199, `Cost ${cash(Number(action.price))}`, 11, 333);
-  nativeAgenda(scene, layer, state, 180, 214, firstDay, [...events, { id: 'draft-training', kind: 'training', name: action.name, startDay, duration, selected: true }], choose, scroll, allowed);
+  nativeAgenda(scene, layer, state, 180, 214, firstDay, [...events, { id: 'draft-training', kind: 'training', formatId:trainingAgendaFormat(actionId), name: action.name, startDay, duration, selected: true }], choose, scroll, allowed);
   button(scene, layer, 304, 382, 77, 'OK', confirm, state.money >= Number(action.price), 33, 'calendar');
   button(scene, layer, 385, 382, 109, 'Cancel', cancel, true, 33, 'cancel');
 }

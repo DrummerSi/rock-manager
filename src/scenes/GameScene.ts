@@ -1,3 +1,11 @@
+import {loadCareer,saveCareer,recordCareer,careerAvailability,careerTotal,type Career} from '../game/career';
+import venueCards from '../game/venue-cards.json';
+import {TOUR_RULES,tourAvailable,tourQuote,bookTour,cancelTour} from '../game/tour';
+import {emptyTourDraft,tourWindow,tourCityWindow,tourStageWindow,tourExpenseWindow,tourBookingWindow,tourOngoingWindow,tourResultWindow} from '../ui/tour-windows';
+import {GANGSTA_RULES,gangstaAvailable,gangstaActions,gangstaPrice,canUseGangsta,useGangsta,bookSecurity,resolveGangstaCard,gangstaSpeech} from '../game/gangsta';
+import {gangstaWindow,gangstaTargetWindow} from '../ui/gangsta-windows';
+import {VIDEO_RULES,videoAvailable,currentVideo,canBookVideo,bookVideo} from '../game/video';
+import {videoWindow,videoBookingWindow} from '../ui/video-windows';
 import { NativeText } from '../ui/native-text';
 import actorAssets from '../generated/actor-animation.json';
 import { renderEventCard } from '../ui/event-card';
@@ -14,33 +22,43 @@ import originalText from '../game/original-text.json' with {type:'json'};
 import { availableBandmateActions, bandmateConcerns, bandmateStats, bandmateMood, bandmateGreeting, effectiveMusicians, bandmateOccupied, giveBandmateGift, trainBandmate, canTrainBandmate, changeBandmateRelations, fireBandmate, applyBandmateExitToCity, BANDMATE_RULES } from '../game/bandmates';
 import { bandmateWindow, bandmateActionWindow, bandmateTrainingWindow } from '../ui/bandmate-windows';
 import { createActorPortrait, type ActorPortrait, type ActorMood } from '../ui/actor-portrait';
-import { PUBLICITY_RULES, bookConcert, bookAdvert, givePressKit, giveGift, canBookCalendar, venueAcceptance, chartRows, currentWeekSales } from '../game/publicity';
+import { PUBLICITY_RULES, bookConcert, bookAdvert, givePressKit, giveVideo, giveGift, canBookCalendar, venueAcceptance,venueBookingIssue, chartRows, currentWeekSales } from '../game/publicity';
 import { activityEvents, venueWindow, mediaWindow, concertBookWindow, advertWindow, mediaActionWindow, chartWindow, agendaWindow, resultWindow } from '../ui/activity-windows';
-import { defaultDesign, designCost, bookRelease, type DesignSelection } from '../game/design';
+import { defaultDesign, designCategories, designCost, bookRelease, type DesignSelection } from '../game/design';
 import { designWindow, releaseWindow } from '../ui/design-windows';
 import Phaser from 'phaser';
 import data from '../generated/game-data.json' with { type: 'json' };
-import { advanceDay, calendarDate, candidates, licenseSong, newGame, recruit, SLOT_INSTRUMENTS, SLOT_NAMES } from '../game/model';
+import { advanceDay, calendarDate, candidates, licenseSong, publisherSongs, newGame, recruit, SLOT_INSTRUMENTS, SLOT_NAMES } from '../game/model';
+import musicBusiness from '../generated/music-business.json';
 import type { GameState, Instrument, Musician } from '../game/model';
 import { BrowserSaveStore } from '../game/storage';
-import { button, COLORS, frame, meter, text, title } from '../ui/canvas-ui';
+import { infoFrame, button, COLORS, frame, meter, text, title } from '../ui/canvas-ui';
 import { cursorStyle } from '../ui/cursors';
 import { initialCityAnimation, tickCityAnimation } from '../game/city-animation';
 import type { CityAnimationState } from '../game/city-animation';
-import { chooseSessionMusician, contractOffers, evaluateDemo, demoRefusalVoice, finishRecording, signContract, startRecording, updateChannel } from '../game/recording';
+import { chooseSessionMusician, contractOffers, evaluateDemo, demoRefusalVoice, finishRecording, signContract, startRecording, updateChannel,approveContractDemo,recordableSongIds,currentAlbumSigned,cancelRecordContract } from '../game/recording';
 import { FeedbackAudio } from '../game/feedback-audio';
 import sourceAudio from '../generated/source-window-audio.json';
 import { RecordingAudio } from '../game/recording-audio';
 import { NativeDisplay } from '../ui/native-display';
-import { channelSettingsWindow, contractWindow, labelWindow, mixerWindow, sessionWindow, studioWindow } from '../ui/tutorial-windows';
+import {missionDefinition,missionCards as scenarioCards,type MissionId,isMissionId} from '../game/mission-catalog';
+import {newMission} from '../game/missions';
+import {scenarioEvent,scenarioText} from '../game/scenarios';
+import type {ScenarioEvent} from '../game/scenario-types';
+import {scenarioWindow} from '../ui/scenario-window';
+import {introSegments} from '../ui/mission-intro-sequence';
+import {scenarioBooking} from '../ui/scenario-booking';
+import {completeScenarioQuit,scenarioQuitOccupied} from '../game/scenario-quits';
+import { labelSurveyWindow, channelSettingsWindow, contractWindow, labelWindow, mixerWindow, sessionWindow, studioWindow } from '../ui/tutorial-windows';
 
-type Modal = 'mission-result' | 'mission-warning' | 'bandmate' | 'bandmate-action' | 'bandmate-training' | 'training-result' | 'artist-away' | 'briefing' | 'rehearsal' | 'recruit' | 'rename' | 'menu' | 'help' | 'reset' | 'publisher' | 'songs' | 'missions' | 'quit' | 'studio' | 'mixer' | 'settings' | 'finish-demo' | 'replace-demo' | 'session' | 'label' | 'contract' | 'rejection' | 'design' | 'release' | 'venue' | 'concert-book' | 'media' | 'advert' | 'media-action' | 'chart' | 'agenda' | 'activity-result' | null;
-const musicians: Musician[] = data.musicians;
+type Modal = 'venue-notice'|'tour'|'tour-city'|'tour-stage'|'tour-expenses'|'tour-book'|'tour-ongoing'|'tour-result'|'tour-cancel'|'tour-intro'|'tour-complete'|'label-action' | 'label-survey' | 'gangsta' | 'gangsta-action' | 'gangsta-target' | 'gangsta-security' | 'gangsta-card' | 'video' | 'video-book' | 'video-card' | 'scenario-book' | 'scenario-event' | 'mission-result' | 'mission-warning' | 'bandmate' | 'bandmate-action' | 'bandmate-training' | 'training-result' | 'artist-away' | 'briefing' | 'rehearsal' | 'recruit' | 'rename' | 'menu' | 'help' | 'reset' | 'publisher' | 'songs' | 'missions' | 'quit' | 'studio' | 'mixer' | 'settings' | 'finish-demo' | 'replace-demo' | 'session' | 'label' | 'contract' | 'rejection' | 'design' | 'release' | 'venue' | 'concert-book' | 'media' | 'advert' | 'media-action' | 'chart' | 'agenda' | 'activity-result' | null;
+const musicians: Musician[] = data.allMusicians;
 const money = (value: number) => value.toLocaleString('en-GB');
 
 export class GameScene extends Phaser.Scene {
   private state!: GameState;
   private storage = new BrowserSaveStore();
+  private career:Career={version:1,missions:{}};
   private world!: Phaser.GameObjects.Container;
   private hud!: Phaser.GameObjects.Container;
   private modalLayer?: Phaser.GameObjects.Container;
@@ -49,12 +67,24 @@ export class GameScene extends Phaser.Scene {
   private parentModalKind: Modal = null;
   private selectedStudioId = 'Studio01';
   private selectedLabelId = 'Record01';
+  private selectedPublisherId = 'Publish01';
   private offerIndex = 4;
   private designSelection: DesignSelection = defaultDesign();
   private releaseDay = 6;
   private releaseFirstDay = 0;
   private selectedVenueId = 'Live01';
   private selectedMediaId = 'Media02';
+  private gangstaOffset=0;
+  private gangstaCategoryId='ActCatGangTamper';
+  private gangstaActionId='ActGangStreet';
+  private gangstaTargetIndex=0;
+  private tourDraft=emptyTourDraft();
+  private tourCityId='';
+  private tourResultIndex=0;
+  private tourExpenseIndex=0;
+  private tourStageSelection:string[]=[];
+  private videoIndex=0;
+  private videoCardId='ECOCVideoDone';
   private mediaOffset = 0;
   private selectedActionId = 'ActMediaGivePressKit';
   private selectedAdvertId = 'AdFM01';
@@ -64,13 +94,16 @@ export class GameScene extends Phaser.Scene {
   private bandmateCategoryId = 'ActCatMusicianGifts';
   private bandmateActionId = 'ActGiftDrink01';
   private bandmateModalLayer?: Phaser.GameObjects.Container;
-  private actorPortraits: { layer: Phaser.GameObjects.Container; actor: ActorPortrait }[] = [];
+  private actorPortraits: { layer: Phaser.GameObjects.Container; actor: ActorPortrait; speechKey?:string }[] = [];
   private recruitSpeechId = '';
   private trainingResultId = '';
   private activeActivityResultId = '';
   private selectedChannel = 0;
   private sessionReturn: 'mixer' | 'settings' = 'mixer';
   private recordingAudio = new RecordingAudio();
+  private labelAuditioning = false;
+  private labelAuditionGeneration = 0;
+  private labelAuditionTimer?: Phaser.Time.TimerEvent;
   private mixerMaster = 0.5;
   private recruitDragging = false;
   private recruitDragOffset = 0;
@@ -79,9 +112,11 @@ export class GameScene extends Phaser.Scene {
   private tutorialLayer?: Phaser.GameObjects.Container;
   private tutorialId: string | null = null;
   private tutorialButtonY = 0;
-  private statusLabel!: Phaser.GameObjects.Text;
+  private venueIssue:{cardId:string;reason?:string}={cardId:'ECOCVenueNotLikeStyle'};
+  private venueNoticeReturn:Modal='venue';
   private moneyLabel!: Phaser.GameObjects.Text;
   private dateLabel!: Phaser.GameObjects.Text;
+  private dateAnimationStarted = -Infinity;
   private scroll = 200;
   private running = true;
   private feedbackAudio = new FeedbackAudio();
@@ -93,13 +128,13 @@ export class GameScene extends Phaser.Scene {
   private selectedSongId = '';
   private publisherOffset = 0;
   private missionOffset = 0;
+  private selectedMissionId:MissionId='Mission01';
+  private beforeScenarioBooking?:GameState;
   private selectedInstrument: Instrument = 'Guitar';
   private nameDraft = '';
   private ambient?: Phaser.Sound.BaseSound;
   private cursors?: Phaser.Types.Input.Keyboard.CursorKeys;
   private hasSaved = false;
-  private notice = '';
-  private noticeUntil = 0;
   private handledKeyEvents = new WeakSet<KeyboardEvent>();
   private cityClock = 0;
   private cityLayers: { placeId: string | null; image: Phaser.GameObjects.Image;
@@ -138,7 +173,9 @@ export class GameScene extends Phaser.Scene {
       this.game.renderer.pipelines.addPostPipeline('NativeDisplay', NativeDisplay);
       this.cameras.main.setPostPipeline('NativeDisplay');
     }
-    this.state = evaluateMissionProgress(this.storage.load(musicians) ?? newGame(data.mission.startMoney));
+    this.state = evaluateMissionProgress(this.storage.load(musicians) ?? newMission('Mission01',musicians));
+    this.selectedMissionId=this.state.missionId;
+    this.career=loadCareer(this.state);saveCareer(this.career);
     this.hasSaved = this.state.started;
     this.feedbackAudio.registerSources(sourceAudio.recovered);
     this.feedbackAudio.setMuted(this.state.muted);
@@ -172,22 +209,25 @@ export class GameScene extends Phaser.Scene {
       });
       zone.on('pointerup', () => {
         if (!this.isPlaceAvailable(hotspot.id)) return;
-        if (!this.modal && hotspot.id === 'publish01') {
+        if (!this.modal && (hotspot.id === 'publish01'||hotspot.id==='publish02')) {
           if (this.state.tutorialEnabled && !this.state.seenTutorials.includes('ECOCMis1IntroducePublisher')) {
             this.toast('Visit the Practice Room first.'); return;
           }
-          this.open('publisher'); return;
+          this.selectedPublisherId='Publish'+hotspot.id.slice(-2);this.publisherOffset=0;this.open('publisher'); return;
         }
-        if (!this.modal && (hotspot.id === 'studio01' || hotspot.id === 'studio04')) {
-          this.selectedStudioId = hotspot.id === 'studio01' ? 'Studio01' : 'Studio04';
+        if (!this.modal && data.tutorialGameplay.studios.some(s=>s.id.toLowerCase()===hotspot.id)) {
+          this.selectedStudioId = 'Studio'+hotspot.id.slice(-2);
           this.open(this.state.recording ? 'mixer' : 'studio'); return;
         }
-        if (!this.modal && (hotspot.id === 'record01' || hotspot.id === 'record03')) {
-          this.selectedLabelId = hotspot.id === 'record01' ? 'Record01' : 'Record03'; this.open('label'); return;
+        if (!this.modal && data.tutorialGameplay.labels.some(s=>s.id.toLowerCase()===hotspot.id)) {
+          this.selectedLabelId = 'Record'+hotspot.id.slice(-2); this.open('label'); return;
         }
         if (!this.modal && PUBLICITY_RULES.venues.some(v => v.id.toLowerCase() === hotspot.id)) { this.selectedVenueId = PUBLICITY_RULES.venues.find(v => v.id.toLowerCase() === hotspot.id)!.id; this.open('venue'); return; }
         if (!this.modal && PUBLICITY_RULES.media.some(m => m.id.toLowerCase() === hotspot.id)) { this.selectedMediaId = PUBLICITY_RULES.media.find(m => m.id.toLowerCase() === hotspot.id)!.id; this.mediaOffset = 0; this.open('media'); return; }
-        if (!this.modal && hotspot.id === 'design01') { this.designSelection = defaultDesign(); this.open('design'); return; }
+        if(!this.modal&&hotspot.id==='gangsta01'){this.gangstaOffset=0;this.open('gangsta');return;}
+        if(!this.modal&&hotspot.id==='tour01'){this.open(this.state.tour&&!this.state.tour.completed?'tour-ongoing':'tour');if(!this.state.scenario?.vars.tourIntroduced&&this.modal==='tour')this.open('tour-intro');return;}
+        if(!this.modal&&hotspot.id==='video01'){this.videoIndex=0;this.open('video');return;}
+        if (!this.modal && hotspot.id === 'design01') { this.designSelection = defaultDesign(this.state.missionId); this.open('design'); return; }
         if (!this.modal) this.toast(`${this.placeName(hotspot.id)} is not included in this opening prototype yet.`, 4000);
       });
     }
@@ -212,7 +252,7 @@ export class GameScene extends Phaser.Scene {
         dialogTexts: this.dialogTextObjects(this.modalLayer).map(t => ({text:t.text,x:t.x,y:t.y,width:t.width,height:t.height,font:t.style.fontFamily,size:t.style.fontSize,spacing:t.letterSpacing,nativeFont:(t as NativeText).nativeFontId})), running: this.running, feedbackAudio: this.feedbackAudio.diagnostics, speechPlayback: this.feedbackAudio.playback, actors: this.actorPortraits.filter(item => item.layer.scene === this).map(item => item.actor.diagnostics), tutorialId: this.tutorialId, tutorialButtonY: this.tutorialButtonY, scene: 'Game',
         backgroundModal: this.settingsParentLayer ? 'settings' : this.parentModalKind, recruitOffset: this.recruitOffset, recruitMaxOffset: this.recruitMaxOffset,
         cityAudio:{playing:Boolean(this.ambient?.isPlaying&&!this.ambient?.isPaused)},sourceLayout:this.modalLayer?.getData('sourceLayout'),eventCardButtons:this.modalLayer?.getData('eventCardButtons'),eventCardBounds:this.tutorialLayer?.getData('eventCardBounds')??this.modalLayer?.getData('eventCardBounds'), moodPortraits:this.state.band.map(m=>m?{id:m.musicianId,medium:this.moodPortrait(m.musicianId,'medium'),large:this.moodPortrait(m.musicianId,'large')}:null),
-        selectedStudioId: this.selectedStudioId, selectedLabelId: this.selectedLabelId, offerIndex: this.offerIndex, previewPlaying: this.recordingAudio.playing, recordingPlayback: this.recordingAudio.diagnostics,
+        selectedStudioId: this.selectedStudioId, selectedLabelId: this.selectedLabelId, offerIndex: this.offerIndex, previewPlaying: this.recordingAudio.playing, labelAuditioning:this.labelAuditioning, recordingPlayback: this.recordingAudio.diagnostics,
         mixerKnobs: (this.modalLayer?.list ?? []).filter((object) => object instanceof Phaser.GameObjects.Image && object.name.startsWith('mixer-knob-')).map((object) => {
           const sprite = object as Phaser.GameObjects.Image;
           const reg = data.tutorialMedia.find((m) => m.key === sprite.texture.key)!;
@@ -230,6 +270,27 @@ export class GameScene extends Phaser.Scene {
 
   private isPlaceAvailable(id: string): boolean {
     if (!this.state.started || this.missionHasEnded()) return false;
+    if(id==='live05'&&this.state.missionId==='Mission01')return false;
+    if(id==='media01'&&missionDefinition(this.state.missionId).neverPlaces.includes('Media01'))return false;
+    if(id==='gangsta01')return gangstaAvailable(this.state);
+    if(id==='tour01')return tourAvailable(this.state);
+    if(id==='video01')return videoAvailable(this.state);
+    if(this.state.missionId!=='Mission01'){
+      const definition=missionDefinition(this.state.missionId),nativeId=data.hotspots.find(p=>p.id===id)?.id??id;
+      // Mission03 LeaveMixer explicitly makes Live01–05 available, including
+      // Live05 despite its initial NeverAvailable entry.
+      const unlockedVenue=this.state.missionId==='Mission03'&&id==='live05'&&Boolean(this.state.demo);
+      if(!unlockedVenue&&definition.neverPlaces.some(p=>p.toLowerCase()===nativeId))return false;
+      if(['Mission05','Mission06','Mission07','Mission08'].includes(this.state.missionId)&&definition.availablePlaces.some(p=>p.toLowerCase()===id))return true;
+      if(id.startsWith('publish'))return true;
+      if(id.startsWith('studio'))return this.state.ownedSongs.length>0;
+      if(id.startsWith('record'))return this.state.contract?this.state.contract.labelId.toLowerCase()===id:Boolean(this.state.demo);
+      if(id==='design01')return Boolean(this.state.demo&&this.state.contract&&this.state.contract.approved!==false);
+      if(id.startsWith('live'))return Boolean(this.state.demo);
+      if(id==='media03'&&this.state.scenario?.vars.cityNewsClosed)return false;
+      if(PUBLICITY_RULES.media.some(m=>m.id.toLowerCase()===id))return Boolean(this.state.album);
+      return false;
+    }
     if (id === 'publish01') return !this.state.tutorialEnabled || this.state.seenTutorials.includes('ECOCMis1IntroducePublisher');
     if (id === 'studio01' || id === 'studio04') return this.state.ownedSongs.length > 0
       && (!this.state.tutorialEnabled || this.state.seenTutorials.includes('ECOCMis1IntroduceStudio'));
@@ -282,7 +343,7 @@ export class GameScene extends Phaser.Scene {
       design01: 'Album artwork', gangsta01: 'Sergey Spektor', publish01: 'Song publisher',
       record01: 'Record label', record02: 'Record label', record03: 'Record label', record04: 'Global Records',
       media01: 'Television', media02: 'Radio FM', media03: 'Music press', media04: 'Zero Magazine',
-      media05: 'Record store / charts', tour01: 'Spotlight Tours', video01: 'Music video studio',
+      media05: 'Record store / charts', tour01: 'Spotlight Tours', video01: VIDEO_RULES.studio.name,
     };
     return PUBLICITY_RULES.venues.find(v => v.id.toLowerCase() === id)?.name ?? PUBLICITY_RULES.media.find(m => m.id.toLowerCase() === id)?.name ?? names[id] ?? (id.startsWith('studio') ? 'Recording studio' : 'Concert venue');
   }
@@ -305,10 +366,11 @@ export class GameScene extends Phaser.Scene {
       hit.on('pointerup', () => { if (!this.modal && this.state.started) { this.selectedSlot = slot; this.open('rehearsal'); } });
     }
     this.hudText(698, 32, 'Assets', '#b4b4b4');
-    const agendaHit = this.add.zone(663, 77, 93, 45).setOrigin(0).setInteractive({ cursor: cursorStyle('active') }); this.hud.add(agendaHit); agendaHit.on('pointerup', () => { if (!this.modal && this.state.started) { this.activityFirstDay = this.state.day - 3; this.open('agenda'); } });
+    const agendaHit = this.add.zone(665, 17, 95, 104).setOrigin(0).setInteractive({ cursor: cursorStyle('active') }); this.hud.add(agendaHit); agendaHit.on('pointerup', () => { if (!this.modal && this.state.started) { this.activityFirstDay = this.state.day - 8; this.open('agenda'); } });
     this.hudText(698, 80, 'Date', '#b4b4b4');
     this.moneyLabel = this.hudText(711, 54, money(this.state.money), '#eeeeee').setOrigin(0.5, 0);
-    this.dateLabel = this.hudText(711, 104, this.headerDate(), '#eeeeee').setOrigin(0.5, 0);
+    this.dateLabel = this.hudText(711, 109, this.headerDate(), '#eeeeee').setOrigin(0.5);
+    this.animateDate();
     this.hud.add(this.add.image(273, 20, 'rehearsal').setOrigin(0));
     const rehearsalHit = this.add.rectangle(270, 19, 253, 80, 0xffffff, 0).setOrigin(0).setInteractive({ cursor: cursorStyle('active') });
     this.hud.add(rehearsalHit);
@@ -320,13 +382,6 @@ export class GameScene extends Phaser.Scene {
     // Keep prototype transport controls inside the recovered surround. The
     // original BITD masks supply the sides and lower curves, without stretching.
     this.hud.add(this.add.image(40, 550, 'city-frame-bottom').setOrigin(0));
-    this.statusLabel = text(this, this.hud, 95, 561, '', 12, COLORS.muted, 320);
-    button(this, this.hud, 45, 556, 42, '‹', () => { this.scroll = Math.max(0, this.scroll - 80); }, this.modal === null, 28);
-    button(this, this.hud, 425, 556, 42, '›', () => { this.scroll = Math.min(400, this.scroll + 80); }, this.modal === null, 28);
-    button(this, this.hud, 480, 556, 110, this.running ? 'Pause' : 'Play', () => {
-      this.running = !this.running; this.clock = 0; this.drawHud();
-    }, this.modal === null && this.state.started, 28);
-    button(this, this.hud, 600, 556, 155, 'Advance one day', () => this.tickDay(), this.modal === null && this.state.started, 28);
     for (const mask of data.cityFrame) {
       const image = this.add.image(mask.x, mask.y, mask.key).setOrigin(0);
       // The opaque header covers the upper portion in the original score.
@@ -337,34 +392,36 @@ export class GameScene extends Phaser.Scene {
   }
 
   private save(): void {
+    this.career=recordCareer(this.career,this.state);saveCareer(this.career);
     this.hasSaved = this.storage.save(this.state);
     if (!this.hasSaved) this.toast('Browser storage is unavailable. This session cannot be saved.', 6000);
   }
 
-  private toast(message: string, duration = 3000): void {
-    this.notice = message; this.noticeUntil = this.time.now + duration; this.updateStatus();
+  // Prototype status/debug messages are not part of the original HUD.
+  private toast(message:string,_duration=3000):void {
+    if(/(?:cannot afford|can't afford|not enough (?:cash|money)|insufficient funds)/i.test(message)&&this.modal!=='venue-notice'){
+      this.venueIssue={cardId:'ECOCNoMoneyWarning'};this.venueNoticeReturn=this.modal;this.open('venue-notice');
+    }
   }
-
-  private updateStatus(): void {
-    if (!this.statusLabel) return;
-    const filled = this.state.band.filter(Boolean).length;
-    this.statusLabel.setText(this.time.now < this.noticeUntil ? this.notice
-      : `${data.mission.name}  ·  Day ${this.state.day}  ·  ${this.state.publicity.top10Day !== null ? 'Top 10!' : 'Band ' + filled + '/5'}  ·  ${this.hasSaved ? 'Saved' : 'New mission'}`);
-  }
+  private updateStatus():void {}
 
   private tickDay(): void {
-    if(this.modal || this.tutorialId || this.missionHasEnded() || this.state.missionProgress?.pendingFailure) return;
+    if(this.modal&&this.modal!=='tour-ongoing' || this.tutorialId || this.missionHasEnded() || this.state.missionProgress?.pendingFailure) return;
     void this.feedbackAudio.play('Tick', true);
     const oldSales = this.state.publicity.totalSales;
+    const oldTourResults=this.state.tour?.results.length??0;
     const result = advanceDay(this.state, musicians);
     this.state = result.state;
     this.save();
     this.moneyLabel.setText(money(this.state.money));
-    this.dateLabel.setText(this.headerDate());
+    this.dateAnimationStarted = this.time.now;
     if (result.unpaid) this.toast(`Cannot cover ${money(result.unpaid)} in weekly wages.`, 4500);
     else if (this.state.album?.releaseDay === this.state.day) this.toast('Your album has been released.', 4500);
     else if (result.wages) this.toast(`Payday: ${money(result.wages)} paid in weekly wages.`, 4500);
     else if (this.state.publicity.totalSales > oldSales) this.toast(`${Math.round(this.state.publicity.totalSales - oldSales)} records sold today.`, 4500);
+    this.drawHud();
+    if((this.state.tour?.results.length??0)>oldTourResults){this.tourResultIndex=oldTourResults;this.open('tour-result');return;}
+    if(this.state.tour&&!this.state.tour.seen&&this.state.day>=this.state.tour.startDay){this.open('tour-ongoing');return;}
     if (!this.presentMissionOutcome() && !this.presentNextActivityResult()) this.showProgressTutorial();
   }
 
@@ -372,6 +429,13 @@ export class GameScene extends Phaser.Scene {
     const [year, month, day] = this.state.startDate.split('-').map(Number);
     return new Intl.DateTimeFormat('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'UTC' })
       .format(new Date(Date.UTC(year, month - 1, day + this.state.day))).replace(/\/(?=\d{4}$)/, ' ');
+  }
+
+  private animateDate(): void {
+    // DateDisplayScript.timeTick increments before indexing this source list.
+    const scales = [1.1, 1.3, 1.5, 1.3, 1.2, 1.1, 1];
+    const frame = Math.floor((this.time.now - this.dateAnimationStarted) * data.city.movieFPS / 1000);
+    this.dateLabel?.setScale(frame >= 0 && frame < scales.length - 1 ? scales[frame + 1] : 1);
   }
 
   private toggleSound(): void {
@@ -387,6 +451,7 @@ export class GameScene extends Phaser.Scene {
     if(kind===null && this.missionHasEnded())kind='mission-result';
     else if(kind===null && this.state.missionProgress?.pendingFailure)kind='mission-warning';
     const previous = this.modal;
+    if(previous!==kind&&this.labelAuditioning){this.labelAuditioning=false;this.labelAuditionGeneration++;this.labelAuditionTimer?.remove();this.labelAuditionTimer=undefined;}
     if(kind)this.ambient?.stop(); // ScrollingCityScript.pause kills city sound under windows.
     if(kind==='publisher'&&previous!=='publisher'){this.selectedSongId='';this.publisherOffset=0;}
     if (previous !== kind) this.feedbackAudio.stop();
@@ -396,17 +461,23 @@ export class GameScene extends Phaser.Scene {
       this.feedbackAudio.stopPlace();
       const returning=previous==='concert-book'&&kind==='venue';
       if(kind==='venue'&&!returning)void this.feedbackAudio.playPlace(this.selectedVenueId);
+      if(kind==='gangsta'&&!['label-action','label-survey','gangsta-action','gangsta-target','gangsta-security'].includes(previous??''))this.feedbackAudio.template(gangstaSpeech(this.state));
+      if(kind==='video'&&previous!=='video-book')void this.feedbackAudio.playPlace('Video01');
       if(kind==='studio'&&previous!=='replace-demo')void this.feedbackAudio.playPlace(this.selectedStudioId);
     }
     // These SoundScript objects belong to the dialog, not a render pass.
-    if(kind==='briefing'&&previous!==kind)void this.feedbackAudio.play('Intro01_01',false,1);
+    if(kind==='briefing'&&previous!==kind&&this.state.missionId==='Mission01')void this.feedbackAudio.play('Intro01_01',false,1);
     if(kind==='mission-result'&&previous!==kind&&this.state.missionProgress?.status==='lost')void this.feedbackAudio.play('A131',false,.7);
     if(kind==='activity-result'&&previous!==kind){
       const review=this.state.publicity.reviews.find(r=>r.id===this.activeActivityResultId);
       if(review&&(review.mediaId==='Media03'||review.mediaId==='Media04'))void this.feedbackAudio.play('Snare',true,.7);
     }
     if (kind === 'media' && previous !== 'media' && previous !== 'media-action' && previous !== 'advert' && previous !== 'chart') this.feedbackAudio.greeting(this.selectedMediaId, this.state.publicity.reporters.find(r => r.mediaId === this.selectedMediaId)?.mood ?? .5);
-    if (kind === 'label' && previous !== 'label' && previous !== 'contract' && previous !== 'rejection') this.feedbackAudio.greeting(this.selectedLabelId);
+    if (kind === 'label' && previous !== 'label' && previous !== 'contract' && previous !== 'rejection' && previous !== 'label-action' && previous !== 'label-survey') {
+      if(this.state.contract?.labelId===this.selectedLabelId)this.feedbackAudio.labelSpeech(this.selectedLabelId,'contractGreeting');
+      else this.feedbackAudio.greeting(this.selectedLabelId);
+    }
+    if(kind==='contract'&&previous!=='contract')this.feedbackAudio.labelSpeech(this.selectedLabelId,'contract');
     if (kind === 'activity-result') {
       const result = this.state.publicity.concertResults.find(r => r.id === this.activeActivityResultId);
       if (result && !result.cancelled) {
@@ -435,9 +506,12 @@ export class GameScene extends Phaser.Scene {
       this.bandmateModalLayer?.destroy(true); this.bandmateModalLayer = undefined;
     }
     const bandChild = kind === 'artist-away' || kind === 'bandmate' || kind === 'bandmate-action' || kind === 'bandmate-training' || kind === 'recruit' || kind === 'rename' || kind === 'songs';
-    const child = bandChild || kind === 'contract' || kind === 'rejection' || kind === 'session' || kind === 'settings' || kind === 'finish-demo' || kind === 'replace-demo' || kind === 'release' || ['concert-book','advert','media-action','chart'].includes(kind ?? '');
-    const isParent = previous === 'rehearsal' || previous === 'label' || previous === 'mixer' || previous === 'studio' || previous === 'design' || previous === 'venue' || previous === 'media';
-    if (child && isParent) {
+    const child = bandChild || kind === 'venue-notice' || kind === 'contract' || kind === 'rejection' || kind === 'session' || kind === 'settings' || kind === 'finish-demo' || kind === 'replace-demo' || kind === 'release' || ['tour-result','tour-cancel','tour-intro','tour-city','tour-stage','tour-expenses','tour-book','gangsta-action','gangsta-target','gangsta-security','gangsta-card','video-book','video-card','concert-book','advert','media-action','chart'].includes(kind ?? '');
+    const isParent = previous === 'tour-ongoing' || previous === 'tour' || previous === 'rehearsal' || previous === 'label' || previous === 'mixer' || previous === 'studio' || previous === 'design' || previous === 'concert-book' || previous === 'venue' || previous === 'media' || previous === 'video' || previous==='gangsta';
+    if (child && isParent && previous !== kind) {
+      // Replacing the retained parent must also remove its suspended graphics.
+      // Calendar redraws keep their existing parent rather than orphaning it.
+      this.parentModalLayer?.destroy(true);
       this.parentModalLayer = this.modalLayer; this.parentModalLayer?.setDepth(49); this.modalLayer = undefined;
       this.parentModalKind = previous;
       if (this.parentModalLayer) suspend(this.parentModalLayer);
@@ -453,6 +527,9 @@ export class GameScene extends Phaser.Scene {
     if (!kind) {
       if(!this.ambient?.isPlaying)this.ambient?.play();
       this.state = applyBandmateExitToCity(this.state); this.save();
+      if(previous&&previous!=='menu'&&previous!=='briefing')this.dispatchScenario({kind:'city'});
+      if(this.presentMissionOutcome())return;
+      if(this.state.scenario?.queue.length){this.open('scenario-event');return;}
       if (this.presentNextActivityResult()) return;
       if ((previous === 'media' || previous === 'advert') && this.state.publicity.firstMediaVisitDay === null) { this.state = { ...this.state, publicity: { ...this.state.publicity, firstMediaVisitDay: this.state.day } }; this.save(); }
       const guidance=pendingMission01Guidance(this.state,{previousModal:previous,acknowledgedDays:this.state.tutorialAcknowledgedDays});
@@ -462,22 +539,24 @@ export class GameScene extends Phaser.Scene {
     }
     const layer = this.add.container(0, 0).setDepth(50);
     this.modalLayer = layer;
-    const shade = this.add.rectangle(0, 0, 800, 600, 0x080508, ['release','concert-book','advert','media-action','chart','bandmate-action','bandmate-training'].includes(kind) ? 0 : 0.25).setOrigin(0).setInteractive();
+    const shade = this.add.rectangle(0, 0, 800, 600, 0x080508, ['gangsta-action','gangsta-target','gangsta-security','gangsta-card','video-book','video-card','release','concert-book','advert','media-action','chart','bandmate-action','bandmate-training'].includes(kind) ? 0 : 0.25).setOrigin(0).setInteractive();
     layer.add(shade);
-    if (kind === 'menu') { /* MainMenuScript derives its own surround. */ }
+    if (kind.startsWith('tour')||kind === 'menu'||kind==='venue-notice'||kind==='gangsta'||kind==='gangsta-action'||kind==='gangsta-target'||kind==='gangsta-security'||kind==='gangsta-card'||kind==='video'||kind==='video-book'||kind==='video-card'||kind==='scenario-event'||kind==='scenario-book') { /* Source renderers derive their own surround. */ }
     else if (kind === 'recruit') frame(this, layer, 293, 95, 358, 483, 'dialog');
     else if (kind === 'rehearsal') frame(this, layer, 60, 77, 683, 462, 'dialog');
-    else if (['quit','reset','finish-demo','replace-demo','rejection','publisher','rename','missions','briefing','studio', 'mixer', 'settings', 'label', 'contract', 'session', 'design', 'release', 'venue', 'concert-book', 'media', 'advert', 'media-action', 'chart', 'agenda', 'activity-result', 'bandmate', 'bandmate-action', 'bandmate-training', 'training-result', 'artist-away', 'mission-result', 'mission-warning'].includes(kind)) { /* Native window functions compose their own recovered frames. */ }
+    else if (['label-action','label-survey','quit','reset','finish-demo','replace-demo','rejection','publisher','rename','missions','briefing','studio', 'mixer', 'settings', 'label', 'contract', 'session', 'design', 'release', 'venue', 'concert-book', 'media', 'advert', 'media-action', 'chart', 'agenda', 'activity-result', 'bandmate', 'bandmate-action', 'bandmate-training', 'training-result', 'artist-away', 'mission-result', 'mission-warning'].includes(kind)) { /* Native window functions compose their own recovered frames. */ }
     else frame(this, layer, 48, 154, 704, 396, 'dialog');
     if (kind === 'publisher' || kind === 'songs') this.songDialog(layer, kind === 'publisher');
     if (kind === 'briefing') this.briefing(layer);
+    if (kind === 'scenario-event') this.scenarioCard(layer);
+    if(kind==='scenario-book')this.bookScenarioAppointment(layer);
     if (kind === 'rehearsal') this.rehearsal(layer);
     if (kind === 'recruit') this.recruitment(layer);
     if (kind === 'bandmate') { this.bandmate(layer); if (previous !== 'bandmate' && previous !== 'bandmate-action' && previous !== 'bandmate-training') this.feedbackAudio.template(bandmateGreeting(this.state, this.selectedId)); }
     if (kind === 'bandmate-action') this.bandmateAction(layer);
     if (kind === 'bandmate-training') this.bandmateTraining(layer);
     if (kind === 'training-result') this.trainingResult(layer);
-    if (kind === 'artist-away') renderEventCard(this,layer,{headline:'Gone Fishing',text:'This artist is busy elsewhere.',windowTitle:'Info',icon:'calendar',onConfirm:()=>this.open('rehearsal')});
+    if (kind === 'artist-away') renderEventCard(this,layer,{headline:'Gone Fishing',text:'This artist is busy elsewhere.',windowTitle:'Info',icon:'megaphone',onConfirm:()=>this.open('rehearsal')});
     if (kind === 'rename') this.rename(layer);
     if (kind === 'menu') this.menu(layer);
     if (kind === 'help') this.help(layer);
@@ -487,7 +566,7 @@ export class GameScene extends Phaser.Scene {
     if (kind === 'missions') this.missionSelection(layer);
     if (kind === 'quit') this.quitConfirmation(layer);
     if (kind === 'design') designWindow(this, layer, this.state, musicians, this.designSelection, (index, direction) => {
-      const options = data.design.categories[index].elements; const next = [...this.designSelection]; next[index] = options[(options.indexOf(next[index]) + direction + options.length) % options.length]; this.designSelection = next; this.open('design');
+      const options = designCategories(this.state.missionId)[index].elements; const next = [...this.designSelection]; next[index] = options[(options.indexOf(next[index]) + direction + options.length) % options.length]; this.designSelection = next; this.open('design');
     }, () => {
       if (!this.state.contract) { this.toast('Sign a record contract before scheduling this album.'); return; }
       if (designCost(this.designSelection) > this.state.money) { this.toast('You cannot afford this cover design.'); return; }
@@ -495,14 +574,15 @@ export class GameScene extends Phaser.Scene {
     }, () => this.open(null));
     if (kind === 'release') releaseWindow(this, layer, this.state, musicians, this.designSelection, this.releaseDay, this.releaseFirstDay,
       day => { this.releaseDay = day; this.open('release'); }, direction => { this.releaseFirstDay = Phaser.Math.Clamp(this.releaseFirstDay + direction, this.state.day - 23, this.state.day + 83); this.open('release'); },
-      () => { try { this.state = bookRelease(this.state, musicians, this.designSelection, this.releaseDay); this.save(); this.drawHud(); this.open(null); this.toast('Cover designed and album release scheduled.'); } catch(error) { this.toast((error as Error).message); } }, () => this.open('design'), activityEvents(this.state), day => canBookCalendar(this.state, 'release', day));
+      () => { try { this.state = bookRelease(this.state, musicians, this.designSelection, this.releaseDay); this.dispatchScenario({kind:'release'});this.dispatchScenario({kind:'place',placeId:'Design01'});this.save(); this.drawHud(); this.open(null); this.toast('Cover designed and album release scheduled.'); } catch(error) { this.toast((error as Error).message); } }, () => this.open('design'), activityEvents(this.state), day => canBookCalendar(this.state, 'release', day));
+    if(kind==='venue-notice'){const card=venueCards.cards.find(c=>c.ID===this.venueIssue.cardId)!;const venue=PUBLICITY_RULES.venues.find(v=>v.id===this.selectedVenueId)!;scenarioWindow(this,layer,{...card,comment:this.venueIssue.reason??card.comment},{expand:t=>t.replace(/<¤CPlace.Name>/gi,venue.name),confirm:()=>this.open(this.venueNoticeReturn)});void this.feedbackAudio.play('_EventCard',true);}
     if (kind === 'venue') venueWindow(this, layer, this.state, this.selectedVenueId, () => {
-      const accepted = venueAcceptance(this.state, musicians, this.selectedVenueId); if (!accepted.accepted) { this.toast(accepted.reason, 5500); return; }
+      const issue=venueBookingIssue(this.state,musicians,this.selectedVenueId);if(issue){this.venueIssue=issue;this.venueNoticeReturn='venue';this.open('venue-notice');return;}
       this.activityDay = this.closestActivityDay('concert', this.state.day + 2, 1); this.activityFirstDay = this.state.day - 3; this.open('concert-book');
     }, () => this.open(null));
     if (kind === 'concert-book') concertBookWindow(this, layer, this.state, this.selectedVenueId, this.activityDay, this.activityFirstDay,
       day => { this.activityDay = day; this.open('concert-book'); }, direction => this.scrollActivityAgenda(direction, 'concert-book'), day => canBookCalendar(this.state, 'concert', day),
-      () => this.performActivity(() => bookConcert(this.state, musicians, this.selectedVenueId, this.activityDay), null, 'Show booked.'), () => this.open('venue'));
+      () => {const issue=venueBookingIssue(this.state,musicians,this.selectedVenueId);if(issue){this.venueIssue=issue;this.venueNoticeReturn='concert-book';this.open('venue-notice');return;}this.performActivity(()=>bookConcert(this.state,musicians,this.selectedVenueId,this.activityDay),null,'');}, () => this.open('venue'));
     if (kind === 'media') {
       mediaWindow(this, layer, this.state, this.selectedMediaId, this.mediaOffset,
         offset => { this.mediaOffset = offset; this.open('media'); }, id => this.chooseMediaCategory(id), () => this.open(null));
@@ -517,14 +597,61 @@ export class GameScene extends Phaser.Scene {
       () => this.performActivity(() => bookAdvert(this.state, this.selectedAdvertId, this.activityDay, this.activityDuration), null, 'Advert campaign booked.'), () => this.open('media'));
     if (kind === 'media-action') mediaActionWindow(this, layer, this.state, this.selectedMediaId, this.selectedActionId,
       direction => { const gifts = PUBLICITY_RULES.gifts; const index = Phaser.Math.Clamp(gifts.findIndex(g => g.id === this.selectedActionId) + direction, 0, gifts.length - 1); this.selectedActionId = gifts[index].id; this.open('media-action'); },
-      () => this.performActivity(() => this.selectedActionId === 'ActMediaGivePressKit' ? givePressKit(this.state, this.selectedMediaId, musicians) : giveGift(this.state, this.selectedActionId, this.selectedMediaId), 'media', this.selectedActionId === 'ActMediaGivePressKit' ? 'Press kit delivered.' : 'Gift delivered.'), () => this.open('media'));
+      () => this.performActivity(() => this.selectedActionId==='ActMediaTVGiveVideoClip'?giveVideo(this.state,this.selectedMediaId):this.selectedActionId === 'ActMediaGivePressKit' ? givePressKit(this.state, this.selectedMediaId, musicians) : giveGift(this.state, this.selectedActionId, this.selectedMediaId), 'media', this.selectedActionId==='ActMediaTVGiveVideoClip'?'':this.selectedActionId === 'ActMediaGivePressKit' ? 'Press kit delivered.' : 'Gift delivered.'), () => this.open('media'));
     if (kind === 'chart') chartWindow(this, layer, this.selectedMediaId, chartRows(this.state, this.selectedMediaId), () => this.open('media'));
+    if(kind==='tour')tourWindow(this,layer,this.state,this.tourDraft,id=>{if(id==='TCRockCity')return;this.tourCityId=id;this.open('tour-city');},amount=>{this.tourDraft.rotation+=amount;this.open('tour');},()=>{this.tourStageSelection=this.tourDraft.stage.length?[...this.tourDraft.stage]:TOUR_RULES.categories.map(c=>c.elements[0]);this.open('tour-stage');},()=>{this.tourExpenseIndex=Math.max(0,TOUR_RULES.expenses.findIndex(e=>e.ID===this.tourDraft.expenseId));this.open('tour-expenses');},()=>{this.activityDay=this.state.day+3;this.activityFirstDay=this.state.day-3;this.open('tour-book');},()=>this.open(null));
+    if(kind==='tour-city')tourCityWindow(this,layer,this.tourDraft,this.tourCityId,()=>{const cities=this.tourDraft.cities;this.tourDraft.cities=cities.includes(this.tourCityId)?cities.filter(id=>id!==this.tourCityId):[...cities,this.tourCityId];this.open('tour');},()=>this.open('tour'));
+    if(kind==='tour-stage')tourStageWindow(this,layer,this.state,musicians,this.tourStageSelection,(i,id)=>{this.tourStageSelection[i]=id;this.open('tour-stage');},()=>{this.tourDraft.stage=[...this.tourStageSelection];this.open('tour');},()=>this.open('tour'));
+    if(kind==='tour-expenses')tourExpenseWindow(this,layer,this.tourExpenseIndex,i=>{this.tourExpenseIndex=i;this.open('tour-expenses');},()=>{this.tourDraft.expenseId=TOUR_RULES.expenses[this.tourExpenseIndex].ID;this.open('tour');},()=>this.open('tour'));
+    if(kind==='tour-book')tourBookingWindow(this,layer,this.state,this.tourDraft,this.activityDay,this.activityFirstDay,day=>{this.activityDay=day;this.open('tour-book');},dir=>{this.activityFirstDay+=dir;this.open('tour-book');},()=>{try{this.state=bookTour(this.state,this.tourDraft.cities,this.tourDraft.stage,this.tourDraft.expenseId,this.activityDay);this.save();this.open(null);}catch(e){this.toast((e as Error).message);}},()=>this.open('tour'));
+    if(kind==='tour-ongoing')tourOngoingWindow(this,layer,this.state,()=>{this.state={...this.state,tour:{...this.state.tour!,seen:true}};this.save();this.open(this.state.tour!.cancelled?null:'tour-complete');},()=>this.open('tour-cancel'));
+    if(kind==='tour-result'){
+      tourResultWindow(this,layer,this.state,this.tourResultIndex,()=>{this.state={...this.state,tour:{...this.state.tour!,seenResults:this.tourResultIndex+1}};this.save();this.open('tour-ongoing');});
+      const result=this.state.tour!.results[this.tourResultIndex],city=TOUR_RULES.cities.find(c=>c.ID===result.venueId)!;this.feedbackAudio.concert('Live06',result.satisfaction,result.audience/Number(city.size));
+    }
+    if(kind==='tour-cancel'||kind==='tour-intro'||kind==='tour-complete'){
+      const card=TOUR_RULES.cards.find(c=>c.ID===(kind==='tour-cancel'?'ECOCBandTourCancel':kind==='tour-complete'?'ECOCTourComplete':'ECOCIntroduceWorldTour'))!;
+      renderEventCard(this,layer,{windowTitle:card.name,headline:card.Headline,text:scenarioText(card.comment,this.state,musicians),question:card.question,icon:card.icon,confirmLabel:card.ButtonOK.name,onConfirm:()=>{if(kind==='tour-cancel'){this.state=cancelTour(this.state);this.save();this.open('tour-ongoing');}else if(kind==='tour-complete')this.open(null);else{this.state.scenario!.vars.tourIntroduced=true;this.save();this.open('tour');}},...(kind==='tour-cancel'?{cancelLabel:card.ButtonCancel.name,onCancel:()=>this.open('tour-ongoing')}:{})});
+    }
+    if(kind==='gangsta'){
+      gangstaWindow(this,layer,this.gangstaOffset,offset=>{this.gangstaOffset=offset;this.open('gangsta');},id=>{
+        this.gangstaCategoryId=id;this.gangstaActionId=gangstaActions(this.state,id)[0];
+        if(id==='ActCatGangSecurity'){this.activityDay=this.state.day+1;this.activityFirstDay=this.state.day-3;this.open('gangsta-security');}else this.open('gangsta-action');
+      },()=>this.open(null));this.bindActor(layer,'gangsta01',162,84);
+    }
+    if(kind==='gangsta-action'){
+      const actions=gangstaActions(this.state,this.gangstaCategoryId),index=actions.indexOf(this.gangstaActionId);
+      bandmateActionWindow(this,layer,this.state,this.gangstaCategoryId,this.gangstaActionId,canUseGangsta(this.state,this.gangstaActionId),
+        direction=>{this.gangstaActionId=actions[Phaser.Math.Clamp(index+direction,0,actions.length-1)];this.open('gangsta-action');},
+        ()=>{if(this.gangstaCategoryId==='ActCatGangMurder'){this.gangstaTargetIndex=0;this.open('gangsta-target');}else this.performGangstaAction();},()=>this.open('gangsta'),
+        {previousEnabled:index>0,nextEnabled:index<actions.length-1,actionCount:actions.length,price:gangstaPrice(this.state,this.gangstaActionId)});
+    }
+    if(kind==='gangsta-target'){
+      const members=this.state.band.flatMap(b=>b?[musicians.find(m=>m.id===b.musicianId)!]:[]),person=members[this.gangstaTargetIndex];
+      gangstaTargetWindow(this,layer,members,this.gangstaTargetIndex,person?this.moodPortrait(person.id,'large'):'',index=>{this.gangstaTargetIndex=index;this.open('gangsta-target');},()=>this.performGangstaAction(person.id),()=>this.open('gangsta-action'));
+    }
+    if(kind==='gangsta-security')bandmateTrainingWindow(this,layer,this.state,'ActGangSecurity',7,this.activityDay,this.activityFirstDay,activityEvents(this.state),
+      day=>{this.activityDay=day;this.open('gangsta-security');},direction=>this.scrollActivityAgenda(direction,'gangsta-security'),day=>canBookCalendar(this.state,'advert',day,7),
+      ()=>{try{this.state=bookSecurity(this.state,this.activityDay,musicians);this.save();this.drawHud();this.open('gangsta');}catch(error){this.toast((error as Error).message);}},()=>this.open('gangsta'));
+    if(kind==='gangsta-card')this.gangstaCard(layer);
+    if(kind==='video')videoWindow(this,layer,this.videoIndex,index=>{this.videoIndex=index;this.open('video');},()=>this.beginVideoBooking(),()=>this.open(null));
+    if(kind==='video-book')videoBookingWindow(this,layer,this.state,this.videoIndex,this.activityDay,this.activityFirstDay,
+      day=>{this.activityDay=day;this.open('video-book');},direction=>this.scrollActivityAgenda(direction,'video-book'),
+      day=>canBookVideo(this.state,VIDEO_RULES.concepts[this.videoIndex].id,day),
+      ()=>this.performActivity(()=>scenarioEvent(bookVideo(this.state,VIDEO_RULES.concepts[this.videoIndex].id,this.activityDay),{kind:'action',actionId:'BookVideoProduction'},musicians),null,''),()=>this.open('video'));
+    if(kind==='video-card'){
+      const card=VIDEO_RULES.cards.find(c=>c.ID===this.videoCardId)!;
+      const bitmap=data.activities.bitmaps.find(b=>b.name===card.Gfx);
+      scenarioWindow(this,layer,card,{pictureRegistration:bitmap?{x:bitmap.regX!,y:bitmap.regY!}:undefined,portraitKey:card.Gfx?'activity-'+card.Gfx.replaceAll(' ','_').toLowerCase():undefined,expand:value=>value,confirm:()=>this.dismissVideoCard()});
+    }
     if (kind === 'agenda') agendaWindow(this, layer, this.state, this.activityFirstDay, direction => this.scrollActivityAgenda(direction, 'agenda'), () => this.open(null));
     if (kind === 'activity-result') { const result = [...this.state.publicity.concertResults, ...this.state.publicity.reviews].find(r => r.id === this.activeActivityResultId); if (result) resultWindow(this, layer, this.state, musicians, result, () => this.acknowledgeActivityResult()); }
     if (kind === 'studio') this.studio(layer);
     if (kind === 'mixer') this.mixer(layer);
     if (kind === 'settings') this.channelSettings(layer);
-    if (kind === 'label') { this.label(layer); this.bindActor(layer, this.selectedLabelId, 167, 118); }
+    if(kind==='label-action')bandmateActionWindow(this,layer,this.state,'ActCatRecordCancelContract','ActRecordCancelContract',true,()=>{},()=>{this.state=cancelRecordContract(this.state);this.save();this.open(null);},()=>this.open('label'));
+    if(kind==='label-survey')labelSurveyWindow(this,layer,this.state,()=>this.open('label'));
+    if (kind === 'label') { this.label(layer);const signed=this.state.contract?.labelId===this.selectedLabelId;this.bindActor(layer, this.selectedLabelId, signed?162:167, signed?114:118); }
     if (kind === 'contract') this.contract(layer);
     if (kind === 'session') this.sessionMusician(layer);
     if (kind === 'finish-demo' || kind === 'replace-demo' || kind === 'rejection') this.recordingConfirmation(layer, kind);
@@ -548,15 +675,47 @@ export class GameScene extends Phaser.Scene {
     return suggested;
   }
   private scrollActivityAgenda(direction: number, kind: Modal): void {
-    this.activityFirstDay = Phaser.Math.Clamp(this.activityFirstDay + direction, this.state.day - 23, this.state.day + 83); this.open(kind);
+    this.activityFirstDay = Phaser.Math.Clamp(this.activityFirstDay + direction, this.state.day - (kind==='agenda'?28:23), this.state.day + (kind==='agenda'?12:83)); this.open(kind);
   }
   private performActivity(action: () => GameState, next: Modal, message: string): void {
     try { this.state = action(); this.save(); this.drawHud(); this.open(next); this.toast(message);
       if (next === 'media') {
         const reporter = this.state.publicity.reporters.find(r => r.mediaId === this.selectedMediaId);
-        this.feedbackAudio.gift(this.selectedMediaId, reporter?.modifiers.at(-1)?.amount ?? 0, this.selectedActionId === 'ActMediaGivePressKit');
+        this.feedbackAudio.gift(this.selectedMediaId, reporter?.modifiers.at(-1)?.amount ?? 0, this.selectedActionId === 'ActMediaGivePressKit'||this.selectedActionId==='ActMediaTVGiveVideoClip');
       }
     } catch (error) { this.toast((error as Error).message, 5500); }
+  }
+  private performGangstaAction(actorId?:string):void {
+    try{
+      this.state=useGangsta(this.state,this.gangstaActionId,musicians,actorId);this.save();this.drawHud();this.open('gangsta');
+      this.feedbackAudio.template(actorId==='RMCPernille'&&this.gangstaCategoryId==='ActCatGangMurder'?'g01new01009':gangstaSpeech(this.state,this.gangstaActionId));
+    }catch(error){this.toast((error as Error).message);}
+  }
+  private dismissGangstaCard():void{this.state=resolveGangstaCard(this.state);this.save();this.drawHud();this.open(null);}
+  private gangstaCard(layer:Phaser.GameObjects.Container):void{
+    const pending=this.state.gangsta?.queue[0];if(!pending){this.open(null);return;}
+    const card=GANGSTA_RULES.cards.find(c=>c.ID.toLowerCase()===pending.id.toLowerCase())!;
+    const musician=musicians.find(m=>m.id===pending.actorId),office=/HmGangsta01/i.test(card.Gfx??'');
+    const bitmap=data.activities.bitmaps.find(b=>b.name===card.Gfx);
+    const artwork=bitmap?'activity-'+bitmap.name.replaceAll(' ','_').toLowerCase():'source-window-'+(card.Gfx??'').replaceAll(' ','_').toLowerCase();
+    const recoveredRegistration=bitmap?{x:bitmap.regX!,y:bitmap.regY!}:card.Gfx==='live smashed demo01'?{x:GANGSTA_RULES.artwork['live smashed demo01'].regX,y:GANGSTA_RULES.artwork['live smashed demo01'].regY}:undefined;
+    const expand=(value:string)=>scenarioText(value.replace(/missionvar\.my(?:knocked|killed)/gi,'¤CRealMusician'),this.state,musicians,pending.actorId);
+    const result=scenarioWindow(this,layer,card,{portraitKey:office?undefined:/^<|^human$/i.test(card.Gfx??'')&&musician?this.moodPortrait(musician.id,'large'):this.textures.exists(artwork)?artwork:undefined,
+      pictureRegistration:recoveredRegistration,actorId:office?'gangsta01':undefined,expand,confirm:()=>this.dismissGangstaCard()});
+    if(office&&result.portraitRect)this.bindActor(layer,'gangsta01',result.portraitRect.x,result.portraitRect.y);
+    const voice=String(card.ExecuteThis??'').match(/g01new\d+/i)?.[0];if(voice)void this.feedbackAudio.play(voice);else if(/playsound/i.test(card.ExecuteThis??''))void this.feedbackAudio.play('Snare',true,.7);
+  }
+  private beginVideoBooking():void {
+    if(!this.state.demo||!this.state.contract||this.state.contract.songId!==this.state.demo.songId){this.videoCardId='ECOCVideoNoAlbum';this.open('video-card');return;}
+    if(currentVideo(this.state)){this.videoCardId='ECOCVideoTwo';this.open('video-card');return;}
+    const concept=VIDEO_RULES.concepts[this.videoIndex];
+    if(this.state.money<concept.price){this.toast('You cannot afford this video.');return;}
+    this.activityDay=Array.from({length:97},(_,i)=>this.state.day+4+i).find(day=>canBookVideo(this.state,concept.id,day))??this.state.day+4;
+    this.activityFirstDay=this.state.day-3;this.open('video-book');
+  }
+  private dismissVideoCard():void {
+    if(this.videoCardId==='ECOCVideoDone'&&this.state.video){this.state={...this.state,video:{...this.state.video,seen:true}};this.save();this.open(null);}
+    else this.open('video');
   }
   private chooseMediaCategory(id: string): void {
     const category = data.activities.tables.ActionCategory.find(c => c.ID === id)!;
@@ -565,9 +724,12 @@ export class GameScene extends Phaser.Scene {
       this.selectedAdvertId = PUBLICITY_RULES.media.find(m => m.id === this.selectedMediaId)!.adverts[0]; this.activityDuration = 5;
       this.activityDay = this.closestActivityDay('advert', this.state.day + 5, 5); this.activityFirstDay = this.state.day - 3; this.open('advert'); return;
     }
-    this.selectedActionId = id === 'ActCatMediaPresskit' ? 'ActMediaGivePressKit' : PUBLICITY_RULES.gifts[0].id; this.open('media-action');
+    this.selectedActionId = id==='ActCatMediaVideo'?'ActMediaTVGiveVideoClip':id === 'ActCatMediaPresskit' ? 'ActMediaGivePressKit' : PUBLICITY_RULES.gifts[0].id; this.open('media-action');
   }
   private presentNextActivityResult(): boolean {
+    if(this.state.scenario?.queue.length){this.open('scenario-event');return true;}
+    if(currentVideo(this.state)?.completed&&!this.state.video?.seen){this.videoCardId='ECOCVideoDone';this.open('video-card');return true;}
+    if(this.state.gangsta?.queue.length){this.open('gangsta-card');return true;}
     const completion = this.state.bandmates.completions.find(c => !c.seen);
     if (completion) { this.trainingResultId = completion.id; this.open('training-result'); return true; }
     const result = [...this.state.publicity.concertResults, ...this.state.publicity.reviews].find(r => !this.state.publicity.seenResults.includes(r.id));
@@ -601,8 +763,8 @@ export class GameScene extends Phaser.Scene {
 
   private studio(layer: Phaser.GameObjects.Container): void {
     const studio = data.tutorialGameplay.studios.find((s) => s.id === this.selectedStudioId)!;
-    const songs = data.songs.filter((s) => this.state.ownedSongs.includes(s.id));
-    if (!songs.some((s) => s.id === this.selectedSongId)) this.selectedSongId = this.state.selectedSong ?? songs[0]?.id ?? '';
+    const songs = recordableSongIds(this.state).map(id=>data.songs.find(s=>s.id===id)!);
+    if (!songs.some((s) => s.id === this.selectedSongId)) this.selectedSongId = songs.find(s=>s.id===this.state.selectedSong)?.id ?? songs[0]?.id ?? '';
     studioWindow(this, layer, this.state, studio, songs, this.selectedSongId,
       (id) => { this.selectedSongId = id; this.open('studio'); },
       () => { if (this.state.demo) this.open('replace-demo'); else this.beginRecording(); }, () => this.open(null));
@@ -648,9 +810,9 @@ export class GameScene extends Phaser.Scene {
       }, () => { this.sessionReturn = 'settings'; this.open('session'); }, () => void this.previewRecording(), () => this.open('mixer'));
   }
 
-  private async previewRecording(): Promise<void> {
-    if (this.state.muted) { this.toast('Sound is off. Press M to enable sound.'); return; }
-    const recording = this.modal === 'rehearsal' || this.modal === 'mission-result' ? this.state.demo : this.state.recording;
+  private async previewRecording(audition = false): Promise<void> {
+    if (this.state.muted) { if(!audition)this.toast('Sound is off. Press M to enable sound.'); return; }
+    const recording = audition || this.modal === 'rehearsal' || this.modal === 'mission-result' ? this.state.demo : this.state.recording;
     if (!recording || this.tutorialId) return;
     this.ambient?.stop();
     const previewChannel = this.modal === 'settings' ? this.selectedChannel : undefined;
@@ -695,10 +857,10 @@ export class GameScene extends Phaser.Scene {
   private sessionMusician(layer: Phaser.GameObjects.Container): void {
     const recording = this.state.recording!;
     const studio = data.tutorialGameplay.studios.find((s) => s.id === recording.studioId)!;
-    sessionWindow(this, layer, this.state, studio, recording.channels[this.selectedChannel], (id) => {
+    sessionWindow(this, layer, this.state, studio, recording.channels[this.selectedChannel], (id,instrument) => {
       try {
         const playing = this.recordingAudio.playing;
-        this.state = chooseSessionMusician(this.state, data.tutorialGameplay, this.selectedChannel, id);
+        this.state = chooseSessionMusician(this.state, data.tutorialGameplay, this.selectedChannel, id,instrument);
         this.save(); this.open(this.sessionReturn); if (playing) void this.previewRecording();
       } catch (error) { this.toast((error as Error).message, 6000); }
     }, () => this.open(this.sessionReturn));
@@ -706,13 +868,33 @@ export class GameScene extends Phaser.Scene {
 
   private label(layer: Phaser.GameObjects.Container): void {
     const label = data.tutorialGameplay.labels.find((s) => s.id === this.selectedLabelId)!;
-    labelWindow(this, layer, this.state, label, () => {
+    labelWindow(this, layer, this.state, label, () => void this.auditionLabel(layer), () => this.open(null),id=>this.open(id==='ActRecordSurvey'?'label-survey':'label-action'));
+  }
+
+  /** DlgRecord.playDemo: block input, play mixdown, WaitScript(3), then decideIfSign. */
+  private async auditionLabel(layer:Phaser.GameObjects.Container):Promise<void>{
+    if(this.labelAuditioning||!this.state.demo)return;
+    this.labelAuditioning=true;const generation=++this.labelAuditionGeneration;
+    const label = data.tutorialGameplay.labels.find(s=>s.id===this.selectedLabelId)!;
+    const blocker=this.add.zone(0,0,800,600).setOrigin(0).setInteractive();layer.add(blocker);
+    this.feedbackAudio.stop();this.feedbackAudio.stopPlace();
+    await this.previewRecording(true);
+    if(generation!==this.labelAuditionGeneration||this.modal!=='label')return;
+    if(!this.state.muted&&!this.recordingAudio.playing){this.labelAuditioning=false;blocker.destroy();return;}
+    this.labelAuditionTimer=this.time.delayedCall(3000,()=>{
+      this.labelAuditioning=false;this.labelAuditionTimer=undefined;blocker.destroy();this.recordingAudio.stop();
       const result = evaluateDemo(this.state, label, musicians);
       if (!result.accepted) { this.open('rejection'); return; }
+      if(this.state.contract?.labelId===label.id){
+        if(!currentAlbumSigned(this.state))this.state=approveContractDemo(this.state,label,musicians);
+        this.save();this.open('label');this.feedbackAudio.labelSpeech(label.id,'nextContract');
+        for(const item of this.actorPortraits)if(item.layer.scene===this&&item.actor.diagnostics.id.toLowerCase()===label.id.toLowerCase())item.actor.setMood('Happy');return;
+      }
       const offers = contractOffers(label, result.like);
       // Director's one-based Steps.count / 2 initial selection.
       this.offerIndex = Math.max(0, Math.trunc(offers.length / 2) - 1); this.open('contract');
-    }, () => this.open(null));
+      for(const item of this.actorPortraits)if(item.layer.scene===this&&item.actor.diagnostics.id.toLowerCase()===label.id.toLowerCase())item.actor.setMood('Happy');
+    });
   }
 
   private contract(layer: Phaser.GameObjects.Container): void {
@@ -731,26 +913,122 @@ export class GameScene extends Phaser.Scene {
     if(kind==='finish-demo'){
       const content=originalText.translations.szidMixerExit.replace(/^"|"$/g,'').replaceAll('""','"').replaceAll('\x85','…').replaceAll('\\n','\n');
       mixerExitWindow(this,layer,content,()=>{
-        try{this.state=finishRecording(this.state,data.tutorialGameplay,musicians,data.songs);this.save();this.open(null);this.toast('Demo recorded. Visit Rebel Records or Rainbow Records.',8000);}
+        try{this.state=finishRecording(this.state,data.tutorialGameplay,musicians,data.songs);this.dispatchScenario({kind:'recording'});this.save();this.open(null);this.toast(this.state.contract?.prearranged?'Demo recorded. Visit Global Records for approval.':'Demo recorded. Visit a record label.',8000);}
         catch(error){this.toast((error as Error).message,6000);}
       },()=>this.open('mixer'),()=>void this.saveMixdown());return;
     }
     if(kind==='replace-demo'){
-      const card=sourceConfirmations.cards.ECOCAlbumDiscardDemo;
-      renderEventCard(this,layer,{headline:card.Headline,text:card.comment,question:card.question,windowTitle:card.name,icon:'megaphone',confirmLabel:card.confirm,cancelLabel:card.cancel,onConfirm:()=>this.beginRecording(),onCancel:()=>this.open('studio')});return;
+      const card=currentAlbumSigned(this.state)?sourceConfirmations.cards.ECOCAlbumDiscard:sourceConfirmations.cards.ECOCAlbumDiscardDemo;
+      const albumName=data.songs.find(s=>s.id===this.state.demo?.songId)?.name??'';
+      renderEventCard(this,layer,{headline:card.Headline,text:card.comment.replace('<¤calbum.name>',albumName),question:card.question,windowTitle:card.name,icon:'megaphone',confirmLabel:card.confirm,cancelLabel:card.cancel,onConfirm:()=>this.beginRecording(),onCancel:()=>this.open('studio')});return;
     }
     const label = data.tutorialGameplay.labels.find((s) => s.id === this.selectedLabelId)!;
     const evaluated=evaluateDemo(this.state,label,musicians);
     const refusal=labelRefusalWindow(this,layer,this.selectedLabelId,evaluated.reason,()=>this.open(null));
     this.bindActor(layer,this.selectedLabelId,refusal.portraitRect.x,refusal.portraitRect.y,'Angry');
-    this.feedbackAudio.template(demoRefusalVoice(this.selectedLabelId,evaluated.reasonKind));
+    this.feedbackAudio.template(demoRefusalVoice(this.selectedLabelId,evaluated.reasonKind,this.state.contract?.labelId===this.selectedLabelId));
   }
 
   private briefing(layer: Phaser.GameObjects.Container): void {
-    missionIntroWindow(this,layer,data.mission,() => {
-      this.state = { ...this.state, started: true }; this.running = true; this.feedbackAudio.setMuted(this.state.muted); this.sound.mute = this.state.muted; if (!this.state.muted && !this.ambient?.isPlaying) this.ambient?.play(); this.save(); this.open(null);
-      this.toast('Open Rehearsal to put your band together.', 6000);
+    missionIntroWindow(this,layer,missionDefinition(this.state.missionId),() => {
+      this.state = { ...this.state, started: true }; if(['Mission05','Mission06'].includes(this.state.missionId))this.dispatchScenario({kind:'city'}); this.running = true; this.feedbackAudio.setMuted(this.state.muted); this.sound.mute = this.state.muted; if (!this.state.muted && !this.ambient?.isPlaying) this.ambient?.play(); this.save(); this.open(null);
+      if(this.state.missionId==='Mission01')this.toast('Open Rehearsal to put your band together.', 6000);
     });
+    if(this.state.missionId!=='Mission01')this.playMissionIntro(layer);
+  }
+
+  private dispatchScenario(event:ScenarioEvent):void{
+    this.state=evaluateMissionProgress(scenarioEvent(this.state,event,musicians));
+  }
+
+  private playMissionIntro(layer:Phaser.GameObjects.Container):void{
+    const segments=introSegments(this.state.missionId);let index=0,picture:Phaser.GameObjects.Image|undefined,waiting=false;
+    const speakers=new Map<string,{layer:Phaser.GameObjects.Container;actor:ActorPortrait;speechKey?:string}>();
+    let lastSpeaker:string|undefined;
+    const speaker=(id:string,anchor:number[],mood:ActorMood='normal',newPhoto=false)=>{
+      let entry=newPhoto?undefined:speakers.get(id);
+      if(!entry){
+        const source=actorAssets.portraits.find(p=>p.id===id);if(!source)return;
+        entry={layer,actor:createActorPortrait(this,layer,id,anchor[0]-source.anchor[0],anchor[1]-source.anchor[1],{mood}),speechKey:''};
+        speakers.set(id,entry);this.actorPortraits.push(entry);
+      }
+      return entry;
+    };
+    const next=async()=>{
+      if(!layer.scene||index>=segments.length)return;
+      const segment=segments[index++];
+      if(segment.picture&&this.textures.exists(segment.picture.key)){
+        const place=(p:NonNullable<typeof segment.picture>)=>{
+          const x=Math.round(p.anchor[0]-p.registration[0]*p.dimensions[0]/p.nativeDimensions[0]);
+          const y=Math.round(p.anchor[1]-p.registration[1]*p.dimensions[1]/p.nativeDimensions[1]);
+          const image=this.add.image(x,y,p.key).setOrigin(0).setDisplaySize(...p.dimensions);layer.add(image);return image;
+        };
+        if(segment.border&&this.textures.exists(segment.border.key))place(segment.border);
+        picture=place(segment.picture);
+      }
+      if(segment.actorId){
+        const entry=speaker(segment.actorId,segment.picture?.anchor??[298,260],segment.mood,Boolean(segment.picture));
+        if(entry){entry.speechKey=segment.audioKey;if(segment.mood)entry.actor.setMood(segment.mood);lastSpeaker=segment.actorId;}
+        // Both brothers share this score photo. The second starts Angry but
+        // silent, then answers when his original numbered clip begins.
+        if(segment.audioKey==='intro03_07a16')speaker('mission03_brother02',[298,260],'Angry');
+        if(segment.audioKey==='intro07_01a18')speaker('mission07_spacecadet_lina01',[288,252],'normal');
+        if(segment.audioKey==='intro05_02a24')speaker('mission05_guitarist01',[289,257],'normal');
+      }else if(lastSpeaker){const entry=speakers.get(lastSpeaker);if(entry)entry.speechKey=segment.audioKey;}
+      layer.setData('introSegment',{index,audioKey:segment.audioKey,picture:segment.pictureName??picture?.texture.key,holdPreviousPicture:segment.holdPreviousPicture??false});
+      await this.feedbackAudio.play(segment.audioKey,false,1);waiting=true;
+    };
+    const timer=this.time.addEvent({delay:100,loop:true,callback:()=>{if(waiting&&!this.feedbackAudio.playback.playing){waiting=false;void next();}}});
+    layer.once('destroy',()=>timer.remove(false));void next();
+  }
+
+  private resolveScenarioCard(choice:string):void{
+    const pending=this.state.scenario?.queue[0];if(!pending)return;
+    const before=this.state;
+    this.dispatchScenario({kind:'card',cardId:pending.id,choice});
+    if(pending.id==='ECOCMis4Media01RqNadia'&&choice==='ButtonOK'){
+      this.beforeScenarioBooking=before;this.activityDay=this.state.day+2;this.activityFirstDay=this.state.day-3;this.open('scenario-book');return;
+    }
+    this.save();this.open(null);
+    const requestActor:Record<string,string>={ECOCCityRequestCD:'m03',ECOCZer0RequestCD:'m04',ECOCRadioRequestCD:'m02',ECOCTVRequestVideo:'m01'};
+    if(choice==='ButtonOK'&&requestActor[pending.id]&&!this.modal)this.feedbackAudio.template(requestActor[pending.id]+'mb0400z');
+  }
+
+  private bookScenarioAppointment(layer:Phaser.GameObjects.Container):void{
+    const appointment=this.state.scenario?.appointments.find(a=>a.id==='DivEventWin');if(!appointment)return;
+    const undo=()=>{if(this.beforeScenarioBooking)this.state=this.beforeScenarioBooking;this.beforeScenarioBooking=undefined;this.open('scenario-event');};
+    scenarioBooking(this,layer,this.state,appointment,this.activityDay,this.activityFirstDay,day=>{this.activityDay=day;this.open('scenario-book');},direction=>{this.activityFirstDay+=direction;this.open('scenario-book');},()=>{
+      appointment.startDay=this.activityDay;this.beforeScenarioBooking=undefined;this.save();this.open(null);
+    },undo,day=>{const state={...this.state,scenario:{...this.state.scenario!,appointments:this.state.scenario!.appointments.filter(a=>a.id!==appointment.id)}};return canBookCalendar(state,'concert',day);});
+  }
+
+  private scenarioCard(layer:Phaser.GameObjects.Container):void{
+    const pending=this.state.scenario?.queue[0];if(!pending){this.open(null);return;}
+    if(pending.id==='ECOCQuitNow'&&pending.speakerId){
+      if(scenarioQuitOccupied(this.state,pending.speakerId)){this.open(null);return;}
+      this.state=completeScenarioQuit(this.state,pending.speakerId,musicians);this.save();
+    }
+    const card=scenarioCards.find(c=>c.ID.toLowerCase()===pending.id.toLowerCase());
+    if(!card){throw new Error('Missing recovered scenario card: '+pending.id);}
+    const gfx=String(card.Gfx??'');
+    const picturedId=gfx.match(/<(?:¤#|getobjbyid\(#)(\w+)/i)?.[1];
+    const focusId=picturedId??pending.speakerId;
+    const musician=musicians.find(m=>m.id.toLowerCase()===focusId?.toLowerCase());
+    const song=data.songs.find(s=>s.id===(this.state.album?.songId??this.state.demo?.songId??this.state.selectedSong));
+    const expand=(value:string)=>scenarioText(value,this.state,musicians,focusId,card.ID).replace(/<¤C(?:album|song)\.name>/gi,song?.name??'');
+    let portraitKey=musician?this.moodPortrait(musician.id,'large'):undefined;
+    const officeActor=/RepTV/i.test(gfx)?'media01':/HmGangsta01/i.test(gfx)?'gangsta01':/Hmjudge/i.test(gfx)?'eccourt01':gfx.match(/Hm(Record0[1-4])/i)?.[1]?.toLowerCase()??PUBLICITY_RULES.reporters.find(r=>r.id.toLowerCase()===focusId?.toLowerCase())?.mediaId.toLowerCase();
+    if(officeActor)portraitKey=undefined;
+    if(gfx&&!gfx.includes('<')&&gfx!=='human'){
+      const candidate='source-window-'+gfx.replaceAll(' ','_').toLowerCase();if(this.textures.exists(candidate))portraitKey=candidate;
+    }
+    const result=scenarioWindow(this,layer,card,{portraitKey,actorId:officeActor,animatePortrait:Boolean(musician),expand,confirm:()=>this.resolveScenarioCard('ButtonOK'),cancel:card.ButtonCancel?.name?()=>this.resolveScenarioCard('ButtonCancel'):undefined,third:card.Button3?.name?()=>this.resolveScenarioCard('Button3'):undefined});
+    if(officeActor&&result.portraitRect)this.bindActor(layer,officeActor,result.portraitRect.x,result.portraitRect.y);
+    if(musician&&!officeActor&&result.portraitRect&&!card.dataMemberName.toLowerCase().includes('large'))this.bindActor(layer,musician.id,result.portraitRect.x,result.portraitRect.y,bandmateMood(this.state,musician.id));
+    const speech=String(card.ExecuteThis??'').match(/speak\s*\([\s\S]*?&QUOTE&"?([^"&]+)/i)?.[1]?.trim();
+    if(speech){const actor=actorAssets.staticPortraits.find(p=>p.musicianId===musician?.id)?.actorId;this.feedbackAudio.template(speech.replaceAll('¤¤¤',actor?'a'+actor.slice(-2):'').replaceAll('¤¤',actor?actor.slice(-2):''));}
+    void this.feedbackAudio.play('_EventCard',true);
+    layer.setData('scenarioCardId',pending.id);
   }
 
   private bindActor(layer: Phaser.GameObjects.Container, id: string, x: number, y: number, mood?: ActorMood): void {
@@ -792,6 +1070,8 @@ export class GameScene extends Phaser.Scene {
           this.state = this.bandmateCategoryId === 'ActCatMusicianGifts' ? giveBandmateGift(this.state, this.selectedId, this.bandmateActionId, musicians)
             : this.bandmateCategoryId === 'ActCatMusicianRelations' ? changeBandmateRelations(this.state, this.selectedId, this.bandmateActionId)
             : fireBandmate(this.state, this.selectedId, musicians);
+          if(this.bandmateCategoryId==='ActCatMusicianGifts')this.dispatchScenario({kind:'gift',actorId:this.selectedId,actionId:this.bandmateActionId});
+          if(this.bandmateCategoryId==='ActCatMusicianKick')this.dispatchScenario({kind:'fire',actorId:this.selectedId});
           this.save(); this.open(this.bandmateCategoryId === 'ActCatMusicianKick' ? 'rehearsal' : 'bandmate');
           const speech = this.state.bandmates.lastSpeech;
           if (speech) this.feedbackAudio.template(speech.template);
@@ -807,6 +1087,7 @@ export class GameScene extends Phaser.Scene {
       day => canTrainBandmate(this.state, this.selectedId, this.bandmateActionId, day), () => {
         try {
           this.state = trainBandmate(this.state, this.selectedId, this.bandmateActionId, this.activityDay, musicians);
+          this.dispatchScenario({kind:'training',actorId:this.selectedId,actionId:this.bandmateActionId});
           this.save(); this.open('bandmate');
           this.feedbackAudio.template(this.state.bandmates.lastSpeech!.template);
         } catch (error) { this.toast((error as Error).message); }
@@ -834,7 +1115,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   private moodPortrait(id:string,size:'large'|'medium'):string {
-    const occupied=this.state.bandmates.training.some(t=>!t.completed&&t.musicianId===id&&t.startDay<=this.state.day&&this.state.day<t.startDay+t.duration);
+    const occupied=bandmateOccupied(this.state,id);
     const current=bandmateMood(this.state,id),mood=occupied?'occupied':current==='Furious'?'Angry':current;
     return actorAssets.staticPortraits.find(p=>p.musicianId===id&&p.size===size&&p.mood.toLowerCase()===mood.toLowerCase())?.textureKey??`${size==='large'?'portrait':'icon'}-${id}`;
   }
@@ -879,19 +1160,19 @@ export class GameScene extends Phaser.Scene {
         this.selectedSlot = slot; this.recruitOffset = 0;
         if (member) { this.selectedId = member.musicianId; this.selectedInstrument = member.instrument; }
         else this.selectedId = '';
-        if (member && this.state.bandmates.training.some(t => !t.completed && t.musicianId === member.musicianId && t.startDay <= this.state.day && this.state.day < t.startDay + t.duration)) { this.open('artist-away'); return; }
+        if (member && bandmateOccupied(this.state,member.musicianId)) { this.open('artist-away'); return; }
         this.open(member ? 'bandmate' : 'recruit');
       });
     }
-    layer.add(this.add.image(524, 124, 'ui-cd').setOrigin(0));
-    text(this, layer, 550, 132, 'Album status', 11, '#eeeeee').setFontFamily('Verdana').setFontStyle('bold');
-    frame(this, layer, 522, 145, 198, 306, 'inner');
+    // Original InfoAlbum offset(462,46) inside Rehearsal at(60,77).
+    // RehearsalAlbumFormatting:189x224 template plus7 trailing14px lines.
+    const albumContent=infoFrame(this,layer,522,123,189,224+7*14,'Album status','cd');
     const label=data.tutorialGameplay.labels.find(l=>l.id===this.state.contract?.labelId), contract=this.state.contract, demo=this.state.demo;
     const song=data.songs.find(s=>s.id===demo?.songId);
     const revenue=this.state.album&&this.state.day>=this.state.album.releaseDay?this.state.publicity.totalSales*18:0;
     const publisher=(song?.royalty??0)*revenue,toLabel=(contract?.royalty??0)*(revenue-publisher),earned=revenue-publisher-toLabel;
-    const rows:[string,string][]=[['Record company',label?.name??'-'],['Royalty',contract?(contract.royalty*100).toFixed(1)+'%':'-'],['Advance',contract?money(contract.advance):'-'],['',''],['Album recorded',demo?'Yes':'No'],['Sleeve designed',demo?(this.state.album?'Yes':'No'):'-'],['Release date',this.state.album?calendarDate({...this.state,day:this.state.album.releaseDay}):'-'],['Video','-'],['',''],['Copies sold',demo?money(this.state.publicity.totalSales):'-'],['Revenue',demo?money(revenue):'-'],['To publisher',demo?money(Math.round(publisher)):'-'],['To label',demo&&contract?money(Math.round(toLabel)):'-'],['Earned',demo&&contract?money(Math.round(earned)):'-'],['Incl. advance',demo&&contract?money(Math.round(earned-contract.advance)):'-']];
-    rows.forEach(([name,value],i)=>{(text(this,layer,527,153+i*14,name,11,'#eeeeee').setFontFamily('Verdana').setLetterSpacing(-1) as NativeText).setNativeAntialias(false);(text(this,layer,627,153+i*14,value,11,'#eeeeee').setFontFamily('Verdana').setLetterSpacing(-1) as NativeText).setNativeAntialias(false);});
+    const rows:[string,string][]=[['Record company',label?.name??'-'],['Royalty',contract?(contract.royalty*100).toFixed(1)+'%':'-'],['Advance',contract?money(contract.advance):'-'],['',''],['Album recorded',demo?'Yes':'No'],['Sleeve designed',demo?(this.state.album?'Yes':'No'):'-'],['Release date',this.state.album?calendarDate({...this.state,day:this.state.album.releaseDay}):'-'],['Video',currentVideo(this.state)?.completed?VIDEO_RULES.concepts.find(v=>v.id===this.state.video?.conceptId)?.name??'-':'-'],['',''],['Copies sold',demo?money(Math.ceil(this.state.publicity.totalSales)):'-'],['Revenue',demo?money(revenue):'-'],['To publisher',demo?money(Math.round(publisher)):'-'],['To label',demo&&contract?money(Math.round(toLabel)):'-'],['Earned',demo&&contract?money(Math.round(earned)):'-'],['Incl. advance',demo&&contract?money(Math.round(earned-contract.advance)):'-']];
+    rows.forEach(([name,value],i)=>{(text(this,layer,albumContent.x,albumContent.y+i*14,name,11,'#eeeeee').setFontFamily('Verdana').setLetterSpacing(-1) as NativeText).setNativeAntialias(false);(text(this,layer,albumContent.x+100,albumContent.y+i*14,value,11,'#eeeeee').setFontFamily('Verdana').setLetterSpacing(-1) as NativeText).setNativeAntialias(false);});
     button(this,layer,478,500,144,'Play song',()=>{if(this.recordingAudio.playing)this.recordingAudio.stop();else void this.previewRecording();},Boolean(demo),34,'preview');
     button(this, layer, 75, 500, 220, 'Change Band Name', () => { this.nameDraft = this.state.bandName; this.open('rename'); }, true, 34, 'rename');
     button(this, layer, 632, 500, 101, 'OK', () => this.attemptLeaveRehearsal(), true, 34, 'accept');
@@ -899,10 +1180,12 @@ export class GameScene extends Phaser.Scene {
 
   private songDialog(layer: Phaser.GameObjects.Container, publisher: boolean): void {
     if(publisher){
-      publisherWindow(this,layer,{songs:data.songs.filter(s=>!this.state.ownedSongs.includes(s.id)),selectedId:this.selectedSongId,offset:this.publisherOffset,funds:this.state.money,
+      const songs=publisherSongs(this.state,data.songs,this.selectedPublisherId);
+      if(!songs.some(s=>s.id===this.selectedSongId))this.selectedSongId=songs[0]?.id??'';
+      publisherWindow(this,layer,{title:musicBusiness.publishers.find(p=>p.id===this.selectedPublisherId)!.name,songs,selectedId:this.selectedSongId,offset:this.publisherOffset,funds:this.state.money,
         select:id=>{this.selectedSongId=id;this.open('publisher');void this.feedbackAudio.play(id+'Preview',false,.6);},scroll:offset=>{this.publisherOffset=offset;this.open('publisher');},cancel:()=>this.open(null),buy:()=>{
           const selected=data.songs.find(s=>s.id===this.selectedSongId);if(!selected)return;
-          this.state=licenseSong(this.state,data.songs,selected.id);this.save();this.open(null);this.toast(`Licensed ${selected.name} for ${money(selected.price)}.`);
+          this.state=licenseSong(this.state,data.songs,selected.id,this.selectedPublisherId);this.save();this.open(null);this.toast(`Licensed ${selected.name} for ${money(selected.price)}.`);
         }});return;
     }
     const pool = data.songs.filter((s) => publisher ? !this.state.ownedSongs.includes(s.id) : this.state.ownedSongs.includes(s.id));
@@ -1015,7 +1298,7 @@ export class GameScene extends Phaser.Scene {
     button(this, layer, 341, 529, 125, existing ? 'Remove' : 'Hire', () => {
       if (!selected) return;
       this.state = existing ? { ...this.state, band: this.state.band.map((m, i) => i === this.selectedSlot ? null : m) }
-        : recruit(this.state, musicians, this.selectedSlot, selected.id, this.selectedInstrument);
+        : scenarioEvent(recruit(this.state, musicians, this.selectedSlot, selected.id, this.selectedInstrument),{kind:'action',actionId:'HireBandMember',actorId:selected.id},musicians);
       this.save(); this.open('rehearsal');
       if (!existing) { const cue = data.musicians.find(m => m.id === selected.id); if (cue) this.feedbackAudio.template('a' + (cue.smallPortrait?.match(/actor(\d+)/)?.[1] ?? '01') + 'ra0200X'); }
     }, Boolean(selected), 36, existing ? 'garbage' : 'accept');
@@ -1036,6 +1319,7 @@ export class GameScene extends Phaser.Scene {
   private saveName(): void {
     if (!this.nameDraft.trim()) return;
     this.state = { ...this.state, bandName: this.nameDraft.trim(), bandNameChanged:true };
+    this.dispatchScenario({kind:'name'});
     this.save(); this.open('rehearsal');
   }
 
@@ -1044,8 +1328,16 @@ export class GameScene extends Phaser.Scene {
   }
 
   private missionSelection(layer: Phaser.GameObjects.Container): void {
-    const total=this.state.missionProgress?.status==='won'?(missionEnding(this.state).score.total??0):0;
-    missionChooseWindow(this,layer,data.missions,this.missionOffset,total,()=>this.open(this.state.started?'reset':'briefing'),()=>this.open('menu'),offset=>{this.missionOffset=offset;this.open('missions');});
+    this.career=recordCareer(this.career,this.state);saveCareer(this.career);
+    const unlocked=careerAvailability(this.career,this.state.missionId);
+    const missions=data.missions.map(m=>({...m,available:m.playable&&unlocked.has(m.id),points:this.career.missions[m.id]?.points}));
+    const available=(id:string)=>missions.some(m=>m.id===id&&m.available);
+    if(!available(this.selectedMissionId))this.selectedMissionId=this.state.missionId;
+    missionChooseWindow(this,layer,missions,this.missionOffset,careerTotal(this.career),()=>{
+      if(!available(this.selectedMissionId))return;
+      if(this.state.started){this.open('reset');return;}
+      this.state=newMission(this.selectedMissionId,musicians);this.save();this.open('briefing');
+    },()=>this.open('menu'),offset=>{this.missionOffset=offset;this.open('missions');},this.selectedMissionId,id=>{if(isMissionId(id)&&available(id)){this.selectedMissionId=id;this.open('missions');}});
   }
 
   private quitConfirmation(layer: Phaser.GameObjects.Container): void {
@@ -1054,12 +1346,14 @@ export class GameScene extends Phaser.Scene {
   }
 
   private help(layer: Phaser.GameObjects.Container): void {
-    title(this,layer,48,154,'First Steps','megaphone');
+    title(this,layer,48,154,missionDefinition(this.state.missionId).name,'megaphone');
     const objectives=missionObjectives(this.state);
     objectives.forEach((objective,i)=>{
       (text(this,layer,80,205+i*24,`${objective.done?'Done':'Next'}   ${objective.text}`,11,objective.done?'#eeeeee':'#c2b6b3',620).setFontFamily('Verdana') as NativeText).setNativeAntialias(false);
     });
-    const next=!this.state.album ? 'Hire a singer, license a song, record a demo and sign a label contract. Then design a cover and schedule its release.'
+    const next=this.state.missionId==='Mission03'?'Record Supermarket Love, obtain Global Records approval, release the album and keep the brothers together for the day-70 Global Aid Gala.'
+      :this.state.missionId==='Mission04'?"Build Nadia’s band, record and release an album, then promote it and complete the TV appearance when invited."
+      :!this.state.album ? 'Hire a singer, license a song, record a demo and sign a label contract. Then design a cover and schedule its release.'
       :this.state.day<this.state.album.releaseDay ? `Your record releases on ${calendarDate({...this.state,day:this.state.album.releaseDay})}. Send press kits and book promotion while you wait.`
       :'Give Radio FM, City News and Zer0 Magazine a press kit. Buy a Record Store campaign and play gigs to attract buyers. Check the Record Store sales chart; radio position alone does not complete this mission.';
     (text(this,layer,80,368,next,11,'#eeeeee',625).setFontFamily('Verdana') as NativeText).setNativeAntialias(false);
@@ -1090,22 +1384,36 @@ export class GameScene extends Phaser.Scene {
   }
 
   private resetConfirmation(layer: Phaser.GameObjects.Container): void {
-    renderEventCard(this,layer,{headline:'Start First Steps again?',text:'This replaces the saved band and starts the mission with 100,000.',windowTitle:'Confirm',icon:'effect',confirmLabel:'OK',cancelLabel:'Cancel',onCancel:()=>this.open('menu'),onConfirm:()=>{
-      this.state = newGame(data.mission.startMoney); this.running = false; this.clock = 0;
+    renderEventCard(this,layer,{headline:`Start ${missionDefinition(this.selectedMissionId).name}?`,text:`This replaces the saved band and starts the mission with ${money(missionDefinition(this.selectedMissionId).startMoney)}.`,windowTitle:'Confirm',icon:'effect',confirmLabel:'OK',cancelLabel:'Cancel',onCancel:()=>this.open('menu'),onConfirm:()=>{
+      this.state = newMission(this.selectedMissionId,musicians); this.running = false; this.clock = 0;
       this.ambient?.stop(); this.hasSaved = false;
-      this.storage.save(this.state); this.open('briefing');
+      this.save(); this.open('briefing');
     }});
   }
 
   private keyInput(event: KeyboardEvent): void {
+    if(this.labelAuditioning)return;
+    if(this.modal==='venue-notice'){if(event.key==='Enter'||event.key==='Escape')this.open(this.venueNoticeReturn);return;}
     // Phaser can revisit queued DOM events when the input display list changes.
     // Consume each event once while still permitting distinct key-repeat events.
     if (this.handledKeyEvents.has(event)) return;
     this.handledKeyEvents.add(event);
+    if(this.modal==='scenario-book'){
+      if(event.key==='Escape'){if(this.beforeScenarioBooking)this.state=this.beforeScenarioBooking;this.beforeScenarioBooking=undefined;this.open('scenario-event');}return;
+    }
+    if(this.modal==='scenario-event'){
+      if(event.key==='Enter'||event.key==='Escape'){
+        const pending=this.state.scenario?.queue[0],card=scenarioCards.find(c=>c.ID.toLowerCase()===pending?.id.toLowerCase());
+        this.resolveScenarioCard(event.key==='Escape'&&card?.ButtonCancel?.name?'ButtonCancel':'ButtonOK');
+      }
+      return;
+    }
     if (this.tutorialId) {
       if (event.key === 'Enter' || event.key === 'Escape') this.dismissTutorial();
       return;
     }
+    if(this.modal==='gangsta-card'){if(event.key==='Enter'||event.key==='Escape')this.dismissGangstaCard();return;}
+    if(this.modal==='video-card'){if(event.key==='Enter'||event.key==='Escape')this.dismissVideoCard();return;}
     if(this.modal==='mission-result'){if(event.key==='Enter'||event.key==='Escape')this.closeMissionResult();return;}
     if(this.modal==='mission-warning'){if(event.key==='Enter'||event.key==='Escape')this.confirmMissionWarning();return;}
     if (this.modal === 'rename') {
@@ -1129,8 +1437,8 @@ export class GameScene extends Phaser.Scene {
       if (this.modal === 'menu') this.running = true;
       if (this.modal === 'activity-result') { this.acknowledgeActivityResult(); return; }
       if (this.modal === 'training-result') { this.acknowledgeTrainingResult(); return; }
-      const back: Partial<Record<NonNullable<Modal>, Modal>> = { 'artist-away': 'rehearsal', bandmate: 'rehearsal', 'bandmate-action': 'bandmate', 'bandmate-training': 'bandmate', recruit: 'rehearsal', songs: 'rehearsal', session: this.sessionReturn, settings: 'mixer',
-        mixer: 'finish-demo', 'finish-demo': 'mixer', 'replace-demo': 'studio', contract: 'label', rejection: 'label', release: 'design', 'concert-book': 'venue', advert: 'media', 'media-action': 'media', chart: 'media' };
+      const back: Partial<Record<NonNullable<Modal>, Modal>> = { 'tour-result':'tour-ongoing','tour-cancel':'tour-ongoing','tour-intro':'tour','tour-city':'tour','tour-stage':'tour','tour-expenses':'tour','tour-book':'tour','tour-ongoing':'tour-ongoing','artist-away': 'rehearsal', bandmate: 'rehearsal', 'bandmate-action': 'bandmate', 'bandmate-training': 'bandmate', recruit: 'rehearsal', songs: 'rehearsal', session: this.sessionReturn, settings: 'mixer',
+        'label-action':'label','label-survey':'label',mixer: 'finish-demo', 'finish-demo': 'mixer', 'replace-demo': 'studio', contract: 'label', rejection: 'label', release: 'design', 'gangsta-action':'gangsta','gangsta-target':'gangsta-action','gangsta-security':'gangsta', 'video-book':'video', 'concert-book': 'venue', advert: 'media', 'media-action': 'media', chart: 'media' };
       this.open(this.modal ? back[this.modal] ?? null : 'menu');
     }
     if (event.key === ' ' && !this.modal && this.state.started) {
@@ -1139,10 +1447,15 @@ export class GameScene extends Phaser.Scene {
   }
 
   update(_time: number, delta: number): void {
+    this.animateDate();
     if (!this.state) return;
     this.actorPortraits = this.actorPortraits.filter(item => item.layer.scene === this);
     const speech = this.feedbackAudio.playback;
-    for (const item of this.actorPortraits) item.actor.update(speech.key, speech.positionSeconds, speech.playing);
+    for (const item of this.actorPortraits) item.actor.update(speech.key, speech.positionSeconds,
+      speech.playing&&(item.speechKey===undefined||item.speechKey.toLowerCase()===speech.key.toLowerCase()));
+    if(this.modal==='tour-ongoing'&&!this.state.tour?.completed&&document.visibilityState==='visible'){
+      this.clock+=Math.min(delta,100);if(this.clock>=1000){this.clock=0;this.tickDay();}
+    }
     if (!this.modal && !this.tutorialId) {
       if (document.visibilityState === 'visible') this.animateCity(delta);
       const pointer = this.input.activePointer;

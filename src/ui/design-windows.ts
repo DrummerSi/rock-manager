@@ -2,7 +2,7 @@ import { nativeAgenda, type AgendaEntry } from './agenda';
 import Phaser from 'phaser';
 import data from '../generated/game-data.json' with { type: 'json' };
 import type { GameState, Musician } from '../game/model';
-import { designElements, type DesignSelection } from '../game/design';
+import { designElements, designCategories, type DesignSelection } from '../game/design';
 import { button, frame, text, title } from './canvas-ui';
 import { nativeChooser } from './native-chooser';
 import { coverImage } from './album-cover';
@@ -26,7 +26,7 @@ export function designWindow(scene: Phaser.Scene, layer: Phaser.GameObjects.Cont
     coverImage(scene, layer, 118, 127, 300, state.bandName, state.band, musicians, selection);
     const elements = designElements(selection);
     let right = 0;
-    data.design.categories.forEach((category, index) => {
+    designCategories(state.missionId).forEach((category, index) => {
         const chooser = nativeChooser(scene,layer,{x:444,y:123+60*index,label:category.name,icon:'design-'+category.gfx,
             value:elements[index].name+' $'+elements[index].price.toLocaleString('en-GB'),textRight:210,
             previous:()=>change(index,-1),next:()=>change(index,1),

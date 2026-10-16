@@ -1,10 +1,14 @@
+import {missionSpend} from './scenario78';
+import {gangstaAway} from './gangsta';
+import {videoOccupies} from './video';
+import {tourOccupied} from './tour';
 import rawRules from './bandmate-rules.json' with { type: 'json' };
 import type { GameState, Musician } from './model';
 
 export const BANDMATE_RULES = rawRules;
 export type BandmateMood = 'Furious' | 'Angry' | 'Annoyed' | 'normal' | 'Satisfied' | 'Happy';
 export type BandmateStat = 'mood' | 'health' | 'musicality' | 'charisma' | 'patience';
-export interface BandmateModifier { id: string; musicianId: string; stat: BandmateStat; amount: number; startDay: number; duration: number; otherId?: string }
+export interface BandmateModifier { id: string; musicianId: string; stat: BandmateStat; amount: number; startDay: number; duration: number; otherId?: string;constant?:boolean }
 export interface BandmatePerson { musicianId: string; mood: number; health: number; musicality: number; charisma: number; patience: number; needs: Record<string, number>; gifts: string[]; fired: boolean }
 export interface BandmateTraining { id: string; musicianId: string; actionId: string; type: string; startDay: number; duration: number; completed: boolean }
 export interface BandmateSpeech { musicianId: string; template: string; actionId: string }
@@ -21,20 +25,21 @@ export function defaultBandmates(state?: Pick<GameState, 'day'>, musicians?: Mus
 }
 const current = (state: GameState) => (state as WithBandmates).bandmates ?? defaultBandmates(state);
 const copy = (state: GameState): WithBandmates => ({ ...state, bandmates: structuredClone(current(state)) });
-const fading = (m: BandmateModifier, day: number) => m.amount * clamp(1 - (day - m.startDay) / m.duration);
+const fading = (m: BandmateModifier, day: number) => m.constant?m.amount:m.amount * clamp(1 - (day - m.startDay) / m.duration);
 function bandmateAttitude(state: GameState, id: string, otherId: string): number {
   const base = (sourceActor(id)!.attitudes as Record<string, number | undefined>)[otherId] ?? 0;
   const adjustments = current(state).modifiers.filter(m => m.musicianId === id && m.otherId === otherId).reduce((n, m) => n + fading(m, state.day), 0);
   return clamp(base + adjustments, -1, 1);
 }
+// ClassRealMusician.getIsOccupied excludes ordinary Concert events.
 export function bandmateOccupied(state: GameState, id: string, day = state.day): boolean {
-  return current(state).training.some(t => !t.completed && t.musicianId === id && t.startDay <= day && day < t.startDay + t.duration)
-    || state.publicity.concerts.some(c => !c.completed && c.startDay <= day && day < c.startDay + c.duration);
+  return tourOccupied(state,id,day)||state.scenario?.appointments.some(a=>['hospital','prison','award'].includes(a.kind)&&!a.completed&&(!a.actorId||a.actorId===id)&&a.startDay<=day&&day<a.startDay+a.duration)||gangstaAway(state,id,day)||videoOccupies(state,id,day)||current(state).training.some(t => !t.completed && t.musicianId === id && t.startDay <= day && day < t.startDay + t.duration);
 }
 export function bandmateStats(state: GameState, id: string): BandmatePerson {
   const saved = current(state).people.find(p => p.musicianId === id);
   if (!saved) throw new Error('Unknown musician.');
   const result = structuredClone(saved);
+  if(state.missionId==='Mission04'&&state.band.filter(Boolean).length===1&&state.band.some(m=>m?.musicianId===id))result.mood-=.16;
   for (const modifier of current(state).modifiers.filter(m => m.musicianId === id && !m.otherId)) result[modifier.stat] += fading(modifier, state.day);
   for (const [need, value] of Object.entries(result.needs)) {
     const penalty = Math.max(0, value - .2) * .1;
@@ -105,7 +110,7 @@ export function bandmateConcerns(state: GameState, id: string, musicians: Musici
   });
 }
 export function effectiveMusicians(state: GameState, musicians: Musician[]): Musician[] {
-  return musicians.map(m => { const p = current(state).people.find(p => p.musicianId === m.id); return p ? { ...m, ...Object.fromEntries((['mood', 'health', 'musicality', 'charisma'] as const).map(k => [k, bandmateStats(state, m.id)[k]])) } : m; });
+  return musicians.map(m => { const p = current(state).people.find(p => p.musicianId === m.id); return p ? { ...m, salary: Number(state.scenario?.vars['salary:'+m.id] ?? m.salary), ...Object.fromEntries((['mood', 'health', 'musicality', 'charisma'] as const).map(k => [k, bandmateStats(state, m.id)[k]])) } : m; });
 }
 function requireMember(state: GameState, id: string) {
   if (!state.band.some(m => m?.musicianId === id)) throw new Error('That musician is not in your band.');
@@ -133,7 +138,7 @@ export function availableBandmateActions(state: GameState, id: string, categoryI
 export function giveBandmateGift(state: GameState, id: string, actionId: string, _musicians?: Musician[]): GameState {
   const action = purchase(state, id, actionId);
   if (!rawRules.categories.find(c => c.id === 'ActCatMusicianGifts')!.actions.includes(actionId)) throw new Error('Not a musician gift.');
-  const next = copy(state), person = next.bandmates.people.find(p => p.musicianId === id)!;
+  const next = missionSpend(copy(state),'gifts',action.price), person = next.bandmates.people.find(p => p.musicianId === id)!;
   if (action.once && person.gifts.includes(actionId)) throw new Error('This artist already received that gift.');
   next.money -= action.price;
   if (action.once) {
@@ -164,7 +169,7 @@ export function applyBandmateExitToCity(state: GameState): GameState {
 export function canTrainBandmate(state: GameState, id: string, actionId: string, startDay: number): boolean {
   const action = rawRules.actions.find(a => a.id === actionId && a.trainingType);
   if (!action || !Number.isSafeInteger(startDay) || startDay <= state.day || startDay > state.day + 100 || !state.band.some(m => m?.musicianId === id)) return false;
-  for (let day = startDay; day < startDay + action.duration; day++) if (bandmateOccupied(state, id, day)) return false;
+  for (let day = startDay; day < startDay + action.duration; day++) if (bandmateOccupied(state, id, day)||state.publicity.concerts.some(c=>!c.completed&&c.startDay<=day&&day<c.startDay+c.duration)||state.scenario?.appointments.some(a=>!a.completed&&(!a.actorId||a.actorId===id)&&a.startDay<=day&&day<a.startDay+a.duration)) return false;
   // Native album releases occupy NotOnTour, without the Band resource. Training may overlap.
   return true;
 }
@@ -242,7 +247,7 @@ export function advanceBandmates(state: GameState, _musicians?: Musician[]): Gam
       next.bandmates.completions.push({ id: training.id, musicianId: p.musicianId, actionId: training.actionId, day, seen: false });
     }
   }
-  next.bandmates.modifiers = next.bandmates.modifiers.filter(m => m.startDay + m.duration > state.day);
+  next.bandmates.modifiers = next.bandmates.modifiers.filter(m => m.constant||m.startDay + m.duration > state.day);
   next.bandmates.lastDay = state.day;
   return next;
 }
@@ -268,7 +273,7 @@ export function validBandmates(state: GameState, musicians?: Musician[]): boolea
   if (!Array.isArray(b.people) || b.people.length !== ids.size || b.people.some(p => !p || typeof p !== 'object') || new Set(b.people.map(p => p.musicianId)).size !== b.people.length || !Array.isArray(b.modifiers) || !Array.isArray(b.training) || !Array.isArray(b.pendingBooze) || !Array.isArray(b.completions)) return false;
   if (b.training.some(t => !t || typeof t !== 'object') || new Set(b.training.map(t => t.id)).size !== b.training.length || b.completions.some(c => !c || typeof c !== 'object') || new Set(b.completions.map(c => c.id)).size !== b.completions.length) return false;
   return b.people.every(p => p && ids.has(p.musicianId) && typeof p.fired === 'boolean' && ['mood', 'health', 'musicality', 'charisma', 'patience'].every(k => Number.isFinite(p[k as BandmateStat]) && p[k as BandmateStat] >= 0 && p[k as BandmateStat] <= 1) && p.needs && Object.entries(p.needs).every(([k, v]) => /^Need\w+$/.test(k) && Number.isFinite(v) && v >= -1 && v <= 1) && Array.isArray(p.gifts) && p.gifts.every(g => rawRules.actions.some(a => a.id === g && a.once)) && new Set(p.gifts).size === p.gifts.length)
-    && b.modifiers.every(m => m && ids.has(m.musicianId) && ['mood', 'health', 'musicality', 'charisma', 'patience'].includes(m.stat) && Number.isFinite(m.amount) && Math.abs(m.amount) <= 1 && int(m.startDay) && int(m.duration) && m.duration > 0 && (!m.otherId || ids.has(m.otherId)))
+    && b.modifiers.every(m => m && ids.has(m.musicianId) && ['mood', 'health', 'musicality', 'charisma', 'patience'].includes(m.stat) && Number.isFinite(m.amount) && Math.abs(m.amount) <= (m.otherId?2:1) && int(m.startDay) && int(m.duration) && m.duration > 0 && (m.constant===undefined||typeof m.constant==='boolean') && (!m.otherId || ids.has(m.otherId)))
     && b.training.every(t => t && /^training\d+$/.test(t.id) && ids.has(t.musicianId) && rawRules.actions.some(a => a.id === t.actionId && a.trainingType === t.type && a.duration === t.duration) && int(t.startDay) && typeof t.completed === 'boolean' && (!t.completed || t.startDay + t.duration <= state.day))
     && b.pendingBooze.every(p => p && ids.has(p.musicianId) && [ .3, .5 ].includes(p.amount))
     && b.completions.every(c => c && ids.has(c.musicianId) && int(c.day) && c.day <= state.day && typeof c.seen === 'boolean' && b.training.some(t => t.id === c.id && t.completed && t.musicianId === c.musicianId && t.actionId === c.actionId && t.startDay + t.duration === c.day))

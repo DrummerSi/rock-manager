@@ -34,7 +34,7 @@ test('native venue rules and source calendar resources govern booking; no money 
   assert.equal(JSON.stringify(state), snapshot);
   const booked = bookConcert(state, data.musicians, 'Live01', 2);
   assert.equal(booked.money, state.money, 'Café Lizette has zero rent');
-  assert.throws(() => bookConcert(booked, data.musicians, 'Live01', 5), /5 days/);
+  assert.throws(() => bookConcert(booked, data.musicians, 'Live01', 5), /Venue booking refused/);
   assert.ok(!canBookCalendar(booked, 'release', 2), 'Release and concert share NotOnTour');
   assert.ok(canBookCalendar(booked, 'advert', 2), 'Adverts have no occupied resources');
 });

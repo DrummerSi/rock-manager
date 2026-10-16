@@ -1,13 +1,15 @@
 import { NativeText } from './native-text';
 import Phaser from 'phaser';
 import data from '../generated/game-data.json' with { type: 'json' };
-import type { GameState, Musician, Song } from '../game/model';
+import business from '../generated/music-business.json';
+import {originalImageKey} from './agenda';
+import type { GameState, Musician, Song, Instrument } from '../game/model';
 import type { Label, MixChannel, Studio } from '../game/recording';
-import { button, frame, text, title } from './canvas-ui';
+import { button, frame, text, title, infoFrame } from './canvas-ui';
 import { cursorStyle } from './cursors';
 import { nativeKnob, nativeToggle, registeredImage } from './mixer-controls';
 import { nativeChooser } from './native-chooser';
-import { defaultEffects } from '../game/recording';
+import { defaultEffects, SESSION_INSTRUMENTS } from '../game/recording';
 import type { ChannelEffects } from '../game/recording';
 
 const cash = (value: number) => `$${value.toLocaleString('en-GB')}`;
@@ -43,7 +45,7 @@ export function studioWindow(scene: Phaser.Scene, layer: Phaser.GameObjects.Cont
     previous:()=>chooseSong(songs[position-1].id),next:()=>chooseSong(songs[position+1].id),
     previousEnabled:position>0,nextEnabled:position>=0&&position<songs.length-1});
   // DlgStudioData: pair centered on InfoDlg, 23px below ChooseSong's top.
-  button(scene, layer, 385, 402, 135, 'Record', start, Boolean(song) && state.band.some(Boolean) && state.money >= studio.price && !state.contract, 33, 'microphone');
+  button(scene, layer, 385, 402, 135, 'Record', start, Boolean(song) && state.band.some(Boolean) && state.money >= studio.price, 33, 'microphone');
   button(scene, layer, 526, 402, 132, 'Cancel', close, true, 33, 'cancel');
 }
 
@@ -175,57 +177,96 @@ export function channelSettingsWindow(scene: Phaser.Scene, layer: Phaser.GameObj
   button(scene, layer, 275, bottom, 76, 'OK', close, true, 33, 'accept');
 }
 
-export function labelWindow(scene: Phaser.Scene, layer: Phaser.GameObjects.Container, state: GameState, label: Label, submit: () => void, close: () => void): void {
-  frame(scene, layer, 142, 76, 516, 448, 'dialog');
-  title(scene, layer, 142, 76, label.name, 'golden-record');
-  const backgroundKey = `${label.id.toLowerCase()}-background01`;
-  const background = data.tutorialMedia.find((m) => m.key === backgroundKey)!;
-  frame(scene, layer, 164, 115, background.width + 6, background.height + 6, 'inner');
-  image(scene, layer, 167, 118, backgroundKey);
-  for (const name of ['moves_0003', 'moves_0001']) {
-    const key = `${label.id.toLowerCase()}-${name}`;
-    const sprite = data.tutorialMedia.find((m) => m.key === key);
-    if (sprite) image(scene, layer, 167 + background.regX - sprite.regX, 118 + background.regY - sprite.regY, key);
+/** DlgRecordData / DlgRecordNoContractData, at source loc(142,76). */
+export function labelWindow(scene: Phaser.Scene, layer: Phaser.GameObjects.Container, state: GameState, label: Label, submit: () => void, close: () => void, choose:(id:string)=>void): void {
+  const signed=state.contract?.labelId===label.id;
+  const body=text(scene,layer,175,372,label.description,11,'#eeeeee',304).setFontFamily('Verdana').setLineSpacing(0);
+  (body as NativeText).setNativeAntialias(false);
+  const bodyHeight=Math.max(16,body.height),buttonY=341+bodyHeight+41+14;
+  body.setVisible(!signed);
+  const border=frame(scene,layer,142,76,signed?366:371,signed?501:buttonY+53-76,'dialog');layer.sendToBack(border);
+  title(scene,layer,142,76,label.name,'golden-record');
+  image(scene,layer,signed?159:164,signed?111:115,originalImageKey(scene,'frame02 large environment'));
+  if(!signed){
+    infoFrame(scene,layer,166,341,304,bodyHeight,'Company info','golden-record');layer.bringToTop(body);
+    button(scene,layer,195,buttonY,134,'Play Demo',submit,Boolean(state.demo)&&!state.recording,33,'cd');
+    button(scene,layer,335,buttonY,130,'Cancel',close,true,33,'cancel');return;
   }
-  caption(scene, layer, 496, 136, state.contract ? `Contract signed\n\nRoyalty\n${Math.round(state.contract.royalty * 100)}%\n\nAdvance\n${cash(state.contract.advance)}`
-    : `Record deal\n\n${label.albums} album${label.albums === 1 ? '' : 's'}\n\nRoyalty range\n${Math.round(label.minimumRoyalty * 100)}–${Math.round(label.maximumRoyalty * 100)}%`, 142);
-  frame(scene, layer, 166, 346, 463, 99, 'inner');
-  image(scene, layer, 166, 322, 'ui-golden-record');
-  caption(scene, layer, 194, 335, 'Company info').setFontFamily('Verdana').setFontSize(11).setFontStyle('bold');
-  caption(scene, layer, 175, 355, label.description, 444).setFontFamily('Arial').setFontSize(13);
-  const song = data.songs.find((s) => s.id === state.demo?.songId);
-  caption(scene, layer, 175, 410, state.contract ? `Signed: ${song?.name}` : song ? `Demo: ${song.name}` : 'No demo recorded yet.', 439).setFontSize(11);
-  button(scene, layer, 166, 471, 177, state.contract ? 'Signed' : 'Play demo', submit, Boolean(state.demo) && !state.contract && !state.recording, 33, 'cd');
-  button(scene, layer, 452, 471, 177, 'Cancel', close, true, 33, 'cancel');
+  const heading=caption(scene,layer,168,349,'Category').setFontFamily('Verdana').setFontSize(11).setFontStyle('bold');
+  const head=frame(scene,layer,162,345,heading.width+11,heading.height+8,'panel');layer.moveTo(head,layer.list.indexOf(heading));
+  frame(scene,layer,162,361,280,143,'outer');frame(scene,layer,167,366,270,133,'inner');
+  const ids=business.labels.find(r=>r.id===label.id)!.actions;
+  ids.forEach((id,index)=>{
+    const entry=data.activities.tables.ActionCategory.find(c=>c.ID===id)??data.activities.tables.Action.find(c=>c.ID===id)!;
+    const enabled=id==='ActRecordDemo'?Boolean(state.demo)&&!state.recording&&state.contract?.approved===false:id==='ActRecordSurvey'?Boolean(state.album&&state.album.releaseDay>0&&state.day>=state.album.releaseDay):true;
+    const y=368+index*42;
+    const key=[entry.Gfx.replaceAll(' ','_').toLowerCase(),'activity-'+entry.Gfx.replaceAll(' ','_').toLowerCase()].find(k=>scene.textures.exists(k));
+    if(key){const bitmap=data.activities.bitmaps.find(b=>b.name.toLowerCase()===entry.Gfx.toLowerCase());image(scene,layer,192-(bitmap?.regX??0),y+21-(bitmap?.regY??0),key).setAlpha(enabled?1:.35);}
+    const name=caption(scene,layer,219,y,entry.name,213).setFontFamily('Verdana').setFontSize(11).setFontStyle('bold');
+    const comment=caption(scene,layer,219,y+14,entry.comment,213).setFontFamily('Verdana').setFontSize(11).setLineSpacing(0);
+    const shift=Math.max(0,(42-name.height-comment.height)/2-2);name.y+=shift;comment.y+=shift;
+    if(!enabled){name.setAlpha(.35);comment.setAlpha(.35);}else{const hit=scene.add.zone(169,y,266,42).setOrigin(0).setInteractive({cursor:cursorStyle('active')});layer.add(hit);hit.on('pointerup',()=>id==='ActRecordDemo'?submit():choose(id));}
+  });
+  image(scene,layer,444,352,'scroll-up').setAlpha(.3);image(scene,layer,444,476,'scroll-down').setAlpha(.3);
+  image(scene,layer,451,380,originalImageKey(scene,'BehindScrollerPic')).setDisplaySize(13,95);image(scene,layer,448,378,'scroll-thumb');
+  button(scene,layer,283,524,81,'OK',close,true,33,'accept');
 }
 
-export function contractWindow(scene: Phaser.Scene, layer: Phaser.GameObjects.Container, label: Label, offer: { advance: number; royalty: number }, index: number, count: number,
+/** DlgRecordContractData: the contract image and two native choosers. */
+export function contractWindow(scene: Phaser.Scene, layer: Phaser.GameObjects.Container, _label: Label, offer: { advance: number; royalty: number }, index: number, count: number,
   change: (index: number) => void, sign: () => void, cancel: () => void): void {
-  frame(scene, layer, 243, 119, 485, 380, 'dialog');
-  title(scene, layer, 243, 119, 'Contract Proposal', 'contract');
-  image(scene, layer, 271, 159, 'image_contract01');
-  caption(scene, layer, 491, 163, label.name, 208).setFontStyle('bold');
-  const advanceIcon = image(scene, layer, 485, 190, 'ui-money'); caption(scene, layer, 489 + advanceIcon.width, 195, 'Advance');
-  frame(scene, layer, 485, 220, 153, 29, 'inner'); caption(scene, layer, 491, 227, cash(offer.advance));
-  clickImage(image(scene, layer, 641, 216, 'small-arrow-up'), () => change(index - 1), index > 0);
-  clickImage(image(scene, layer, 641, 234, 'small-arrow-down'), () => change(index + 1), index < count - 1);
-  image(scene, layer, 485, 256, 'ui-cd'); caption(scene, layer, 515, 262, 'Royalty');
-  frame(scene, layer, 485, 289, 153, 29, 'inner'); caption(scene, layer, 491, 296, `${Math.round(offer.royalty * 100)}%`);
-  clickImage(image(scene, layer, 641, 285, 'small-arrow-up'), () => change(index + 1), index < count - 1);
-  clickImage(image(scene, layer, 641, 303, 'small-arrow-down'), () => change(index - 1), index > 0);
-  caption(scene, layer, 491, 336, `${label.albums} album${label.albums === 1 ? '' : 's'} under contract.\n\nA larger advance means a lower royalty. Advances are repaid from sales.`, 210).setFontSize(11);
-  button(scene, layer, 271, 460, 125, 'OK', sign, true, 33, 'accept');
-  button(scene, layer, 544, 460, 165, 'Cancel', cancel, true, 33, 'cancel');
+  const advance=nativeChooser(scene,layer,{x:485,y:190,label:'Advance',value:cash(offer.advance),icon:'ui-money',textRight:90,previous:()=>change(index-1),next:()=>change(index+1),previousEnabled:index>0,nextEnabled:index<count-1});
+  const royalty=nativeChooser(scene,layer,{x:485,y:256,label:'Royalty',value:Math.round(offer.royalty*100)+'%',icon:'ui-cd',textRight:90,previous:()=>change(index+1),next:()=>change(index-1),previousEnabled:index<count-1,nextEnabled:index>0});
+  const width=242+Math.max(advance.width,advance.heading.x+advance.heading.width+5,royalty.width,royalty.heading.x+royalty.heading.width+5)+20;
+  const border=frame(scene,layer,243,119,width,394,'dialog');layer.sendToBack(border);
+  title(scene,layer,243,119,'Contract Proposal','contract');image(scene,layer,271,159,'image_contract01');
+  const center=243+(width-20)/2;
+  button(scene,layer,center-96,460,77,'OK',sign,true,33,'accept');button(scene,layer,center-13,460,109,'Cancel',cancel,true,33,'cancel');
+}
+
+/** DlgRecordSurveyData / DlgSurveyInfoData: three most receptive audience groups. */
+export function labelSurveyWindow(scene:Phaser.Scene,layer:Phaser.GameObjects.Container,state:GameState,close:()=>void):void {
+  let y=168;
+  const contents=scene.add.container();layer.add(contents);
+  [...state.publicity.groups].sort((a,b)=>b.likes-a.likes).slice(0,3).forEach(group=>{
+    const source=data.activities.tables.Group.find(g=>g.ID===group.id)!;
+    const percent=Math.trunc(100*Math.max(0,group.likes));
+    const pieIndex=Math.max(0,Math.min(20,20-Math.trunc(percent/5)));
+    image(scene,contents,123,y,'pie01_'+String(pieIndex).padStart(4,'0'));
+    const description=text(scene,contents,213,y,source.name+'\n'+source.comment+'\nAge: '+source.AgeRange.min+'–'+source.AgeRange.max+'\nGroup size: '+Number(source.size).toLocaleString('en-GB'),11,'#eeeeee',296).setFontFamily('Verdana').setLineSpacing(0);
+    (description as NativeText).setNativeAntialias(false);
+    const value=text(scene,contents,168,y+57,percent+'%',11,'#eeeeee').setFontFamily('Verdana').setOrigin(.5,0);
+    (value as NativeText).setNativeAntialias(false);
+    y+=Math.max(67,description.height)+5;
+  });
+  const contentHeight=y-163,buttonY=132+contentHeight+41+10;
+  const border=frame(scene,layer,100,100,439,buttonY+53-100,'dialog');layer.sendToBack(border);
+  title(scene,layer,100,100,'Survey','microphone');
+  infoFrame(scene,layer,114,132,386,contentHeight,'Target group');layer.bringToTop(contents);
+  button(scene,layer,276,buttonY,81,'OK',close,true,33,'accept');
 }
 
 export function sessionWindow(scene: Phaser.Scene, layer: Phaser.GameObjects.Container, state: GameState, studio: Studio, channel: MixChannel,
-  choose: (id: string | null) => void, close: () => void): void {
+  choose: (id: string | null,instrument:Instrument) => void, close: () => void): void {
   frame(scene, layer, 293, 95, 358, 457, 'dialog');
   title(scene, layer, 293, 95, 'Session musician', 'microphone');
   const currentBandMember = state.band.find((b) => b?.instrument === channel.instrument && !state.recording!.channels.some((c) => c !== channel && c.musicianId === b.musicianId));
   const bandPerson = data.musicians.find((m) => m.id === currentBandMember?.musicianId);
   const options = [...(bandPerson ? [{ id: null, name: bandPerson.name, price: 0 }] : []), ...data.tutorialGameplay.sessionMusicians.filter((m) => studio.sessionMusicians.includes(m.id))];
   let selected = options.find((o) => o.id === channel.musicianId) ?? options[0];
+  let instrument=channel.instrument;
+  let chooser:Phaser.GameObjects.Container|undefined;
+  const instrumentChooser=()=>{
+    const available=selected?.id?SESSION_INSTRUMENTS.filter(i=>data.tutorialGameplay.loops.some(l=>l.songId===state.recording!.songId&&l.instrument===i)):[channel.instrument];
+    if(!available.includes(instrument))instrument=available[0];
+    const instruments=[instrument,...available.filter(i=>i!==instrument)];
+    // Preserve the chosen order while using the original Up/Down chooser.
+    const draw=(order:Instrument[])=>{
+      chooser?.destroy(true);const index=order.indexOf(instrument);
+      chooser=nativeChooser(scene,layer,{x:315,y:428,label:'Instrument',value:instrument,textRight:238,
+        previous:()=>{instrument=order[index-1];draw(order);},next:()=>{instrument=order[index+1];draw(order);},previousEnabled:index>0,nextEnabled:index<order.length-1}).container;
+    };draw(instruments);
+  };
   let sheet: Phaser.GameObjects.Container | undefined;
   const rows: Phaser.GameObjects.Rectangle[] = [];
   const select = (option: typeof options[number]) => {
@@ -233,6 +274,7 @@ export function sessionWindow(scene: Phaser.Scene, layer: Phaser.GameObjects.Con
     sheet?.destroy(true);
     sheet = studioMusicianSheet(scene, layer, 315, 137, data.musicians, { ...channel, musicianId: option.id ?? bandPerson?.id ?? null });
     rows.forEach((row, index) => row.setFillStyle(options[index] === selected ? 0x514a3c : 0x171717));
+    instrumentChooser();
   };
   caption(scene, layer, 317, 277, 'Musician').setFontSize(11);
   caption(scene, layer, 504, 277, 'Price').setFontSize(11);
@@ -245,10 +287,7 @@ export function sessionWindow(scene: Phaser.Scene, layer: Phaser.GameObjects.Con
     caption(scene, layer, 325, y + 8, option.name, 168).setFontSize(11);
     caption(scene, layer, 502, y + 8, option.price ? cash(option.price) : '', 51).setFontSize(10);
   });
-  caption(scene, layer, 315, 428, 'Instrument');
-  frame(scene, layer, 315, 448, 238, 27, 'inner');
-  caption(scene, layer, 323, 455, channel.instrument, 222).setFontSize(11);
-  button(scene, layer, 315, 502, 125, 'OK', () => choose(selected.id), options.length > 0, 33, 'accept');
+  button(scene, layer, 315, 502, 125, 'OK', () => choose(selected.id,instrument), options.length > 0, 33, 'accept');
   button(scene, layer, 504, 502, 127, 'Cancel', close, true, 33, 'cancel');
   if (selected) select(selected);
 }

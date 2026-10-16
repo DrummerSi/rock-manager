@@ -11,7 +11,7 @@ const {PNG}=require('pngjs');
 const pressCards:typeof import('../../src/game/press-review-cards.json')=require('../../src/game/press-review-cards.json');
 const base=process.env.PLAYWRIGHT_BASE_URL??'http://127.0.0.1:5174';
 const snapshot=(page:Page)=>page.evaluate(()=>(window as any).__rockManager.snapshot());
-async function click(page:Page,x:number,y:number){await page.mouse.click(x,y);await page.evaluate(()=>new Promise<void>(resolve=>requestAnimationFrame(()=>requestAnimationFrame(()=>resolve()))));}
+async function click(page:Page,x:number,y:number){await page.mouse.click(x,y,{delay:35});await page.evaluate(()=>new Promise<void>(resolve=>requestAnimationFrame(()=>requestAnimationFrame(()=>resolve()))));}
 async function boot(page:Page,state:GameState){
   await page.addInitScript(value=>localStorage.setItem('rock-manager.mission01.v1',JSON.stringify(value)),state);
   await page.goto(base);await page.waitForFunction(()=>'__rockManager'in window);
@@ -69,7 +69,10 @@ test('mission chooser, briefing illustration and rename expose original layout c
 });
 
 test('rename uses the original paper field',async({page},info)=>{
-  await boot(page,fixture());await click(page,306,40);await click(page,150,517);
+  await boot(page,fixture());await click(page,306,40);
+  await expect.poll(async()=>(await snapshot(page)).modal).toBe('rehearsal');
+  await click(page,150,517);
+  await expect.poll(async()=>(await snapshot(page)).modal).toBe('rename');
   const s=await snapshot(page);expect(s.sourceLayout.id).toBe('DlgRehearsal01Name');
   expect(s.sourceLayout.bounds).toEqual({x:260,y:204,width:334,height:146});
   expect(s.sourceLayout.field).toEqual({x:282,y:258,width:280});
