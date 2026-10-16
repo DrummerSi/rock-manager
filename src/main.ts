@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { GameScene } from './scenes/GameScene';
+import { PreloadScene } from './scenes/PreloadScene';
 
 async function boot(): Promise<void> {
 await Promise.all(['14px "Courier New"', 'bold 14px "Courier New"', '15px Arial', 'bold 15px Arial',
@@ -11,7 +12,7 @@ new Phaser.Game({
   backgroundColor: '#000000',
   render: { antialias: false, roundPixels: true },
   scale: { mode: Phaser.Scale.FIT, autoCenter: Phaser.Scale.CENTER_BOTH },
-  scene: [GameScene],
+  scene: [PreloadScene,GameScene],
 });
 }
 void boot();

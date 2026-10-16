@@ -4,8 +4,8 @@ import manifest from '../generated/sprite-atlases.json';
 /** Load each file once; publish the original keys after loading completes. */
 export function preloadSpriteAtlases(scene:Phaser.Scene):void {
   const base=import.meta.env.BASE_URL+'assets/';
-  for(const page of manifest.pages)scene.load.atlas(page.key,base+page.image+'?v='+page.version,base+page.json+'?v='+page.version);
-  for(const image of manifest.standalone)scene.load.image(image.aliases[0],base+image.file+'?v='+image.version);
+  for(const page of manifest.pages)if(!scene.textures.exists(page.key))scene.load.atlas(page.key,base+page.image+'?v='+page.version,base+page.json+'?v='+page.version);
+  for(const image of manifest.standalone)if(!scene.textures.exists(image.aliases[0]))scene.load.image(image.aliases[0],base+image.file+'?v='+image.version);
 }
 
 /** A keyed view into an atlas, sharing its GPU source rather than uploading

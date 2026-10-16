@@ -1,4 +1,5 @@
-import {preloadSpriteAtlases,registerSpriteAtlasKeys} from '../game/sprite-atlases';
+import {hasAudioData,preloadAudioData} from '../game/audio-data';
+import {missionPreviewPaths,songStemPaths} from '../game/song-audio';
 import {loadCareer,saveCareer,recordCareer,careerAvailability,careerTotal,type Career} from '../game/career';
 import venueCards from '../game/venue-cards.json';
 import {TOUR_RULES,tourAvailable,tourQuote,bookTour,cancelTour} from '../game/tour';
@@ -122,7 +123,10 @@ export class GameScene extends Phaser.Scene {
   private scroll = 200;
   private running = true;
   private feedbackAudio = new FeedbackAudio();
-  private failedAssets = new Set<string>();
+  private audioLoading=false;
+  private audioLoadGeneration=0;
+  private studioAudioKey='';
+  private studioAudioPromise?:Promise<void>;
   private clock = 0;
   private selectedSlot = 0;
   private recruitOffset = 0;
@@ -145,33 +149,16 @@ export class GameScene extends Phaser.Scene {
 
   constructor() { super('Game'); }
 
-  preload(): void {
-    this.failedAssets.clear();
-    const progress = this.add.graphics();
-    this.add.text(400, 270, 'ROCK MANAGER', { fontFamily: 'Georgia', fontSize: '28px', color: '#dfc18a' }).setOrigin(0.5);
-    const status = this.add.text(400, 310, 'Loading First Steps…', { fontFamily: 'Arial', fontSize: '16px', color: '#c2b6b3' }).setOrigin(0.5);
-    const onProgress = (amount: number) => {
-      progress.clear().fillStyle(0x3d2837).fillRect(240, 344, 320, 6)
-        .fillStyle(0xdfc18a).fillRect(240, 344, 320 * amount, 6);
-      status.setText(`Loading First Steps… ${Math.floor(amount*100)}%`);
-    };
-    const onError = (file: Phaser.Loader.File) => { this.failedAssets.add(file.key); };
-    this.load.on('progress', onProgress);
-    this.load.on('loaderror', onError);
-    this.events.once('shutdown', () => { this.load.off('progress', onProgress); this.load.off('loaderror', onError); });
-    preloadSpriteAtlases(this);
-    this.load.audio('ambience', `${import.meta.env.BASE_URL}assets/city-ambience.wav`);
-  }
-
-  create(): void {
-    this.children.removeAll(true);
-    if(this.failedAssets.size){
-      this.add.text(400,250,'Some game files could not be loaded.\nCheck your connection, then retry.',{fontFamily:'Arial',fontSize:'18px',color:'#eeeeee',align:'center'}).setOrigin(.5);
-      this.add.rectangle(400,340,180,44,0x3d2837).setInteractive({cursor:'pointer'}).once('pointerup',()=>this.scene.restart());
-      this.add.text(400,340,'Retry loading',{fontFamily:'Arial',fontSize:'18px',color:'#ffffff'}).setOrigin(.5);
-      return;
+  create(options:{fadeIn?:boolean}={}): void {
+    if(options.fadeIn){
+      this.input.enabled=false;
+      if(this.input.keyboard)this.input.keyboard.enabled=false;
+      this.cameras.main.once(Phaser.Cameras.Scene2D.Events.FADE_IN_COMPLETE,()=>{
+        this.input.enabled=true;
+        if(this.input.keyboard)this.input.keyboard.enabled=true;
+      });
+      this.cameras.main.fadeIn(500,0,0,0);
     }
-    registerSpriteAtlasKeys(this.textures);
     if (this.game.renderer instanceof Phaser.Renderer.WebGL.WebGLRenderer) {
       this.game.renderer.pipelines.addPostPipeline('NativeDisplay', NativeDisplay);
       this.cameras.main.setPostPipeline('NativeDisplay');
@@ -409,7 +396,7 @@ export class GameScene extends Phaser.Scene {
   private updateStatus():void {}
 
   private tickDay(): void {
-    if(this.modal&&this.modal!=='tour-ongoing' || this.tutorialId || this.missionHasEnded() || this.state.missionProgress?.pendingFailure) return;
+    if(this.audioLoading || this.modal&&this.modal!=='tour-ongoing' || this.tutorialId || this.missionHasEnded() || this.state.missionProgress?.pendingFailure) return;
     void this.feedbackAudio.play('Tick', true);
     const oldSales = this.state.publicity.totalSales;
     const oldTourResults=this.state.tour?.results.length??0;
@@ -456,6 +443,10 @@ export class GameScene extends Phaser.Scene {
   }
 
   private open(kind: Modal): void {
+    if(kind==='briefing'){
+      const paths=missionPreviewPaths(this.state.missionId);
+      if(paths.some(path=>!hasAudioData(path))){this.waitForAudio('Loading song previews',paths,()=>this.open('briefing'));return;}
+    }
     if(kind==='design'&&this.state.missionId==='Mission09'&&!this.state.scenario?.vars.costumes){
       this.dispatchScenario({kind:'action',actionId:'EnterDesign'});
       this.time.delayedCall(0,()=>{if(this.modal==='design')this.open('scenario-event');});
@@ -778,16 +769,58 @@ export class GameScene extends Phaser.Scene {
     const studio = data.tutorialGameplay.studios.find((s) => s.id === this.selectedStudioId)!;
     const songs = recordableSongIds(this.state).map(id=>data.songs.find(s=>s.id===id)!);
     if (!songs.some((s) => s.id === this.selectedSongId)) this.selectedSongId = songs.find(s=>s.id===this.state.selectedSong)?.id ?? songs[0]?.id ?? '';
+    if(this.selectedSongId)void this.prepareStudioAudio(this.selectedSongId).catch(()=>{});
     studioWindow(this, layer, this.state, studio, songs, this.selectedSongId,
       (id) => { this.selectedSongId = id; this.open('studio'); },
       () => { if (this.state.demo) this.open('replace-demo'); else this.beginRecording(); }, () => this.open(null));
   }
 
   private beginRecording(): void {
-    try {
-      this.state = startRecording(this.state, data.tutorialGameplay, this.selectedStudioId, this.selectedSongId);
-      this.save(); this.open('mixer');
-    } catch (error) { this.toast((error as Error).message, 6000); }
+    const songId=this.selectedSongId,studioId=this.selectedStudioId;
+    this.waitForAudio('Loading song instruments',songStemPaths(this.state,songId),()=>{
+      try {
+        this.state = startRecording(this.state, data.tutorialGameplay, studioId, songId);
+        this.save(); this.open('mixer');
+      } catch (error) { this.toast((error as Error).message, 6000); }
+    },()=>this.open('studio'));
+  }
+
+  private prepareStudioAudio(songId:string):Promise<void>{
+    const paths=songStemPaths(this.state,songId),key=paths.join('\n');
+    if(key===this.studioAudioKey&&this.studioAudioPromise)return this.studioAudioPromise;
+    this.studioAudioKey=key;
+    this.studioAudioPromise=preloadAudioData(paths,()=>{},()=>this.studioAudioKey===key).catch(error=>{
+      if(this.studioAudioKey===key)this.studioAudioPromise=undefined;
+      throw error;
+    });
+    return this.studioAudioPromise;
+  }
+
+  private waitForAudio(label:string,paths:string[],ready:()=>void,cancel?:()=>void):void{
+    if(this.audioLoading)return;
+    if(paths.every(hasAudioData)){ready();return;}
+    this.audioLoading=true;const generation=++this.audioLoadGeneration;
+    const layer=this.add.container().setDepth(1000);
+    const blocker=this.add.rectangle(0,0,800,600,0x000000,.65).setOrigin(0).setInteractive();layer.add(blocker);
+    frame(this,layer,205,225,390,150,'dialog');title(this,layer,205,225,label,'cd');
+    const status=text(this,layer,225,270,'',11,'#eeeeee',350).setFontFamily('Verdana');
+    const actions=this.add.container();layer.add(actions);
+    const current=()=>generation===this.audioLoadGeneration&&Boolean(layer.scene);
+    const onShutdown=()=>{if(current())close();};
+    const close=()=>{this.events.off('shutdown',onShutdown);this.audioLoadGeneration++;this.audioLoading=false;layer.destroy(true);};
+    const run=()=>{
+      actions.removeAll(true);
+      if(cancel)button(this,actions,345,329,109,'Cancel',()=>{close();cancel();},true,33,'cancel');
+      void preloadAudioData(paths,(loaded,total)=>{if(current())status.setText(`Loading audio: ${loaded} / ${total}`);},current).then(()=>{
+        if(!current())return;close();ready();
+      }).catch(()=>{
+        if(!current())return;status.setText('Audio could not be loaded. Check your connection and retry.');
+        actions.removeAll(true);
+        button(this,actions,cancel?275:345,329,109,'Retry',run,true,33,'accept');
+        if(cancel)button(this,actions,405,329,109,'Cancel',()=>{close();cancel();},true,33,'cancel');
+      });
+    };
+    this.events.once('shutdown',onShutdown);run();
   }
 
   private mixer(layer: Phaser.GameObjects.Container): void {
@@ -1429,6 +1462,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   private keyInput(event: KeyboardEvent): void {
+    if(this.audioLoading)return;
     if(this.labelAuditioning)return;
     if(this.modal==='venue-notice'){if(event.key==='Enter'||event.key==='Escape')this.open(this.venueNoticeReturn);return;}
     // Phaser can revisit queued DOM events when the input display list changes.

@@ -6,7 +6,7 @@ const loading = new Map<string, Promise<ArrayBuffer>>();
 export function retainAudioData(path: string, bytes: ArrayBuffer): void { encoded.set(path, bytes); }
 export function hasAudioData(path: string): boolean { return encoded.has(path); }
 
-export async function audioData(path: string): Promise<ArrayBuffer> {
+async function encodedAudioData(path: string): Promise<ArrayBuffer> {
   let bytes = encoded.get(path);
   if (!bytes) {
     let pending = loading.get(path);
@@ -19,7 +19,23 @@ export async function audioData(path: string): Promise<ArrayBuffer> {
     }
     bytes = await pending;
   }
-  return bytes.slice(0);
+  return bytes;
+}
+
+export async function audioData(path:string):Promise<ArrayBuffer>{ return (await encodedAudioData(path)).slice(0); }
+
+/** Warm compressed files only, with bounded concurrency. Existing playback
+ * requests share the same pending download and receive their own decode copy. */
+export async function preloadAudioData(paths:readonly string[],progress:(loaded:number,total:number)=>void=()=>{},current:()=>boolean=()=>true):Promise<void>{
+  const unique=[...new Set(paths)];let next=0,loaded=unique.filter(hasAudioData).length,failed=false;
+  const missing=unique.filter(path=>!hasAudioData(path));progress(loaded,unique.length);
+  await Promise.all(Array.from({length:Math.min(4,missing.length)},async()=>{
+    while(!failed&&current()&&next<missing.length){
+      const path=missing[next++];
+      try {await encodedAudioData(path);}catch(error){failed=true;throw error;}
+      if(!failed)progress(++loaded,unique.length);
+    }
+  }));
 }
 
 export function audioAssetPaths(feedback: readonly {path:string}[], extra: readonly {path:string}[], music: readonly {file:string}[]): string[] {

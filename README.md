@@ -25,6 +25,8 @@ npm run preview
 Original extracted images remain intact. Frames retain their dimensions and alpha, with no trimming or rotation and two pixels of edge padding. Existing asset keys and Director registration points are preserved. Actor/font atlases, large backgrounds and fractionally scaled studio photos remain separate. Atlas URLs include a content version for browser caching. This bundles requests; loading assets by mission is a separate optimization.
 
 
+Mission song previews preload as compressed audio during initial loading and before a new mission briefing. Selecting a studio song warms only that song's loops and eligible vocal variants, with four downloads at a time. Record waits for missing stems before charging or entering the mixer; failed downloads can be retried. Playback and mixdown reuse those downloaded bytes, and unused variants remain undecoded.
+
 ## Play this milestone
 
 1. Read the First Steps briefing and begin the mission.
