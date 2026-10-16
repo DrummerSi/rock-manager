@@ -1,0 +1,11 @@
+import fs from 'node:fs';
+import {decodeDirectorVList} from './director-vlist.mjs';
+const row=(table,i)=>Object.fromEntries(Object.entries(table).map(([key,value])=>[key,Array.isArray(value)?value[i]:row(value,i)]));
+const base='analysis/original/data/';
+const missions=JSON.parse(fs.readFileSync(base+'DataDBRest00.json')).data.Mission;
+const mission=row(missions,missions.ID.indexOf('Mission04'));
+const triggers=JSON.parse(fs.readFileSync(base+'DataDBRest04.json')).data.Trigger;
+const cards=JSON.parse(fs.readFileSync(base+'DataDBEC04.json')).data;
+const autoLoad=decodeDirectorVList(process.argv[2]??'E:/Games/Rock Manager/Plugins/Swedish/M04.dat');
+const result={mission,autoLoad,triggers:triggers.ID.map((_,i)=>row(triggers,i)),cards:Object.values(cards).flatMap(table=>table.ID.map((_,i)=>row(table,i)))};
+fs.writeFileSync('analysis/original/mission04-recovered.json',JSON.stringify(result,null,2)+'\n');

@@ -1,0 +1,12 @@
+import fs from 'node:fs';
+import {decodeDirectorVList} from './director-vlist.mjs';
+const root='analysis/original';
+const read=n=>JSON.parse(fs.readFileSync(`${root}/data/${n}.json`));
+const row=(v,i)=>Array.isArray(v)?v[i]:v&&typeof v==='object'?Object.fromEntries(Object.entries(v).map(([k,c])=>[k,row(c,i)])):v;
+const rows=t=>t.ID.map((_,i)=>row(t,i));
+const rest=read('DataDBRest03'),cards=read('DataDBEC03'),catalog=read('DataDBRest00');
+const mission=rows(catalog.data.Mission).find(m=>m.ID==='Mission03');
+const autoload=decodeDirectorVList('.local/original-runtime/Plugins/Swedish/M03.dat');
+fs.writeFileSync(`${root}/mission03-autoload-evidence.json`,JSON.stringify(autoload,null,2));
+fs.writeFileSync(`${root}/mission03-rules-evidence.json`,JSON.stringify({method:'Static original columnar tables flattened recursively; expression strings retained without execution.',sources:[rest,cards,catalog].map(({source,sha256})=>({source,sha256})),mission,triggers:rows(rest.data.Trigger),cards:rows(cards.data.EventCardOKCancel)},null,2));
+console.log('Retained Mission03 catalog, autoload, 30 triggers and 30 event cards.');
