@@ -18,6 +18,13 @@ npm run preview
 
 `dist/` is a standalone static web build with relative paths, suitable for embedding in Tauri. The original game files and the large analysis folder are not included in it.
 
+## Sprite atlases
+
+`npm run prepare:assets` also generates lossless Phaser atlases in `public/assets/atlases` and the loader manifest in `src/generated/sprite-atlases.json`. To repack already prepared images, run `node scripts/build-sprite-atlases.mjs`. Unchanged inputs reuse the existing pages.
+
+Original extracted images remain intact. Frames retain their dimensions and alpha, with no trimming or rotation and two pixels of edge padding. Existing asset keys and Director registration points are preserved. Actor/font atlases, large backgrounds and fractionally scaled studio photos remain separate. Atlas URLs include a content version for browser caching. This bundles requests; loading assets by mission is a separate optimization.
+
+
 ## Play this milestone
 
 1. Read the First Steps briefing and begin the mission.

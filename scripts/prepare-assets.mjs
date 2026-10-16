@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { PNG } from 'pngjs';
+import {buildSpriteAtlases} from './build-sprite-atlases.mjs';
 
 const root = path.resolve('analysis/original');
 const fixture = JSON.parse(fs.readFileSync(path.join(root, 'data/mission01-recovered.json'), 'utf8'));
@@ -292,5 +293,7 @@ fs.writeFileSync('src/generated/source-window-audio.json', JSON.stringify({recov
 fs.mkdirSync(path.join(destination, 'feedback'), { recursive: true });
 for (const entry of feedback.recovered) fs.copyFileSync(path.join(root,entry.path), path.join(destination,'feedback',path.basename(entry.path)));
 for (const entry of sourceAudio.recovered) fs.copyFileSync(path.join(root,entry.path), path.join(destination,'feedback',path.basename(entry.path)));
+
+buildSpriteAtlases();
 
 console.log(`Prepared ${Object.keys(images).length} original images, ${musicians.length} musicians, ambience and ${feedback.recovered.length} feedback audio files.`);

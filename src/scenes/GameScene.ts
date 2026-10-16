@@ -1,3 +1,4 @@
+import {preloadSpriteAtlases,registerSpriteAtlasKeys} from '../game/sprite-atlases';
 import {loadCareer,saveCareer,recordCareer,careerAvailability,careerTotal,type Career} from '../game/career';
 import venueCards from '../game/venue-cards.json';
 import {TOUR_RULES,tourAvailable,tourQuote,bookTour,cancelTour} from '../game/tour';
@@ -158,7 +159,7 @@ export class GameScene extends Phaser.Scene {
     this.load.on('progress', onProgress);
     this.load.on('loaderror', onError);
     this.events.once('shutdown', () => { this.load.off('progress', onProgress); this.load.off('loaderror', onError); });
-    for (const [key, filename] of Object.entries(data.images)) this.load.image(key, `${import.meta.env.BASE_URL}assets/${filename}`);
+    preloadSpriteAtlases(this);
     this.load.audio('ambience', `${import.meta.env.BASE_URL}assets/city-ambience.wav`);
   }
 
@@ -170,6 +171,7 @@ export class GameScene extends Phaser.Scene {
       this.add.text(400,340,'Retry loading',{fontFamily:'Arial',fontSize:'18px',color:'#ffffff'}).setOrigin(.5);
       return;
     }
+    registerSpriteAtlasKeys(this.textures);
     if (this.game.renderer instanceof Phaser.Renderer.WebGL.WebGLRenderer) {
       this.game.renderer.pipelines.addPostPipeline('NativeDisplay', NativeDisplay);
       this.cameras.main.setPostPipeline('NativeDisplay');
