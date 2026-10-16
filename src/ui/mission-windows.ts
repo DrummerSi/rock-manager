@@ -6,8 +6,8 @@ import {missionEnding} from '../game/mission-progress';
 
 const cash=(n:number)=>Math.round(n).toLocaleString('en-GB');
 /** Source DlgMissionOutroData: original artwork and relative score-column layout. */
-export function missionResultWindow(scene:Phaser.Scene,parent:Phaser.GameObjects.Container,state:GameState,albumName:string,close:()=>void):void {
-  const ending=missionEnding(state,albumName),x=100,y=100;
+export function missionResultWindow(scene:Phaser.Scene,parent:Phaser.GameObjects.Container,state:GameState,albumName:string,close:()=>void,careerPoints=0):void {
+  const ending=missionEnding(state,albumName,careerPoints),x=100,y=100;
   const label=(px:number,py:number,value:string,width?:number,bold=false)=>{
     const result=text(scene,parent,px,py,value,11,'#fffbf0',width).setFontFamily('Verdana').setFontStyle(bold?'bold':'').setLetterSpacing(-1).setLineSpacing(2) as NativeText;
     return result.setNativeAntialias(false);

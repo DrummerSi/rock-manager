@@ -1,4 +1,4 @@
-import {missionSpend} from './scenario78';
+import {missionSpend} from './mission-spending';
 import { bandmateOccupied } from './bandmates';
 import {missionDefinition} from './mission-catalog';
 import sourceRules from './publicity-rules.json' with { type: 'json' };
@@ -29,6 +29,7 @@ export interface PublicityState {
 }
 type PublicGame = GameState & { publicity: PublicityState };
 const clamp = (n: number, low = 0, high = 1) => Math.max(low, Math.min(high, n));
+const population=(state:GameState,g:{id:string;size:number})=>Number(state.scenario?.vars['population:'+g.id]??g.size);
 const mean = (values: number[]) => values.length ? values.reduce((a, b) => a + b, 0) / values.length : 0;
 const styleNames = ['Metal', 'rock', 'Punk', 'Pop', 'Dance', 'Boring'];
 const keyFor = (state: GameState) => state.demo ? `${state.demo.songId}:${state.demo.recordedDay}` : null;
@@ -40,7 +41,7 @@ const ordinal = (state: GameState) => Math.floor(Date.parse(`${state.startDate}T
 // OneGraphScript: the original percentage legend maps raw 0..0.33 to 0..100.
 export const displayAlbumHype = (raw: number): number => Math.round(raw / .33 * 100);
 export function albumHype(state:GameState):number {
-  return Math.max(0,rawRules.groups.reduce((sum,g)=>sum+g.size*(state.publicity.groups.find(v=>v.id===g.id)?.albumHype??0),0)/rawRules.groups.reduce((sum,g)=>sum+g.size,0));
+  return Math.max(0,rawRules.groups.reduce((sum,g)=>sum+population(state,g)*(state.publicity.groups.find(v=>v.id===g.id)?.albumHype??0),0)/rawRules.groups.reduce((sum,g)=>sum+population(state,g),0));
 }
 
 export function defaultPublicity(state?: Pick<GameState, 'day'>): PublicityState {
@@ -73,6 +74,7 @@ function liking(state: GameState, musicians: Musician[], taste: Taste, imageWeig
     const score = tolerance >= 2 ? 1 : 1 - Math.abs(taste.songType! - (state.demo?.songType ?? 0)) / tolerance;
     scores.push(score); averages.push(score);
   }
+  if(state.scenario?.vars.AlbumLikeBoost!==undefined)return {like:1,penalty:0};
   return { like: mean(averages) + freshWeight * (freshness(state) - 1), penalty: scores.reduce((sum, n) => sum + Math.min(n, 0), 0) };
 }
 
@@ -218,10 +220,12 @@ function performConcert(state: PublicGame, musicians: Musician[], concert: Conce
     audience: 0, satisfaction: 0, income: 0, rent: venue.rent, cancelled: false };
   concert.completed = true;
   if (!state.demo || !state.band.some(b => b?.instrument === 'Vocals')) { result.cancelled = true; p.concertResults.push(result); return 0; }
-  const reaches = reach(venue.targets), totalReach = Object.values(reaches).reduce((a, b) => a + b, 0);
+  const reaches = reach(venue.targets);
+  if(state.scenario?.vars.LiveReachBoost!==undefined)for(const id of Object.keys(reaches))reaches[id]=Math.min(1,reaches[id]+Number(state.scenario.vars.LiveReachBoost));
+  const totalReach = Object.values(reaches).reduce((a, b) => a + b, 0);
   const wanted = rawRules.groups.map((g, i) => {
     const guaranteed = totalReach ? venue.size * venue.regulars * reaches[g.id] / totalReach : 0;
-    const additional = clamp(reaches[g.id] * (tour?.populationFactor??1) * p.groups[i].bandHype * 0.02 * (1 + 0.3 * p.liveReputation) * freshness(state)) * g.size;
+    const additional = clamp(reaches[g.id] * (tour?.populationFactor??1) * p.groups[i].bandHype * 0.02 * (1 + 0.3 * p.liveReputation) * freshness(state)) * population(state,g);
     return guaranteed + additional;
   });
   const totalWanted = wanted.reduce((a, b) => a + b, 0), filled = Math.min(1.3, totalWanted / venue.size);
@@ -231,7 +235,7 @@ function performConcert(state: PublicGame, musicians: Musician[], concert: Conce
   const weight = members.reduce((sum, v) => sum + influence[v.b.instrument], 0);
   const performance = clamp((members.reduce((sum, v) => sum + influence[v.b.instrument] * (0.5 * v.m.musicality + 0.4 * (v.m.charisma ?? 0) + 0.6 * v.m.mood) / 1.5, 0) / weight - 0.2) / 0.55) * crowdFactor;
   const quality = Object.fromEntries(rawRules.groups.map((g, i) => [g.id, Math.min(1, (4 * performance + liking(state, musicians, g, 1, true, 0.3).like) / 5)]));
-  const satisfaction = totalWanted >= 1 ? Math.min(1, rawRules.groups.reduce((sum, g, i) => sum + quality[g.id] * wanted[i] / totalWanted, 0) + (random(p) * 0.2 - 0.1)+.2*(tour?.stageQuality??0)) : 0;
+  const satisfaction = totalWanted >= 1 ? Math.min(1, rawRules.groups.reduce((sum, g, i) => sum + quality[g.id] * wanted[i] / totalWanted, 0) + (random(p) * 0.2 - 0.1)+Number(state.scenario?.vars.ConcertLikeBoost??0)+.2*(tour?.stageQuality??0)) : 0;
   result.audience = Math.min(venue.size, totalWanted); result.satisfaction = Math.max(0, satisfaction);
   result.income = Math.round(result.audience * venue.ticketPrice * venue.royalty);
   p.liveReputation = clamp(p.liveReputation + clamp((satisfaction - 0.2) * totalWanted / 500, -0.5, 0.5), -1, 1);
@@ -269,7 +273,7 @@ function reportersTick(state: PublicGame, musicians: Musician[]) {
       }
     }
     if ((media.type === 'Radio'||media.type==='TV') && reporter.nextPlaylistDay > 0 && state.day >= reporter.nextPlaylistDay) {
-      const totalHype = Math.max(0, rawRules.groups.reduce((sum, g, i) => sum + g.size * p.groups[i].albumHype, 0) / rawRules.groups.reduce((sum, g) => sum + g.size, 0));
+      const totalHype = Math.max(0, rawRules.groups.reduce((sum, g, i) => sum + population(state,g) * p.groups[i].albumHype, 0) / rawRules.groups.reduce((sum, g) => sum + population(state,g), 0));
       let rotation = likes + (totalHype - source.minimumHype) / (0.5 - source.minimumHype);
       const video=media.type==='TV'&&state.video?.completed&&state.video.albumKey===keyFor(state)?videoRules.concepts.find(v=>v.id===state.video!.conceptId):undefined;
       if(media.type==='TV'&&!video)continue;
@@ -363,7 +367,7 @@ export function advancePublicity<T extends PublicGame>(state: T, musicians: Musi
         group.likes = liking(current, musicians, source).like;
         group.albumHype = Math.max(0, (group.albumHype - 0.005) * 0.962);
         group.willBuy = Math.max(0, (group.willBuy + source.resistance * group.albumHype - 0.0065) * 0.995);
-        const bought = Math.max(group.bought, source.size * Math.max(0, (group.likes + freshness(current)) * Math.min(1, group.willBuy)));
+        const bought = Math.max(group.bought, population(current,source) * Math.max(0, (group.likes + freshness(current)) * Math.min(1, group.willBuy)));
         sales += bought - group.bought; group.bought = bought;
       }
       p.totalSales += sales;

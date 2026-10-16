@@ -1,4 +1,5 @@
-import {missionSpend} from './scenario78';
+import {missionSnapshots} from './mission-catalog';
+import {missionSpend} from './mission-spending';
 import {gangstaAway} from './gangsta';
 import {videoOccupies} from './video';
 import {tourOccupied} from './tour';
@@ -272,7 +273,7 @@ export function validBandmates(state: GameState, musicians?: Musician[]): boolea
   const int = (n: number) => Number.isSafeInteger(n) && n >= 0 && n <= 365100;
   if (!Array.isArray(b.people) || b.people.length !== ids.size || b.people.some(p => !p || typeof p !== 'object') || new Set(b.people.map(p => p.musicianId)).size !== b.people.length || !Array.isArray(b.modifiers) || !Array.isArray(b.training) || !Array.isArray(b.pendingBooze) || !Array.isArray(b.completions)) return false;
   if (b.training.some(t => !t || typeof t !== 'object') || new Set(b.training.map(t => t.id)).size !== b.training.length || b.completions.some(c => !c || typeof c !== 'object') || new Set(b.completions.map(c => c.id)).size !== b.completions.length) return false;
-  return b.people.every(p => p && ids.has(p.musicianId) && typeof p.fired === 'boolean' && ['mood', 'health', 'musicality', 'charisma', 'patience'].every(k => Number.isFinite(p[k as BandmateStat]) && p[k as BandmateStat] >= 0 && p[k as BandmateStat] <= 1) && p.needs && Object.entries(p.needs).every(([k, v]) => /^Need\w+$/.test(k) && Number.isFinite(v) && v >= -1 && v <= 1) && Array.isArray(p.gifts) && p.gifts.every(g => rawRules.actions.some(a => a.id === g && a.once)) && new Set(p.gifts).size === p.gifts.length)
+  return b.people.every(p => p && ids.has(p.musicianId) && typeof p.fired === 'boolean' && ['mood', 'health', 'musicality', 'charisma', 'patience'].every(k => Number.isFinite(p[k as BandmateStat]) && p[k as BandmateStat] >= 0 && p[k as BandmateStat] <= (k==='health'&&state.missionId==='Mission09'?Math.max(1,Number(missionSnapshots.Mission09.Classes.RealMusician[p.musicianId as keyof typeof missionSnapshots.Mission09.Classes.RealMusician]?.Health?.Current??1)):1)) && p.needs && Object.entries(p.needs).every(([k, v]) => /^Need\w+$/.test(k) && Number.isFinite(v) && v >= -1 && v <= 1) && Array.isArray(p.gifts) && p.gifts.every(g => rawRules.actions.some(a => a.id === g && a.once)) && new Set(p.gifts).size === p.gifts.length)
     && b.modifiers.every(m => m && ids.has(m.musicianId) && ['mood', 'health', 'musicality', 'charisma', 'patience'].includes(m.stat) && Number.isFinite(m.amount) && Math.abs(m.amount) <= (m.otherId?2:1) && int(m.startDay) && int(m.duration) && m.duration > 0 && (m.constant===undefined||typeof m.constant==='boolean') && (!m.otherId || ids.has(m.otherId)))
     && b.training.every(t => t && /^training\d+$/.test(t.id) && ids.has(t.musicianId) && rawRules.actions.some(a => a.id === t.actionId && a.trainingType === t.type && a.duration === t.duration) && int(t.startDay) && typeof t.completed === 'boolean' && (!t.completed || t.startDay + t.duration <= state.day))
     && b.pendingBooze.every(p => p && ids.has(p.musicianId) && [ .3, .5 ].includes(p.amount))

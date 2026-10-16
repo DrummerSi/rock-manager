@@ -14,11 +14,21 @@ export interface TourDraft {cities:string[];stage:string[];expenseId:string;rota
 export const emptyTourDraft=():TourDraft=>({cities:[],stage:[],expenseId:'',rotation:0});
 
 /** Original80-frame EarthAnim, 126px sphere and -19degree axial tilt. */
-function globe(s:Phaser.Scene,l:Phaser.GameObjects.Container,x:number,y:number,draft:TourDraft,choose?:(id:string)=>void,tour?:BandTour,day=0):void {
+function globe(s:Phaser.Scene,l:Phaser.GameObjects.Container,x:number,y:number,draft:TourDraft,choose?:(id:string)=>void,tour?:BandTour,day=0) {
   pic(s,l,x+43,y+29,'image_screenshot tour01');
   const rotation=Math.round(draft.rotation/(2*Math.PI)*80)/80*2*Math.PI;
   const frameNo=((Math.trunc((rotation+1.05)*80/(2*Math.PI))-1)%80+80)%80;
-  const earth=pic(s,l,x+47,y+47,'globe01_'+String(frameNo).padStart(4,'0'));earth.setDisplaySize(259,267);
+  const earthName='globe01_'+String(frameNo).padStart(4,'0'),earthMeta=TOUR_RULES.bitmaps.find(b=>b.name===earthName)!;
+  // EarthAnim centers the frame; GlobeMap then pastes at (-4,-7), clipping
+  // to its 259x267 sprite canvas before drawing the city markers.
+  const earthKey='tour-earth-composite-'+frameNo;
+  if(!s.textures.exists(earthKey)){
+    const centered=document.createElement('canvas');centered.width=259;centered.height=267;
+    centered.getContext('2d')!.drawImage(s.textures.get('tour-'+earthName).getSourceImage() as HTMLImageElement,Math.round(259/2-earthMeta.regX),Math.round(267/2-earthMeta.regY));
+    const texture=s.textures.createCanvas(earthKey,259,267)!;
+    texture.getContext().drawImage(centered,-4,-7);texture.refresh();
+  }
+  pic(s,l,x+47,y+47,earthKey);
   const project=(coordinates:string)=>{
     const [longitude,latitude]=JSON.parse(coordinates) as number[],r=126;
     const a=-r*Math.cos(latitude)*Math.sin(longitude),b=r*Math.sin(latitude),c=-r*Math.cos(latitude)*Math.cos(longitude);
@@ -28,19 +38,12 @@ function globe(s:Phaser.Scene,l:Phaser.GameObjects.Container,x:number,y:number,d
   const route=['TCRockCity',...draft.cities];
   const lines=s.add.graphics().lineStyle(1,0x000000);l.add(lines);
   for(let i=1;i<route.length;i++){const a=project(TOUR_RULES.cities.find(c=>c.ID===route[i-1])!.Coordinates),b=project(TOUR_RULES.cities.find(c=>c.ID===route[i])!.Coordinates);if(a.z<0&&b.z<0)lines.lineBetween(a.x,a.y,b.x,b.y);}
-  for(const city of TOUR_RULES.cities.filter(c=>c.Available==='1')){
+  for(const city of TOUR_RULES.cities.filter(c=>c.Available==='1'||c.ID==='TCRockCity')){
     const p=project(city.Coordinates);if(p.z>=0)continue;
     const dot=s.add.circle(p.x,p.y,3,draft.cities.includes(city.ID)?0xffffff:0x000000).setStrokeStyle(1,0xffffff);l.add(dot);
     if(choose){dot.setInteractive({cursor:cursorStyle('active')});let label:Phaser.GameObjects.Text|undefined;dot.on('pointerover',()=>label=caption(s,l,p.x+5,p.y,city.name).setBackgroundColor('#000000')).on('pointerout',()=>label?.destroy()).on('pointerup',()=>{label?.destroy();choose(city.ID);});}
   }
-  if(tour&&!tour.completed){
-    const elapsed=day-tour.startDay,leg=Math.min(draft.cities.length,Math.floor(Math.max(0,elapsed)/2)),from=route[leg]??route.at(-1)!,to=route[leg+1]??'TCRockCity';
-    const a=project(TOUR_RULES.cities.find(c=>c.ID===from)!.Coordinates),b=project(TOUR_RULES.cities.find(c=>c.ID===(tour.cancelled?'TCRockCity':to))!.Coordinates);
-    // calcDirection(...,16), then the source cast's reverse direction order.
-    const direction=Math.trunc((((Math.atan2(b.x-a.x,a.y-b.y)+2*Math.PI)%(2*Math.PI))*16)/(2*Math.PI));
-    const planeFrame=(12+(16-direction))%16,key='tour-plane02_'+String(planeFrame).padStart(4,'0');
-    if(s.textures.exists(key)&&(tour.cancelled||elapsed%2===0)){const plane=s.add.image(a.x,a.y,key);l.add(plane);s.tweens.add({targets:plane,x:b.x,y:b.y,duration:1000,ease:'Linear'});l.once('destroy',()=>s.tweens.killTweensOf(plane));}
-  }
+  return project;
 }
 const buttonWidth=(s:Phaser.Scene,label:string,icon:string)=>{const t=caption(s,s.add.container(),0,0,label);t.setFontFamily('Courier New').setFontSize(14).setFontStyle('bold');const key=uiIconKey(s,icon),width=29+t.width+(key?s.textures.get(key).getSourceImage().width:0);t.parentContainer.destroy(true);return Math.ceil(width);};
 
@@ -76,7 +79,7 @@ export function tourStageWindow(s:Phaser.Scene,l:Phaser.GameObjects.Container,st
   selection.forEach(id=>{const element=TOUR_RULES.elements.find(e=>e.ID===id)!;for(const m of element.Gfx.matchAll(/\["([^"]+)",\s*(\d+)\]/g))layers.push({name:m[1],order:Number(m[2])});});
   if(selection[0]==='DESBGName'&&state.album){
     // DlgTourStage.makeComposite's original four-corner sleeve projection.
-    const cover=composeCover(s,state.album.bandName,state.album.band,musicians,state.album.selection),source=cover.getContext('2d')!.getImageData(0,0,300,300);
+    const cover=composeCover(s,state.album.bandName,state.album.band,musicians,state.album.selection,state.album.costumes),source=cover.getContext('2d')!.getImageData(0,0,300,300);
     const key='tour-stage-cover-'+Phaser.Utils.String.UUID(),texture=s.textures.createCanvas(key,111,149)!,pixels=texture.getContext().createImageData(111,149);
     const [x0,y0,x1,y1,x2,y2,x3,y3]=[0,0,111,4,111,151,2,123];
     const dx1=x1-x2,dx2=x3-x2,dx3=x0-x1+x2-x3,dy1=y1-y2,dy2=y3-y2,dy3=y0-y1+y2-y3,det=dx1*dy2-dx2*dy1;
@@ -114,8 +117,39 @@ export function tourBookingWindow(s:Phaser.Scene,l:Phaser.GameObjects.Container,
 
 export function tourOngoingWindow(s:Phaser.Scene,l:Phaser.GameObjects.Container,state:GameState,close:()=>void,cancel:()=>void):void {
   const tour=state.tour!,x=100,y=100;frame(s,l,x,y,601,406,'dialog');title(s,l,x,y,'World Tour','icon_scene01');
-  const city=TOUR_RULES.cities.find(c=>c.ID===(tour.cities[Math.min(tour.results.length,tour.cities.length-1)]))!;
-  const longitude=(JSON.parse(city.Coordinates) as number[])[0];globe(s,l,x,y,{cities:tour.cities,stage:tour.stage,expenseId:tour.expenseId,rotation:-longitude},undefined,tour,state.day);
+  const route=['TCRockCity',...tour.cities],elapsed=Math.max(0,state.day-tour.startDay);
+  const leg=Math.min(tour.cities.length,Math.floor(elapsed/2));
+  const from=TOUR_RULES.cities.find(c=>c.ID===route[leg])!;
+  const to=TOUR_RULES.cities.find(c=>c.ID===(tour.cancelled?'TCRockCity':route[leg+1]??'TCRockCity'))!;
+  const globeLayer=s.add.container();l.add(globeLayer);
+  const draft={cities:tour.cities,stage:tour.stage,expenseId:tour.expenseId,rotation:0};
+  const start=JSON.parse(from.Coordinates) as number[],end=JSON.parse(to.Coordinates) as number[];
+  const vector=([lon,lat]:number[])=>[Math.cos(lat)*Math.cos(lon),Math.sin(lat),Math.cos(lat)*Math.sin(lon)];
+  const a=vector(start),b=vector(end),angle=Math.acos(Phaser.Math.Clamp(a.reduce((v,n,i)=>v+n*b[i],0),-1,1));
+  // TourTravelScript follows the great circle and rotates the globe to keep
+  // the aircraft visible. Projecting an unseen destination onto a fixed globe
+  // made the return flight appear to land somewhere unrelated to Rock City.
+  const coordinates=(t:number)=>{
+    if(t<=0)return start;if(t>=1)return end;
+    const weights=angle<1e-6?[1-t,t]:[Math.sin((1-t)*angle)/Math.sin(angle),Math.sin(t*angle)/Math.sin(angle)];
+    const v=a.map((n,i)=>n*weights[0]+b[i]*weights[1]);
+    return [Math.atan2(v[2],v[0]),Math.atan2(v[1],Math.hypot(v[0],v[2]))];
+  };
+  const flying=!tour.completed&&(tour.cancelled||elapsed%2===0);
+  const plane=flying?s.add.image(0,0,'tour-plane02_0012'):undefined;
+  let lastRotation=NaN,project:ReturnType<typeof globe>;
+  const draw=(t:number)=>{
+    const coords=coordinates(t),rotation=Math.round(-coords[0]/(2*Math.PI)*80)/80*2*Math.PI;
+    if(rotation!==lastRotation){globeLayer.removeAll(true);draft.rotation=rotation;project=globe(s,globeLayer,x,y,draft);lastRotation=rotation;}
+    if(plane){
+      const pos=project(JSON.stringify(coords)),next=project(JSON.stringify(coordinates(Math.min(1,t+.001))));
+      const direction=Math.trunc((((Math.atan2(next.x-pos.x,pos.y-next.y)+2*Math.PI)%(2*Math.PI))*16)/(2*Math.PI));
+      plane.setPosition(pos.x,pos.y).setScale(Math.max(.4,Math.min(1,t/.2,(1-t)/.2))).setTexture('tour-plane02_'+String((12+16-direction)%16).padStart(4,'0'));
+    }
+  };
+  draw(0);
+  if(plane){l.add(plane);const progress={value:0};s.tweens.add({targets:progress,value:1,duration:1000,ease:'Linear',onUpdate:()=>draw(progress.value)});l.once('destroy',()=>s.tweens.killTweensOf(progress));}
+
   const info=infoFrame(s,l,x+331,y+70,230,210,'Total Results','activity-icon_spotlight02');
   tour.results.forEach((r,i)=>{caption(s,l,info.x,info.y+i*17,TOUR_RULES.cities.find(c=>c.ID===r.venueId)!.name);caption(s,l,info.x+128,info.y+i*17,money(r.income));});
   const revenue=tour.results.reduce((sum,r)=>sum+r.income,0);caption(s,l,info.x,info.y+155,'Total revenue: '+money(revenue));caption(s,l,info.x,info.y+170,'Prepaid: '+money(tour.cost));caption(s,l,info.x,info.y+185,'Total: '+money(revenue-tour.cost));

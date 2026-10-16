@@ -3,7 +3,7 @@ import data from '../generated/game-data.json' with { type: 'json' };
 import type { BandMember, Musician } from '../game/model';
 import { designElements, type DesignSelection } from '../game/design';
 const tuning = [[-24, 1], [-4, .9306], [-4, .9420], [7, .7471], [-1, .8667], [6, 1.0476], [7, .8767], [13, .9681], [0, 1], [11, .8421], [0, 1], [-1, .8125], [11, .67], [3, .88]];
-export function composeCover(scene: Phaser.Scene, name: string, band: (BandMember | null)[], musicians: Musician[], selection: DesignSelection): HTMLCanvasElement {
+export function composeCover(scene: Phaser.Scene, name: string, band: (BandMember | null)[], musicians: Musician[], selection: DesignSelection, costumes=false): HTMLCanvasElement {
     const canvas = document.createElement('canvas');
     canvas.width = canvas.height = 300;
     const ctx = canvas.getContext('2d')!;
@@ -35,7 +35,8 @@ export function composeCover(scene: Phaser.Scene, name: string, band: (BandMembe
                 if (!m || artist.id === 'DEDArtists03' && m.instrument !== 'Vocals')
                     continue;
                 const musician = musicians.find(x => x.id === m.musicianId)!;
-                const actor = musician.smallPortrait?.match(/actor\d+/)?.[0];
+                const baseActor = musician.smallPortrait?.match(/actor\d+/)?.[0];
+                const actor = baseActor+(costumes?'_bear':'');
                 const infix = { Drums: '01', Guitar: '02', Bass: '03', Keyboards: '04', Vocals: '06' }[m.instrument];
                 const suffix = { L: 'l', R: 'r', Z: 'z', N: '' }[pos.direction];
                 const bitmap = data.design.bitmaps.find(b => b.name === `pose_${actor}_${infix}${suffix}`);
@@ -123,9 +124,9 @@ export function composeCover(scene: Phaser.Scene, name: string, band: (BandMembe
     }
     return canvas;
 }
-export function coverImage(scene: Phaser.Scene, layer: Phaser.GameObjects.Container, x: number, y: number, size: number, name: string, band: (BandMember | null)[], musicians: Musician[], selection: DesignSelection) {
+export function coverImage(scene: Phaser.Scene, layer: Phaser.GameObjects.Container, x: number, y: number, size: number, name: string, band: (BandMember | null)[], musicians: Musician[], selection: DesignSelection, costumes=false) {
     const key = 'album-cover-' + Phaser.Utils.String.UUID();
-    scene.textures.addCanvas(key, composeCover(scene, name, band, musicians, selection));
+    scene.textures.addCanvas(key, composeCover(scene, name, band, musicians, selection, costumes));
     const image = scene.add.image(x, y, key).setOrigin(0).setDisplaySize(size, size);
     layer.add(image);
     image.once('destroy', () => scene.textures.remove(key));

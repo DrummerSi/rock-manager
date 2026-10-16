@@ -1,10 +1,10 @@
-import {missionSpend} from './scenario78';
+import {missionSpend} from './mission-spending';
 import type {GameState,Musician} from './model';
 import data from '../generated/game-data.json' with {type:'json'};
 import publicityRules from './publicity-rules.json' with {type:'json'};
 import rules from './gangsta-rules.json' with {type:'json'};
 import {bandmateOccupied} from './bandmates';
-import {scenarioEvent} from './scenarios';
+import {missionEvent} from './mission-events';
 import {recordMissionFailure} from './mission-progress';
 import {canBookCalendar} from './publicity';
 
@@ -19,7 +19,7 @@ export interface GangstaState {
 export const defaultGangsta=():GangstaState=>({seed:0x53455247,used:false,debt:0,loanDeadline:0,loanDays:0,loanTier:0,fans:0,scandals:0,paparazzi:0,bombs:0,tamper:false,tamperRating:0,legal:false,pending:[],queue:[],away:[],security:[]});
 const current=(s:GameState)=>s.gangsta??defaultGangsta();
 const copy=(s:GameState):GameState&{gangsta:GangstaState}=>({...s,gangsta:structuredClone(current(s)),publicity:structuredClone(s.publicity),bandmates:structuredClone(s.bandmates),scenario:s.scenario?structuredClone(s.scenario):undefined});
-export const gangstaAvailable=(s:GameState)=>['Mission04','Mission05','Mission06','Mission07','Mission08'].includes(s.missionId);
+export const gangstaAvailable=(s:GameState)=>['Mission04','Mission05','Mission06','Mission07','Mission08','Mission09','Mission10'].includes(s.missionId);
 export const gangstaAway=(s:GameState,id:string,day=s.day)=>current(s).away.some(a=>a.actorId===id&&day<a.until);
 export const gangstaAction=(id:string)=>data.activities.tables.Action.find(a=>a.ID===id);
 export const gangstaCategories=()=>[...rules.office.Actions.matchAll(/#(\w+)/g)].map(m=>data.activities.tables.ActionCategory.find(c=>c.ID===m[1])!);
@@ -67,7 +67,7 @@ export function useGangsta(input:GameState,id:string,musicians:Musician[],actorI
     if(actorId==='RMCPernille')s.money+=id==='ActGangWreck'?100000:id==='ActGangSuicide'?150000:85000;
     else g.pending.push({kind:id,day:s.day+5,actorId});
   }
-  return scenarioEvent(s,{kind:'action',placeId:'Gangsta01',actionId:id,actorId},musicians);
+  return missionEvent(s,{kind:'action',placeId:'Gangsta01',actionId:id,actorId},musicians);
 }
 export function bookSecurity(input:GameState,startDay:number,musicians:Musician[]):GameState {
   if(!canUseGangsta(input,'ActGangSecurity')||!canBookCalendar(input,'advert',startDay,7))throw new Error('This booking is unavailable.');
@@ -143,3 +143,4 @@ export function validGangsta(s:GameState):boolean {
     &&Array.isArray(g.away)&&g.away.every(a=>typeof a.actorId==='string'&&count(a.until))
     &&Array.isArray(g.security)&&g.security.every(a=>count(a.startDay)&&a.duration===7));
 }
+

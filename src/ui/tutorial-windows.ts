@@ -60,7 +60,8 @@ export function mixerWindow(scene: Phaser.Scene, layer: Phaser.GameObjects.Conta
   image(scene, layer, 279, 418, 'background_mixer_rack01');
   image(scene, layer, 67, 127, 'background_mixer_control01');
   image(scene, layer, 114, 145, `${studio.id.toLowerCase()}_environment01`).setDisplaySize(113, 89);
-  caption(scene, layer, 79, 262, song.name, 187).setFontSize(11);
+  // SongNameText is an unused cast member; no title sprite is placed in
+  // the original Mixer score and MixerScript does not draw a song label.
   const skinButton = (x: number, y: number, key: string, action: () => void) => {
     const sprite = registeredImage(scene, layer, x, y, key).setInteractive({ cursor: cursorStyle('active') });
     let pressed = false;
@@ -155,7 +156,11 @@ export function channelSettingsWindow(scene: Phaser.Scene, layer: Phaser.GameObj
     nativeKnob(scene, layer, 279, y, false, 0, 1, effects[kind].mix, (mix) => { effects[kind].mix = mix; update(); }, '', true);
     if (kind === 'delay') {
       const notes = ['32', '16T', '16', '8T', '8', '4T', '4'];
-      const note = caption(scene, layer, 289, y + 5, notes[Math.round(effects.delay.time * 6)]).setFontSize(10).setColor('#00ff00');
+      // FXDelay.getGFX: TimeDisplay is NoteText at (171,5), a 28x12
+      // Verdana9 bold field. Center the value inside the bitmap's black well.
+      const note = caption(scene, layer, 289, y + 5, notes[Math.round(effects.delay.time * 6)], 28)
+        .setFontFamily('Verdana').setFontSize(9).setFontStyle('bold').setColor('#00c800').setAlign('center').setFixedSize(28,12);
+      (note as NativeText).setNativeAntialias(false);
       nativeKnob(scene, layer, 323, y, false, 0, 1, effects.delay.time, (time) => { effects.delay.time = time; note.setText(notes[Math.round(time * 6)]); update(); }, '', true);
       nativeKnob(scene, layer, 388, y, false, 0, 1, effects.delay.decay, (decay) => { effects.delay.decay = decay; update(); }, '', true);
     } else {
@@ -187,9 +192,11 @@ export function labelWindow(scene: Phaser.Scene, layer: Phaser.GameObjects.Conta
   const border=frame(scene,layer,142,76,signed?366:371,signed?501:buttonY+53-76,'dialog');layer.sendToBack(border);
   title(scene,layer,142,76,label.name,'golden-record');
   image(scene,layer,signed?159:164,signed?111:115,originalImageKey(scene,'frame02 large environment'));
+  const backdrop='actor-office-background-'+label.id.toLowerCase();
+  if(scene.textures.exists(backdrop))image(scene,layer,signed?162:167,signed?114:118,backdrop);
   if(!signed){
     infoFrame(scene,layer,166,341,304,bodyHeight,'Company info','golden-record');layer.bringToTop(body);
-    button(scene,layer,195,buttonY,134,'Play Demo',submit,Boolean(state.demo)&&!state.recording,33,'cd');
+    button(scene,layer,195,buttonY,134,'Play Demo',submit,true,33,'cd');
     button(scene,layer,335,buttonY,130,'Cancel',close,true,33,'cancel');return;
   }
   const heading=caption(scene,layer,168,349,'Category').setFontFamily('Verdana').setFontSize(11).setFontStyle('bold');

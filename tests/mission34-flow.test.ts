@@ -6,9 +6,9 @@ import {recruit,licenseSong,advanceDay,validSave,type GameState} from '../src/ga
 import {startRecording,finishRecording,signContract,approveContractDemo} from '../src/game/recording';
 import {bookRelease} from '../src/game/design';
 import {givePressKit,bookAdvert,bookConcert,PUBLICITY_RULES} from '../src/game/publicity';
-import {scenarioEvent} from '../src/game/scenarios';
+import {missionEvent} from '../src/game/mission-events';
 import {trainBandmate,giveBandmateGift,bandmateStats} from '../src/game/bandmates';
-import {completeScenarioQuit} from '../src/game/scenario-quits';
+import {completeMusicianQuit} from '../src/game/musician-quits';
 const musicians=data.allMusicians;
 const date=()=>new Date(2026,9,14);
 const hype=(s:GameState)=>PUBLICITY_RULES.groups.reduce((n,g)=>n+g.size*s.publicity.groups.find(x=>x.id===g.id)!.albumHype,0)/PUBLICITY_RULES.groups.reduce((n,g)=>n+g.size,0);
@@ -17,8 +17,8 @@ function acknowledge(s:GameState){
  for(let count=0;s.scenario!.queue.length&&!s.scenario!.outcome;count++){
   assert.ok(count<100,'Scenario card sequence must terminate');
   const c=s.scenario!.queue[0];
-  if(c.id==='ECOCQuitNow'&&c.speakerId)s=completeScenarioQuit(s,c.speakerId,musicians);
-  s=scenarioEvent(s,{kind:'card',cardId:c.id,choice:c.id==='ECMMis4StealSong'?'Button3':'ButtonOK'},musicians);
+  if(c.id==='ECOCQuitNow'&&c.speakerId)s=completeMusicianQuit(s,c.speakerId,musicians);
+  s=missionEvent(s,{kind:'card',cardId:c.id,choice:c.id==='ECMMis4StealSong'?'Button3':'ButtonOK'},musicians);
  }
  return s;
 }
@@ -66,7 +66,7 @@ test('fresh Mission03 records and releases the owned song, cares for both brothe
  let s=newMission('Mission03',musicians,date());s.started=true;
  for(const[slot,id,instrument]of [[1,'RMCTony','Guitar'],[2,'RMCGullan','Drums'],[3,'RMCGurra','Bass']] as const)s=recruit(s,musicians,slot,id,instrument);
  s=finishRecording(startRecording(s,data.tutorialGameplay,'Studio02','Sng18'),data.tutorialGameplay,musicians,data.songs);
- s=scenarioEvent(s,{kind:'recording'},musicians);
+ s=missionEvent(s,{kind:'recording'},musicians);
  const cashBeforeApproval=s.money;
  s=approveContractDemo(s,data.tutorialGameplay.labels.find(l=>l.id==='Record04')!,musicians);
  assert.equal(s.money,cashBeforeApproval,'Prearranged approval does not award a second contract advance');
@@ -76,10 +76,10 @@ test('fresh Mission03 records and releases the owned song, cares for both brothe
  let minimumMoney=s.money,minimumMood=1,unpaid=0;
  while(s.day<75&&!s.scenario!.outcome){
   // Genuine care: two three-day media courses per ten days; balanced gifts.
-  if(s.day%10===0&&s.day<60)for(const id of ['RMCLelle','RMCNille']){s=trainBandmate(s,id,'ActTrainMedia',s.day+1);s=scenarioEvent(s,{kind:'training',actorId:id},musicians);}
+  if(s.day%10===0&&s.day<60)for(const id of ['RMCLelle','RMCNille']){s=trainBandmate(s,id,'ActTrainMedia',s.day+1);s=missionEvent(s,{kind:'training',actorId:id},musicians);}
   if(s.day%10===0&&s.day<65)s=bookConcert(s,musicians,'Live01',s.day+5);
-  if(s.day===18)for(const id of ['RMCLelle','RMCNille']){s=giveBandmateGift(s,id,'ActGiftStereo');s=scenarioEvent(s,{kind:'gift',actorId:id},musicians);}
-  s=scenarioEvent(s,{kind:'city'},musicians);s=acknowledge(s);
+  if(s.day===18)for(const id of ['RMCLelle','RMCNille']){s=giveBandmateGift(s,id,'ActGiftStereo');s=missionEvent(s,{kind:'gift',actorId:id},musicians);}
+  s=missionEvent(s,{kind:'city'},musicians);s=acknowledge(s);
   const tick=advanceDay(s,musicians);s=acknowledge(tick.state);unpaid+=tick.unpaid;
   minimumMoney=Math.min(minimumMoney,s.money);for(const id of ['RMCLelle','RMCNille'])minimumMood=Math.min(minimumMood,bandmateStats(s,id).mood);
   assert.ok(validSave(s,musicians,data.songs,data.tutorialGameplay),`Mission03 save day${s.day}`);

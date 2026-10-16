@@ -30,7 +30,7 @@ const sessionMusicians = humans.data.StudioMusician.ID.map((id, i) => {
   const s = row(humans.data.StudioMusician, i);
   return { id, name: s.name, age: Number(s.Age), genre: s.Genre, charisma: Number(s.Charisma), price: Number(s.WantedSalary), musicality: Number(s.Musicality.Current) };
 }).filter((s) => studios.some((studio) => studio.sessionMusicians.includes(s.id)));
-const playableMissions=read('missions').missions.filter(m=>['Mission01','Mission03','Mission04','Mission05','Mission06','Mission07','Mission08'].includes(m.ID));
+const playableMissions=read('missions').missions.filter(m=>['Mission01','Mission03','Mission04','Mission05','Mission06','Mission07','Mission08','Mission09','Mission10'].includes(m.ID));
 const allowed = [...new Set(playableMissions.flatMap(m=>ids(m.AvailableSongs)))];
 const audioDirectory = `${root}/media/tutorial-audio`;
 fs.mkdirSync(audioDirectory, { recursive: true });

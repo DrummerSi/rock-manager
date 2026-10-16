@@ -1,11 +1,35 @@
 import fs from 'node:fs';
 import crypto from 'node:crypto';
 import { PNG } from 'pngjs';
+import {indexedCast,bitmap} from './director-cast.mjs';
 import { DirectorFile } from 'file:///C:/Users/blink/AppData/Local/Temp/rock-manager-director-tools/node_modules/projectorrays/dist/pkg/node.es.js';
 
 const root = 'analysis/original';
+// Original city cast already contains mood-specific costume portraits.
+// Recover just these static images without rebuilding actor animation atlases.
+if(process.argv.includes('--costume-portraits')){
+  const evidencePath=root+'/actor-animation-evidence.json',evidence=JSON.parse(fs.readFileSync(evidencePath));
+  const cast=indexedCast(root+'/scripts/cd/city01.cxt/metadata.json','E:/Games/Rock Manager/city01.cxt');
+  let count=0;
+  for(const member of cast.members){
+    const name=member.data.info?.name??'';
+    const match=/^(?:Portrait_)?(actor(?:02|09|10|17)_bear)_(Angry|Annoyed|Bored|Happy|normal|Sad|Satisfied|background)_(Large|Medium)$/i.exec(name);
+    if(member.data.type!==1||!match)continue;
+    const actorId=match[1].toLowerCase(),baseActor=actorId.replace('_bear','');
+    const original=evidence.staticPortraits.find(p=>p.actorId===baseActor);if(!original)throw new Error('Missing musician for '+actorId);
+    const mood=match[2].toLowerCase()==='background'?'occupied':match[2].toLowerCase(),size=match[3].toLowerCase();
+    const {bytes,...metadata}=bitmap(cast,member,0),textureKey=`actor-static-${actorId}-${mood}-${size}`;
+    const path='media/ActorAnimation/city01/'+textureKey+'.png';fs.writeFileSync(root+'/'+path,bytes);
+    const portrait={...metadata,musicianId:original.musicianId,actorId,mood,size,name,path,textureKey};
+    evidence.staticPortraits=evidence.staticPortraits.filter(p=>p.textureKey!==textureKey);evidence.staticPortraits.push(portrait);count++;
+  }
+  if(count!==64)throw new Error('Expected 64 original costume portraits, recovered '+count);
+  evidence.staticPortraitRule.costumes='Mission09 TRMis9PerfectImage01 appends _bear to musician Gfx; getCurrentPic uses that Gfx for mood and occupied portraits.';
+  fs.writeFileSync(evidencePath,JSON.stringify(evidence,null,2));console.log(JSON.stringify({costumePortraits:count}));process.exit(0);
+}
+const costumeOnly=process.argv.includes('--costumes');
 const introOnly=process.argv.includes('--intro');
-const additional = introOnly||process.argv.includes('--additional');
+const additional = costumeOnly||introOnly||process.argv.includes('--additional');
 const decodedLayers=new Map(),emptyBackgrounds=new Map();
 const prior = additional ? JSON.parse(fs.readFileSync(`${root}/actor-animation-evidence.json`)) : null;
 const windowsPalette = JSON.parse(fs.readFileSync(`${root}/director-windows-palette.json`)).rgb;
@@ -28,7 +52,7 @@ const recovered = additional ? [...prior.recovered] : [], texts = [], palettes =
 const actors = [];
 const musicianTable=JSON.parse(fs.readFileSync(root+'/data/DataMusicians00.json')).data.RealMusician;
 const musicians=additional ? musicianTable.ID.map((ID,i)=>({ID,Gfx:musicianTable.Gfx[i]})) : JSON.parse(fs.readFileSync(root+'/data/mission01-recovered.json')).availableMusicians;
-const sources = introOnly ? ['mission03_globalboss02','mission03_brother01','mission03_brother02','mission04_gangsta02','mission05_guitarist01','mission05_singer01','mission06_nicke01','mission06_nicke02','mission07_spacecadet_roy01','mission07_spacecadet_lina01'].filter(id=>!prior.portraits.some(p=>p.id===id)).map(id=>'V:/Movies/'+id+'.cxt') : additional ? ['E:/Games/Rock Manager/city01.cxt',...musicians.filter(m=>!prior.portraits.some(p=>p.id===m.Gfx.toLowerCase())).map(m=>'E:/Games/Rock Manager/Actor'+m.Gfx.slice(-2)+'.cxt'),...['Media01','Gangsta01','ECcourt01'].filter(id=>!prior.portraits.some(p=>p.id===id.toLowerCase())).map(id=>['E:/Games/Rock Manager/'+id+'.cxt','V:/Movies/'+id+'.cxt'].find(path=>fs.existsSync(path))).filter(Boolean)]
+const sources = costumeOnly ? fs.readdirSync('V:/Movies').filter(n=>/actor\d+_bear\.cxt$/i.test(n)&&!prior.portraits.some(p=>p.id===n.slice(0,-4).toLowerCase())).map(n=>'V:/Movies/'+n) : introOnly ? ['mission03_globalboss02','mission03_brother01','mission03_brother02','mission04_gangsta02','mission05_guitarist01','mission05_singer01','mission06_nicke01','mission06_nicke02','mission07_spacecadet_roy01','mission07_spacecadet_lina01'].filter(id=>!prior.portraits.some(p=>p.id===id)).map(id=>'V:/Movies/'+id+'.cxt') : additional ? ['E:/Games/Rock Manager/city01.cxt',...musicians.filter(m=>!prior.portraits.some(p=>p.id===m.Gfx.toLowerCase())).map(m=>'E:/Games/Rock Manager/Actor'+m.Gfx.slice(-2)+'.cxt'),...['Media01','Gangsta01','ECcourt01'].filter(id=>!prior.portraits.some(p=>p.id===id.toLowerCase())).map(id=>['E:/Games/Rock Manager/'+id+'.cxt','V:/Movies/'+id+'.cxt'].find(path=>fs.existsSync(path))).filter(Boolean)]
   : ['E:/Games/Rock Manager/RockMaterial.cxt','V:/Movies/city01.cxt','V:/Movies/media02.cxt','V:/Movies/Media03.cxt','V:/Movies/media04.cxt','V:/Movies/media05.cxt',...Array.from({length:4},(_,i)=>'V:/Movies/Record0'+(i+1)+'.cxt'),...musicians.map(m=>'V:/Movies/Actor'+m.Gfx.slice(-2)+'.cxt')];
 const names = new Set(['background01']);
 for (const source of sources) {
@@ -107,13 +131,13 @@ for (const source of sources) {
     const mattePixelsRemoved=(name==='background01'||/^moves/i.test(name))?backgroundTransparentInk(png):0;
     const path=`media/ActorAnimation/${cast}/${String(slots.indexOf(member.id)+1).padStart(4,'0')}-${name.replace(/[^a-zA-Z0-9_-]/g,'_')||'unnamed'}.png`;
     const output=PNG.sync.write(png);
-    if(introOnly)decodedLayers.set(path,png);else{fs.mkdirSync(`${root}/media/ActorAnimation/${cast}`,{recursive:true});fs.writeFileSync(`${root}/${path}`,output);}
+    if(introOnly||costumeOnly)decodedLayers.set(path,png);else{fs.mkdirSync(`${root}/media/ActorAnimation/${cast}`,{recursive:true});fs.writeFileSync(`${root}/${path}`,output);}
     recovered.push({key:`${cast}:${slots.indexOf(member.id)+1}`,name,rawName,path,width,height,regX,regY,depth,stride,paletteId,alphaFlag,activeMemberAlpha,mattePixelsRemoved,matteRule:staticPortrait?'Original static portrait preserved; unused alpha ignored':'Source RenderMusicianScript.X ink36: every exactwhite pixel transparent, including enclosed islands; enabled member alpha retained for nonwhite pixels',paletteRule:paletteId===-3?'Director built-in grayscale (0 white,255 black)':customPalettes.has(paletteId+1)?`custom CLUT at cast slot ${paletteId+1}`:'cast custom CLUT or Windows palette',castSlot:slots.indexOf(member.id)+1,memberId:member.id,chunkId:key.sectionID,source,sourceSHA256,bitdSHA256:digest(raw),pngSHA256:digest(output),alpha:mattePixelsRemoved?'source ink36 white color-key with original enabled alpha':activeMemberAlpha&&hasAlpha?'enabled-original-alpha':'opaque RGB; unused stored alpha ignored',encoding:isRaw?'raw':'packbits'});
   }
   director.destroy();
 }
 const portraits=additional ? [...prior.portraits] : [];
-for(const source of sources.filter(s=>/(?:Actor\d+|Record\d+|Media\d+|Gangsta\d+|ECcourt\d+|mission0[3-8]_(?:globalboss02|brother0[12]|gangsta02|guitarist01|singer01|nicke0[12]|spacecadet_(?:roy|lina)01))\.cxt$/i.test(s))){
+for(const source of sources.filter(s=>/(?:Actor\d+(?:_bear)?|Record\d+|Media\d+|Gangsta\d+|ECcourt\d+|mission0[3-8]_(?:globalboss02|brother0[12]|gangsta02|guitarist01|singer01|nicke0[12]|spacecadet_(?:roy|lina)01))\.cxt$/i.test(s))){
   const frames=recovered.filter(r=>r.source===source);
   if(introOnly&&!frames.some(r=>r.name==='background01')&&!emptyBackgrounds.has(source)){
     const id=source.split('/').at(-1).replace(/\.cxt$/i,'');
@@ -150,17 +174,17 @@ const cues=Object.assign({},...feedback.lipSync.map(s=>s.entries));
 let introCueSource;
 if(introOnly){
   const source='V:/Sound/Voice/_intAll.cue',bytes=fs.readFileSync(source);
-  for(const match of bytes.toString('latin1').matchAll(/^(intro0[3-8]_\w+):\s*(\[[\d, ]*\])/gim))cues[match[1].toLowerCase()]=JSON.parse(match[2]);
-  introCueSource={source,sha256:digest(bytes),keys:Object.keys(cues).filter(k=>/^intro0[3-8]_/.test(k)),cueRateHz:12};
+  for(const match of bytes.toString('latin1').matchAll(/^(intro0[3-9]_\w+):\s*(\[[\d, ]*\])/gim))cues[match[1].toLowerCase()]=JSON.parse(match[2]);
+  introCueSource={source,sha256:digest(bytes),keys:Object.keys(cues).filter(k=>/^intro0[3-9]_/.test(k)),cueRateHz:12};
 }
 
-const staticPortraits=recovered.flatMap(entry=>{
+const staticPortraits=[...(prior?.staticPortraits?.filter(p=>p.actorId.endsWith('_bear'))??[]),...recovered.flatMap(entry=>{
   const actorId=/actor\d+/i.exec(entry.name)?.[0].toLowerCase(),musician=musicians.find(m=>m.Gfx.toLowerCase()===actorId);
   if(!musician||/^moves_|background01$/i.test(entry.name))return [];
   const size=/(large|medium|small)$/i.exec(entry.name)?.[1].toLowerCase();if(!size)return [];
   const mood=/_background_/i.test(entry.name)?'occupied':size==='small'?'independent':/_([^_]+)_(large|medium)$/i.exec(entry.name)?.[1].toLowerCase();
   if(!mood)return [];
   return [{musicianId:musician.ID,actorId,mood,size,name:entry.name,path:entry.path,textureKey:`actor-static-${actorId}-${mood}-${size}`,width:entry.width,height:entry.height,regX:entry.regX,regY:entry.regY,source:entry.source,sourceSHA256:entry.sourceSHA256,memberId:entry.memberId,chunkId:entry.chunkId,pngSHA256:entry.pngSHA256,alphaFlag:entry.alphaFlag}];
-});
-fs.writeFileSync(`${root}/actor-animation-evidence.json`,JSON.stringify({schemaVersion:1,...(introCueSource?{introCueSource}:prior?.introCueSource?{introCueSource:prior.introCueSource}:{}),portraits,staticPortraits:[...new Map(staticPortraits.map(p=>[p.textureKey,p])).values()],staticPortraitRule:{source:"ClassRealMusicianScript.getCurrentPic / MusicianPortaitScript.redraw",hudSize:"medium",defaultSize:"large",smallMoodIndependent:true,furiousFallback:"angry",occupied:"actorNN_background_size",alpha:"Use member enabled-alpha flag; unused stored alpha plane ignored; source live FaceAnim ink36 keys every exactwhite pixel in all animation layers, including backdrop and enclosed areas"},recovered:[...new Map(recovered.filter(r=>!decodedLayers.has(r.path)).map(r=>[r.key,r])).values()],cues:{...prior?.cues,...cues},cueRateHz:12,moodStates:{Furious:{eyes:0,mouth:3},Angry:{eyes:0,mouth:3},Annoyed:{eyes:0,mouth:2},normal:{eyes:2,mouth:2},Satisfied:{eyes:2,mouth:1},Happy:{eyes:2,mouth:0},Sad:{eyes:4,mouth:3},Cool:{eyes:0,mouth:2},Superior:{eyes:3,mouth:1},Bored:{eyes:2,mouth:3},Apologetic:{eyes:3,mouth:1},Malicious:{eyes:0,mouth:0}},componentLimitation:'Initial component follows pose1 and retained12Hz cue samples; full original body transitions and frameTimer-dependent mouth-alternation cadence remain unimplemented.',rules:{source:'RockUtil 00066-FaceScript / 00067-CueScript / 00096-unnamed CPshowFace',cueIndex:'floor(positionSeconds*12), original cues are0..100 values',pose1:'body moves_0003; eyes moves_(0061+eyesState); idle mouth2 is Dummy, otherwise moves_(0001+mouthState)',talkingMouth:'mouthBaseFrame=firstMember+4; mouth index round(cue/33), original alternating middle cue uses offset0or3 for13..27frames (random15+12); moves_(0005+offset+round(cue/33))',registration:'All layers share background registration anchor; topLeft=portraitTopLeft+backgroundReg-layerReg',coverage:'Retained first70 move layers across6static poses, their mouths and eyes. Continuous body transitions/moving-speech layers beyond70 not reproduced by this initial portrait component.'}},null,2));
+})];
+fs.writeFileSync(`${root}/actor-animation-evidence.json`,JSON.stringify({schemaVersion:1,...(prior?.officeBackgrounds?{officeBackgrounds:prior.officeBackgrounds,officeBackgroundRule:prior.officeBackgroundRule}:{}),...(introCueSource?{introCueSource}:prior?.introCueSource?{introCueSource:prior.introCueSource}:{}),portraits,staticPortraits:[...new Map(staticPortraits.map(p=>[p.textureKey,p])).values()],staticPortraitRule:{source:"ClassRealMusicianScript.getCurrentPic / MusicianPortaitScript.redraw",hudSize:"medium",defaultSize:"large",smallMoodIndependent:true,furiousFallback:"angry",occupied:"actorNN_background_size",alpha:"Use member enabled-alpha flag; unused stored alpha plane ignored; source live FaceAnim ink36 keys every exactwhite pixel in all animation layers, including backdrop and enclosed areas"},recovered:[...new Map(recovered.filter(r=>!decodedLayers.has(r.path)).map(r=>[r.key,r])).values()],cues:{...prior?.cues,...cues},cueRateHz:12,moodStates:{Furious:{eyes:0,mouth:3},Angry:{eyes:0,mouth:3},Annoyed:{eyes:0,mouth:2},normal:{eyes:2,mouth:2},Satisfied:{eyes:2,mouth:1},Happy:{eyes:2,mouth:0},Sad:{eyes:4,mouth:3},Cool:{eyes:0,mouth:2},Superior:{eyes:3,mouth:1},Bored:{eyes:2,mouth:3},Apologetic:{eyes:3,mouth:1},Malicious:{eyes:0,mouth:0}},componentLimitation:'Initial component follows pose1 and retained12Hz cue samples; full original body transitions and frameTimer-dependent mouth-alternation cadence remain unimplemented.',rules:{source:'RockUtil 00066-FaceScript / 00067-CueScript / 00096-unnamed CPshowFace',cueIndex:'floor(positionSeconds*12), original cues are0..100 values',pose1:'body moves_0003; eyes moves_(0061+eyesState); idle mouth2 is Dummy, otherwise moves_(0001+mouthState)',talkingMouth:'mouthBaseFrame=firstMember+4; mouth index round(cue/33), original alternating middle cue uses offset0or3 for13..27frames (random15+12); moves_(0005+offset+round(cue/33))',registration:'All layers share background registration anchor; topLeft=portraitTopLeft+backgroundReg-layerReg',coverage:'Retained first70 move layers across6static poses, their mouths and eyes. Continuous body transitions/moving-speech layers beyond70 not reproduced by this initial portrait component.'}},null,2));
 console.log(`Recovered ${portraits.length} actor atlases and ${recovered.length} source layers.`);

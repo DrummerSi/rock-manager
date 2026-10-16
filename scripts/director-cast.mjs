@@ -27,7 +27,7 @@ export function bitmap(cast,member,ink){
     if(depth===32)rgb=isRaw?[...pixels.subarray(row+x*4+1,row+x*4+4)]:[pixels[row+width+x],pixels[row+2*width+x],pixels[row+3*width+x]];
     else if(depth===16){const v=isRaw?pixels.readUInt16BE(row+x*2):(pixels[row+x]<<8)|pixels[row+width+x];rgb=[(v>>10)&31,(v>>5)&31,v&31].map(v=>Math.floor(v*255/31));}
     else if(depth===8)rgb=palette.slice(pixels[row+x]*3,pixels[row+x]*3+3);else throw new Error(`Unsupported bitmap depth${depth}`);
-    png.data.set(rgb,i);png.data[i+3]=ink===36&&rgb.every(v=>v===255)?0:hasAlpha?pixels[row+(isRaw?x*4:x)]:255;
+    png.data.set(rgb,i);png.data[i+3]=ink===36&&rgb.every(v=>v===255)?0:hasAlpha&&(h[22]&0x10)?pixels[row+(isRaw?x*4:x)]:255;
   }
   const bytes=PNG.sync.write(png);
   return {bytes,width,height,regX,regY,depth,ink,source:cast.source,sourceSHA256:cast.sourceSHA256,memberId:member.id,chunkId:key.sectionID,bitdSHA256:digest(raw),pngSHA256:digest(bytes)};

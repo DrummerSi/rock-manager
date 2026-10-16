@@ -2,6 +2,7 @@ import { defaultBandmates } from './bandmates';
 import { defaultPublicity } from './publicity';
 import type { GameState, Musician } from './model';
 import { validSave } from './model';
+import {clearCompletedCoverReminder} from './media-reminders';
 import data from '../generated/game-data.json' with { type: 'json' };
 import {missionSnapshots} from './mission-catalog';
 import {finishRecording} from './recording';
@@ -68,7 +69,7 @@ export class BrowserSaveStore implements SaveStore {
           }
         }
       }
-      return validSave(value, musicians, data.songs, data.tutorialGameplay) ? value : null;
+      return validSave(value, musicians, data.songs, data.tutorialGameplay) ? clearCompletedCoverReminder(value) : null;
     } catch { return null; }
   }
   save(state: GameState): boolean {

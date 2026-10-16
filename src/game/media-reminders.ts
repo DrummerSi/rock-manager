@@ -1,5 +1,5 @@
 import type {GameState,Musician} from './model';
-import type {ScenarioEvent} from './scenario-types';
+import type {MissionEvent} from './mission-event-types';
 import {givePressKit,giveVideo} from './publicity';
 import cards from './media-reminder-cards.json';
 
@@ -10,16 +10,24 @@ const requests=[
 ];
 export const isMediaReminder=(id:string)=>cards.some(c=>c.ID===id);
 
+/** TRLockUpPlacesFromDesign cancels TRReminderDesign once ReleaseDate is set. */
+export function clearCompletedCoverReminder(state:GameState):GameState {
+  if(!['Mission08','Mission09'].includes(state.missionId)||!state.scenario||!state.album||!state.contract||state.album.songId!==state.contract.songId||state.album.releaseDay<=0)return state;
+  const key=`reminder:design:${state.contract.signedDay}`;
+  if(state.scenario.vars[key]&&!state.scenario.queue.some(c=>c.id==='ECOCRecordTellDesign'))return state;
+  return {...state,scenario:{...state.scenario,vars:{...state.scenario.vars,[key]:true},queue:state.scenario.queue.filter(c=>c.id!=='ECOCRecordTellDesign')}};
+}
+
 /** DataDBRest00 reminders explicitly enabled by Mission08.StartTriggers. */
-export function updateMediaReminders(input:GameState,event:ScenarioEvent,musicians:Musician[]):GameState {
-  if(input.missionId!=='Mission08'||!input.scenario||input.scenario.outcome)return input;
-  let state=structuredClone(input);
+export function updateMediaReminders(input:GameState,event:MissionEvent,musicians:Musician[]):GameState {
+  if(!['Mission08','Mission09'].includes(input.missionId)||!input.scenario||input.scenario.outcome)return input;
+  let state=structuredClone(clearCompletedCoverReminder(input));
   const s=state.scenario!,v=s.vars;
   const queue=(id:string,actor?:string)=>{
     if(!s.queue.some(c=>c.id===id))s.queue.push({id,...(actor?{speakerId:actor}:{})});
   };
   if(event.kind==='card'&&event.cardId&&isMediaReminder(event.cardId)){
-    if(!s.queue.some(c=>c.id===event.cardId))return input;
+    if(!s.queue.some(c=>c.id===event.cardId))return state;
     const request=requests.find(r=>r.id===event.cardId);
     if(event.choice==='ButtonOK'){
       if(request){
@@ -36,7 +44,7 @@ export function updateMediaReminders(input:GameState,event:ScenarioEvent,musicia
     if(!state.scenario!.seen.includes(event.cardId))state.scenario!.seen.push(event.cardId);
     return state;
   }
-  if(event.kind!=='day'&&event.kind!=='city')return input;
+  if(event.kind!=='day'&&event.kind!=='city')return state;
   const album=state.album,key=state.demo?`${state.demo.songId}:${state.demo.recordedDay}`:null;
   if(album&&key&&state.day>=album.releaseDay){
     for(const r of requests){

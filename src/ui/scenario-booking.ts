@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import type {GameState} from '../game/model';
-import type {ScenarioAppointment} from '../game/scenario-types';
+import type {MissionAppointment} from '../game/mission-event-types';
 import originalText from '../game/original-text.json' with {type:'json'};
 import {button,frame,title} from './canvas-ui';
 import {nativeText} from './native-text';
@@ -12,7 +12,7 @@ import {activityEvents} from './activity-windows';
  * AgFmConcert. Price/venue descriptions are intentionally not invented.
  */
 export function scenarioBooking(scene:Phaser.Scene,parent:Phaser.GameObjects.Container,state:GameState,
-  appointment:ScenarioAppointment,day:number,firstDay:number,changeDay:(day:number)=>void,scroll:(direction:number)=>void,
+  appointment:MissionAppointment,day:number,firstDay:number,changeDay:(day:number)=>void,scroll:(direction:number)=>void,
   confirm:()=>void,cancel:()=>void,allowed:(day:number)=>boolean=(candidate)=>candidate>=state.day+1):void {
   const label=originalText.translations.szidAgendaBookMediaEvent;
   frame(scene,parent,160,90,477,345,'dialog');title(scene,parent,160,90,label,'calendar-title');

@@ -16,14 +16,14 @@ export function designWindow(scene: Phaser.Scene, layer: Phaser.GameObjects.Cont
         frame(scene, layer, 91, 86, 354, 422, 'dialog');
         title(scene, layer, 91, 86, 'Design Studio', 'camera');
         pic(scene, layer, 111, 124, 'design-frame_cdcover01');
-        coverImage(scene, layer, 114, 127, 300, album.bandName, album.band, musicians, album.selection);
+        coverImage(scene, layer, 114, 127, 300, album.bandName, album.band, musicians, album.selection,album.costumes);
         button(scene, layer, 314, 455, 109, 'Cancel', close, true, 33, 'cancel');
         return;
     }
     const originalLayer = layer; layer = scene.add.container(); originalLayer.add(layer);
     title(scene, layer, 91, 86, 'Design Studio', 'camera');
     pic(scene, layer, 115, 124, 'design-frame_cdcover01');
-    coverImage(scene, layer, 118, 127, 300, state.bandName, state.band, musicians, selection);
+    coverImage(scene, layer, 118, 127, 300, state.bandName, state.band, musicians, selection,Boolean(state.scenario?.vars.costumes));
     const elements = designElements(selection);
     let right = 0;
     designCategories(state.missionId).forEach((category, index) => {
@@ -43,7 +43,7 @@ export function releaseWindow(scene: Phaser.Scene, layer: Phaser.GameObjects.Con
     const hasDesign = data.design.categories.some((category,index)=>selection[index]!==category.elements[0]);
     if (hasDesign) {
       pic(scene, layer, 180, 127, 'design-tmpCD_frame');
-      coverImage(scene, layer, 182, 129, 70, state.bandName, state.band, musicians, selection);
+      coverImage(scene, layer, 182, 129, 70, state.bandName, state.band, musicians, selection,Boolean(state.scenario?.vars.costumes));
     } else pic(scene, layer, 180, 127, 'design-image_nodesign01_small01');
     const infoX = hasDesign ? 270 : 281;
     caption(scene, layer, infoX, 125, 'Set a release date for your album.', 11, 343).setFontStyle('bold');

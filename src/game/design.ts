@@ -9,6 +9,7 @@ export interface Album {
     band: (BandMember | null)[];
     selection: DesignSelection;
     cost: number;
+    costumes?: boolean;
     quality: number;
     imageStyle: Style;
     designedDay: number;
@@ -51,7 +52,7 @@ export function bookRelease(state: GameState, musicians: Musician[], selection: 
     const nonArtist = elements.filter((_, i) => i !== 1), clamp = (n: number) => Math.max(0, Math.min(1, n));
     const quality = clamp(state.demo.quality + nonArtist.reduce((sum, e) => sum + e.quality, 0) + .1 * (average(m => m.charisma ?? 0) - .5));
     const imageStyle = Object.fromEntries(['Metal', 'rock', 'Punk', 'Pop', 'Dance', 'Boring'].map(k => [k, clamp(average(m => m.style?.[k] ?? 0) + nonArtist.reduce((sum, e) => sum + (e.style as Style)[k], 0))]));
-    return { ...state, money: state.money - cost, album: { songId: state.demo.songId, bandName: state.bandName, band: structuredClone(state.band), selection: [...selection], cost, quality, imageStyle, designedDay: state.day, releaseDay } };
+    return { ...state, money: state.money - cost, album: { songId: state.demo.songId, bandName: state.bandName, band: structuredClone(state.band), selection: [...selection], costumes:Boolean(state.scenario?.vars.costumes), cost, quality, imageStyle, designedDay: state.day, releaseDay } };
 }
 export function validAlbum(state: GameState, musicians: Musician[]): boolean {
     const a = state.album;

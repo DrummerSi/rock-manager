@@ -27,8 +27,10 @@ const borders:Record<number,[number,number,'normal'|'left'|'right']>={
   53:[288,256,'left'],55:[292,256,'normal'],57:[291,257,'right'],59:[296,261,'left'],61:[291,257,'right'],
   111:[292,256,'normal'],124:[302,253,'left'],129:[288,256,'left'],131:[298,256,'normal'],135:[306,263,'normal'],244:[293,256,'right'],
   69:[288,256,'left'],71:[293,261,'normal'],96:[292,256,'normal'],103:[307,260,'right'],
+  259:[290,253,'normal'],264:[287,259,'right'],
 };
 function introBorder(frame:number|undefined):IntroPicture|undefined{
+  if(frame===262)return picture('frame02 large environment_rotated2','source-window-frame02_large_environment_rotated2',[302,263],[336,234],[169,118]);
   const row=frame===undefined?undefined:borders[frame];if(!row)return;
   const [x,y,kind]=row;
   return kind==='left'?picture('frame02 large environment_rotated-3','source-window-frame02_large_environment_rotated-3',[x,y],[341,241],[171,120])
@@ -87,6 +89,12 @@ export function introSegments(missionId:string):IntroSegment[]{
     {audioKey:'intro08_03r04',frame:135,picture:picture('rainbowzoom01','mission34-rainbowzoom01-1522',[302,259],[314,210],[157,105])},
     {audioKey:'intro08_04r04',frame:244,picture:boardroom([288,252]),actorId:'mission03_globalboss02',mood:'Angry'},
     {audioKey:'intro08_05r04',actorId:'mission03_globalboss02',holdPreviousPicture:true},
+  ];
+  else if(missionId==='Mission09')segments=[
+    {audioKey:'intro09_01r01',frame:259,picture:picture('background01','mission34-background01-1620',[286,249],[314,210],[157,105]),actorId:'record04',mood:'Happy'},
+    {audioKey:'intro09_02r01',frame:262,picture:picture('survey reports01','mission34-survey_reports01-1422',[297,259],[322,222],[161,111])},
+    {audioKey:'intro09_03r01',frame:264,picture:boardroom([282,254]),actorId:'mission03_globalboss02',mood:'normal'},
+    {audioKey:'intro09_04r01',actorId:'mission03_globalboss02',holdPreviousPicture:true},
   ];
   else return[];
   return segments.map(segment=>({...segment,pictureName:segment.picture?.name,border:introBorder(segment.frame)}));

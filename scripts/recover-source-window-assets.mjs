@@ -17,7 +17,7 @@ for(const [index,override]of [['analysis/original/scripts/installed/RockMaterial
 }
 fs.writeFileSync('analysis/original/source-window-assets.json',JSON.stringify({recovered,formatting},null,2));
 const cardPath='analysis/original/data/DataDBEC00.json',cardBytes=fs.readFileSync(cardPath),table=JSON.parse(cardBytes).data.EventCardOKCancel,cards={};
-for(const id of ['ECOCAlbumDiscardDemo','ECOCAlbumDiscard','ECOCAskQuitGame']){
+for(const id of ['ECOCAlbumDiscardDemo','ECOCAlbumDiscard','ECOCAskQuitGame','ECOCContractAlreadyGot','ECContractNoDemo','ECContractNoBand']){
  const i=table.ID.indexOf(id);cards[id]=Object.fromEntries(['name','Headline','comment','question','Caption','Gfx','icon','dataMemberName'].map(k=>[k,table[k][i]]));
  cards[id].confirm=table.ButtonOK.name[i];cards[id].cancel=table.ButtonCancel.name[i];
 }

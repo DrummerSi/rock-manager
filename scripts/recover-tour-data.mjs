@@ -11,9 +11,9 @@ for(const element of elements)for(const match of element.Gfx.matchAll(/"([^"]+)"
 const animated=[...wanted].filter(name=>name.endsWith('_0001')).map(name=>name.slice(0,-4));
 const recovered=[];fs.mkdirSync(root+'/media/Tour',{recursive:true});
 for(const name of ['RockMaterial','city01']){
-  const cast=indexedCast(root+'/scripts/'+(name==='city01'?'cd':'installed')+'/'+name+'.cxt/metadata.json','E:/Games/Rock Manager/'+name+'.cxt');
+  const cast=indexedCast(name==='RockMaterial'?root+'/rockmaterial-current-index.json':root+'/scripts/cd/city01.cxt/metadata.json','E:/Games/Rock Manager/'+name+'.cxt');
   for(const member of cast.members){const name=member.data.info?.name??'';if(member.data.type!==1||!(/^(globe01_|plane02_)/i.test(name)||wanted.has(name)||animated.some(prefix=>name.startsWith(prefix)&&/^\d{4}$/.test(name.slice(prefix.length)))))continue;
-    const image=bitmap(cast,member,36);if(!image)continue;const{bytes,...info}=image;
+    const image=bitmap(cast,member,name.startsWith('stage_small_')?0:36);if(!image)continue;const{bytes,...info}=image;
     const key='tour-'+name.replaceAll(' ','_').toLowerCase(),path='media/Tour/'+key+'.png';fs.writeFileSync(root+'/'+path,bytes);recovered.push({...info,name,key,path});
   }
 }

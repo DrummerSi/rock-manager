@@ -10,9 +10,9 @@ import type { Contract, Demo, Recording, RecordingRules, Style } from './recordi
 import { validRecordingProgress } from './recording';
 import { evaluateMissionProgress, recordMissionFailure, validMissionProgress, type MissionProgress } from './mission-progress';
 import {missionDefinition,isMissionId,type MissionId} from './mission-catalog';
-import type {ScenarioState} from './scenario-types';
-import {scenarioEvent,validScenario} from './scenarios';
-import {applyScenarioQuits} from './scenario-quits';
+import type {MissionEventState} from './mission-event-types';
+import {missionEvent,validMissionEvents} from './mission-events';
+import {applyMusicianQuits} from './musician-quits';
 export const SLOT_INSTRUMENTS = [
   ['Guitar', 'Keyboards'], ['Guitar', 'Keyboards'], ['Drums'], ['Bass'], ['Vocals'],
 ] as const;
@@ -37,7 +37,7 @@ export interface GameState {
   tutorialAcknowledgedDays?: Record<string, number>; bandNameChanged?: boolean;
   agendaHistory?: {day:number;balance:number;albumKey:string|null;hype:number;sales:number}[];
   missionProgress?: MissionProgress;
-  scenario?:ScenarioState;
+  scenario?:MissionEventState;
   gangsta?:GangstaState;
   video?:VideoProduction|null;
   tour?:BandTour|null;
@@ -93,11 +93,11 @@ export function advanceDay(state: GameState, musicians: Musician[]): { state: Ga
       if (money >= salary) { money -= salary; wages += salary; } else { unpaid += salary; }
     }
   }
-  const progressed = applyScenarioQuits(advanceBandmates(advanceGangsta(advanceVideo(advanceTour({ ...state, day, money },musicians))), musicians),musicians);
+  const progressed = applyMusicianQuits(advanceBandmates(advanceGangsta(advanceVideo(advanceTour({ ...state, day, money },musicians))), musicians),musicians);
   const settled = advancePublicity(progressed, effectiveMusicians(progressed, musicians));
   let next=applyBandmateConcertFeedback(progressed, settled);
-  for(const result of next.publicity.concertResults.filter(r=>!state.publicity.concertResults.some(old=>old.id===r.id)))next=scenarioEvent(next,{kind:'concert',concertId:result.concertId,placeId:result.venueId},musicians);
-  next=scenarioEvent(next,{kind:'day'},musicians);
+  for(const result of next.publicity.concertResults.filter(r=>!state.publicity.concertResults.some(old=>old.id===r.id)))next=missionEvent(next,{kind:'concert',concertId:result.concertId,placeId:result.venueId},musicians);
+  next=missionEvent(next,{kind:'day'},musicians);
   // Original player.moneyGraph and album.hypeGraph record actual daily values.
   const snapshot=(s:GameState)=>({day:s.day,balance:s.money,albumKey:s.demo?`${s.demo.songId}:${s.demo.recordedDay}`:null,hype:albumHype(s),sales:s.publicity.totalSales});
   next={...next,agendaHistory:[...(state.agendaHistory??[]).filter(p=>p.day<state.day),snapshot(state),snapshot(next)]};
@@ -129,7 +129,7 @@ export function validSave(value: unknown, musicians: Musician[], songs?: Song[],
   if (!Array.isArray(s.ownedSongs) || new Set(s.ownedSongs).size !== s.ownedSongs.length
     || s.ownedSongs.some((id) => typeof id !== 'string' || (songs && !songs.some((song) => song.id === id)))
     || (s.selectedSong !== null && !s.ownedSongs.includes(s.selectedSong!))) return false;
-  if (!validMissionProgress(s as GameState) || !validScenario(s as GameState) || !validBandmates(s as GameState, musicians) || !validGangsta(s as GameState) || !validVideo(s as GameState) || !validTour(s as GameState) || !validPublicity(s as GameState) || !validAlbum(s as GameState, musicians) || !validRecordingProgress(s as GameState, musicians, rules)) return false;
+  if (!validMissionProgress(s as GameState) || !validMissionEvents(s as GameState) || !validBandmates(s as GameState, musicians) || !validGangsta(s as GameState) || !validVideo(s as GameState) || !validTour(s as GameState) || !validPublicity(s as GameState) || !validAlbum(s as GameState, musicians) || !validRecordingProgress(s as GameState, musicians, rules)) return false;
   return s.band.every((member, slot) => {
     if (member === null) return true;
     if (!member || typeof member !== 'object') return false;

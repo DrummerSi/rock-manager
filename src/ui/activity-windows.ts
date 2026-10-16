@@ -11,7 +11,7 @@ import { nativeAgenda, originalImageKey, trainingAgendaFormat, type AgendaEntry 
 import { cursorStyle } from './cursors';
 import { NativeText } from './native-text';
 import { nativeChooser } from './native-chooser';
-import {missionDefinition} from '../game/mission-catalog';
+import {missionDefinition,missionCards as scenarioCards} from '../game/mission-catalog';
 import originalText from '../game/original-text.json' with { type: 'json' };
 const caption = (s: Phaser.Scene, l: Phaser.GameObjects.Container, x: number, y: number, value: string, size = 11, width?: number) => text(s, l, x, y, value, size, '#eeeeee', width).setFontFamily('Verdana').setFontStyle('').setLineSpacing(1);
 // Director formats pictures to a fixed text rectangle. Keep dynamic translated
@@ -52,7 +52,7 @@ export function activityEvents(state: GameState): AgendaEntry[] {
         ...(state.gangsta?.security??[]).map((e,i)=>({id:'security-'+i,kind:'security' as const,name:'Body Guards',startDay:e.startDay,duration:e.duration})),
         ...(state.tour?[{id:'band-tour',kind:'concert' as const,formatId:'AgFmBandTour',name:'World Tour',startDay:state.tour.startDay,duration:state.tour.duration}]:[]),
         ...(video?[{id:'video-production',kind:'video' as const,name:'Video',startDay:video.startDay,duration:video.duration}]:[]),
-        ...(state.scenario?.appointments??[]).map(a=>({id:a.id,kind:'concert' as const,formatId:a.kind==='prison'?'AgFmPrison':a.kind==='hospital'?'AgFmHospital':a.kind==='award'?'AgFmAward':undefined,name:a.kind==='prison'?'Prison':a.kind==='hospital'?'Hospital':a.kind==='award'?'Award':a.kind==='television'?'Stars of Cheese — TV24':'Global Aid — Colosseum',startDay:a.startDay,duration:a.duration})),
+        ...(state.scenario?.appointments??[]).map(a=>({id:a.id,kind:'concert' as const,formatId:a.kind==='prison'?'AgFmPrison':a.kind==='hospital'?'AgFmHospital':a.kind==='award'?'AgFmAward':a.kind==='interview'?'AgFmExpoMediaActivity':undefined,name:a.kind==='prison'?'Prison':a.kind==='hospital'?'Hospital':a.kind==='award'?'Award':a.id==='mis9radioBookingObj'?'Radio FM':a.kind==='interview'?'Zer0 Magazine':a.id.startsWith('ECOCMis9')?(scenarioCards.find(c=>c.ID===a.id)?.Headline??a.id):a.kind==='television'?'Stars of Cheese — TV24':'Global Aid — Colosseum',startDay:a.startDay,duration:a.duration})),
         ...state.bandmates.training.map(t => ({id:t.id,kind:'training' as const,formatId:trainingAgendaFormat(t.actionId),name:data.activities.tables.Action.find(a => a.ID===t.actionId)?.name ?? 'Training',startDay:t.startDay,duration:t.duration})),
         ...(state.album ? [{ id: 'album-release', kind: 'release' as const, name: 'Album release', startDay: state.album.releaseDay, duration: 1 }] : []),
         ...state.publicity.concerts.map((c: ConcertBooking) => ({ id: c.id, kind: 'concert' as const, name: PUBLICITY_RULES.venues.find(v => v.id === c.venueId)?.name ?? 'Concert', startDay: c.startDay, duration: c.duration })),

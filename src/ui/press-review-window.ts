@@ -68,7 +68,7 @@ export function pressReviewWindow(scene: Phaser.Scene, parent: Phaser.GameObject
       if(!magazine)picture.preFX?.addColorMatrix().grayscale(1);
       parent.getData('sourceLayout').picture={key:overrides.pictureKey,x:layer.x+picture.x,y:layer.y+picture.y,width:picture.width,height:picture.height};
     }else if(album&&!overrides.pictureKey){
-      const cover=coverImage(scene,layer,magazine?59:56,magazine?60:112,magazine?92:105,album.bandName,album.band,musicians,album.selection);
+      const cover=coverImage(scene,layer,magazine?59:56,magazine?60:112,magazine?92:105,album.bandName,album.band,musicians,album.selection,album.costumes);
       cover.setDisplaySize(magazine?92:105,magazine?94:105);
       // The original newsprint path calls makeGrayscale; Phaser's color matrix preserves the cover composition.
       if(!magazine)cover.preFX?.addColorMatrix().grayscale(1);

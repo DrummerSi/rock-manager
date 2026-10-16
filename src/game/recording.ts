@@ -78,7 +78,7 @@ export function startRecording(state: GameState, rules: RecordingRules, studioId
 export function cancelRecordContract(state:GameState):GameState {
   if(!state.contract)return state;
   const p=state.publicity,debt=(p.earlierAlbumRoyalties??0)+p.grossRoyalties-p.paidRoyalties-state.contract.advance;
-  return {...state,money:debt<0&&state.money < -debt?3000:state.money+Math.round(debt),contract:null,demo:null,album:null,video:null,
+  return {...state,money:debt<0&&state.money < -debt?3000:state.money+Math.round(debt),contract:null,demo:state.contract.approved===false?state.demo:null,album:null,video:null,
     publicity:{...p,earlierAlbumSales:(p.earlierAlbumSales??0)+p.totalSales,earlierAlbumRoyalties:0,totalSales:0,grossRoyalties:0,paidRoyalties:0,advanceRepaid:0,albumKey:null,
       salesHistory:[],chart:0,radioChart:0,top10Day:null,exposures:p.exposures.filter(e=>e.albumKey===null),
       groups:p.groups.map(g=>({...g,albumHype:0,albumExposure:0,willBuy:0,bought:0,likes:0})),
@@ -200,6 +200,7 @@ export function evaluateDemo(state: GameState, label: Pick<Label,'name'|'targets
       reasonKind:scores[0].path[0] as DemoReasonKind,reasonPath:[...scores[0].path] };
   });
   // Original chooses the target with highest overall liking, not lowest penalty.
+  if(state.scenario?.vars.AlbumLikeBoost!==undefined)return {...results[0],accepted:true,like:1,reason:''};
   return results.sort((a, b) => b.like - a.like)[0];
 }
 
@@ -245,7 +246,7 @@ export function validRecordingProgress(state: GameState, musicians: Musician[], 
     || !state.demo.imageStyle || styles.some((s) => !Number.isFinite(state.demo!.imageStyle[s]) || state.demo!.imageStyle[s] < 0 || state.demo!.imageStyle[s] > 1))) return false;
   if(state.contract?.prearranged){
     const c=state.contract;
-    return state.missionId==='Mission03'&&c.prearranged===true&&c.labelId==='Record04'&&state.ownedSongs.includes(c.songId)&&c.advance===100000&&c.royalty===.1&&c.albums===1&&typeof c.approved==='boolean'&&c.signedDay===0&&(!c.approved||Boolean(state.demo));
+    return ['Mission03','Mission09'].includes(state.missionId)&&c.prearranged===true&&c.labelId==='Record04'&&state.ownedSongs.includes(c.songId)&&c.advance===(state.missionId==='Mission09'?0:100000)&&c.royalty===.1&&c.albums===1&&typeof c.approved==='boolean'&&c.signedDay===0&&(!c.approved||Boolean(state.demo));
   }
   if (state.contract !== null && ((state.contract.approved!==false&&(!state.demo||state.recording)) || !(rules?.labels.map(l=>l.id)??['Record01','Record02','Record03','Record04']).includes(state.contract.labelId)
     || (state.demo?state.contract.songId !== state.demo.songId:state.recording?state.contract.songId!==state.recording.songId:true) || !Number.isSafeInteger(state.contract.advance) || state.contract.advance < 0

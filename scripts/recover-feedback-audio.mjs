@@ -42,7 +42,7 @@ function recover(source,key){
 }
 const originalRoster=JSON.parse(fs.readFileSync(`${root}/data/DataMusicians00.json`)).data.RealMusician;
 const missionTable=JSON.parse(fs.readFileSync(`${root}/data/DataDBRest00.json`)).data.Mission;
-const wanted=new Set(missionTable.ID.flatMap((id,i)=>['Mission01','Mission03','Mission04','Mission05','Mission06','Mission07','Mission08'].includes(id)?[...missionTable.AvailableMusicians[i].matchAll(/#(\w+)/g)].map(m=>m[1]):[]));
+const wanted=new Set(missionTable.ID.flatMap((id,i)=>['Mission01','Mission03','Mission04','Mission05','Mission06','Mission07','Mission08','Mission09','Mission10'].includes(id)?[...missionTable.AvailableMusicians[i].matchAll(/#(\w+)/g)].map(m=>m[1]):[]));
 // Autoloaded cast members are required even where the recruitment roster excludes them.
 for(const name of ['mission03-autoload-evidence.json','mission04-recovered.json']){
   const path=`${root}/${name}`;if(!fs.existsSync(path))continue;

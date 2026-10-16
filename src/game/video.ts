@@ -14,7 +14,7 @@ export function currentVideo(state:GameState):VideoProduction|null {
 }
 export function videoAvailable(state:GameState):boolean {
   // Mission04 IntroduceVideo makes Video01 available on ExitPlace Design01.
-  return Boolean(state.contract&&state.album)&&(['Mission05','Mission06','Mission07','Mission08'].includes(state.missionId)||state.missionId==='Mission04'
+  return Boolean(state.contract&&state.album)&&(['Mission05','Mission06','Mission07','Mission08','Mission09','Mission10'].includes(state.missionId)||state.missionId==='Mission04'
     &&Boolean(state.scenario?.queue.some(c=>c.id==='ECOCMis4IntroduceVideo')||state.scenario?.seen.includes('ECOCMis4IntroduceVideo')));
 }
 export function videoOccupies(state:GameState,id:string,day=state.day):boolean {

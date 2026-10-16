@@ -59,6 +59,8 @@ export function missionObjectives(state: GameState): MissionObjective[] {
     const released=Boolean(state.album&&state.album.releaseDay<=state.day);
     const done=state.missionId==='Mission03'?[state.demo?.songId==='Sng18',Boolean(state.contract?.approved),released,state.money>missionDefinition(state.missionId).startMoney,['RMCLelle','RMCNille'].every(id=>state.band.some(m=>m?.musicianId===id))]
       :state.missionId==='Mission05'?[Boolean(state.contract),released,(state.publicity.earlierAlbumSales??0)+state.publicity.totalSales>=25000,Boolean(state.tour?.completed&&state.tour.results.length>=3)]
+      :state.missionId==='Mission09'?[state.scenario?.outcome==='won']
+      :state.missionId==='Mission10'?[state.day>=365]
       :state.missionId==='Mission07'?[state.ownedSongs.length>0,Boolean(state.demo),released,state.publicity.totalSales>=100000,state.scenario?.active.succeed!==undefined]
       :state.missionId==='Mission08'?[state.band.some(Boolean),Boolean(state.demo),state.contract?.labelId==='Record03',state.publicity.totalSales+Number(state.publicity.earlierAlbumSales??0)<=3000,state.scenario?.outcome==='won']
       :state.missionId==='Mission06'?[state.band.filter(Boolean).length>1,Boolean(state.demo),released,(state.publicity.earlierAlbumSales??0)+state.publicity.totalSales>30000]
@@ -82,14 +84,14 @@ export function missionScore(state: GameState): { assets: number; debts: number;
   const won = evaluateMissionProgress(state).missionProgress.status === 'won';
   return { assets, debts, economy, concertPoints, reviewPoints, total: won ? Math.round((economy + concertPoints + reviewPoints) / 1000) * 1000 : null };
 }
-export function missionEnding(state: GameState, albumName = '') {
+export function missionEnding(state: GameState, albumName = '', careerPoints=0) {
   const progress = evaluateMissionProgress(state).missionProgress;
   const success = progress.status === 'won';
   const definition=missionDefinition(state.missionId);
   const sourceText = success ? definition.success : progress.failureReason === 'NoMoney' ? endings.outOfMoney.text : definition.failure;
-  const text = sourceText.replace(/<¤C(?:album|song)\.name>/gi, albumName).replace(/<¤CBand\.name>/gi, state.bandName);
+  const text = sourceText.replace(/<formatInteger\(¤CPlayer.getTotalPoints\(#Mission09\)\)>/gi,Math.round(careerPoints).toLocaleString('en-GB')).replace(/<¤C(?:album|song)\.name>/gi, albumName).replace(/<¤CBand\.name>/gi, state.bandName);
   const stem=state.missionId.toLowerCase();
-  const next=state.missionId==='Mission01'?'Mission03':state.missionId==='Mission03'?'Mission04':state.missionId==='Mission04'?'Mission05':state.missionId==='Mission05'?'Mission06':state.missionId==='Mission06'?'Mission07':state.missionId==='Mission07'?'Mission08':null;
+  const next=state.missionId==='Mission01'?'Mission03':state.missionId==='Mission03'?'Mission04':state.missionId==='Mission04'?'Mission05':state.missionId==='Mission05'?'Mission06':state.missionId==='Mission06'?'Mission07':state.missionId==='Mission07'?'Mission08':state.missionId==='Mission08'?'Mission09':state.missionId==='Mission09'?'Mission10':null;
   return { title: definition.name, text, picture: state.missionId==='Mission01'?(success?endings.successPicture:endings.failurePicture):stem+(success?'_success01':'_failure01'),
     success, score: missionScore(state), originalNextMissionId: success ? (state.missionId==='Mission01'?endings.nativeNextMissionId:next) : null,
     nextPlayableMissionId: success?next:null, sound: success ? 'recorded-demo-loop' : 'a131', acknowledged: progress.acknowledged };

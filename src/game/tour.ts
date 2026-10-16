@@ -9,7 +9,7 @@ export interface BandTour {
   seenResults?:number;
   returnDay?:number;
 }
-export const tourAvailable=(s:GameState)=>s.missionId==='Mission05'&&Boolean(s.scenario?.vars.tourUnlocked);
+export const tourAvailable=(s:GameState)=>s.missionId==='Mission10'||s.missionId==='Mission09'&&Boolean(s.album)||s.missionId==='Mission05'&&Boolean(s.scenario?.vars.tourUnlocked);
 export const tourOccupied=(s:GameState,id:string,day=s.day)=>Boolean(s.tour&&!s.tour.completed&&s.tour.startDay<=day&&day<(s.tour.returnDay??s.tour.startDay+s.tour.duration)&&s.tour.members.includes(id));
 const city=(id:string)=>rules.cities.find(c=>c.ID===id)!;
 /** DlgTour.calcTimeAndCost uses spherical distance, rounded to500, plus4000. */

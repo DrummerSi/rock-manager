@@ -257,6 +257,11 @@ for (const portrait of actorAnimation.portraits) {
  fs.copyFileSync(path.join(root,portrait.atlas.path),path.join(destination,filename)); images[portrait.atlas.textureKey]=filename;
  provenance.push({key:portrait.atlas.textureKey,path:portrait.atlas.path,sha256:portrait.atlas.sha256,importRule:'Original Director actor layers with source registration points'});
 }
+for(const backdrop of actorAnimation.officeBackgrounds??[]){
+ const filename=backdrop.textureKey+'-'+backdrop.pngSHA256.slice(0,12)+'.png';
+ fs.copyFileSync(path.join(root,backdrop.path),path.join(destination,filename));images[backdrop.textureKey]=filename;
+ provenance.push({key:backdrop.textureKey,path:backdrop.path,sha256:backdrop.pngSHA256,importRule:'DlgRecord.setPlace copies the opaque office before ink36 face animation'});
+}
 const gameData = { design, activities, sourceWindowBitmaps:sourceWindowAssets.recovered.map(({name,width,height,regX,regY})=>({name,width,height,regX,regY,key:'source-window-'+name.replaceAll(' ','_').toLowerCase()})),
   city: cityEvidence, cityFrame: cityFrame.masks.map(({ key, x, y }) => ({ key, x, y })), cursors,
   tutorialGameplay, tutorialMedia: tutorialMedia.map(({ name, width, height, regX, regY }) => ({ key: name.replaceAll(' ', '_').toLowerCase(), width, height, regX, regY })),
