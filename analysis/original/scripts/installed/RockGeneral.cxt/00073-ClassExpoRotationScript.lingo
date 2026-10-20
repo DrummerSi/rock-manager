@@ -1,0 +1,66 @@
+property ancestor, child, className, belongsTo, _killed, RotationOfClass
+global gRock
+
+on new me, argChild, argBelongsTo
+  if objectp(argChild) then
+    child = argChild
+  else
+    child = me
+  end if
+  belongsTo = argBelongsTo
+  ancestor = script("ClassAudienceExposureScript").new(child)
+  className = #ExpoRotation
+  RotationOfClass = #none
+  return me
+end
+
+on kill me
+  _killed = 1
+  if objectp(ancestor) then
+    ancestor = ancestor.kill()
+  end if
+  child = 0
+  belongsTo = 0
+  return 0
+end
+
+on eventChangeState me, argAction, argOption
+  if argAction = #start then
+    ancestor.stdSetReachesGroups()
+    ancestor.stdSetInfluenceWhat()
+    album_r = gRock.m_context.getFocus(#album)
+    if objectp(album_r) then
+      ancestor.QualityPerGroup = [:]
+      if RotationOfClass = #album then
+        repeat with n = 1 to ancestor.ReachesGroups.count
+          tmpGroupID = ancestor.ReachesGroups.getPropAt(n)
+          group_r = gRock.m_classManager.getObjByIDAndClass(tmpGroupID, #Group)
+          tmpLike = rDefLikesAlbum(group_r, album_r, [#music: 1, #image: 0.20000000000000001, #SongType: 1, #quality: 1, #Freshness: 0.29999999999999999])
+          if tmpLike < -1 then
+            tmpLike = -1.0
+          end if
+          ancestor.QualityPerGroup.addProp(tmpGroupID, tmpLike)
+        end repeat
+      else
+        if RotationOfClass = #video then
+          videoConcept_r = gRock.m_classManager.getObjByIDAndClass(album_r.video, #VideoConcept)
+          repeat with n = 1 to ancestor.ReachesGroups.count
+            tmpGroupID = ancestor.ReachesGroups.getPropAt(n)
+            group_r = gRock.m_classManager.getObjByIDAndClass(tmpGroupID, #Group)
+            tmpLike = rDefLikesAlbum(group_r, album_r, [#music: 1, #image: 1, #SongType: 1, #quality: 1, #Freshness: 0.29999999999999999])
+            if tmpLike < -1 then
+              tmpLike = -1.0
+            end if
+            tmpLike = calcAverage([1.0: tmpLike, 1.0: videoConcept_r.quality])
+            ancestor.QualityPerGroup.addProp(tmpGroupID, tmpLike)
+          end repeat
+        end if
+      end if
+    end if
+    ancestor.stdFillInBlanks()
+  else
+    if argAction = #stop then
+    end if
+  end if
+  return ancestor.eventChangeState(argAction, argOption)
+end

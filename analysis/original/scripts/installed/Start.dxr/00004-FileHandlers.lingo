@@ -1,0 +1,163 @@
+on readBinary argFile
+  openXLib(the moviePath & "FileIO.dll")
+  tmpList = []
+  tmpRead = fileio(#mnew, "read", argFile)
+  if not objectp(tmpRead) then
+    put "Couldnt open"
+    return 
+  else
+    tmpLen = tmpRead(#mGetLength)
+    tmpStr = tmpRead(#mReadFile)
+    tmpPos = tmpRead(#mGetPosition)
+    if tmpPos < tmpLen then
+      add(tmpList, tmpStr)
+      repeat while 1
+        tmpStr = tmpRead(#mReadFile)
+        tmpPos = tmpRead(#mGetPosition)
+        add(tmpList, tmpStr)
+        if tmpPos >= tmpLen then
+          exit repeat
+        end if
+      end repeat
+    end if
+    tmpRead(#mdispose)
+    if count(tmpList) then
+      return tmpList
+    end if
+    return tmpStr
+  end if
+  closeXLib(the moviePath & "FileIO.dll")
+end
+
+on readFile argFileName
+  tmpFile = new(xtra("FileIO"))
+  openFile(tmpFile, argFileName, 1)
+  if status(tmpFile) <> 0 then
+    put error(tmpFile, status(tmpFile))
+    return status(tmpFile)
+  end if
+  tmpStr = readFile(tmpFile)
+  closeFile(tmpFile)
+  return tmpStr
+end
+
+on writeFile argFileName, argStr
+  tmpFile = new(xtra("FileIO"))
+  openFile(tmpFile, argFileName, 2)
+  if status(tmpFile) <> 0 then
+    createFile(tmpFile, argFileName)
+    if status(tmpFile) <> 0 then
+      return error(tmpFile, status(tmpFile))
+    end if
+    openFile(tmpFile, argFileName, 2)
+    if status(tmpFile) <> 0 then
+      return error(tmpFile, status(tmpFile))
+    end if
+  end if
+  setPosition(tmpFile, 0)
+  writeString(tmpFile, EMPTY)
+  setPosition(tmpFile, 0)
+  writeString(tmpFile, argStr)
+  closeFile(tmpFile)
+  return 0
+end
+
+on fileExtractPath argFileName
+  tmpLen = length(argFileName)
+  tmpDelim = "\"
+  if the machineType <> 256 then
+    tmpDelim = ":"
+  end if
+  repeat with n = tmpLen down to 1
+    if char n of argFileName = tmpDelim then
+      return char 1 to n of argFileName
+    end if
+  end repeat
+  return EMPTY
+end
+
+on fileExtractName argFileName
+  tmpLen = length(argFileName)
+  tmpDelim = "\"
+  if the machineType <> 256 then
+    tmpDelim = ":"
+  end if
+  repeat with n = tmpLen down to 1
+    if char n of argFileName = tmpDelim then
+      return char (n + 1) to tmpLen of argFileName
+    end if
+  end repeat
+  return argFileName
+end
+
+on fileStripName argFileName
+  argFileName = fileExtractName(argFileName)
+  tmpOff = offset(".", argFileName)
+  if tmpOff then
+    return char 1 to (tmpOff - 1) of argFileName
+  end if
+  return argFileName
+end
+
+on fileExists2 argFile, argPossibleExtsList
+  if voidp(argPossibleExtsList) then
+    argPossibleExtsList = [EMPTY]
+  end if
+  tmpPath = fileExtractPath(argFile)
+  tmpFileName = argFile.char[tmpPath.length + 1..argFile.length]
+  repeat with n = 1 to the maxinteger
+    tmpName = getNthFileNameInFolder(tmpPath, n)
+    if tmpName = EMPTY then
+      return 0
+    end if
+    repeat with tmpExt in argPossibleExtsList
+      if tmpName = (tmpFileName & tmpExt) then
+        return 1
+      end if
+    end repeat
+  end repeat
+  return 0
+end
+
+on fileExists argFile, argPossibleExtsList
+  if voidp(argPossibleExtsList) then
+    argPossibleExtsList = [EMPTY]
+  end if
+  tmp = new(xtra("FileIO"))
+  tmpResult = 0
+  repeat with tmpExt in argPossibleExtsList
+    tmpName = argFile & "." & tmpExt
+    openFile(tmp, tmpName, 1)
+    if status(tmp) = 0 then
+      tmpResult = 1
+      closeFile(tmp)
+      exit repeat
+    end if
+    closeFile(tmp)
+  end repeat
+  return tmpResult
+end
+
+on fileGetLength argFile
+  tmp = new(xtra("FileIO"))
+  openFile(tmp, argFile, 1)
+  if status(tmp) <> 0 then
+    return 0
+  end if
+  tmpLen = getLength(tmp)
+  closeFile(tmp)
+  return tmpLen
+end
+
+on getFilesInFolder argPath
+  tmpList = []
+  repeat with n = 1 to the maxinteger
+    tmpName = getNthFileNameInFolder(argPath, n)
+    if tmpName = EMPTY then
+      exit repeat
+      next repeat
+    end if
+    tmpList.add(tmpName)
+  end repeat
+  return tmpList
+end

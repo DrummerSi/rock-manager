@@ -1,0 +1,298 @@
+property ancestor, m_band_r, m_musiciansByPos, m_addedInstrumentGfxItems, m_calcSmallBandOnExitRehearsal, m_highestNumMembersSoFar, m_numMembersOnEnterRehearsal, m_sndObj
+global gDir, gRock, gUseful
+
+on new me, argOptions
+  argOptions.setaProp(#ReportTo, me)
+  argOptions.setaProp(#child, me)
+  dialog_r = gRock.m_classManager.getObjByIDAndClass(#DlgRehearsal01, #Dialog)
+  dialog_r.dataMemberName = "DlgRehearsal01Data"
+  argOptions[#DlgInfoObj] = dialog_r
+  ancestor = script("DlgRockAncestorScript").new(argOptions)
+  m_band_r = gRock.m_context.getFocus(#Band)
+  m_calcSmallBandOnExitRehearsal = 0
+  m_numMembersOnEnterRehearsal = m_band_r.members.count
+  m_highestNumMembersSoFar = m_band_r.members.count
+  m_addedInstrumentGfxItems = []
+  me.refresh()
+  if not objectp(gRock.m_context.getFocus(#album)) and not rOKCheatPass() then
+    itemObj = ancestor.m_objDlg.getItem(#ButtonCancel)
+    if objectp(itemObj) then
+      itemObj.send(#dimButton, 1)
+    end if
+  end if
+  ancestor.render()
+  gRock.m_context.setContext(#Rehearsal01)
+  gRock.m_eventCardsManager.allowEventCardsWithProp(#ShowInRehearsal, 1, 1)
+  return me
+end
+
+on refresh me
+  itemObj = ancestor.m_objDlg.getItem(#title)
+  itemObj.setOneProp(#editData, m_band_r.name)
+  me.setAlbumInfo()
+  me.setBandInfo()
+  m_musiciansByPos = [:]
+  repeat with n = 1 to m_band_r.members.count()
+    musician_r = gRock.m_classManager.getObjByIDAndClass(m_band_r.members[n], #RealMusician)
+    if not (musician_r.spatialPos > 0) then
+      musician_r.spatialPos = n
+    end if
+    m_musiciansByPos.setaProp(musician_r.spatialPos, musician_r)
+  end repeat
+  repeat with n = m_addedInstrumentGfxItems.count down to 1
+    ancestor.m_objDlg.deleteItem(m_addedInstrumentGfxItems[n])
+  end repeat
+  m_addedInstrumentGfxItems = []
+  someonePlaysDrums = 0
+  repeat with n = 1 to 5
+    ID = symbol("Person" & convItoS(n, 2))
+    itemObj = ancestor.m_objDlg.getItem(ID)
+    musician_r = m_musiciansByPos.getaProp(n)
+    if objectp(musician_r) then
+      if musician_r.NowPlaying = #Drums then
+        someonePlaysDrums = 1
+      end if
+      tmpInstrumentGfx = rgetProp(musician_r.InstrumentGFX, musician_r.NowPlaying)
+      if tmpInstrumentGfx = "empty" then
+        tmpInstrumentGfx = EMPTY
+      end if
+      if tmpInstrumentGfx.length > 1 then
+        tmpInstrumentGfx = "instrumentpos_" & convItoS(n, 2) & "_" & tmpInstrumentGfx
+        tmpID = symbol("InstrGfx" & string(n))
+        instrGfxItem = ancestor.m_objDlg.addItem([#ID: tmpID, #type: #Pic, #Pic: tmpInstrumentGfx, #rel: [[#Pic, 1], [#Pic, 2], #Auto, #Auto], #inOffsetRect: rect(206, 64, 0, 0), #ch: 6, #topLeftMeansWhat: [#Reg, #Reg]])
+        m_addedInstrumentGfxItems.add(instrGfxItem)
+      end if
+      itemObj.setOneProp(#Pic, musician_r.getCurrentPic())
+      next repeat
+    end if
+    itemObj.setOneProp(#Pic, getContextOKFileName(#PortraitLarge, #unknown))
+  end repeat
+  if someonePlaysDrums = 0 then
+    instrGfxItem = ancestor.m_objDlg.addItem([#ID: #InstrGfxDrums, #type: #Pic, #Pic: "instrumentpos_03_drums_black_standard", #rel: [[#Pic, 1], [#Pic, 2], #Auto, #Auto], #inOffsetRect: rect(206, 64, 0, 0), #ch: 6, #topLeftMeansWhat: [#Reg, #Reg]])
+    m_addedInstrumentGfxItems.add(instrGfxItem)
+  end if
+  ancestor.m_objDlg.renderAtLoc()
+end
+
+on kill me
+  if objectp(m_sndObj) then
+    m_sndObj = m_sndObj.kill()
+  end if
+  gUseful.setSoundSystem(#Director)
+  if m_calcSmallBandOnExitRehearsal = 1 then
+    gRock.m_tempVars[#BandCalcModsOnly] = #SmallBand
+    m_band_r.updateModifiers()
+  end if
+  m_addedInstrumentGfxItems = []
+  ancestor.kill()
+  gRock.m_eventCardsManager.allowEventCardsWithProp(#ShowInRehearsal, 0, 0)
+  return 0
+end
+
+on focusChange me, argGotFocus
+  if argGotFocus = 0 then
+    if objectp(m_sndObj) then
+      m_sndObj = m_sndObj.kill()
+    end if
+    gUseful.setSoundSystem(#Director)
+  end if
+  ancestor.focusChange(argGotFocus)
+end
+
+on Report me, argObj, argWhat
+end
+
+on mouse me, argObj, argWhat, argOption
+  if objectp(argOption) then
+    if argWhat = #click then
+      ID = argOption.getOneProp(#ID)
+      IDStr = string(ID)
+      if offset("Person", IDStr) then
+        Nr = value(IDStr.char[7..IDStr.length])
+        musician_r = m_musiciansByPos.getaProp(Nr)
+        if not objectp(musician_r) then
+          gDir.m_objDialogsMaster.openDialog(#Rehearsal01Choose, [#spatialPos: Nr])
+        else
+          if musician_r.getIsOccupied() then
+            gRock.m_eventCardsManager.tryNewShowEventCard(#ECOCMusicianAway, [#prio: 0])
+          else
+            gDir.m_objDialogsMaster.openDialog(#Rehearsal01Artist, [#Musician: musician_r])
+          end if
+        end if
+      else
+        if ID = #Button3 then
+          gDir.m_objDialogsMaster.openDialog(#Rehearsal01Name, [:])
+        else
+          if ID = #ButtonCancel then
+            if objectp(m_sndObj) then
+              m_sndObj = m_sndObj.kill()
+            else
+              gUseful.setSoundSystem(#xtra)
+              tmpSndPath = gRock.m_paths.getPath(#RenderedMusic) & "mixdown.wav"
+              m_sndObj = script("SoundScript").new(tmpSndPath, [#PlayDirect: 0, #vol: #DemoVol])
+              m_sndObj.play()
+            end if
+            exit
+          else
+            if ID = #ButtonOK then
+              gotSinger = 0
+              musicians_r = m_band_r.getMusicianObjs()
+              repeat with mus_r in musicians_r
+                if mus_r.NowPlaying = #Vocals then
+                  gotSinger = 1
+                  exit repeat
+                end if
+              end repeat
+              if not gotSinger and not rOKCheatPass() then
+                mission_r = gRock.m_context.getFocus(#Mission)
+                vocalistsLeft = mission_r.AvailableMusicians.duplicate()
+                repeat with n = vocalistsLeft.count down to 1
+                  ID = vocalistsLeft[n]
+                  mus_r = gRock.m_classManager.getObjByIDAndClass(ID, #RealMusician)
+                  if mus_r.InstrumentalSkills.Vocals <= 0 then
+                    vocalistsLeft.deleteAt(n)
+                  end if
+                end repeat
+                if vocalistsLeft > 0 then
+                  gRock.m_eventCardsManager.tryNewShowEventCard(#ECOCNeedSinger, [#prio: 0])
+                  exit
+                else
+                  gRock.m_eventCardsManager.tryNewShowEventCard(#ECOCNoSingersLeft, [#prio: 1])
+                end if
+              end if
+              if m_band_r.name = rGetStr(#szidUnnamedBand) then
+                if rex("missionVar.changedBandName > 0") = 0 then
+                  rex("missionVar.changedBandName = 1")
+                  gRock.m_eventCardsManager.tryNewShowEventCard(#ECOCForgetBandName, [#prio: 0])
+                  exit
+                end if
+              end if
+              ancestor.mouse(argObj, argWhat, argOption)
+            else
+              ancestor.mouse(argObj, argWhat, argOption)
+            end if
+          end if
+        end if
+      end if
+    end if
+  end if
+end
+
+on setAlbumInfo me
+  itemObj = ancestor.m_objDlg.getItemByPath([#InfoAlbum, #Head, #Info])
+  itemObj.setOneProp(#editData, gRock.m_languageManager.getStr(#szidRehearsalAlbumStatus))
+  itemObj = ancestor.m_objDlg.getItemByPath([#InfoAlbum, #Head, #icon])
+  itemObj.setOneProp(#Pic, "icon_cd02")
+  itemObj = ancestor.m_objDlg.getItemByPath([#InfoAlbum, #dlg, #Pic])
+  album_r = gRock.m_context.getFocus(#album)
+  if objectp(album_r) then
+    if album_r.ReleaseDate > 0 then
+      tmpInfo = [#szidReleaseDate, rGetDateStr(album_r.ReleaseDate), #szidCopiesSold, rCurrency(album_r.Sales), #szidRoyalty, convFloatToPercent(album_r.Royalty, 1) & "%", #szidRevenue, rCurrency(album_r.getRevenue(), 0, 1)]
+    else
+      tmpInfo = [EMPTY]
+    end if
+  else
+    tmpInfo = [#szidGotNoAlbum]
+  end if
+  tmpInfo = []
+  tmpInfo.add(#szidRecordCompany)
+  tmpInfo.add("-")
+  if gRock.m_player.CPContractor <> #none then
+    record_r = gRock.m_classManager.getObjByIDAndClass(gRock.m_player.CPContractor, #Record)
+    tmpInfo[tmpInfo.count] = record_r.name
+  end if
+  tmpInfo.add(#szidRoyalty)
+  tmpInfo.add("-")
+  if objectp(record_r) then
+    tmpInfo[tmpInfo.count] = convFloatToPercent(gRock.m_player.CPContractPriceModel.Royalty, 1) & "%"
+  end if
+  tmpInfo.add(#szidAdvancePay)
+  tmpInfo.add("-")
+  if objectp(record_r) then
+    tmpInfo[tmpInfo.count] = rCurrency(record_r.Advance, 0, 1)
+  end if
+  tmpInfo.add(#szidAlbumRecorded)
+  tmpInfo.add(#szidNo)
+  if objectp(album_r) then
+    tmpInfo[tmpInfo.count] = #szidYes
+  end if
+  tmpInfo.add(#szidSleeveDesigned)
+  tmpInfo.add("-")
+  if objectp(album_r) then
+    if album_r.DesignSettings.count > 0 then
+      tmpInfo[tmpInfo.count] = #szidYes
+    else
+      tmpInfo[tmpInfo.count] = #szidNo
+    end if
+  end if
+  tmpInfo.add(#szidReleaseDate)
+  tmpInfo.add("-")
+  if objectp(album_r) then
+    if album_r.ReleaseDate > 0 then
+      tmpInfo[tmpInfo.count] = rGetDateStr(album_r.ReleaseDate)
+    end if
+  end if
+  tmpInfo.add(#szidVideo)
+  tmpInfo.add("-")
+  if objectp(album_r) then
+    video_r = gRock.m_classManager.getObjByIDAndClass(album_r.video, #VideoConcept)
+    if objectp(video_r) then
+      tmpInfo[tmpInfo.count] = video_r.name
+    end if
+  end if
+  tmpInfo.add(#szidCopiesSold)
+  tmpInfo.add("-")
+  if objectp(album_r) then
+    tmpInfo[tmpInfo.count] = rCurrency(album_r.Sales)
+  end if
+  tmpInfo.add(#szidRevenue)
+  tmpInfo.add("-")
+  if objectp(album_r) then
+    tmpRevenue = album_r.getRevenue(#DisregardPublisher)
+    tmpInfo[tmpInfo.count] = rCurrency(tmpRevenue, 0, 1)
+  end if
+  tmpInfo.add(#szidToPublisher)
+  tmpInfo.add("-")
+  if objectp(album_r) then
+    song_r = gRock.m_classManager.getObjByIDAndClass(album_r.SongID, #Song)
+    tmpToPublisher = tmpRevenue * song_r.PriceModel.Royalty
+    tmpInfo[tmpInfo.count] = rCurrency(tmpToPublisher, 0, 1)
+  end if
+  tmpInfo.add(#szidToRecord)
+  tmpInfo.add("-")
+  if objectp(album_r) and objectp(record_r) then
+    tmpToCompany = gRock.m_player.CPContractPriceModel.Royalty * (tmpRevenue - tmpToPublisher)
+    tmpInfo[tmpInfo.count] = rCurrency(tmpToCompany, 0, 1)
+  end if
+  tmpInfo.add(#szidEarned)
+  tmpInfo.add("-")
+  if objectp(album_r) and objectp(record_r) then
+    tmpMoneyLeft = tmpRevenue - tmpToPublisher - tmpToCompany
+    tmpInfo[tmpInfo.count] = rCurrency(tmpMoneyLeft, 0, 1)
+  end if
+  tmpInfo.add(#szidIncludingAdvance)
+  tmpInfo.add("-")
+  if objectp(album_r) and objectp(record_r) then
+    moneyToPlayer = tmpRevenue - tmpToPublisher - tmpToCompany - record_r.Advance
+    tmpInfo[tmpInfo.count] = rCurrency(moneyToPlayer, 0, 1)
+  end if
+  str = EMPTY
+  repeat with n = 1 to 7
+    str = str & RETURN
+  end repeat
+  tmpInfo.add(str)
+  itemObj.setOneProp(#Pic, rFormatText(tmpInfo, "RehearsalAlbumFormatting"))
+end
+
+on setBandInfo me
+  exit
+  itemObj = ancestor.m_objDlg.getItemByPath([#InfoBand, #Head, #Info])
+  itemObj.setOneProp(#editData, gRock.m_languageManager.getStr(#szidRehearsalBandStatus))
+  itemObj = ancestor.m_objDlg.getItemByPath([#InfoBand, #Head, #icon])
+  itemObj.setOneProp(#Pic, "icon_microphone02")
+  str = rBothersBand()
+  itemObj = ancestor.m_objDlg.getItemByPath([#InfoBand, #Pic])
+  itemObj.setOneProp(#Pic, "Dummy")
+  itemObj = ancestor.m_objDlg.getItemByPath([#InfoBand, #dlg, #Pic])
+  itemObj.setOneProp(#Pic, rFormatText([str], "RehearsalInfoFormatting"))
+end

@@ -1,0 +1,80 @@
+property ancestor, m_dialog_r, m_bAlreadyMixedDown
+global gDir, gRock
+
+on new me, argOptions
+  ID = argOptions[#ID]
+  argOptions.setaProp(#ReportTo, me)
+  argOptions.setaProp(#child, me)
+  m_dialog_r = gRock.m_classManager.getObjByIDAndClass(#DlgMixerExit, #Dialog)
+  m_dialog_r.dataMemberName = "DlgMixerExitData"
+  argOptions[#DlgInfoObj] = m_dialog_r
+  ancestor = script("DlgRockAncestorScript").new(argOptions)
+  itemObj = ancestor.m_objDlg.getItem(#Info)
+  itemObj.setOneProp(#Pic, rFormatText([#szidMixerExit], "MixerExitFormatting", [#shadow: 1]))
+  ancestor.m_objDlg.recalc(#DontPaint)
+  ancestor.render()
+  m_bAlreadyMixedDown = 0
+  return me
+end
+
+on kill me
+  m_dialog_r = 0
+  ancestor.kill()
+  return 0
+end
+
+on GetSPNeed me
+  return ancestor.GetSPNeed() + 1
+end
+
+on Report me, argObj, argWhat
+end
+
+on mouse me, argObj, argWhat, argOption
+  if objectp(argOption) then
+    if argWhat = #click then
+      ID = argOption.getOneProp(#ID)
+      IDStr = string(ID)
+      if ID = #ButtonOK then
+        if m_bAlreadyMixedDown = 0 then
+        end if
+        gDir.m_dlgOKButton.leaveNow(me)
+        exit
+      else
+        if ID = #ButtonCancel then
+          ancestor.mouse(argObj, argWhat, argOption)
+          exit
+        else
+          if ID = #Button3 then
+            xIO = xtra("FileIO").new()
+            szPath = gRock.m_paths.getPath("USER")
+            if not stringp(szPath) then
+              szPath = EMPTY
+            end if
+            if szPath = EMPTY then
+              szPath = "C:\"
+            end if
+            szPath = szPath & "Song.wav"
+            szPath = xIO.displaySave(m_dialog_r.name, szPath)
+            xIO = 0
+            if not stringp(szPath) then
+              exit
+            end if
+            if szPath = EMPTY then
+              exit
+            end if
+            if m_bAlreadyMixedDown = 0 then
+              gDir.m_mixerObj.createMixDown()
+            end if
+            m_bAlreadyMixedDown = 1
+            szFromPath = gRock.m_paths.getPath(#RenderedMusic) & "mixdown.wav"
+            xFile3 = xtra("FileXtra3").new()
+            xFile3.fx_FileCopy(szFromPath, szPath)
+            xFile3 = 0
+            exit
+          end if
+        end if
+      end if
+    end if
+  end if
+end

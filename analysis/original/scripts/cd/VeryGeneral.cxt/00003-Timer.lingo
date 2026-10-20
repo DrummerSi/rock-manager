@@ -1,0 +1,93 @@
+property counter, framesPerTick, Active, addObjects, deleteObjects, objects, attachedToObject, totalTicks, ID, timerProp
+
+on new me, argFramesPerTick, argAttachToObject, argID
+  ID = argID
+  timerProp = symbol("TimerItIsOKToTick" & string(ID))
+  counter = 0
+  framesPerTick = argFramesPerTick
+  Active = 1
+  addObjects = []
+  deleteObjects = []
+  objects = []
+  attachedToObject = argAttachToObject
+  if objectp(attachedToObject) then
+    addObject(attachedToObject, me)
+  end if
+  totalTicks = 0
+  return me
+end
+
+on kill me
+  if objectp(attachedToObject) then
+    deleteObject(attachedToObject, me)
+  end if
+  return 0
+end
+
+on getrate me
+  return framesPerTick
+end
+
+on changeRate me, argNewRate, argTickAsWell
+  framesPerTick = argNewRate
+  counter = framesPerTick + 1
+  if argTickAsWell then
+    timeTick(me)
+  end if
+end
+
+on timeTick me, argObj, argOption
+  if Active then
+    totalTicks = totalTicks + 1
+    counter = counter + 1
+    if counter >= framesPerTick then
+      repeat with tmpObj in objects
+        if getaProp(tmpObj, timerProp) then
+          timeTick(tmpObj, me, argOption, framesPerTick)
+        end if
+        if not Active then
+          exit repeat
+        end if
+      end repeat
+      refreshLists(me)
+      counter = 0
+    end if
+  end if
+end
+
+on activate me, YesNo
+  Active = YesNo
+end
+
+on addObject me, argObj
+  setaProp(argObj, timerProp, 1)
+  if deleteObjects.getPos(argObj) then
+    deleteObjects.deleteOne(argObj)
+  end if
+  add(addObjects, argObj)
+end
+
+on deleteObject me, argObj
+  setaProp(argObj, timerProp, 0)
+  if addObjects.getPos(argObj) then
+    addObjects.deleteOne(argObj)
+    if objects.getPos(argObj) then
+      add(deleteObjects, argObj)
+    end if
+    exit
+  end if
+  add(deleteObjects, argObj)
+end
+
+on refreshLists me
+  repeat with tmpObj in addObjects
+    if getPos(objects, tmpObj) = 0 then
+      add(objects, tmpObj)
+    end if
+  end repeat
+  addObjects = []
+  repeat with tmpObj in deleteObjects
+    deleteOne(objects, tmpObj)
+  end repeat
+  deleteObjects = []
+end

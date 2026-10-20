@@ -1,0 +1,61 @@
+property keysObj, helpFile
+global gUseful, gShowingMem, gSystem
+
+on new me
+  keysObj = new(script("KeysObject"), me, [["F4", [#ID: #quit, #prio: 1]], ["F1", [#ID: #Help, #prio: 1]]])
+  helpFile = getSystemPref(#helpFile)
+  if stringp(helpFile) then
+    tmpOff = offset("<", helpFile)
+    if tmpOff then
+      tmpEnd = offset(">", helpFile)
+      tmpLang = getSystemPref(#Language)
+      put EMPTY into helpFile.char[tmpOff..tmpEnd]
+    end if
+  end if
+  return me
+end
+
+on kill me
+  if objectp(keysObj) then
+    keysObj = kill(keysObj)
+  end if
+  return 0
+end
+
+on key me, argObj, argStat, argID
+  global gRock, gSystem
+  if argStat <> #down then
+    exit
+  end if
+  tmpID = argObj.ID
+  if (tmpID = #memory) and the shiftDown then
+    exit
+    if gShowingMem then
+      gShowingMem = 0
+      set the member of sprite 120 to member("Dummy")
+    else
+      gShowingMem = 1
+      tmp = the freeBlock
+      member("ShowMemory").text = string(the freeBlock / 1024)
+      set the member of sprite 120 to member("ShowMemory")
+      set the loc of sprite 120 to point(0, 0)
+    end if
+  else
+    if tmpID = #Help then
+      if objectp(gSystem) then
+        tmpPath = gSystem[#m_projectPath]
+        gotoNetPage(QUOTE & "file://" & tmpPath & helpFile & QUOTE)
+      end if
+    else
+      if tmpID = #quit then
+        if the optionDown then
+          me.quitGame()
+        end if
+      end if
+    end if
+  end if
+end
+
+on quitGame me
+  quit()
+end

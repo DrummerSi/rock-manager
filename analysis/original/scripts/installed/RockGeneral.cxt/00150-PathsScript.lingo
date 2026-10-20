@@ -1,0 +1,156 @@
+property m_delim, m_paths, m_alternativePaths
+
+on new me
+  global gSystem
+  m_delim = "\"
+  if (the runMode = "Projector") and offset("\\resurs\", the moviePath) then
+  end if
+  tmpCheck = gSystem.m_CDPath.char[1..10]
+  dirCnt = 2
+  if tmpCheck.char[1..2] = "\\" then
+    dirCnt = dirCnt + 2
+  end if
+  repeat with n = 1 to tmpCheck.length
+    if tmpCheck.char[n] = "\" then
+      dirCnt = dirCnt - 1
+      if dirCnt = 0 then
+        tmpCheck = tmpCheck.char[1..n]
+        exit repeat
+      end if
+    end if
+  end repeat
+  repeat with n = 1 to the number of castLibs
+    if not offset(tmpCheck, castLib(n).fileName) then
+    end if
+  end repeat
+  if the runMode = "Author" then
+    tmpUserPath = "C:\Documents and Settings\Administratr\Application Data\Rock Manager\"
+  else
+    tmpUserPath = gSystem.m_projectPath
+  end if
+  if stringp(gSystem.getaProp(#m_userPath)) then
+    tmpUserPath = gSystem.m_userPath
+    tmpUserPath = tmpUserPath & "\Rock Manager"
+    createFolders(tmpUserPath, [EMPTY, "\Save", "\Rendered"])
+  end if
+  substitutes = ["PROJECT": gSystem.m_projectPath, "CD": gSystem.m_CDPath, "SERVER": "\\resurs\Monsterland\_Projects\Rockmanager\", "USER": tmpUserPath]
+  m_paths = me.generateFolderIDs(member("FolderLayout" & the runMode).text, substitutes, m_delim)
+  return me
+end
+
+on kill me
+  return 0
+end
+
+on getPath me, argWhich
+  return m_paths[argWhich]
+end
+
+on findFileInOneOfPaths me, argFileName, argPathID
+  tmpPath = me.getPath(argPathID)
+  if fileExists2(tmpPath & argFileName) then
+    return tmpPath
+  end if
+  alternatives = m_alternativePaths.getaProp(argPathID)
+  if not listp(alternatives) then
+    return 0
+  end if
+  repeat with n = 1 to alternatives.count
+    tmpPath = alternatives[n]
+    if fileExists2(tmpPath & argFileName) then
+      return tmpPath
+    end if
+  end repeat
+  return 0
+end
+
+on getAllAlternativePaths me, argPathID
+  tmpPath = me.getPath(argPathID)
+  if voidp(tmpPath) then
+    return []
+  end if
+  tmpPaths = [tmpPath]
+  alternatives = m_alternativePaths.getaProp(argPathID)
+  if voidp(alternatives) then
+    return tmpPaths
+  end if
+  mergeLists(tmpPaths, m_alternativePaths.getaProp(argPathID))
+  return tmpPaths
+end
+
+on generateFolderIDs me, argStructureStr, argSubstitutes, argFolderDelimiter
+  numLines = the number of lines in argStructureStr
+  if voidp(argFolderDelimiter) then
+    argFolderDelimiter = "\"
+  end if
+  if not listp(argSubstitutes) then
+    argSubstitutes = [:]
+  end if
+  repeat with n = 1 to argSubstitutes.count
+    path = argSubstitutes[n]
+    if path.char[path.length] = argFolderDelimiter then
+      delete numLines.char[path.length]
+      argSubstitutes[n] = path
+    end if
+  end repeat
+  currentPath = []
+  idSorted = [:]
+  m_alternativePaths = [:]
+  structure = [:]
+  lst = structure
+  indent = 0
+  repeat with lineNr = 1 to numLines
+    tmpLine = argStructureStr.line[lineNr]
+    tmpWord1 = tmpLine.word[1]
+    if tmpWord1.length = 0 then
+      next repeat
+    end if
+    tmpNewIndent = offset(tmpWord1, tmpLine)
+    tmpOff = offset(":", tmpLine)
+    folderName = trimStringFromChars(tmpLine.char[tmpNewIndent..tmpOff - 1], " ")
+    idName = trimStringFromChars(tmpLine.char[tmpOff + 1..tmpLine.length], " ")
+    tryNr = 0
+    tmpTryOff = offset("_TRY", idName)
+    if tmpTryOff then
+      tryNr = value(idName.char[tmpTryOff + 4..idName.length])
+      delete n.char[tmpTryOff..idName.length]
+    end if
+    if tmpNewIndent <= indent then
+      lst = structure
+      repeat with n = 1 to tmpNewIndent - 1
+        lst = lst[n]
+      end repeat
+      repeat with n = tmpNewIndent to indent
+        currentPath.deleteAt(currentPath.count)
+      end repeat
+    end if
+    tmpSub = [:]
+    tmpSub.addProp(0, idName)
+    lst.addProp(folderName, tmpSub)
+    lst = tmpSub
+    substitute = argSubstitutes.getaProp(folderName)
+    if stringp(substitute) then
+      currentPath.add(substitute)
+    else
+      currentPath.add(folderName)
+    end if
+    pathStr = EMPTY
+    repeat with n = 1 to currentPath.count
+      pathStr = pathStr & currentPath[n] & argFolderDelimiter
+    end repeat
+    ID = symbol(idName)
+    if tryNr = 0 then
+      idSorted.addProp(ID, pathStr)
+    else
+      tmp = m_alternativePaths.getaProp(ID)
+      if voidp(tmp) then
+        tmp = [:]
+        tmp.sort()
+        m_alternativePaths.addProp(ID, tmp)
+      end if
+      tmp.addProp(tryNr, pathStr)
+    end if
+    indent = tmpNewIndent
+  end repeat
+  return idSorted
+end

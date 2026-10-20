@@ -1,0 +1,82 @@
+property dragging, firstFrame, val, numFrames, SP, sendSP, command, Absolute, reportObj, ID, mouseObj, minMaxObj
+
+on new me, argReportObj, argFirstFrame, argNumFrames, argSPNum, argLoc, argID, argMinMaxObj
+  reportObj = argReportObj
+  firstFrame = the number of member argFirstFrame
+  val = 0
+  numFrames = argNumFrames
+  dragging = 0
+  SP = sprite(argSPNum)
+  SP.loc = argLoc
+  tmpRect = getMemberRect(member(firstFrame)) + rect(argLoc, argLoc)
+  mouseObj = new(script("DragMouseScript"), me, tmpRect, [#cursorRoll: #DragH, #layer: 70])
+  minMaxObj = argMinMaxObj
+  if objectp(minMaxObj) then
+    minMaxObj.setParams(VOID, VOID, VOID, 0, numFrames - 1)
+  end if
+  me.setVal(0)
+  return me
+end
+
+on kill me
+  if objectp(minMaxObj) then
+    minMaxObj = minMaxObj.kill()
+  end if
+  mouseObj = mouseObj.kill()
+  reportObj = 0
+  return 0
+end
+
+on mouse me, argObj, argWhat
+  if argWhat = #down then
+    dragging = point(the mouseH, the mouseV)
+  else
+    if argWhat = #stillDown then
+      tmp = point(the mouseH, the mouseV)
+      tmpDiff = tmp - dragging
+      dragging = tmp
+      tmpDiffY = getAt(tmpDiff, 1)
+      setVal(me, val + tmpDiffY)
+    else
+      if argWhat = #click then
+        if objectp(reportObj) then
+          reportObj.Report(me, #Released, me.getVal())
+        end if
+      end if
+    end if
+  end if
+end
+
+on getVal me
+  if objectp(minMaxObj) then
+    return minMaxObj.conv(val)
+  else
+    return val
+  end if
+end
+
+on setMinMaxRelVal me, argVal
+  tmpVal = float(argVal - minMaxObj.outMin) / float(minMaxObj.outMax - minMaxObj.outMin)
+  tmpVal = tmpVal * numFrames
+  me.setVal(tmpVal, #NoReport)
+end
+
+on setVal me, argVal, argOption
+  val = argVal
+  if val >= numFrames then
+    val = numFrames - 1
+  else
+    if val < 0 then
+      val = 0
+    end if
+  end if
+  SP.member = member(firstFrame + val)
+  if objectp(minMaxObj) then
+    tmpVal = minMaxObj.conv(val)
+  else
+    tmpVal = val
+  end if
+  if (argOption <> #NoReport) and objectp(reportObj) then
+    reportObj.Report(me, #changed, tmpVal)
+  end if
+end

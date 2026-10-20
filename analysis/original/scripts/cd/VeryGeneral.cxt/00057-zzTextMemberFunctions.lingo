@@ -1,0 +1,149 @@
+on formatFromList argMember, argFormatList, argExchangeList
+  formatTemplates = [1: [#font: "Arial", #fontStyle: [#bold], #fontSize: 12], 2: [#font: "Arial", #fontStyle: [#plain], #fontSize: 12]]
+  if voidp(argExchangeList) then
+    argExchangeList = ["Namn:", "Jimmy Hedfeldt", "lder:", "23 r", "Spelar:", "Gitarr, bas", "Stil:", "Hrdrock", "Ln:", "700 kr/vecka", "Hrdrocksgitarrist med alkoholproblem. Skriver och spelar helst egna ltar. Vill spela i samma band som Ville Hedfeldt. Grym flygskrck. Homofob."]
+  end if
+  if voidp(argMember) then
+    argMember = member("x")
+  end if
+  settings = [:]
+  formatByCharIndex = [:]
+  currentFormat = [:]
+  lastFormatChange = 0
+  argExchangeListCnt = 1
+  str = EMPTY
+  repeat with n = 1 to argFormatList.count()
+    Info = argFormatList[n]
+    if stringp(Info) then
+      if Info.char[1] = "A" then
+        argFormatList[n] = argExchangeList[argExchangeListCnt]
+        str = str & argExchangeList[argExchangeListCnt]
+        argExchangeListCnt = argExchangeListCnt + 1
+      else
+        str = str & Info
+      end if
+      next repeat
+    end if
+    lastFormatChange = str.length
+    currentFormat = Info.duplicate()
+    repeat with m = 1 to Info.count()
+      prop = Info.getPropAt(m)
+      val = Info[m]
+      propSettings = settings[prop]
+      if voidp(propSettings) then
+        propSettings = [:]
+        settings.setaProp(prop, propSettings)
+      end if
+      propSettings.addProp(str.length + 1, val)
+    end repeat
+  end repeat
+  perLineProps = [#FixedLinespace, #RightIndent, #FirstIndent, #LeftIndent, #alignment]
+  argMember.text = str
+  repeat with n = 1 to settings.count()
+    prop = settings.getPropAt(n)
+    lst = settings[n]
+    charNr = lst.getPropAt(1)
+    repeat with m = 1 to lst.count()
+      if m = lst.count() then
+        nextCharNr = str.length
+      else
+        nextCharNr = lst.getPropAt(m + 1) - 1
+      end if
+      Info = lst[m]
+      if perLineProps.getPos(prop) then
+        tmpCharNr = charNr - 1
+        if tmpCharNr = 0 then
+          tmpCharNr = 1
+        end if
+        tmpNextChar = nextCharNr
+        if tmpNextChar < str.length then
+          tmpNextChar = tmpNextChar - 1
+        end if
+        tmpLine1 = the number of lines in str.char[1..tmpCharNr]
+        tmpLine2 = the number of lines in str.char[1..tmpNextChar]
+        case prop of
+          #FixedLinespace:
+            argMember.line[tmpLine1..tmpLine2].FixedLinespace = Info
+          #alignment:
+            argMember.char[charNr..nextCharNr].alignment = Info
+          #RightIndent:
+            argMember.char[charNr..nextCharNr].RightIndent = Info
+          #LeftIndent:
+            argMember.char[charNr..nextCharNr].LeftIndent = Info
+          #FirstIndent:
+            argMember.char[charNr..nextCharNr].FirstIndent = Info
+        end case
+      else
+        case prop of
+          #Tabs:
+            argMember.char[charNr..nextCharNr].Tabs = Info
+          #font:
+            argMember.char[charNr..nextCharNr].font = Info
+          #fontSize:
+            argMember.char[charNr..nextCharNr].fontSize = Info
+          #fontStyle:
+            argMember.char[charNr..nextCharNr].fontStyle = Info
+          #FgColor:
+            argMember.char[charNr..nextCharNr].foreColor = Info
+        end case
+      end if
+      charNr = nextCharNr + 1
+    end repeat
+  end repeat
+end
+
+on extractTextFormatting argMember
+  if voidp(argMember) then
+    argMember = member("FormattingTemplate")
+  end if
+  allChanges = []
+  currentSettings = [:]
+  lastChangePos = 1
+  lastChar = EMPTY
+  str = argMember.text
+  repeat with n = 1 to str.length
+    newSettings = [:]
+    newSettings.addProp(#font, argMember.char[n].font)
+    newSettings.addProp(#fontStyle, argMember.char[n].fontStyle)
+    newSettings.addProp(#fontSize, argMember.char[n].fontSize)
+    newSettings.addProp(#FgColor, argMember.char[n].foreColor)
+    newSettings.addProp(#RightIndent, argMember.char[n].RightIndent)
+    newSettings.addProp(#BottomSpacing, argMember.char[n].BottomSpacing)
+    newSettings.addProp(#LeftIndent, argMember.char[n].LeftIndent)
+    newSettings.addProp(#FirstIndent, argMember.char[n].FirstIndent)
+    newSettings.addProp(#FixedLinespace, argMember.char[n].FixedLinespace)
+    newSettings.addProp(#TopSpacing, argMember.char[n].TopSpacing)
+    newSettings.addProp(#alignment, argMember.char[n].alignment)
+    newSettings.addProp(#Tabs, argMember.char[n].Tabs)
+    if (lastChar <> "a") and (str.char[n] = "a") and (n > 1) then
+      allChanges.add(argMember.text.char[lastChangePos..n - 1])
+      lastChangePos = n
+    else
+      if (lastChar = "a") and (str.char[n] <> "a") then
+        allChanges.add(argMember.text.char[lastChangePos..n - 1])
+        lastChangePos = n
+      end if
+    end if
+    changedSettings = [:]
+    repeat with m = 1 to newSettings.count()
+      prop = newSettings.getPropAt(m)
+      if newSettings[m] <> currentSettings[prop] then
+        currentSettings[prop] = newSettings[m]
+        changedSettings.setaProp(prop, newSettings[m])
+      end if
+    end repeat
+    if changedSettings.count() then
+      if lastChangePos < n then
+        allChanges.add(str.char[lastChangePos..n - 1])
+      end if
+      lastChangePos = n
+      allChanges.add(changedSettings)
+    else
+      if n = str.length then
+        allChanges.add(str.char[lastChangePos..n])
+      end if
+    end if
+    lastChar = str.char[n]
+  end repeat
+  return allChanges
+end

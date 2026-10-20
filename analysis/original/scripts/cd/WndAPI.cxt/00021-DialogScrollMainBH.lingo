@@ -1,0 +1,91 @@
+property itemObjs, scrollTLPixels, scrollTLItems, size, activeAxis, displaySize, defaultItemSize, outputMode, outputObj, imageObj, childObj, itemObj, GUIObjs
+
+on new me, argItemObj, argChildObj
+  itemObj = argItemObj
+  childObj = argChildObj
+  if voidp(childObj) then
+    childObj = me
+  end if
+  GUIObjs = [:]
+  size = point(0, 0)
+  size = point(100, 100)
+  scrollTLPixels = point(0, 0)
+  scrollTLItems = point(0, 0)
+  defaultItemSize = point(10, 10)
+  displaySize = point(10, 10)
+  activeAxis = 2
+  itemObjs = []
+  itemObj.ancestor.masterObj.sendAll(#ScrollersReport, me)
+  return me
+end
+
+on kill me
+  itemObj = 0
+  childObj = 0
+  return 0
+end
+
+on scrollerReporting me, argObj, argWhat
+  GUIObjs.addProp(argWhat, argObj)
+end
+
+on getItemSize me, argItemCoord
+  return defaultItemSize
+end
+
+on scroll me, argVal, argKindOfScroll
+  if voidp(argKindOfScroll) then
+    argKindOfScroll = #pixels
+  else
+    if argKindOfScroll = #Arrow then
+      argKindOfScroll = #pixels
+      argVal = argVal * 10
+    end if
+  end if
+  if not listp(argVal) then
+    tmp = point(0, 0)
+    tmp[activeAxis] = argVal
+    argVal = tmp
+  end if
+  if argKindOfScroll = #items then
+    argVal = argVal * childObj.getItemSize(scrollTLItems)
+    argVal = point(0, argVal[2])
+  end if
+  tmpNewTL = scrollTLPixels + argVal
+  if tmpNewTL[1] < 0 then
+    tmpNewTL[1] = 0
+    tmpObj = GUIObjs[#ArrowLeft]
+    if objectp(tmpObj) then
+      tmpObj.dim()
+    end if
+  end if
+  if tmpNewTL[2] < 0 then
+    tmpNewTL[2] = 0
+    tmpObj = GUIObjs[#ArrowUp]
+    if objectp(tmpObj) then
+      tmpObj.dim()
+    end if
+  end if
+  if tmpNewTL[1] > (size[1] - displaySize[1]) then
+    tmpNewTL[1] = size[1] - displaySize[1]
+    tmpObj = GUIObjs[#ArrowRight]
+    if objectp(tmpObj) then
+      tmpObj.dim()
+    end if
+  end if
+  if tmpNewTL[2] > (size[2] - displaySize[2]) then
+    tmpNewTL[2] = size[2] - displaySize[2]
+    if tmpNewTL[2] < 0 then
+      tmpNewTL[2] = 0
+    end if
+    tmpObj = GUIObjs[#ArrowDown]
+    if objectp(tmpObj) then
+      tmpObj.dim()
+    end if
+  end if
+  scrollTLPixels = tmpNewTL
+  childObj.scrollRender()
+end
+
+on scrollRender me
+end

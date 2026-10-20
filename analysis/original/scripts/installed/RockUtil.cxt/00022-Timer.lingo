@@ -1,0 +1,106 @@
+property counter, framesPerTick, Active, addObjects, deleteObjects, objects, attachedToObject, totalTicks, ID, timerProp
+
+on new me, argFramesPerTick, argAttachToObject, argID
+  ID = argID
+  timerProp = symbol("TimerItIsOKToTick" & string(ID))
+  framesPerTick = argFramesPerTick
+  counter = framesPerTick
+  Active = 1
+  addObjects = [:]
+  deleteObjects = []
+  objects = [:]
+  objects.sort()
+  attachedToObject = argAttachToObject
+  if objectp(attachedToObject) then
+    attachedToObject.addObject(me)
+  end if
+  totalTicks = 0
+  return me
+end
+
+on kill me
+  if objectp(attachedToObject) then
+    attachedToObject.deleteObject(me)
+  end if
+  return 0
+end
+
+on getrate me
+  return framesPerTick
+end
+
+on changeRate me, argNewRate, argTickAsWell
+  framesPerTick = argNewRate
+  counter = framesPerTick + 1
+  if argTickAsWell then
+    timeTick(me)
+  end if
+end
+
+on timeTick me, argObj, argOption
+  if Active then
+    refreshLists(me)
+    totalTicks = totalTicks + 1
+    counter = counter + 1
+    if counter >= framesPerTick then
+      repeat with n = objects.count() down to 1
+        tmpObj = objects[n]
+        if tmpObj.getaProp(timerProp) = 1 then
+          tmpObj.timeTick(me, argOption, framesPerTick)
+        end if
+        if not Active then
+          exit repeat
+        end if
+      end repeat
+      counter = 0
+    end if
+  end if
+end
+
+on activate me, YesNo
+  Active = YesNo
+end
+
+on addObject me, argObj, argPrio
+  if voidp(argPrio) then
+    argPrio = 50
+  end if
+  argObj.setaProp(timerProp, 1)
+  if deleteObjects.getPos(argObj) = 0 then
+    if addObjects.getPos(argObj) then
+      pott("WARNING! already in addObjects!", argObj)
+    else
+      if objects.getPos(argObj) then
+        pott("WARNING! already in OBJECTS!", argObj)
+      end if
+    end if
+    addObjects.addProp(argPrio, argObj)
+  else
+    pott("Add/delete timer object!", argObj)
+    deleteObjects.deleteOne(argObj)
+  end if
+end
+
+on deleteObject me, argObj
+  setaProp(argObj, timerProp, 0)
+  if addObjects.getPos(argObj) = 0 then
+    deleteObjects.add(argObj)
+  else
+    pott("Delete/add timer object!", argObj)
+    addObjects.deleteOne(argObj)
+  end if
+end
+
+on refreshLists me
+  repeat with n = 1 to addObjects.count()
+    tmpObj = addObjects[n]
+    if objects.getPos(tmpObj) = 0 then
+      objects.addProp(addObjects.getPropAt(n), tmpObj)
+    end if
+  end repeat
+  addObjects = [:]
+  repeat with tmpObj in deleteObjects
+    objects.deleteOne(tmpObj)
+  end repeat
+  deleteObjects = []
+end

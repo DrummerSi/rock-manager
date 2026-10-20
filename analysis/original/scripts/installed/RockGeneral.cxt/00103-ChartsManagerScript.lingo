@@ -1,0 +1,206 @@
+property m_songs_r, m_songsPerChart
+global gRock
+
+on new me
+  m_songs_r = []
+  m_songsPerChart = [:]
+  gRock.m_gameTimer.addObject(me, VOID, 2)
+  return me
+end
+
+on kill me
+  m_songs_r = []
+  m_songsPerChart = [:]
+  gRock.m_gameTimer.deleteObject(me)
+  return 0
+end
+
+on clearAll me
+  m_songs_r = []
+  m_songsPerChart = [:]
+end
+
+on init me
+  m_songs_r = gRock.m_classManager.getObjsOfClass(#ChartSong)
+end
+
+on zzinitChart me
+  m_songs_r = gRock.m_classManager.getObjsOfClass(#ChartSong)
+  unusedSongs_r = m_songs_r.duplicate()
+  usedSongs_r = []
+  m_songsPerChart = [#TV: [:], #Radio: [:], #Store: [:]]
+  if unusedSongs_r.count = 0 then
+    exit
+  end if
+  repeat while 1
+    tmpRnd = random(unusedSongs_r.count)
+    song_r = unusedSongs_r[tmpRnd]
+    song_r.start(#RandomLife)
+    unusedSongs_r.deleteAt(tmpRnd)
+    me.subPrepareChart(song_r, m_songsPerChart)
+    tmpOKToStop = 1
+    repeat with n = 1 to m_songsPerChart.count
+      tmp = m_songsPerChart[n]
+      if tmp.count < 15 then
+        tmpOKToStop = 0
+      end if
+    end repeat
+    if tmpOKToStop or (unusedSongs_r.count = 0) then
+      exit repeat
+    end if
+  end repeat
+end
+
+on initAfterNewGame me
+  me.ensureSongsOnCharts()
+  exit
+  m_songsPerChart = [:]
+  m_songs_r = gRock.m_classManager.getObjsOfClass(#ChartSong)
+  tmpSongsAreLoaded = 0
+  repeat with song_r in m_songs_r
+    if song_r.ChartMovementID <> #none then
+      tmpSongsAreLoaded = 1
+      exit repeat
+    end if
+  end repeat
+  if tmpSongsAreLoaded then
+    me.ensureSongsOnCharts()
+  else
+    me.initChart()
+  end if
+end
+
+on zzcalcCharts me
+  if m_songsPerChart.count = 0 then
+    me.initChart()
+  end if
+  m_songsPerChart = [#TV: [:], #Radio: [:], #Store: [:]]
+  repeat with song_r in m_songs_r
+    me.subPrepareChart(song_r, m_songsPerChart)
+  end repeat
+  if m_songsPerChart.count = 0 then
+    return [:]
+  end if
+  repeat with n = 1 to m_songsPerChart.count
+    if m_songsPerChart[n].count < 10 then
+      pott("Chart warning, less than 10 songs!", m_songsPerChart.getPropAt(n), m_songsPerChart[n].count)
+    end if
+  end repeat
+  tmpFirstChart = #Radio
+  tmpOnFirstChart = m_songsPerChart.getaProp(tmpFirstChart)
+  if not listp(tmpOnFirstChart) then
+    pott("BAD Chart", m_songs_r.count, m_songsPerChart)
+  end if
+  if tmpOnFirstChart.count < 15 then
+    unusedSongs_r = m_songs_r.duplicate()
+    notUsedSongs_r = []
+    alreadyUsedSongs_r = [:]
+    alreadyUsedSongs_r.sort()
+    repeat with n = m_songs_r.count down to 1
+      song_r = m_songs_r[n]
+      if song_r.getPosOnCharts().count = 0 then
+        if song_r.LifeCounter = 0 then
+          notUsedSongs_r.add(song_r)
+          next repeat
+        end if
+        alreadyUsedSongs_r.addProp(song_r.LifeCounter, song_r)
+      end if
+    end repeat
+    repeat with n = tmpOnFirstChart.count to 15
+      song_r = 0
+      if notUsedSongs_r.count then
+        tmpRnd = random(notUsedSongs_r.count)
+        song_r = notUsedSongs_r[tmpRnd]
+        notUsedSongs_r.deleteAt(tmpRnd)
+      else
+        if alreadyUsedSongs_r.count then
+          song_r = alreadyUsedSongs_r[alreadyUsedSongs_r.count]
+          alreadyUsedSongs_r.deleteAt(alreadyUsedSongs_r.count)
+        end if
+      end if
+      if not objectp(song_r) then
+        exit repeat
+      end if
+      song_r.start()
+      me.subPrepareChart(song_r, m_songsPerChart)
+    end repeat
+  end if
+  repeat with n = 1 to m_songsPerChart.count
+    tmpList = m_songsPerChart[n]
+    tmpNewList = [:]
+    repeat with m = 1 to tmpList.count
+      tmpObj = tmpList[m]
+      tmpNewList.addProp(m, tmpList[m])
+    end repeat
+    m_songsPerChart[n] = tmpNewList
+  end repeat
+  return m_songsPerChart
+end
+
+on subPrepareChart me, argSong_r, argPerChart
+  tmp = argSong_r.getPosOnCharts()
+  repeat with n = 1 to tmp.count
+    tmpPos = tmp[n]
+    if tmpPos = 0 then
+      next repeat
+    end if
+    tmpChart = tmp.getPropAt(n)
+    chart = argPerChart.getaProp(tmpChart)
+    if voidp(chart) then
+      chart = [:]
+      chart.sort()
+      argPerChart.setaProp(tmpChart, chart)
+    end if
+    chart.addProp(tmpPos, argSong_r)
+  end repeat
+end
+
+on timeTick me
+  if (gRock.m_date.getDateInt() mod 7) = 0 then
+    repeat with song_r in m_songs_r
+      song_r.weeklyUpdate()
+    end repeat
+    me.ensureSongsOnCharts()
+  end if
+end
+
+on getChart me, argChartID
+  tmp = m_songsPerChart.getaProp(argChartID)
+  if not listp(tmp) then
+    me.ensureSongsOnCharts()
+  else
+    if tmp.count <= 11 then
+      me.ensureSongsOnCharts()
+    end if
+  end if
+  return m_songsPerChart.getaProp(argChartID)
+end
+
+on ensureSongsOnCharts me
+  m_songs_r = gRock.m_classManager.getObjsOfClass(#ChartSong)
+  m_songsPerChart = [#TV: [:], #Radio: [:], #Store: [:]]
+  unusedSongs_r = []
+  repeat with song_r in m_songs_r
+    if song_r.LifeCounter = 0 then
+      unusedSongs_r.add(song_r)
+      next repeat
+    end if
+    me.subPrepareChart(song_r, m_songsPerChart)
+  end repeat
+  repeat with n = 1 to m_songsPerChart.count
+    thisChartSongs = m_songsPerChart[n]
+    repeat while 1
+      if unusedSongs_r.count = 0 then
+        pott("Warning! Out of chart songs!")
+        exit repeat
+      end if
+      if thisChartSongs.count > 12 then
+        exit repeat
+      end if
+      song_r = unusedSongs_r[random(unusedSongs_r.count)]
+      song_r.forceIntoChart(m_songsPerChart.getPropAt(n))
+      me.subPrepareChart(song_r, m_songsPerChart)
+      unusedSongs_r.deleteOne(song_r)
+    end repeat
+  end repeat
+end

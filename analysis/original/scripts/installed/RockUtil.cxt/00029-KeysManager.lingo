@@ -1,0 +1,259 @@
+property addObjectList, deleteObjectList, objects, busyRepeating, dismissingKeys, keyConvertTable, keysDown, keyProp, Active, forceKeysDown, gotXtra, additionalKeysDown, m_userCodes, m_pollCode, m_keyCode, m_allKeyCodes, m_allPollCodes, m_keysStr
+global gUseful
+
+on new me
+  addObjectList = [:]
+  deleteObjectList = []
+  objects = [:]
+  objects.sort()
+  busyRepeating = 0
+  dismissingKeys = 0
+  if the machineType = 256 then
+    keyConvertTable = value(member("PCKeyConvertTable").text)
+  else
+    keyConvertTable = value(member("MacKeyConvertTable").text)
+  end if
+  keysDown = []
+  keyProp = #KeysItIsOKToSend
+  Active = 1
+  forceKeysDown = []
+  gotXtra = gUseful.xtrasList[#KeyPoll] <> 0
+  if not gotXtra then
+  end if
+  additionalKeysDown = []
+  m_userCodes = member("UserKeyCodes").text.value
+  tmpEnter = m_userCodes.getaProp("RETURN")
+  tmpEnter[#key] = RETURN
+  m_keysStr = EMPTY
+  repeat with n = 1 to m_userCodes.count()
+    m_keysStr = m_keysStr & " " & m_userCodes.getPropAt(n) & " " & RETURN
+  end repeat
+  m_allPollCodes = [:]
+  repeat with n = 1 to m_userCodes.count()
+    tmp = m_userCodes[n]
+    tmp.addProp(#user, m_userCodes.getPropAt(n))
+    m_allPollCodes.setaProp(tmp[#Poll], tmp)
+  end repeat
+  m_allKeyCodes = [:]
+  repeat with n = 1 to m_userCodes.count()
+    tmp = m_userCodes[n]
+    tmp.addProp(#user, m_userCodes.getPropAt(n))
+    m_allKeyCodes.setaProp(tmp[#code], tmp)
+  end repeat
+  return me
+end
+
+on init me
+  gotXtra = gUseful.xtrasList[#KeyPoll]
+end
+
+on kill me
+  Active = 0
+  addObjectList = [:]
+  deleteObjectList = []
+  objects = [:]
+  return 0
+end
+
+on addObject me, argObj, argPrio
+  if voidp(argPrio) then
+    argPrio = 50
+  end if
+  argObj.setaProp(keyProp, 1)
+  if busyRepeating then
+    addObjectList.addProp(argPrio, argObj)
+  else
+    if objects.getPos(argObj) = 0 then
+      objects.addProp(argPrio, argObj)
+    end if
+  end if
+end
+
+on addObjects me
+  repeat with n = 1 to addObjectList.count()
+    tmpObj = addObjectList[n]
+    if objects.getPos(tmpObj) = 0 then
+      objects.addProp(addObjectList.getPropAt(n), tmpObj)
+    end if
+  end repeat
+  addObjectList = [:]
+end
+
+on deleteObject me, argObj
+  argObj.setaProp(keyProp, 0)
+  if busyRepeating then
+    deleteObjectList.add(argObj)
+  else
+    objects.deleteOne(argObj)
+  end if
+end
+
+on deleteObjects me
+  repeat with tmpObj in deleteObjectList
+    objects.deleteOne(tmpObj)
+  end repeat
+  deleteObjectList = []
+end
+
+on timeTick me
+  if dismissingKeys then
+    dismissingKeys = dismissingKeys - 1
+  end if
+  busyRepeating = 1
+  if gotXtra then
+    tmp = me.checkPressed()
+  else
+    tmp = additionalKeysDown.duplicate()
+  end if
+  me.check(tmp)
+  me.addObjects()
+  me.deleteObjects()
+  busyRepeating = 0
+end
+
+on fakeKey me, argKey
+  argKey = me.convert(#key, #code, argKey)
+  me.keyDown([argKey])
+  me.timeTick()
+  me.keyUp()
+end
+
+on keyDown me, argFakeTheseKeyCodes
+  busyRepeating = 1
+  if voidp(argFakeTheseKeyCodes) then
+    argFakeTheseKeyCodes = []
+  end if
+  if gotXtra then
+    additionalKeysDown = me.checkPressed()
+    if the keyCode = 76 then
+    end if
+  else
+    if additionalKeysDown.getOne(the keyCode) = 0 then
+      additionalKeysDown.add(the keyCode)
+    end if
+  end if
+  mergeLists(additionalKeysDown, argFakeTheseKeyCodes)
+  me.check(additionalKeysDown.duplicate())
+  me.addObjects()
+  me.deleteObjects()
+  busyRepeating = 0
+end
+
+on keyUp me
+  busyRepeating = 1
+  additionalKeysDown = []
+  me.check(me.checkPressed())
+  me.addObjects()
+  me.deleteObjects()
+  busyRepeating = 0
+end
+
+on dismissKeys me, argIsTRUE
+  dismissingKeys = argIsTRUE
+end
+
+on convert me, argFromType, argToType, argVal
+  if argFromType = #user then
+    if argVal = " " then
+      argVal = "SPACE"
+    end if
+    tmpOff = offset(" " & argVal & " ", m_keysStr)
+    if tmpOff then
+      tmpLineNr = the number of lines in m_keysStr.char[1..tmpOff]
+      tmp = m_userCodes[tmpLineNr]
+    end if
+    if voidp(tmp) then
+      pott("Code not found (case?)", argFromType, argToType, argVal)
+    end if
+    return tmp.getaProp(argToType)
+  else
+    if argFromType = #code then
+      tmp = m_allKeyCodes.getaProp(argVal)
+      if voidp(tmp) then
+        pott("Code not found (case?)", argFromType, argToType, argVal)
+      end if
+      return tmp[argToType]
+    else
+      if argFromType = #Poll then
+        tmp = m_allPollCodes.getaProp(argVal)
+        if voidp(tmp) then
+          pott("Code not found (case?)", argFromType, argToType, argVal)
+        end if
+        return tmp[argToType]
+      end if
+    end if
+  end if
+  return 0
+end
+
+on check me, argKeysDown
+  if dismissingKeys then
+    exit
+  end if
+  repeat with tmpID in forceKeysDown
+    argKeysDown.add(tmpID)
+  end repeat
+  tmpPressed = []
+  tmpReleased = []
+  repeat with tmpCode in argKeysDown
+    if not keysDown.getPos(tmpCode) then
+      tmpPressed.add(tmpCode)
+    end if
+  end repeat
+  repeat with tmpCode in keysDown
+    if not argKeysDown.getPos(tmpCode) then
+      tmpReleased.add(tmpCode)
+    end if
+  end repeat
+  keysDown = argKeysDown
+  repeat with m_pollCode in tmpPressed
+    if not gotXtra then
+      m_pollCode = me.convert(#code, #Poll, m_pollCode)
+    end if
+    repeat with n = objects.count() down to 1
+      tmpObj = objects[n]
+      if tmpObj.getaProp(keyProp) then
+        if tmpObj.key(#down, m_pollCode) then
+          exit repeat
+        end if
+      end if
+    end repeat
+  end repeat
+  repeat with m_pollCode in tmpReleased
+    if not gotXtra then
+      m_pollCode = me.convert(#code, #Poll, m_pollCode)
+    end if
+    repeat with n = objects.count() down to 1
+      tmpObj = objects[n]
+      if tmpObj.getaProp(keyProp) then
+        if tmpObj.key(#up, m_pollCode) then
+          exit repeat
+        end if
+      end if
+    end repeat
+  end repeat
+end
+
+on forceKeyDown me, argID, argIsTRUE
+  if argIsTRUE then
+    if forceKeysDown.getPos(argID) = 0 then
+      forceKeysDown.add(argID)
+    end if
+  else
+    forceKeysDown.deleteOne(argID)
+  end if
+end
+
+on checkPressed me
+  if gotXtra then
+    return bgAllKeys()
+  else
+    tmpList = []
+    repeat with tmpObj in objects
+      if keyPressed(tmpObj.keyCode) then
+        tmpList.add(tmpObj.keyCode)
+      end if
+    end repeat
+    return tmpList
+  end if
+end

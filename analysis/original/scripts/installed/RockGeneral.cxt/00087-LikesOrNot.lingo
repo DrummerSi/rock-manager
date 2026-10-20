@@ -1,0 +1,247 @@
+property m_dlg, m_image
+global gRock, gDir
+
+on new me
+  return me
+end
+
+on kill me
+  return 0
+end
+
+on show me, argWhat
+  if argWhat = #Likes then
+    tmpBand = gRock.m_context.getFocus(#Band)
+    m_image = me.X(VOID, tmpBand)
+    tmpAlbum = gRock.m_context.getFocus(#album)
+    if objectp(tmpAlbum) then
+      img2 = me.X(VOID, tmpAlbum)
+      img3 = image(m_image.width + img2.width + 20, m_image.height, 8)
+      img3.copyPixels(m_image, m_image.rect, m_image.rect)
+      tmp = point(m_image.rect[3] + 5, 0)
+      img3.copyPixels(img2, rect(tmp, tmp) + img2.rect, img2.rect)
+      m_image = img3
+    end if
+  else
+    if argWhat = #groups then
+      m_image = me.showGroupStuff()
+    else
+      if argWhat = #Musician then
+        me.showMusicianStats()
+        exit
+      end if
+    end if
+  end if
+  me.openDlg()
+end
+
+on openDlg me
+  SPNum = gDir.m_spriteList[#Diagram]
+  sprite(SPNum).ink = 0
+  m_dlg = script("Dialog").new([#AttachImageToMember: #temp, #StartSpriteNum: SPNum, #NumSprites: 2, #OKtoResize: 1, #ID: #WatcherDlg])
+  tmpList = member("DlgDefaultData").text.value
+  tmpList.add([#ID: #Pic, #type: #Pic, #Pic: m_image, #ch: 10, #rect: [0, 20, 0, 20], #rel: [0, 0, #Auto, #Auto], #blit: 1])
+  m_dlg.create(tmpList)
+  lst = m_dlg.getItemsByType(#button)
+  repeat with obj in lst
+    obj.scriptInstanceList.add(me)
+  end repeat
+  m_dlg.renderAtLoc(point(100, 100))
+end
+
+on Report me
+end
+
+on mouse me, argObj, argWhat
+  if argWhat = #click then
+    if argObj.ID = #close then
+      m_dlg = m_dlg.kill()
+    end if
+  end if
+end
+
+on X me, argObjLikes, argObj
+  if voidp(argObjLikes) then
+    argObjLikes = gRock.m_context.getFocus(#place)
+    if objectp(argObjLikes) then
+      if (argObjLikes.className = #media) or (argObjLikes.className = #Live) or (argObjLikes.className = #Record) then
+        pott("Focuzz", argObjLikes.ID)
+      else
+        argObjLikes = 0
+      end if
+    else
+      argObjLikes = 0
+    end if
+    if not objectp(argObjLikes) then
+      argObjLikes = gRock.m_classManager.getObjByID(#Live01)
+    end if
+  end if
+  if voidp(argObj) then
+    argObj = gRock.m_context.getFocus(#album)
+    if voidp(argObj) then
+      argObj = gRock.m_context.getFocus(#Band)
+    end if
+  end if
+  tmpMidVals = rgetProp(argObjLikes, #StyleMix)
+  tmpTolerances = rgetProp(argObjLikes, #StyleMixTolerance)
+  if voidp(tmpMidVals) then
+    tmpMidVals = rgetProp(argObjLikes, #MusicStyle)
+    tmpTolerances = rgetProp(argObjLikes, #MusicStyleTolerance)
+  end if
+  tmpCompareToVals = rgetProp(argObj, #MusicStyle)
+  width = 100
+  height = 20 * 15
+  img = image(width, height + 30, 8)
+  tmpTextMemb = member("RockInfoText")
+  tmpTextMemb.fontStyle = [#bold]
+  tmpTextMemb.font = "Verdana"
+  tmpTextMemb.fontSize = 9
+  tmpGraphWidth = 80
+  tmpOff = point(0, 0)
+  tmpTextMemb.rect[3] = 400
+  tmpTextMemb.text = string(argObjLikes.ID) & " likes " & string(argObj.ID)
+  img.copyPixels(tmpTextMemb.image, tmpTextMemb.rect, tmpTextMemb.rect, [#ink: #blend, #blend: 100])
+  tmpOff = tmpOff + point(0, 15)
+  repeat with m = 1 to 2
+    tmpProps = gRock.m_classManager.getPropsInClass(tmpMidVals.className)
+    repeat with n = 1 to tmpProps.count()
+      tmpProp = tmpProps.getPropAt(n)
+      tmpTextMemb.rect[3] = 200
+      tmpTextMemb.text = string(tmpProp) & " "
+      tmpTextMemb.rect[3] = tmpTextMemb.charPosToLoc(tmpTextMemb.text.length)[1]
+      tmpOff = tmpOff + point(0, 15)
+      tmpOffRect = rect(tmpOff, tmpOff)
+      tmpMid = tmpMidVals.getaProp(tmpProp)
+      if objectp(tmpTolerances) then
+        tmpTol = tmpTolerances.getaProp(tmpProp)
+      end if
+      if voidp(tmpTol) then
+        tmpTol = 0
+      end if
+      tmpImg = image(10, 10, 1)
+      tmpImg.fill(tmpImg.rect, rgb(0, 0, 0))
+      tmpR = rect(tmpMid - tmpTol, 0, tmpMid, 0) * tmpGraphWidth
+      tmpR = tmpR + rect(0, -9, 0, 0) + tmpOffRect
+      tmpQuad = script("QuadScript").new(tmpR)
+      tmpQuad = tmpQuad.getQuad()
+      tmpQuad[1] = tmpQuad[2].duplicate()
+      img.copyPixels(tmpImg, tmpQuad, tmpImg.rect, [#color: rgb(255, 200, 100)])
+      tmpR = rect(tmpMid, 0, tmpMid + tmpTol, 0) * tmpGraphWidth
+      tmpR = tmpR + rect(0, -9, 0, 0) + tmpOffRect
+      tmpQuad = script("QuadScript").new(tmpR)
+      tmpQuad = tmpQuad.getQuad()
+      tmpQuad[2] = tmpQuad[1].duplicate()
+      img.copyPixels(tmpImg, tmpQuad, tmpImg.rect, [#color: rgb(255, 200, 100)])
+      img.copyPixels(tmpTextMemb.image, tmpTextMemb.rect + tmpOffRect + (rect(0, -tmpTextMemb.rect[4], 0, -tmpTextMemb.rect[4]) / 2), tmpTextMemb.rect, [#ink: #blend, #blend: 50])
+      me.drawLines(img, tmpOff, tmpGraphWidth)
+      tmpDiff = abs(tmpMidVals.getaProp(tmpProp) - tmpCompareToVals.getaProp(tmpProp))
+      tmpClr = rgb(0, 180, 0)
+      if tmpDiff > tmpTol then
+        tmpClr = rgb(255, 0, 0)
+      end if
+      tmp = tmpCompareToVals.getaProp(tmpProp)
+      tmpR = rect(tmp, 0, tmp, 0) * tmpGraphWidth
+      tmpR = tmpR + rect(-1, -4, 1, 0) + tmpOffRect
+      img.fill(tmpR, [#color: tmpClr])
+    end repeat
+    tmpMidVals = rgetProp(argObjLikes, #SongType)
+    if voidp(tmpMidVals) then
+      exit repeat
+    end if
+    tmpTolerances = rgetProp(argObjLikes, #SongTypeTolerance)
+    tmpCompareToVals = rgetProp(argObj, #SongType)
+    if voidp(tmpCompareToVals) then
+      tmpCompareToVals = rgetProp(argObj, #SongType)
+    end if
+    tmpOff = tmpOff + point(0, 15)
+  end repeat
+  tmpQuality = rgetProp(argObj, #quality)
+  if not voidp(tmpQuality) then
+    tmpMinQuality = rgetProp(argObjLikes, #MinQuality)
+    if not voidp(tmpMinQuality) then
+      tmpOff = tmpOff + point(0, 10)
+      tmpR = rect(tmpMinQuality, 0, 1, 0) * tmpGraphWidth
+      tmpR = tmpR + rect(0, -5, 0, 0)
+      img.fill(tmpR + rect(tmpOff, tmpOff), [#color: rgb(255, 200, 100)])
+      me.drawLines(img, tmpOff, tmpGraphWidth)
+      tmpR = rect(tmpQuality, 0, tmpQuality, 0) * tmpGraphWidth
+      tmpR = tmpR + rect(-1, -5, 1, 0)
+      img.fill(tmpR + rect(tmpOff, tmpOff), [#color: rgb(255, 0, 0)])
+    end if
+  end if
+  return img
+end
+
+on drawLines me, argImg, argStartPoint, argWidth
+  tmpOffRect = rect(argStartPoint, argStartPoint)
+  tmpR = rect(point(0, 0), point(argWidth, 0)) + tmpOffRect
+  argImg.draw(tmpR, [#shapeType: #line, #lineSize: 1, #color: rgb(0, 0, 0)])
+  tmpR = rect(point(argWidth / 2, 2), point(argWidth / 2, -2)) + tmpOffRect
+  argImg.draw(tmpR, [#shapeType: #line, #lineSize: 1, #color: rgb(0, 0, 0)])
+  tmpR = rect(point(0, 2), point(0, -2)) + tmpOffRect
+  argImg.draw(tmpR, [#shapeType: #line, #lineSize: 1, #color: rgb(0, 0, 0)])
+  tmpR = rect(point(argWidth, 2), point(argWidth, -2)) + tmpOffRect
+  argImg.draw(tmpR, [#shapeType: #line, #lineSize: 1, #color: rgb(0, 0, 0)])
+end
+
+on showGroupStuff me
+  band_r = gRock.m_context.getFocus(#Band)
+  album_r = gRock.m_context.getFocus(#album)
+  tmpEvents = gRock.m_eventsManager.getOngoingEvents()
+  tmpCheckEvents = []
+  repeat with tmpEvent in tmpEvents
+    if tmpEvent.className = #ExpoAd then
+      tmpCheckEvents.add(tmpEvent)
+    end if
+  end repeat
+  audienceGroups_r = gRock.m_classManager.getObjsOfClass(#Group)
+  img = image(100, audienceGroups_r.count() * 20, 8)
+  repeat with n = 1 to audienceGroups_r.count()
+    tmpOff = point(0, n * 20)
+    grp_r = audienceGroups_r[n]
+    if objectp(album_r) then
+      tmpHype = grp_r.Attitudes.getAttitude([album_r.ID, #Hype])
+      if objectp(tmpHype) then
+        tmpHype = tmpHype.Current
+      end if
+      img.fill(rect(0, -tmpHype * 3, 15, 0) + rect(tmpOff, tmpOff), [#shapeType: #rect, #color: rgb(0, 0, 100)])
+      tmpOff = tmpOff + point(20, 0)
+    end if
+    tmpHype = grp_r.Attitudes.getAttitude([band_r.ID, #Hype])
+    if objectp(tmpHype) then
+      tmpHype = tmpHype.Current
+    end if
+    img.fill(rect(0, -tmpHype * 3, 15, 0) + rect(tmpOff, tmpOff), [#shapeType: #rect, #color: rgb(0, 100, 0)])
+    tmpOff = tmpOff + point(20, 0)
+    repeat with tmpEvent in tmpCheckEvents
+      tmpReach = tmpEvent.ReachesGroups.getaProp(grp_r.ID)
+      img.fill(rect(0, -tmpReach * 10, 15, 0) + rect(tmpOff, tmpOff), [#shapeType: #rect, #color: rgb(100, 0, 0)])
+      tmpOff = tmpOff + point(20, 0)
+    end repeat
+  end repeat
+  return img
+end
+
+on showMusicianStats me
+  mus_r = gRock.m_context.getFocus(#RealMusician)
+  band_r = gRock.m_context.getFocus(#Band)
+  str = EMPTY
+  str = str & "Attitudes:" & RETURN
+  repeat with n = 1 to mus_r.Attitudes.Attitudes.count()
+    tmpTowardsID = mus_r.Attitudes.Attitudes.getPropAt(n)
+    if band_r.members.getPos(tmpTowardsID) then
+      tmpAtt = mus_r.Attitudes.Attitudes[n]
+      if floatp(tmpAtt) or integerp(tmpAtt) then
+        str = str & string(tmpTowardsID) & " " & string(tmpAtt) & RETURN
+      end if
+    end if
+  end repeat
+  str = str & "Needs:" & RETURN
+  tmpNeedObjs = mus_r.Needs.NeedObjs
+  repeat with n = 1 to tmpNeedObjs.count()
+    tmpObj = tmpNeedObjs[n]
+    tmpNeedID = tmpNeedObjs.getPropAt(n)
+    str = str & string(tmpNeedID) & " " & string(tmpObj.DynamicTrigger.Current) & RETURN
+  end repeat
+  pott(str)
+end

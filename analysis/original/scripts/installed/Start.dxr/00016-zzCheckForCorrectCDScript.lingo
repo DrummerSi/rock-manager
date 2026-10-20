@@ -1,0 +1,121 @@
+property m_CDCheckObj, m_readFile, m_CDPath, m_iniPropEqualsVal, m_callBackInfo, m_timerObj
+
+on new me, argCDPath, argReadFile, argIniPropEqualsVal, argCallBackInfo
+  m_CDPath = argCDPath
+  if voidp(m_CDPath) then
+    m_CDPath = "E:\"
+  end if
+  m_readFile = argReadFile
+  if voidp(m_readFile) then
+    m_readFile = "MSDN332.INF"
+  end if
+  m_iniPropEqualsVal = argIniPropEqualsVal
+  if voidp(m_iniPropEqualsVal) then
+    m_iniPropEqualsVal = [[#settings, #Language], "Swedish"]
+  end if
+  m_callBackInfo = argCallBackInfo
+  member("StatusText").text = EMPTY
+  m_CDCheckObj = script("SwitchCDScript").new(m_CDPath, [#NeededFiles: [m_readFile], #CallBackInfo: [#object: me, #handler: #switchCDMsg], #MustBeRemovable: 0, #MustBeVolumeRoot: 0])
+  sendAllSprites(#setReportObj, me)
+  return me
+end
+
+on kill me
+  member("StatusText").text = EMPTY
+  if objectp(m_timerObj) then
+    m_timerObj.forget()
+  end if
+  m_timerObj = 0
+  if objectp(m_CDCheckObj) then
+    m_CDCheckObj = m_CDCheckObj.kill()
+  end if
+  return 0
+end
+
+on tryReadDisc me
+  if me.verifyCD() then
+    call(m_callBackInfo[#handler], m_callBackInfo[#object], #Ok)
+  end if
+end
+
+on startChecking me
+  m_CDCheckObj.firstCheck()
+end
+
+on verifyCD me
+  if m_CDCheckObj.checkHasTheseFiles() = 0 then
+    return 0
+  end if
+  str = readFile(m_CDPath & m_readFile)
+  tmpOK = 0
+  if not stringp(str) then
+  else
+    infoList = iniStrToPropList(str)
+    if not listp(infoList) then
+    else
+      tmpInfo = infoList[m_iniPropEqualsVal[1][1]]
+      if not listp(tmpInfo) then
+      else
+        val = tmpInfo[m_iniPropEqualsVal[1][2]]
+        if val <> m_iniPropEqualsVal[2] then
+          put "Wrong language", val, m_iniPropEqualsVal[2]
+          member("StatusText").text = "Wrong language CD! Please insert " & m_iniPropEqualsVal[2]
+        else
+          tmpOK = 1
+        end if
+      end if
+    end if
+  end if
+  return tmpOK
+end
+
+on switchCDMsg me, argInfo
+  put argInfo
+  if argInfo = #RightMedia then
+    tmpOK = me.verifyCD()
+    if tmpOK then
+      m_CDCheckObj = m_CDCheckObj.kill()
+      call(m_callBackInfo[#handler], m_callBackInfo[#object], #Ok)
+    else
+      m_CDCheckObj.startChecking()
+    end if
+  else
+    if argInfo = #WrongMedia then
+      member("StatusText").text = "Wrong CD! Please insert the right one!"
+      put "Wrong CD! Please find the right one!"
+      m_CDCheckObj.startChecking()
+    else
+      if argInfo = #startChecking then
+      else
+        if argInfo = #NoVolume then
+          alert("Not a volume: " & string(m_CDPath))
+          if the runMode = "Projector" then
+            quit()
+          end if
+        else
+          if argInfo = #NotRemovable then
+            alert("Not a CD drive")
+            if the runMode = "Projector" then
+              quit()
+            end if
+          else
+            if argInfo = #Ejecting then
+              member("StatusText").text = "Ejecting disc..."
+            else
+              if argInfo = #Ejected then
+                member("StatusText").text = "Ejected"
+              else
+                if argInfo = #EjectingFailed then
+                else
+                  if argInfo = #Inserted then
+                    member("StatusText").text = "Reading disc..."
+                  end if
+                end if
+              end if
+            end if
+          end if
+        end if
+      end if
+    end if
+  end if
+end

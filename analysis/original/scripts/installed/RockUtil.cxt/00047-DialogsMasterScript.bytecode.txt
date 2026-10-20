@@ -1,0 +1,895 @@
+property m_dlgObjList, m_objProtectMouse, m_inCity, m_baseSPNum, m_noExitToCity, m_noExitDialog
+global gDir, gRock, gUseful
+
+on new me, argBaseSPNum
+  [  0] pusharglist 0 ........................... <[]>
+  [  2] pushlist ................................ <[]>
+  [  3] setprop 1283 ............................ m_dlgObjList = []
+  [  6] pushcons 0 .............................. <"Main">
+  [  8] getmovieprop 621 ........................ <the movieName>
+  [ 11] pusharglist 2 ........................... <"Main", the movieName>
+  [ 13] extcall 149 ............................. <offset("Main", the movieName)>
+  [ 16] getglobal 93 ............................ <gDir>
+  [ 19] pusharglist 1 ........................... <gDir>
+  [ 21] extcall 71 .............................. <objectp(gDir)>
+  [ 24] and ..................................... <offset("Main", the movieName) and objectp(gDir)>
+  [ 25] jmpifz [ 37] ............................ if offset("Main", the movieName) and objectp(gDir) then / else
+  [ 28] pushint8 1 .............................. <1>
+  [ 31] setprop 1284 ............................ m_inCity = 1
+  [ 34] jmp [ 41]
+  [ 37] pushzero ................................ <0>
+  [ 38] setprop 1284 ............................ m_inCity = 0
+  [ 41] getparam 8 .............................. <argBaseSPNum>
+  [ 43] setprop 1285 ............................ m_baseSPNum = argBaseSPNum
+  [ 46] getparam 0 .............................. <me>
+  [ 48] pusharglistnoret 1 ...................... <me>
+  [ 50] extcall 21 .............................. return me
+  [ 52] ret
+end
+
+on kill me
+  [  0] getglobal 23 ............................ <gUseful>
+  [  2] getobjprop 24 ........................... <gUseful.frameTimer>
+  [  4] getparam 0 .............................. <me>
+  [  6] pusharglistnoret 2 ...................... <gUseful.frameTimer, me>
+  [  8] objcall 25 .............................. gUseful.frameTimer.deleteObject(me)
+  [ 10] getprop 1287 ............................ <m_objProtectMouse>
+  [ 13] pusharglist 1 ........................... <m_objProtectMouse>
+  [ 15] extcall 71 .............................. <objectp(m_objProtectMouse)>
+  [ 18] jmpifz [ 31] ............................ if objectp(m_objProtectMouse) then
+  [ 21] getprop 1287 ............................ <m_objProtectMouse>
+  [ 24] pusharglist 1 ........................... <m_objProtectMouse>
+  [ 26] objcall 1 ............................... <m_objProtectMouse.kill()>
+  [ 28] setprop 1287 ............................ m_objProtectMouse = m_objProtectMouse.kill()
+  [ 31] getparam 0 .............................. <me>
+  [ 33] pusharglistnoret 1 ...................... <me>
+  [ 35] objcall 1271 ............................ me.closeAllDialogs()
+  [ 38] pushzero ................................ <0>
+  [ 39] pusharglistnoret 1 ...................... <0>
+  [ 41] extcall 21 .............................. return 0
+  [ 43] ret
+end
+
+on closeAllDialogs me
+  [  0] getprop 1283 ............................ <m_dlgObjList>
+  [  3] getobjprop 32 ........................... <m_dlgObjList.count>
+  [  6] setlocal 0
+  [  8] getlocal 0
+  [ 10] pushint8 1 .............................. <1>
+  [ 13] gteq
+  [ 14] jmpifz [ 41] ............................ repeat with n = m_dlgObjList.count down to 1
+  [ 17] getprop 1283 ............................ <m_dlgObjList>
+  [ 20] getlocal 0 .............................. <n>
+  [ 22] pusharglist 2 ........................... <m_dlgObjList, n>
+  [ 24] objcall 34 .............................. <m_dlgObjList[n]>
+  [ 27] pusharglistnoret 1 ...................... <m_dlgObjList[n]>
+  [ 29] objcall 1 ............................... m_dlgObjList[n].kill()
+  [ 31] pushint8 -1
+  [ 34] getlocal 0
+  [ 36] add
+  [ 37] setlocal 0
+  [ 39] endrepeat [  8]
+  [ 41] pusharglist 0 ........................... <[]>
+  [ 43] pushlist ................................ <[]>
+  [ 44] setprop 1283 ............................ m_dlgObjList = []
+  [ 47] ret
+end
+
+on closeDialogsOnTopOf me, argObj
+  [  0] getprop 1283 ............................ <m_dlgObjList>
+  [  3] getparam 8 .............................. <argObj>
+  [  5] pusharglist 2 ........................... <m_dlgObjList, argObj>
+  [  7] objcall 92 .............................. <m_dlgObjList.getPos(argObj)>
+  [ 10] setlocal 0 .............................. Pos = m_dlgObjList.getPos(argObj)
+  [ 12] getlocal 0 .............................. <Pos>
+  [ 14] jmpifz [ 74] ............................ if Pos then
+  [ 17] getprop 1283 ............................ <m_dlgObjList>
+  [ 20] pusharglist 1 ........................... <m_dlgObjList>
+  [ 22] objcall 44 .............................. <m_dlgObjList.duplicate()>
+  [ 25] setlocal 8 .............................. lst = m_dlgObjList.duplicate()
+  [ 27] getlocal 8 .............................. <lst>
+  [ 29] getobjprop 32 ........................... <lst.count>
+  [ 32] setlocal 16
+  [ 34] getlocal 16
+  [ 36] getlocal 0 .............................. <Pos>
+  [ 38] pushint8 1 .............................. <1>
+  [ 41] add ..................................... <Pos + 1>
+  [ 42] gteq
+  [ 43] jmpifz [ 74] ............................ repeat with n = lst.count down to Pos + 1
+  [ 46] getlocal 8 .............................. <lst>
+  [ 48] getlocal 16 ............................. <n>
+  [ 50] pusharglist 2 ........................... <lst, n>
+  [ 52] objcall 34 .............................. <lst[n]>
+  [ 55] setlocal 24 ............................. dlg = lst[n]
+  [ 57] getlocal 24 ............................. <dlg>
+  [ 59] pusharglistnoret 1 ...................... <dlg>
+  [ 61] objcall 1 ............................... dlg.kill()
+  [ 63] pushint8 -1
+  [ 66] getlocal 16
+  [ 68] add
+  [ 69] setlocal 16
+  [ 71] endrepeat [ 34]
+  [ 74] ret
+end
+
+on getDialogsUnder me, argObj
+  [  0] getprop 1283 ............................ <m_dlgObjList>
+  [  3] getparam 8 .............................. <argObj>
+  [  5] pusharglist 2 ........................... <m_dlgObjList, argObj>
+  [  7] objcall 92 .............................. <m_dlgObjList.getPos(argObj)>
+  [ 10] setlocal 0 .............................. Pos = m_dlgObjList.getPos(argObj)
+  [ 12] getlocal 0 .............................. <Pos>
+  [ 14] pushzero ................................ <0>
+  [ 15] eq ...................................... <Pos = 0>
+  [ 16] jmpifz [ 26] ............................ if Pos = 0 then
+  [ 19] pusharglist 0 ........................... <[]>
+  [ 21] pushlist ................................ <[]>
+  [ 22] pusharglistnoret 1 ...................... <[]>
+  [ 24] extcall 21 .............................. return []
+  [ 26] getprop 1283 ............................ <m_dlgObjList>
+  [ 29] pusharglist 1 ........................... <m_dlgObjList>
+  [ 31] objcall 44 .............................. <m_dlgObjList.duplicate()>
+  [ 34] setlocal 8 .............................. lst = m_dlgObjList.duplicate()
+  [ 36] getlocal 8 .............................. <lst>
+  [ 38] getobjprop 32 ........................... <lst.count>
+  [ 41] setlocal 16
+  [ 43] getlocal 16
+  [ 45] getlocal 0 .............................. <Pos>
+  [ 47] gteq
+  [ 48] jmpifz [ 70] ............................ repeat with n = lst.count down to Pos
+  [ 51] getlocal 8 .............................. <lst>
+  [ 53] getlocal 0 .............................. <Pos>
+  [ 55] pusharglistnoret 2 ...................... <lst, Pos>
+  [ 57] objcall 100 ............................. lst.deleteAt(Pos)
+  [ 60] pushint8 -1
+  [ 63] getlocal 16
+  [ 65] add
+  [ 66] setlocal 16
+  [ 68] endrepeat [ 43]
+  [ 70] getlocal 8 .............................. <lst>
+  [ 72] pusharglistnoret 1 ...................... <lst>
+  [ 74] extcall 21 .............................. return lst
+  [ 76] ret
+end
+
+on getDialogUnder me, argObj
+  [  0] getparam 0 .............................. <me>
+  [  2] getparam 8 .............................. <argObj>
+  [  4] pusharglist 2 ........................... <me, argObj>
+  [  6] objcall 1273 ............................ <me.getDialogsUnder(argObj)>
+  [  9] setlocal 0 .............................. lst = me.getDialogsUnder(argObj)
+  [ 11] getlocal 0 .............................. <lst>
+  [ 13] getobjprop 32 ........................... <lst.count>
+  [ 16] jmpifz [ 35] ............................ if lst.count then
+  [ 19] getlocal 0 .............................. <lst>
+  [ 21] getlocal 0 .............................. <lst>
+  [ 23] getobjprop 32 ........................... <lst.count>
+  [ 26] pusharglist 2 ........................... <lst, lst.count>
+  [ 28] objcall 34 .............................. <lst[lst.count]>
+  [ 31] pusharglistnoret 1 ...................... <lst[lst.count]>
+  [ 33] extcall 21 .............................. return lst[lst.count]
+  [ 35] pusharglist 0 ........................... <>
+  [ 37] extcall 190 ............................. <VOID>
+  [ 40] pusharglistnoret 1 ...................... <VOID>
+  [ 42] extcall 21 .............................. return VOID
+  [ 44] ret
+end
+
+on getDialogsOver me, argObj
+  [  0] getprop 1283 ............................ <m_dlgObjList>
+  [  3] getparam 8 .............................. <argObj>
+  [  5] pusharglist 2 ........................... <m_dlgObjList, argObj>
+  [  7] objcall 92 .............................. <m_dlgObjList.getPos(argObj)>
+  [ 10] setlocal 0 .............................. Pos = m_dlgObjList.getPos(argObj)
+  [ 12] getlocal 0 .............................. <Pos>
+  [ 14] pushzero ................................ <0>
+  [ 15] eq ...................................... <Pos = 0>
+  [ 16] jmpifz [ 26] ............................ if Pos = 0 then
+  [ 19] pusharglist 0 ........................... <[]>
+  [ 21] pushlist ................................ <[]>
+  [ 22] pusharglistnoret 1 ...................... <[]>
+  [ 24] extcall 21 .............................. return []
+  [ 26] getprop 1283 ............................ <m_dlgObjList>
+  [ 29] pusharglist 1 ........................... <m_dlgObjList>
+  [ 31] objcall 44 .............................. <m_dlgObjList.duplicate()>
+  [ 34] setlocal 8 .............................. lst = m_dlgObjList.duplicate()
+  [ 36] pushint8 1 .............................. <1>
+  [ 39] setlocal 16
+  [ 41] getlocal 16
+  [ 43] getlocal 0 .............................. <Pos>
+  [ 45] lteq
+  [ 46] jmpifz [ 68] ............................ repeat with n = 1 to Pos
+  [ 49] getlocal 8 .............................. <lst>
+  [ 51] getlocal 16 ............................. <n>
+  [ 53] pusharglistnoret 2 ...................... <lst, n>
+  [ 55] objcall 100 ............................. lst.deleteAt(n)
+  [ 58] pushint8 1
+  [ 61] getlocal 16
+  [ 63] add
+  [ 64] setlocal 16
+  [ 66] endrepeat [ 41]
+  [ 68] getlocal 8 .............................. <lst>
+  [ 70] pusharglistnoret 1 ...................... <lst>
+  [ 72] extcall 21 .............................. return lst
+  [ 74] ret
+end
+
+on getNumOpen me
+  [  0] getprop 1283 ............................ <m_dlgObjList>
+  [  3] getobjprop 32 ........................... <m_dlgObjList.count>
+  [  6] pusharglistnoret 1 ...................... <m_dlgObjList.count>
+  [  8] extcall 21 .............................. return m_dlgObjList.count
+  [ 10] ret
+end
+
+on refresh me
+  [  0] getprop 1283 ............................ <m_dlgObjList>
+  [  3] peek 0
+  [  5] pusharglist 1
+  [  7] extcall 32
+  [ 10] pushint8 1
+  [ 12] peek 0
+  [ 14] peek 2
+  [ 16] lteq
+  [ 17] jmpifz [ 57] ............................ repeat with dlgObj in m_dlgObjList
+  [ 20] peek 2
+  [ 22] peek 1
+  [ 24] pusharglist 2
+  [ 26] extcall 34
+  [ 29] setlocal 0
+  [ 31] getlocal 0 .............................. <dlgObj>
+  [ 33] pushsymb 1277 ........................... <#refresh>
+  [ 36] pusharglist 2 ........................... <dlgObj, #refresh>
+  [ 38] objcall 73 .............................. <dlgObj.handler(#refresh)>
+  [ 41] jmpifz [ 51] ............................ if dlgObj.handler(#refresh) then
+  [ 44] getlocal 0 .............................. <dlgObj>
+  [ 46] pusharglistnoret 1 ...................... <dlgObj>
+  [ 48] objcall 1277 ............................ dlgObj.refresh()
+  [ 51] pushint8 1
+  [ 53] add
+  [ 54] endrepeat [ 12]
+  [ 57] pop 3
+  [ 59] ret
+end
+
+on mouse me, argObj, argWhat
+  [  0] getparam 16 ............................. <argWhat>
+  [  2] pushsymb 858 ............................ <#click>
+  [  5] eq ...................................... <argWhat = #click>
+  [  6] jmpifz [ 18] ............................ if argWhat = #click then
+  [  9] getparam 8 .............................. <argObj>
+  [ 11] getprop 1287 ............................ <m_objProtectMouse>
+  [ 14] eq ...................................... <argObj = m_objProtectMouse>
+  [ 15] jmpifz [ 18] ............................ if argObj = m_objProtectMouse then
+  [ 18] ret
+end
+
+on Split me, argStr
+  [  0] pusharglist 0 ........................... <[]>
+  [  2] pushlist ................................ <[]>
+  [  3] setlocal 0 .............................. tmp = []
+  [  5] pushint8 1 .............................. <1>
+  [  8] setlocal 8 .............................. last = 1
+  [ 10] pushint8 1 .............................. <1>
+  [ 13] setlocal 16
+  [ 15] getlocal 16
+  [ 17] getparam 8 .............................. <argStr>
+  [ 19] getobjprop 151 .......................... <argStr.length>
+  [ 22] lteq
+  [ 23] jmpifz [127] ............................ repeat with n = 1 to argStr.length
+  [ 26] getparam 8 .............................. <argStr>
+  [ 28] pushsymb 150 ............................ <#char>
+  [ 31] getlocal 16 ............................. <n>
+  [ 33] pusharglist 3 ........................... <argStr, #char, n>
+  [ 35] objcall 152 ............................. <argStr.char[n]>
+  [ 38] pusharglist 1 ........................... <argStr.char[n]>
+  [ 40] extcall 1290 ............................ <charToNum(argStr.char[n])>
+  [ 43] pushint8 65 ............................. <65>
+  [ 46] lt ...................................... <charToNum(argStr.char[n]) < 65>
+  [ 47] jmpifz [116] ............................ if charToNum(argStr.char[n]) < 65 then
+  [ 50] getlocal 0 .............................. <tmp>
+  [ 52] getparam 8 .............................. <argStr>
+  [ 54] pushsymb 150 ............................ <#char>
+  [ 57] getlocal 8 .............................. <last>
+  [ 59] getlocal 16 ............................. <n>
+  [ 61] pushint8 1 .............................. <1>
+  [ 64] sub ..................................... <n - 1>
+  [ 65] pusharglist 4 ........................... <argStr, #char, last, n - 1>
+  [ 67] objcall 152 ............................. <argStr.char[last..n - 1]>
+  [ 70] pusharglistnoret 2 ...................... <tmp, argStr.char[last..n - 1]>
+  [ 72] objcall 50 .............................. tmp.add(argStr.char[last..n - 1])
+  [ 75] getlocal 0 .............................. <tmp>
+  [ 77] getparam 8 .............................. <argStr>
+  [ 79] pushsymb 150 ............................ <#char>
+  [ 82] getlocal 16 ............................. <n>
+  [ 84] getlocal 16 ............................. <n>
+  [ 86] pushint8 1 .............................. <1>
+  [ 89] add ..................................... <n + 1>
+  [ 90] pusharglist 4 ........................... <argStr, #char, n, n + 1>
+  [ 92] objcall 152 ............................. <argStr.char[n..n + 1]>
+  [ 95] pusharglistnoret 2 ...................... <tmp, argStr.char[n..n + 1]>
+  [ 97] objcall 50 .............................. tmp.add(argStr.char[n..n + 1])
+  [100] getlocal 16 ............................. <n>
+  [102] pushint8 1 .............................. <1>
+  [105] add ..................................... <n + 1>
+  [106] setlocal 16 ............................. n = n + 1
+  [108] getlocal 16 ............................. <n>
+  [110] pushint8 1 .............................. <1>
+  [113] add ..................................... <n + 1>
+  [114] setlocal 8 .............................. last = n + 1
+  [116] pushint8 1
+  [119] getlocal 16
+  [121] add
+  [122] setlocal 16
+  [124] endrepeat [ 15]
+  [127] getlocal 8 .............................. <last>
+  [129] getparam 8 .............................. <argStr>
+  [131] getobjprop 151 .......................... <argStr.length>
+  [134] lt ...................................... <last < argStr.length>
+  [135] jmpifz [162] ............................ if last < argStr.length then
+  [138] getlocal 0 .............................. <tmp>
+  [140] getparam 8 .............................. <argStr>
+  [142] pushsymb 150 ............................ <#char>
+  [145] getlocal 8 .............................. <last>
+  [147] getparam 8 .............................. <argStr>
+  [149] getobjprop 151 .......................... <argStr.length>
+  [152] pusharglist 4 ........................... <argStr, #char, last, argStr.length>
+  [154] objcall 152 ............................. <argStr.char[last..argStr.length]>
+  [157] pusharglistnoret 2 ...................... <tmp, argStr.char[last..argStr.length]>
+  [159] objcall 50 .............................. tmp.add(argStr.char[last..argStr.length])
+  [162] getlocal 0 .............................. <tmp>
+  [164] pusharglistnoret 1 ...................... <tmp>
+  [166] extcall 21 .............................. return tmp
+  [168] ret
+end
+
+on timeTick me
+  [  0] getglobal 23 ............................ <gUseful>
+  [  2] getobjprop 609 .......................... <gUseful.mouseObjects>
+  [  5] pushzero ................................ <0>
+  [  6] pusharglistnoret 2 ...................... <gUseful.mouseObjects, 0>
+  [  8] objcall 796 ............................. gUseful.mouseObjects.block(0)
+  [ 11] getglobal 23 ............................ <gUseful>
+  [ 13] getobjprop 24 ........................... <gUseful.frameTimer>
+  [ 15] getparam 0 .............................. <me>
+  [ 17] pusharglistnoret 2 ...................... <gUseful.frameTimer, me>
+  [ 19] objcall 25 .............................. gUseful.frameTimer.deleteObject(me)
+  [ 21] ret
+end
+
+on openDialog me, argDlgID, argOptions
+  [  0] pushint8 1 .............................. <1>
+  [  3] pusharglistnoret 1 ...................... <1>
+  [  5] extcall 89 .............................. waitCursor(1)
+  [  8] getprop 1284 ............................ <m_inCity>
+  [ 11] jmpifz [ 25] ............................ if m_inCity then
+  [ 14] getglobal 93 ............................ <gDir>
+  [ 17] pushint8 1 .............................. <1>
+  [ 20] pusharglistnoret 2 ...................... <gDir, 1>
+  [ 22] objcall 684 ............................. gDir.pause(1)
+  [ 25] getglobal 7 ............................. <gRock>
+  [ 27] getobjprop 1293 ......................... <gRock.m_gameTimer>
+  [ 30] pushzero ................................ <0>
+  [ 31] pusharglistnoret 2 ...................... <gRock.m_gameTimer, 0>
+  [ 33] objcall 779 ............................. gRock.m_gameTimer.activate(0)
+  [ 36] getprop 1283 ............................ <m_dlgObjList>
+  [ 39] peek 0
+  [ 41] pusharglist 1
+  [ 43] extcall 32
+  [ 46] pushint8 1
+  [ 48] peek 0
+  [ 50] peek 2
+  [ 52] lteq
+  [ 53] jmpifz [ 92] ............................ repeat with obj in m_dlgObjList
+  [ 56] peek 2
+  [ 58] peek 1
+  [ 60] pusharglist 2
+  [ 62] extcall 34
+  [ 65] setlocal 0
+  [ 67] getlocal 0 .............................. <obj>
+  [ 69] getobjprop 1294 ......................... <obj.m_objDlg>
+  [ 72] pushzero ................................ <0>
+  [ 73] pusharglistnoret 2 ...................... <obj.m_objDlg, 0>
+  [ 75] objcall 779 ............................. obj.m_objDlg.activate(0)
+  [ 78] getlocal 0 .............................. <obj>
+  [ 80] pushzero ................................ <0>
+  [ 81] pusharglistnoret 2 ...................... <obj, 0>
+  [ 83] objcall 1295 ............................ obj.focusChange(0)
+  [ 86] pushint8 1
+  [ 88] add
+  [ 89] endrepeat [ 48]
+  [ 92] pop 3
+  [ 94] getparam 8 .............................. <argDlgID>
+  [ 96] pusharglist 1 ........................... <argDlgID>
+  [ 98] extcall 38 .............................. <string(argDlgID)>
+  [101] setlocal 8 .............................. dlgIDStr = string(argDlgID)
+  [103] getparam 0 .............................. <me>
+  [105] getlocal 8 .............................. <dlgIDStr>
+  [107] pusharglist 2 ........................... <me, dlgIDStr>
+  [109] objcall 1278 ............................ <me.Split(dlgIDStr)>
+  [112] setlocal 16 ............................. splitList = me.Split(dlgIDStr)
+  [114] getlocal 16 ............................. <splitList>
+  [116] pusharglist 1 ........................... <splitList>
+  [118] objcall 44 .............................. <splitList.duplicate()>
+  [121] setlocal 16 ............................. splitList = splitList.duplicate()
+  [123] pusharglist 0 ........................... <[:]>
+  [125] pushproplist ............................ <[:]>
+  [126] setlocal 24 ............................. Info = [:]
+  [128] getlocal 8 .............................. <dlgIDStr>
+  [130] setlocal 32 ............................. dlgName = dlgIDStr
+  [132] pushcons 8 .............................. <"Dlg">
+  [134] getlocal 8 .............................. <dlgIDStr>
+  [136] joinstr ................................. <"Dlg" & dlgIDStr>
+  [137] pushcons 16 ............................. <"Script">
+  [139] joinstr ................................. <"Dlg" & dlgIDStr & "Script">
+  [140] setlocal 40 ............................. scriptName = "Dlg" & dlgIDStr & "Script"
+  [142] getlocal 40 ............................. <scriptName>
+  [144] pusharglist 1 ........................... <scriptName>
+  [146] extcall 296 ............................. <member(scriptName)>
+  [149] getobjprop 537 .......................... <member(scriptName).number>
+  [152] pushint8 1 .............................. <1>
+  [155] lt ...................................... <member(scriptName).number < 1>
+  [156] jmpifz [296] ............................ if member(scriptName).number < 1 then
+  [159] getlocal 16 ............................. <splitList>
+  [161] pusharglist 1 ........................... <splitList>
+  [163] objcall 32 .............................. <splitList.count()>
+  [166] getlocal 16 ............................. <splitList>
+  [168] pusharglist 1 ........................... <splitList>
+  [170] objcall 32 .............................. <splitList.count()>
+  [173] pushint8 2 .............................. <2>
+  [176] mod ..................................... <splitList.count() mod 2>
+  [177] sub ..................................... <splitList.count() - (splitList.count() mod 2)>
+  [178] setlocal 48 ............................. cnt = splitList.count() - (splitList.count() mod 2)
+  [180] getlocal 48 ............................. <cnt>
+  [182] setlocal 56
+  [184] getlocal 56
+  [186] pushint8 1 .............................. <1>
+  [189] gteq
+  [190] jmpifz [296] ............................ repeat with n = cnt down to 1
+  [193] getlocal 16 ............................. <splitList>
+  [195] getlocal 56 ............................. <n>
+  [197] pusharglistnoret 2 ...................... <splitList, n>
+  [199] objcall 100 ............................. splitList.deleteAt(n)
+  [202] pushcons 24 ............................. <EMPTY>
+  [204] setlocal 32 ............................. dlgName = EMPTY
+  [206] pushint8 1 .............................. <1>
+  [209] setlocal 64
+  [211] getlocal 64
+  [213] getlocal 16 ............................. <splitList>
+  [215] pusharglist 1 ........................... <splitList>
+  [217] objcall 32 .............................. <splitList.count()>
+  [220] lteq
+  [221] jmpifz [249] ............................ repeat with m = 1 to splitList.count()
+  [224] getlocal 32 ............................. <dlgName>
+  [226] getlocal 16 ............................. <splitList>
+  [228] getlocal 64 ............................. <m>
+  [230] pusharglist 2 ........................... <splitList, m>
+  [232] objcall 34 .............................. <splitList[m]>
+  [235] joinstr ................................. <dlgName & splitList[m]>
+  [236] setlocal 32 ............................. dlgName = dlgName & splitList[m]
+  [238] pushint8 1
+  [241] getlocal 64
+  [243] add
+  [244] setlocal 64
+  [246] endrepeat [211]
+  [249] pushcons 32 ............................. <"Dlg">
+  [251] getlocal 32 ............................. <dlgName>
+  [253] joinstr ................................. <"Dlg" & dlgName>
+  [254] pushcons 40 ............................. <"Script">
+  [256] joinstr ................................. <"Dlg" & dlgName & "Script">
+  [257] setlocal 40 ............................. scriptName = "Dlg" & dlgName & "Script"
+  [259] getlocal 40 ............................. <scriptName>
+  [261] pusharglist 1 ........................... <scriptName>
+  [263] extcall 296 ............................. <member(scriptName)>
+  [266] getobjprop 537 .......................... <member(scriptName).number>
+  [269] pushzero ................................ <0>
+  [270] gt ...................................... <member(scriptName).number > 0>
+  [271] jmpifz [277] ............................ if member(scriptName).number > 0 then
+  [274] jmp [296] ............................... exit repeat
+  [277] getlocal 56 ............................. <n>
+  [279] pushint8 1 .............................. <1>
+  [282] sub ..................................... <n - 1>
+  [283] setlocal 56 ............................. n = n - 1
+  [285] pushint8 -1
+  [288] getlocal 56
+  [290] add
+  [291] setlocal 56
+  [293] endrepeat [184]
+  [296] getlocal 40 ............................. <scriptName>
+  [298] pusharglist 1 ........................... <scriptName>
+  [300] extcall 296 ............................. <member(scriptName)>
+  [303] getobjprop 537 .......................... <member(scriptName).number>
+  [306] pushint8 1 .............................. <1>
+  [309] lt ...................................... <member(scriptName).number < 1>
+  [310] jmpifz [317] ............................ if member(scriptName).number < 1 then
+  [313] pushcons 48 ............................. <"DlgInfoScript">
+  [315] setlocal 40 ............................. scriptName = "DlgInfoScript"
+  [317] getprop 1283 ............................ <m_dlgObjList>
+  [320] getobjprop 32 ........................... <m_dlgObjList.count>
+  [323] jmpifz [391] ............................ if m_dlgObjList.count then / else
+  [326] getprop 1283 ............................ <m_dlgObjList>
+  [329] getprop 1283 ............................ <m_dlgObjList>
+  [332] getobjprop 32 ........................... <m_dlgObjList.count>
+  [335] pusharglist 2 ........................... <m_dlgObjList, m_dlgObjList.count>
+  [337] objcall 34 .............................. <m_dlgObjList[m_dlgObjList.count]>
+  [340] setlocal 72 ............................. topObj = m_dlgObjList[m_dlgObjList.count]
+  [342] getlocal 72 ............................. <topObj>
+  [344] getobjprop 1010 ......................... <topObj.m_SP>
+  [347] getobjprop 1296 ......................... <topObj.m_SP.spriteNum>
+  [350] setlocal 80 ............................. SPNum = topObj.m_SP.spriteNum
+  [352] getlocal 72 ............................. <topObj>
+  [354] pushsymb 1298 ........................... <#GetSPNeed>
+  [357] pusharglist 2 ........................... <topObj, #GetSPNeed>
+  [359] extcall 1297 ............................ <rGotHandler(topObj, #GetSPNeed)>
+  [362] jmpifz [380] ............................ if rGotHandler(topObj, #GetSPNeed) then / else
+  [365] getlocal 80 ............................. <SPNum>
+  [367] getlocal 72 ............................. <topObj>
+  [369] pusharglist 1 ........................... <topObj>
+  [371] objcall 1298 ............................ <topObj.GetSPNeed()>
+  [374] add ..................................... <SPNum + topObj.GetSPNeed()>
+  [375] setlocal 80 ............................. SPNum = SPNum + topObj.GetSPNeed()
+  [377] jmp [388]
+  [380] getlocal 80 ............................. <SPNum>
+  [382] pushint8 1 .............................. <1>
+  [385] add ..................................... <SPNum + 1>
+  [386] setlocal 80 ............................. SPNum = SPNum + 1
+  [388] jmp [396]
+  [391] getprop 1285 ............................ <m_baseSPNum>
+  [394] setlocal 80 ............................. SPNum = m_baseSPNum
+  [396] getlocal 80 ............................. <SPNum>
+  [398] pusharglist 1 ........................... <SPNum>
+  [400] extcall 540 ............................. <sprite(SPNum)>
+  [403] pushcons 56 ............................. <"BlackOut">
+  [405] setobjprop 296 .......................... sprite(SPNum).member = "BlackOut"
+  [408] getlocal 80 ............................. <SPNum>
+  [410] pusharglist 1 ........................... <SPNum>
+  [412] extcall 540 ............................. <sprite(SPNum)>
+  [415] pushzero ................................ <0>
+  [416] pushzero ................................ <0>
+  [417] pushint8 800 ............................ <800>
+  [420] pushint8 600 ............................ <600>
+  [423] pusharglist 4 ........................... <0, 0, 800, 600>
+  [425] extcall 555 ............................. <rect(0, 0, 800, 600)>
+  [428] setobjprop 555 .......................... sprite(SPNum).rect = rect(0, 0, 800, 600)
+  [431] getlocal 80 ............................. <SPNum>
+  [433] pusharglist 1 ........................... <SPNum>
+  [435] extcall 540 ............................. <sprite(SPNum)>
+  [438] pushint8 30 ............................. <30>
+  [441] setobjprop 1083 ......................... sprite(SPNum).blend = 30
+  [444] getlocal 80 ............................. <SPNum>
+  [446] pushint8 1 .............................. <1>
+  [449] add ..................................... <SPNum + 1>
+  [450] setlocal 80 ............................. SPNum = SPNum + 1
+  [452] pushsymb 1299 ........................... <#infoList>
+  [455] getlocal 24 ............................. <Info>
+  [457] pushsymb 1288 ........................... <#dlg>
+  [460] getlocal 32 ............................. <dlgName>
+  [462] pusharglist 1 ........................... <dlgName>
+  [464] extcall 626 ............................. <symbol(dlgName)>
+  [467] pushsymb 60 ............................. <#ID>
+  [470] getparam 8 .............................. <argDlgID>
+  [472] pushsymb 1101 ........................... <#SPNum>
+  [475] getlocal 80 ............................. <SPNum>
+  [477] pushsymb 1300 ........................... <#renderMemberName>
+  [480] pushcons 64 ............................. <"DialogAssembly">
+  [482] getprop 1283 ............................ <m_dlgObjList>
+  [485] getobjprop 32 ........................... <m_dlgObjList.count>
+  [488] pushint8 1 .............................. <1>
+  [491] add ..................................... <m_dlgObjList.count + 1>
+  [492] pusharglist 1 ........................... <m_dlgObjList.count + 1>
+  [494] extcall 38 .............................. <string(m_dlgObjList.count + 1)>
+  [497] joinstr ................................. <"DialogAssembly" & string(m_dlgObjList.count + 1)>
+  [498] pushsymb 1203 ........................... <#OffsetLoc>
+  [501] pushint8 50 ............................. <50>
+  [504] pushint8 50 ............................. <50>
+  [507] pusharglist 2 ........................... <50, 50>
+  [509] extcall 568 ............................. <point(50, 50)>
+  [512] getprop 1283 ............................ <m_dlgObjList>
+  [515] getobjprop 32 ........................... <m_dlgObjList.count>
+  [518] mul ..................................... <point(50, 50) * m_dlgObjList.count>
+  [519] pushsymb 1301 ........................... <#DlgNr>
+  [522] getprop 1283 ............................ <m_dlgObjList>
+  [525] getobjprop 32 ........................... <m_dlgObjList.count>
+  [528] pushint8 1 .............................. <1>
+  [531] add ..................................... <m_dlgObjList.count + 1>
+  [532] pusharglist 14 .......................... <[#infoList: Info, #dlg: symbol(dlgName), #ID: argDlgID, #SPNum: SPNum, #renderMemberName: "DialogAssembly" & string(m_dlgObjList.count + 1), #OffsetLoc: point(50, 50) * m_dlgObjList.count, #DlgNr: m_dlgObjList.count + 1]>
+  [534] pushproplist ............................ <[#infoList: Info, #dlg: symbol(dlgName), #ID: argDlgID, #SPNum: SPNum, #renderMemberName: "DialogAssembly" & string(m_dlgObjList.count + 1), #OffsetLoc: point(50, 50) * m_dlgObjList.count, #DlgNr: m_dlgObjList.count + 1]>
+  [535] setlocal 88 ............................. options = [#infoList: Info, #dlg: symbol(dlgName), #ID: argDlgID, #SPNum: SPNum, #renderMemberName: "DialogAssembly" & string(m_dlgObjList.count + 1), #OffsetLoc: point(50, 50) * m_dlgObjList.count, #DlgNr: m_dlgObjList.count + 1]
+  [537] getparam 16 ............................. <argOptions>
+  [539] pusharglist 1 ........................... <argOptions>
+  [541] extcall 68 .............................. <voidp(argOptions)>
+  [544] jmpifz [552] ............................ if voidp(argOptions) then
+  [547] pusharglist 0 ........................... <[:]>
+  [549] pushproplist ............................ <[:]>
+  [550] setparam 16 ............................. argOptions = [:]
+  [552] pushint8 1 .............................. <1>
+  [555] setlocal 56
+  [557] getlocal 56
+  [559] getparam 16 ............................. <argOptions>
+  [561] pusharglist 1 ........................... <argOptions>
+  [563] objcall 32 .............................. <argOptions.count()>
+  [566] lteq
+  [567] jmpifz [605] ............................ repeat with n = 1 to argOptions.count()
+  [570] getlocal 88 ............................. <options>
+  [572] getparam 16 ............................. <argOptions>
+  [574] getlocal 56 ............................. <n>
+  [576] pusharglist 2 ........................... <argOptions, n>
+  [578] objcall 33 .............................. <argOptions.getPropAt(n)>
+  [581] getparam 16 ............................. <argOptions>
+  [583] getlocal 56 ............................. <n>
+  [585] pusharglist 2 ........................... <argOptions, n>
+  [587] objcall 34 .............................. <argOptions[n]>
+  [590] pusharglistnoret 3 ...................... <options, argOptions.getPropAt(n), argOptions[n]>
+  [592] objcall 28 .............................. options.setaProp(argOptions.getPropAt(n), argOptions[n])
+  [594] pushint8 1
+  [597] getlocal 56
+  [599] add
+  [600] setlocal 56
+  [602] endrepeat [557]
+  [605] getlocal 40 ............................. <scriptName>
+  [607] pusharglist 1 ........................... <scriptName>
+  [609] extcall 284 ............................. <script(scriptName)>
+  [612] getlocal 88 ............................. <options>
+  [614] pusharglist 2 ........................... <script(scriptName), options>
+  [616] objcall 0 ............................... <script(scriptName).new(options)>
+  [618] setlocal 0 .............................. obj = script(scriptName).new(options)
+  [620] getprop 1287 ............................ <m_objProtectMouse>
+  [623] pusharglist 1 ........................... <m_objProtectMouse>
+  [625] extcall 71 .............................. <objectp(m_objProtectMouse)>
+  [628] jmpifz [641] ............................ if objectp(m_objProtectMouse) then
+  [631] getprop 1287 ............................ <m_objProtectMouse>
+  [634] pusharglist 1 ........................... <m_objProtectMouse>
+  [636] objcall 1 ............................... <m_objProtectMouse.kill()>
+  [638] setprop 1287 ............................ m_objProtectMouse = m_objProtectMouse.kill()
+  [641] pushcons 72 ............................. <"MouseObject">
+  [643] pusharglist 1 ........................... <"MouseObject">
+  [645] extcall 284 ............................. <script("MouseObject")>
+  [648] getparam 0 .............................. <me>
+  [650] pushint8 1000 ........................... <1000>
+  [653] inv ..................................... <-1000>
+  [654] pushint8 1000 ........................... <1000>
+  [657] inv ..................................... <-1000>
+  [658] pushint8 2000 ........................... <2000>
+  [661] pushint8 2000 ........................... <2000>
+  [664] pusharglist 4 ........................... <-1000, -1000, 2000, 2000>
+  [666] extcall 555 ............................. <rect(-1000, -1000, 2000, 2000)>
+  [669] pushsymb 393 ............................ <#layer>
+  [672] pushint8 1000 ........................... <1000>
+  [675] getlocal 80 ............................. <SPNum>
+  [677] mul ..................................... <1000 * SPNum>
+  [678] pushint8 1 .............................. <1>
+  [681] sub ..................................... <(1000 * SPNum) - 1>
+  [682] pushsymb 848 ............................ <#noPassRoll>
+  [685] pushint8 1 .............................. <1>
+  [688] pushsymb 851 ............................ <#cursorRoll>
+  [691] pushsymb 1302 ........................... <#NoClick>
+  [694] pusharglist 6 ........................... <[#layer: (1000 * SPNum) - 1, #noPassRoll: 1, #cursorRoll: #NoClick]>
+  [696] pushproplist ............................ <[#layer: (1000 * SPNum) - 1, #noPassRoll: 1, #cursorRoll: #NoClick]>
+  [697] pusharglist 4 ........................... <script("MouseObject"), me, rect(-1000, -1000, 2000, 2000), [#layer: (1000 * SPNum) - 1, #noPassRoll: 1, #cursorRoll: #NoClick]>
+  [699] objcall 0 ............................... <script("MouseObject").new(me, rect(-1000, -1000, 2000, 2000), [#layer: (1000 * SPNum) - 1, #noPassRoll: 1, #cursorRoll: #NoClick])>
+  [701] setprop 1287 ............................ m_objProtectMouse = script("MouseObject").new(me, rect(-1000, -1000, 2000, 2000), [#layer: (1000 * SPNum) - 1, #noPassRoll: 1, #cursorRoll: #NoClick])
+  [704] getprop 1283 ............................ <m_dlgObjList>
+  [707] getlocal 0 .............................. <obj>
+  [709] pusharglistnoret 2 ...................... <m_dlgObjList, obj>
+  [711] objcall 50 .............................. m_dlgObjList.add(obj)
+  [714] getlocal 0 .............................. <obj>
+  [716] pushint8 1 .............................. <1>
+  [719] pusharglistnoret 2 ...................... <obj, 1>
+  [721] objcall 1295 ............................ obj.focusChange(1)
+  [724] getlocal 0 .............................. <obj>
+  [726] pushsymb 1303 ........................... <#m_place_r>
+  [729] pusharglist 2 ........................... <obj, #m_place_r>
+  [731] extcall 524 ............................. <rgetProp(obj, #m_place_r)>
+  [734] pusharglist 1 ........................... <rgetProp(obj, #m_place_r)>
+  [736] extcall 71 .............................. <objectp(rgetProp(obj, #m_place_r))>
+  [739] jmpifz [765] ............................ if objectp(rgetProp(obj, #m_place_r)) then
+  [742] getglobal 7 ............................. <gRock>
+  [744] getobjprop 1304 ......................... <gRock.m_context>
+  [747] pushsymb 1305 ........................... <#place>
+  [750] getlocal 0 .............................. <obj>
+  [752] pushsymb 1303 ........................... <#m_place_r>
+  [755] pusharglist 2 ........................... <obj, #m_place_r>
+  [757] extcall 524 ............................. <rgetProp(obj, #m_place_r)>
+  [760] pusharglistnoret 3 ...................... <gRock.m_context, #place, rgetProp(obj, #m_place_r)>
+  [762] objcall 1306 ............................ gRock.m_context.setFocus(#place, rgetProp(obj, #m_place_r))
+  [765] getglobal 7 ............................. <gRock>
+  [767] getobjprop 1307 ......................... <gRock.m_msgManager>
+  [770] pushsymb 1308 ........................... <#EnterDialog>
+  [773] getlocal 0 .............................. <obj>
+  [775] pusharglistnoret 3 ...................... <gRock.m_msgManager, #EnterDialog, obj>
+  [777] objcall 1309 ............................ gRock.m_msgManager.msg(#EnterDialog, obj)
+  [780] getlocal 0 .............................. <obj>
+  [782] pusharglistnoret 1 ...................... <obj>
+  [784] extcall 21 .............................. return obj
+  [786] ret
+end
+
+on closedDialog me, argObj
+  [  0] getparam 8 .............................. <argObj>
+  [  2] pushsymb 1303 ........................... <#m_place_r>
+  [  5] pusharglist 2 ........................... <argObj, #m_place_r>
+  [  7] extcall 524 ............................. <rgetProp(argObj, #m_place_r)>
+  [ 10] setlocal 0 .............................. itsPlace_r = rgetProp(argObj, #m_place_r)
+  [ 12] getprop 1283 ............................ <m_dlgObjList>
+  [ 15] getparam 8 .............................. <argObj>
+  [ 17] pusharglist 2 ........................... <m_dlgObjList, argObj>
+  [ 19] objcall 92 .............................. <m_dlgObjList.getPos(argObj)>
+  [ 22] setlocal 8 .............................. Pos = m_dlgObjList.getPos(argObj)
+  [ 24] getlocal 8 .............................. <Pos>
+  [ 26] getprop 1283 ............................ <m_dlgObjList>
+  [ 29] getobjprop 32 ........................... <m_dlgObjList.count>
+  [ 32] eq ...................................... <Pos = m_dlgObjList.count>
+  [ 33] getlocal 8 .............................. <Pos>
+  [ 35] pushint8 1 .............................. <1>
+  [ 38] gt ...................................... <Pos > 1>
+  [ 39] and ..................................... <(Pos = m_dlgObjList.count) and (Pos > 1)>
+  [ 40] jmpifz [ 90] ............................ if (Pos = m_dlgObjList.count) and (Pos > 1) then
+  [ 43] getprop 1283 ............................ <m_dlgObjList>
+  [ 46] getlocal 8 .............................. <Pos>
+  [ 48] pushint8 1 .............................. <1>
+  [ 51] sub ..................................... <Pos - 1>
+  [ 52] pusharglist 2 ........................... <m_dlgObjList, Pos - 1>
+  [ 54] objcall 34 .............................. <m_dlgObjList[Pos - 1]>
+  [ 57] getobjprop 1294 ......................... <m_dlgObjList[Pos - 1].m_objDlg>
+  [ 60] pushint8 1 .............................. <1>
+  [ 63] pusharglistnoret 2 ...................... <m_dlgObjList[Pos - 1].m_objDlg, 1>
+  [ 65] objcall 779 ............................. m_dlgObjList[Pos - 1].m_objDlg.activate(1)
+  [ 68] getprop 1283 ............................ <m_dlgObjList>
+  [ 71] getlocal 8 .............................. <Pos>
+  [ 73] pushint8 1 .............................. <1>
+  [ 76] sub ..................................... <Pos - 1>
+  [ 77] pusharglist 2 ........................... <m_dlgObjList, Pos - 1>
+  [ 79] objcall 34 .............................. <m_dlgObjList[Pos - 1]>
+  [ 82] pushint8 1 .............................. <1>
+  [ 85] pusharglistnoret 2 ...................... <m_dlgObjList[Pos - 1], 1>
+  [ 87] objcall 1295 ............................ m_dlgObjList[Pos - 1].focusChange(1)
+  [ 90] getprop 1283 ............................ <m_dlgObjList>
+  [ 93] getparam 8 .............................. <argObj>
+  [ 95] pusharglistnoret 2 ...................... <m_dlgObjList, argObj>
+  [ 97] objcall 104 ............................. m_dlgObjList.deleteOne(argObj)
+  [100] getparam 8 .............................. <argObj>
+  [102] getobjprop 1010 ......................... <argObj.m_SP>
+  [105] getobjprop 1296 ......................... <argObj.m_SP.spriteNum>
+  [108] pushint8 1 .............................. <1>
+  [111] sub ..................................... <argObj.m_SP.spriteNum - 1>
+  [112] setlocal 16 ............................. SPNum = argObj.m_SP.spriteNum - 1
+  [114] getlocal 16 ............................. <SPNum>
+  [116] pusharglist 1 ........................... <SPNum>
+  [118] extcall 540 ............................. <sprite(SPNum)>
+  [121] pushcons 80 ............................. <"Dummy">
+  [123] setobjprop 296 .......................... sprite(SPNum).member = "Dummy"
+  [126] getlocal 16 ............................. <SPNum>
+  [128] pusharglist 1 ........................... <SPNum>
+  [130] extcall 540 ............................. <sprite(SPNum)>
+  [133] pushzero ................................ <0>
+  [134] setobjprop 1073 ......................... sprite(SPNum).ink = 0
+  [137] getlocal 16 ............................. <SPNum>
+  [139] pusharglist 1 ........................... <SPNum>
+  [141] extcall 540 ............................. <sprite(SPNum)>
+  [144] pushint8 100 ............................ <100>
+  [147] setobjprop 1083 ......................... sprite(SPNum).blend = 100
+  [150] getlocal 16 ............................. <SPNum>
+  [152] pusharglist 1 ........................... <SPNum>
+  [154] extcall 540 ............................. <sprite(SPNum)>
+  [157] pushzero ................................ <0>
+  [158] setobjprop 556 .......................... sprite(SPNum).stretch = 0
+  [161] getlocal 16 ............................. <SPNum>
+  [163] pushint8 1 .............................. <1>
+  [166] add ..................................... <SPNum + 1>
+  [167] setlocal 16 ............................. SPNum = SPNum + 1
+  [169] getprop 1287 ............................ <m_objProtectMouse>
+  [172] pusharglist 1 ........................... <m_objProtectMouse>
+  [174] extcall 71 .............................. <objectp(m_objProtectMouse)>
+  [177] jmpifz [190] ............................ if objectp(m_objProtectMouse) then
+  [180] getprop 1287 ............................ <m_objProtectMouse>
+  [183] pusharglist 1 ........................... <m_objProtectMouse>
+  [185] objcall 1 ............................... <m_objProtectMouse.kill()>
+  [187] setprop 1287 ............................ m_objProtectMouse = m_objProtectMouse.kill()
+  [190] getprop 1283 ............................ <m_dlgObjList>
+  [193] getobjprop 32 ........................... <m_dlgObjList.count>
+  [196] pushzero ................................ <0>
+  [197] gt ...................................... <m_dlgObjList.count > 0>
+  [198] jmpifz [297] ............................ if m_dlgObjList.count > 0 then / else
+  [201] getprop 1283 ............................ <m_dlgObjList>
+  [204] getprop 1283 ............................ <m_dlgObjList>
+  [207] getobjprop 32 ........................... <m_dlgObjList.count>
+  [210] pusharglist 2 ........................... <m_dlgObjList, m_dlgObjList.count>
+  [212] objcall 34 .............................. <m_dlgObjList[m_dlgObjList.count]>
+  [215] setlocal 24 ............................. topObj = m_dlgObjList[m_dlgObjList.count]
+  [217] getlocal 24 ............................. <topObj>
+  [219] getobjprop 1010 ......................... <topObj.m_SP>
+  [222] getobjprop 1296 ......................... <topObj.m_SP.spriteNum>
+  [225] pushint8 1 .............................. <1>
+  [228] sub ..................................... <topObj.m_SP.spriteNum - 1>
+  [229] setlocal 16 ............................. SPNum = topObj.m_SP.spriteNum - 1
+  [231] pushcons 88 ............................. <"MouseObject">
+  [233] pusharglist 1 ........................... <"MouseObject">
+  [235] extcall 284 ............................. <script("MouseObject")>
+  [238] getparam 0 .............................. <me>
+  [240] pushint8 1000 ........................... <1000>
+  [243] inv ..................................... <-1000>
+  [244] pushint8 1000 ........................... <1000>
+  [247] inv ..................................... <-1000>
+  [248] pushint8 2000 ........................... <2000>
+  [251] pushint8 2000 ........................... <2000>
+  [254] pusharglist 4 ........................... <-1000, -1000, 2000, 2000>
+  [256] extcall 555 ............................. <rect(-1000, -1000, 2000, 2000)>
+  [259] pushsymb 393 ............................ <#layer>
+  [262] pushint8 1000 ........................... <1000>
+  [265] getlocal 16 ............................. <SPNum>
+  [267] mul ..................................... <1000 * SPNum>
+  [268] pushint8 1 .............................. <1>
+  [271] sub ..................................... <(1000 * SPNum) - 1>
+  [272] pushsymb 848 ............................ <#noPassRoll>
+  [275] pushint8 1 .............................. <1>
+  [278] pushsymb 851 ............................ <#cursorRoll>
+  [281] pushsymb 1302 ........................... <#NoClick>
+  [284] pusharglist 6 ........................... <[#layer: (1000 * SPNum) - 1, #noPassRoll: 1, #cursorRoll: #NoClick]>
+  [286] pushproplist ............................ <[#layer: (1000 * SPNum) - 1, #noPassRoll: 1, #cursorRoll: #NoClick]>
+  [287] pusharglist 4 ........................... <script("MouseObject"), me, rect(-1000, -1000, 2000, 2000), [#layer: (1000 * SPNum) - 1, #noPassRoll: 1, #cursorRoll: #NoClick]>
+  [289] objcall 0 ............................... <script("MouseObject").new(me, rect(-1000, -1000, 2000, 2000), [#layer: (1000 * SPNum) - 1, #noPassRoll: 1, #cursorRoll: #NoClick])>
+  [291] setprop 1287 ............................ m_objProtectMouse = script("MouseObject").new(me, rect(-1000, -1000, 2000, 2000), [#layer: (1000 * SPNum) - 1, #noPassRoll: 1, #cursorRoll: #NoClick])
+  [294] jmp [365]
+  [297] getprop 1284 ............................ <m_inCity>
+  [300] jmpifz [365] ............................ if m_inCity then
+  [303] getglobal 7 ............................. <gRock>
+  [305] getobjprop 1304 ......................... <gRock.m_context>
+  [308] pushsymb 1316 ........................... <#City>
+  [311] pusharglistnoret 2 ...................... <gRock.m_context, #City>
+  [313] objcall 1317 ............................ gRock.m_context.setContext(#City)
+  [316] getprop 1318 ............................ <m_noExitToCity>
+  [319] pushint8 1 .............................. <1>
+  [322] nteq .................................... <m_noExitToCity <> 1>
+  [323] jmpifz [365] ............................ if m_noExitToCity <> 1 then
+  [326] pushzero ................................ <0>
+  [327] setprop 1318 ............................ m_noExitToCity = 0
+  [330] getglobal 93 ............................ <gDir>
+  [333] pushzero ................................ <0>
+  [334] pusharglistnoret 2 ...................... <gDir, 0>
+  [336] objcall 684 ............................. gDir.pause(0)
+  [339] getglobal 7 ............................. <gRock>
+  [341] getobjprop 1307 ......................... <gRock.m_msgManager>
+  [344] pushsymb 1319 ........................... <#ExitToCity>
+  [347] pusharglistnoret 2 ...................... <gRock.m_msgManager, #ExitToCity>
+  [349] objcall 1309 ............................ gRock.m_msgManager.msg(#ExitToCity)
+  [352] getglobal 7 ............................. <gRock>
+  [354] getobjprop 1293 ......................... <gRock.m_gameTimer>
+  [357] pushint8 1 .............................. <1>
+  [360] pusharglistnoret 2 ...................... <gRock.m_gameTimer, 1>
+  [362] objcall 779 ............................. gRock.m_gameTimer.activate(1)
+  [365] getprop 1320 ............................ <m_noExitDialog>
+  [368] pushint8 1 .............................. <1>
+  [371] nteq .................................... <m_noExitDialog <> 1>
+  [372] jmpifz [415] ............................ if m_noExitDialog <> 1 then
+  [375] getlocal 0 .............................. <itsPlace_r>
+  [377] pusharglist 1 ........................... <itsPlace_r>
+  [379] extcall 71 .............................. <objectp(itsPlace_r)>
+  [382] jmpifz [400] ............................ if objectp(itsPlace_r) then
+  [385] getglobal 7 ............................. <gRock>
+  [387] getobjprop 1307 ......................... <gRock.m_msgManager>
+  [390] pushsymb 1321 ........................... <#ExitPlace>
+  [393] getlocal 0 .............................. <itsPlace_r>
+  [395] pusharglistnoret 3 ...................... <gRock.m_msgManager, #ExitPlace, itsPlace_r>
+  [397] objcall 1309 ............................ gRock.m_msgManager.msg(#ExitPlace, itsPlace_r)
+  [400] getglobal 7 ............................. <gRock>
+  [402] getobjprop 1307 ......................... <gRock.m_msgManager>
+  [405] pushsymb 1322 ........................... <#ExitDialog>
+  [408] getparam 8 .............................. <argObj>
+  [410] pusharglistnoret 3 ...................... <gRock.m_msgManager, #ExitDialog, argObj>
+  [412] objcall 1309 ............................ gRock.m_msgManager.msg(#ExitDialog, argObj)
+  [415] pushzero ................................ <0>
+  [416] setprop 1320 ............................ m_noExitDialog = 0
+  [419] ret
+end
+
+on ImNOTExitingToCity me
+  [  0] pushint8 1 .............................. <1>
+  [  3] setprop 1318 ............................ m_noExitToCity = 1
+  [  6] ret
+end
+
+on ImNOTExitingDialog me
+  [  0] pushint8 1 .............................. <1>
+  [  3] setprop 1320 ............................ m_noExitDialog = 1
+  [  6] ret
+end

@@ -1,0 +1,203 @@
+global gRock
+
+on setMusicianInfoSheet argMusicianObj_r, argDlgObj, argOptions
+  returnInfo = [:]
+  if not listp(argOptions) then
+    argOptions = [:]
+  end if
+  sheetItemObj = argDlgObj.getItem(#MusicianSheet)
+  itemObj = sheetItemObj.dialogObj.getItem(#Photo)
+  if objectp(argMusicianObj_r) then
+    if argOptions[#UseStillPhoto] = 1 then
+      itemObj.setOneProp(#Pic, getContextOKFileName(#PortraitLarge, argMusicianObj_r.Gfx))
+    end if
+  else
+    itemObj.setOneProp(#Pic, "portrait_actor00Framed")
+  end if
+  portraitRect = itemObj.onStageRect
+  returnInfo.setaProp(#portraitRect, portraitRect)
+  itemObj = sheetItemObj.dialogObj.getItem(#Info)
+  if objectp(argMusicianObj_r) then
+    inst_r = gRock.m_classManager.getObjByIDAndClass(argMusicianObj_r.NowPlaying, #InstrumentInfo)
+    img = rFormatText([argMusicianObj_r.name, #szidAge, argMusicianObj_r.Age, [#szidYear_P], #szidInstrument, gRock.m_languageManager.getContextWord(inst_r.ID, [:], #Noun), #szidMusicality, EMPTY, #szidCharisma, EMPTY, #szidStyle, argMusicianObj_r.Genre, argMusicianObj_r.comment], "MusicianFormatting")
+  else
+    tmpNA = #szidNA
+    img = rockFormatInfoText([" ", #szidAge, tmpNA, EMPTY, #szidInstrument, tmpNA, #szidMusicality, EMPTY, #szidCharisma, EMPTY, #szidStyle, tmpNA, #szidChooseMusician], "MusicianFormatting").image.duplicate()
+  end if
+  itemObj.setOneProp(#Pic, img)
+  itemObj = sheetItemObj.dialogObj.getItem(#MeterSkill)
+  if not objectp(itemObj) then
+    itemObj = sheetItemObj.dialogObj.addItem([#ID: #MeterSkill, #type: #Dialog, #inOffsetRect: rect(187, 60, 0, 0), #rel: [[#Info, 1], 0, #Auto, #Auto], #usingMouse: 0])
+    rNewGenerateMeter(itemObj)
+  end if
+  if objectp(argMusicianObj_r) then
+    skill = rgetProp(argMusicianObj_r, #Musicality)
+  else
+    skill = 0
+  end if
+  itemObj.send(#setMeter, skill)
+  itemObj = sheetItemObj.dialogObj.getItem(#MeterLooks)
+  if not objectp(itemObj) then
+    itemObj = sheetItemObj.dialogObj.addItem([#ID: #MeterLooks, #type: #Dialog, #inOffsetRect: rect(187, 76, 0, 0), #rel: [[#Info, 1], 0, #Auto, #Auto], #usingMouse: 0])
+    rNewGenerateMeter(itemObj)
+  end if
+  if objectp(argMusicianObj_r) then
+    tmpCharisma = rgetProp(argMusicianObj_r, #Charisma)
+  else
+    tmpCharisma = 0
+  end if
+  itemObj.send(#setMeter, tmpCharisma)
+  return returnInfo
+end
+
+on setMixerMusicianInfoSheet argMusicianObj_r, argDlgObj, argInstrumentID
+  itemObj = argDlgObj.getItemByPath([#MusicianSheet, #Info])
+  tmpList = [EMPTY, #szidAge, EMPTY, #szidStyle, "-", #szidSkill, #szidCharisma]
+  if objectp(argMusicianObj_r) then
+    tmpList[1] = argMusicianObj_r.name.word[1]
+    tmpList[3] = argMusicianObj_r.Age
+    tmpList[5] = argMusicianObj_r.Genre
+  end if
+  itemObj.setOneProp(#Pic, rockFormatInfoText(tmpList, "MusicianStudioFormatting"))
+  itemObj = argDlgObj.getItemByPath([#MusicianSheet, #Pic])
+  tmpOK = 0
+  if objectp(argMusicianObj_r) then
+    tmpOK = argMusicianObj_r.className = #RealMusician
+  end if
+  if not tmpOK then
+    itemObj.setOneProp(#Pic, "portrait_actor00")
+  else
+    itemObj.setOneProp(#Pic, argMusicianObj_r.getCurrentPic(#large))
+  end if
+  tmpSkill = rgetProp(argMusicianObj_r, #Musicality)
+  if voidp(tmpSkill) then
+    tmpSkill = 0
+  end if
+  itemObj = argDlgObj.getItemByPath([#MusicianSheet, #Meter1])
+  if itemObj.dialogObj.itemObjs.count = 0 then
+    rNewGenerateMeter(itemObj, VOID, "meter02_")
+  end if
+  itemObj.send(#setMeter, tmpSkill)
+  tmpCharisma = rgetProp(argMusicianObj_r, #Charisma)
+  if voidp(tmpCharisma) then
+    tmpCharisma = 0
+  end if
+  itemObj = argDlgObj.getItemByPath([#MusicianSheet, #Meter2])
+  if itemObj.dialogObj.itemObjs.count = 0 then
+    rNewGenerateMeter(itemObj, VOID, "meter02_")
+  end if
+  itemObj.send(#setMeter, tmpCharisma)
+end
+
+on speakAndSetFace argSoundFile, argMood
+  tmp = ["speak(" & QUOTE & argSoundFile & QUOTE & ")"]
+  if not voidp(argMood) then
+    tmp.addAt(1, "faceMood(#" & string(argMood) & ")")
+  end if
+  rExecuteActions(tmp)
+end
+
+on CPgetActorInfo argFileName, argCastLib
+  if voidp(argCastLib) then
+    argCastLib = "Actor"
+  end if
+  tmp = castLib(argCastLib).fileName
+  tmpOK = 0
+  if offset(argFileName, tmp) then
+    tmpOK = 1
+  else
+    castLib(argCastLib).fileName = argFileName
+    if offset(argFileName, castLib(argCastLib).fileName) then
+      tmpOK = 1
+    end if
+  end if
+  if tmpOK = 0 then
+    return [:]
+  end if
+  tmpBGMemb = member("background01", argCastLib)
+  return [#BGMember: tmpBGMemb]
+  if offset(argFileName, tmp) or fileExists2(the moviePath & argFileName, [".cst", ".cxt"]) then
+    if not offset(argFileName, tmp) then
+      castLib(argCastLib).fileName = the moviePath & argFileName
+      if not offset(argFileName, castLib(argCastLib).fileName) then
+        return [:]
+      end if
+    end if
+    tmpBGMemb = member("background01", argCastLib)
+    return [#BGMember: tmpBGMemb]
+  end if
+  return [:]
+end
+
+on CPshowFace argFileName, argLoc, argMood, argWhatIsLoc, argSPStartNum, argCastLib
+  global gDir
+  if voidp(argMood) then
+    argMood = #Angry
+  end if
+  if voidp(argLoc) then
+    argLoc = point(100, 100)
+  end if
+  tmpBGMemb = CPgetActorInfo(argFileName, argCastLib)[#BGMember]
+  if objectp(tmpBGMemb) then
+    if argWhatIsLoc = #LeftTop then
+      argLoc = argLoc + tmpBGMemb.regPoint
+    end if
+    if voidp(argSPStartNum) then
+      argSPStartNum = gDir.m_spriteList[#FaceAnim]
+    end if
+    repeat with n = argSPStartNum to argSPStartNum + 4
+      sprite(n).loc = argLoc
+    end repeat
+    faceObj = script("FaceScript").new(argSPStartNum, argCastLib)
+    faceObj.setMood(argMood)
+    return faceObj
+  end if
+end
+
+on rFormatText argList, argFormatMember, argOptions
+  return gRock.m_textFormatter.format(argList, argFormatMember, argOptions)
+end
+
+on rockFormatInfoText argList, argFormatMember, argOutMember, argTempFormatList
+  return gRock.m_textFormatter.formatOLD(argList, argFormatMember, argOutMember, argTempFormatList)
+end
+
+on getSpeechFile argPlaceOrMusician_r, argSpecifierList
+  if (argPlaceOrMusician_r.className = #Human) or gRock.m_classManager.getBaseClassesOfClass(argPlaceOrMusician_r.className).getPos(#Human) then
+    tmpPrefix = argPlaceOrMusician_r.getSoundFilePrefix()
+    place_r = argPlaceOrMusician_r.getBelongsToPlace()
+    if objectp(place_r) then
+      tmpBaseCategory = place_r.className
+    else
+      tmpBaseCategory = #RealMusician
+    end if
+  else
+    tmpBaseCategory = argPlaceOrMusician_r.className
+    tmpNr = string(argPlaceOrMusician_r.ID)
+    tmpPrefix = tmpNr.char[tmpNr.length - 1..tmpNr.length]
+  end if
+  tmpList = [#RealMusician: [1: ["r"], #Choose: [1: "a", #Greeting: "01", #Confirmation: "02"], #status: [1: "b", #Happy: "01", #Satisfied: "01", #Annoyed: "02", #Angry: "02", #Furious: "02", #normal: "01", #Ill: "03", #VeryIll: "04", #Quarrel: "05", #NeedMoney: "06", #NeedParty: "07", #NeedLive: "08", #NeedExpo: "09", #NeedVacation: "10"], #Action: [1: "c", #Happy: "01", #Angry: "02"]], #media: [1: ["m"], #Greeting: [1: "a", #normal: "01", #Satisfied: "02", #Happy: "02", #Angry: "03", #Annoyed: "03", #Furious: "03"], #Action: [1: "b", #Happy: "01", #Angry: "02"]], #Gangsta: [1: ["g"], #Greeting: [1: "a", #normal: "01", #Happy: "02", #Angry: "03", #DebtSmall: "03", #DebtLarge: "04", #DebtUnpaid: "05"], #Action: [1: "b"]], #Record: [1: ["c"], #Greeting: [1: "a", #normal: "01", #Happy: "02", #Angry: "03", #Contract: [#Happy: "04", #Angry: "05", #Concert: "06"]], #Action: [1: "c", #Happy: "01", #Angry: "02"], #NextContract: [1: "b", #Happy: "07", #Angry: "08"], #Contract: [1: "b", #Happy: "01", #Angry: "02"]]]
+  tmp = tmpList.getaProp(tmpBaseCategory)
+  if not listp(tmp) then
+    exit
+  end if
+  tmpPreInfix = tmp.getaProp(1)
+  tmpStr = tmpPrefix & tmpPreInfix[1]
+  repeat with n = 1 to argSpecifierList.count()
+    tmpSpecifier = argSpecifierList[n]
+    tmp = tmp.getaProp(tmpSpecifier)
+    if not voidp(tmp) then
+      if listp(tmp) then
+        tmpLetter = tmp.getaProp(1)
+        if stringp(tmpLetter) then
+          tmpStr = tmpStr & tmpLetter
+        end if
+        next repeat
+      end if
+      tmpRnd = random(3)
+      tmpStr = tmpStr & tmp & "00" & string(tmpRnd)
+      exit repeat
+    end if
+  end repeat
+  return tmpStr
+end

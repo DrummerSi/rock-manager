@@ -1,0 +1,942 @@
+property m_reportObj, m_viewRect, m_items, m_viewImage, m_SP, m_member, m_wholeSize, m_scrollBar, m_onScreenOffLoc, m_selectedItem, m_scrollOffLoc, m_layer, m_arrows, m_bgColor, m_lastClickInfo, m_downOnTime
+
+on new me, argReportObj, argSPNum, argInfoList, argRect, argLayer, argOffsetRectForArrows, argDontShowControls
+  [  0] getparam 8 .............................. <argReportObj>
+  [  2] setprop 1002 ............................ m_reportObj = argReportObj
+  [  5] getparam 16 ............................. <argSPNum>
+  [  7] pusharglist 1 ........................... <argSPNum>
+  [  9] extcall 540 ............................. <sprite(argSPNum)>
+  [ 12] setprop 1010 ............................ m_SP = sprite(argSPNum)
+  [ 15] pushsymb 1622 ........................... <#bitmap>
+  [ 18] pushcons 0 .............................. <"__TEMP">
+  [ 20] pusharglist 2 ........................... <#bitmap, "__TEMP">
+  [ 22] extcall 1621 ............................ <newMember(#bitmap, "__TEMP")>
+  [ 25] setprop 1620 ............................ m_member = newMember(#bitmap, "__TEMP")
+  [ 28] pushzero ................................ <0>
+  [ 29] pushzero ................................ <0>
+  [ 30] pushzero ................................ <0>
+  [ 31] pusharglist 3 ........................... <0, 0, 0>
+  [ 33] extcall 1015 ............................ <rgb(0, 0, 0)>
+  [ 36] setprop 1623 ............................ m_bgColor = rgb(0, 0, 0)
+  [ 39] getparam 32 ............................. <argRect>
+  [ 41] pusharglist 1 ........................... <argRect>
+  [ 43] extcall 136 ............................. <listp(argRect)>
+  [ 46] not ..................................... <not listp(argRect)>
+  [ 47] jmpifz [ 69] ............................ if not listp(argRect) then
+  [ 50] pushint8 200 ............................ <200>
+  [ 53] pushint8 200 ............................ <200>
+  [ 56] pushint8 400 ............................ <400>
+  [ 59] pushint8 300 ............................ <300>
+  [ 62] pusharglist 4 ........................... <200, 200, 400, 300>
+  [ 64] extcall 555 ............................. <rect(200, 200, 400, 300)>
+  [ 67] setparam 32 ............................. argRect = rect(200, 200, 400, 300)
+  [ 69] getparam 32 ............................. <argRect>
+  [ 71] pushint8 1 .............................. <1>
+  [ 74] pusharglist 2 ........................... <argRect, 1>
+  [ 76] objcall 34 .............................. <argRect[1]>
+  [ 79] getparam 32 ............................. <argRect>
+  [ 81] pushint8 2 .............................. <2>
+  [ 84] pusharglist 2 ........................... <argRect, 2>
+  [ 86] objcall 34 .............................. <argRect[2]>
+  [ 89] pusharglist 2 ........................... <argRect[1], argRect[2]>
+  [ 91] extcall 568 ............................. <point(argRect[1], argRect[2])>
+  [ 94] setprop 1624 ............................ m_onScreenOffLoc = point(argRect[1], argRect[2])
+  [ 97] getparam 32 ............................. <argRect>
+  [ 99] pusharglist 1 ........................... <argRect>
+  [101] extcall 1076 ............................ <getRectSize(argRect)>
+  [104] setlocal 0 .............................. size = getRectSize(argRect)
+  [106] getprop 1010 ............................ <m_SP>
+  [109] getprop 1624 ............................ <m_onScreenOffLoc>
+  [112] setobjprop 854 .......................... m_SP.loc = m_onScreenOffLoc
+  [115] pushzero ................................ <0>
+  [116] pushzero ................................ <0>
+  [117] pusharglist 2 ........................... <0, 0>
+  [119] extcall 568 ............................. <point(0, 0)>
+  [122] setprop 1625 ............................ m_scrollOffLoc = point(0, 0)
+  [125] pusharglist 0 ........................... <[:]>
+  [127] pushproplist ............................ <[:]>
+  [128] setprop 1626 ............................ m_items = [:]
+  [131] getparam 40 ............................. <argLayer>
+  [133] pusharglist 1 ........................... <argLayer>
+  [135] extcall 68 .............................. <voidp(argLayer)>
+  [138] jmpifz [145] ............................ if voidp(argLayer) then
+  [141] pushcons 8 .............................. <1000000>
+  [143] setparam 40 ............................. argLayer = 1000000
+  [145] getparam 40 ............................. <argLayer>
+  [147] setprop 1627 ............................ m_layer = argLayer
+  [150] getparam 24 ............................. <argInfoList>
+  [152] pusharglist 1 ........................... <argInfoList>
+  [154] extcall 68 .............................. <voidp(argInfoList)>
+  [157] jmpifz [183] ............................ if voidp(argInfoList) then
+  [160] pushint8 1 .............................. <1>
+  [163] pushint8 2 .............................. <2>
+  [166] pushint8 3 .............................. <3>
+  [169] pushint8 4 .............................. <4>
+  [172] pushint8 5 .............................. <5>
+  [175] pushint8 6 .............................. <6>
+  [178] pusharglist 6 ........................... <[1, 2, 3, 4, 5, 6]>
+  [180] pushlist ................................ <[1, 2, 3, 4, 5, 6]>
+  [181] setparam 24 ............................. argInfoList = [1, 2, 3, 4, 5, 6]
+  [183] getparam 48 ............................. <argOffsetRectForArrows>
+  [185] pusharglist 1 ........................... <argOffsetRectForArrows>
+  [187] extcall 68 .............................. <voidp(argOffsetRectForArrows)>
+  [190] jmpifz [209] ............................ if voidp(argOffsetRectForArrows) then
+  [193] pushzero ................................ <0>
+  [194] pushint8 16 ............................. <16>
+  [197] inv ..................................... <-16>
+  [198] pushzero ................................ <0>
+  [199] pushint8 9 .............................. <9>
+  [202] pusharglist 4 ........................... <0, -16, 0, 9>
+  [204] extcall 555 ............................. <rect(0, -16, 0, 9)>
+  [207] setparam 48 ............................. argOffsetRectForArrows = rect(0, -16, 0, 9)
+  [209] getparam 0 .............................. <me>
+  [211] getparam 24 ............................. <argInfoList>
+  [213] getlocal 0 .............................. <size>
+  [215] pusharglistnoret 3 ...................... <me, argInfoList, size>
+  [217] objcall 236 ............................. me.prepare(argInfoList, size)
+  [220] getparam 0 .............................. <me>
+  [222] pushzero ................................ <0>
+  [223] pushzero ................................ <0>
+  [224] pusharglist 2 ........................... <0, 0>
+  [226] extcall 568 ............................. <point(0, 0)>
+  [229] pusharglistnoret 2 ...................... <me, point(0, 0)>
+  [231] objcall 562 ............................. me.scroll(point(0, 0))
+  [234] getprop 1628 ............................ <m_wholeSize>
+  [237] pushint8 2 .............................. <2>
+  [240] pusharglist 2 ........................... <m_wholeSize, 2>
+  [242] objcall 34 .............................. <m_wholeSize[2]>
+  [245] pusharglist 1 ........................... <m_wholeSize[2]>
+  [247] extcall 175 ............................. <float(m_wholeSize[2])>
+  [250] getlocal 0 .............................. <size>
+  [252] pushint8 2 .............................. <2>
+  [255] pusharglist 2 ........................... <size, 2>
+  [257] objcall 34 .............................. <size[2]>
+  [260] div ..................................... <float(m_wholeSize[2]) / size[2]>
+  [261] setlocal 8 .............................. visiblePart = float(m_wholeSize[2]) / size[2]
+  [263] getlocal 8 .............................. <visiblePart>
+  [265] pushint8 1 .............................. <1>
+  [268] lteq .................................... <visiblePart <= 1>
+  [269] setlocal 16 ............................. dimButtons = visiblePart <= 1
+  [271] pusharglist 0 ........................... <[]>
+  [273] pushlist ................................ <[]>
+  [274] setprop 1629 ............................ m_arrows = []
+  [277] pushzero ................................ <0>
+  [278] pushzero ................................ <0>
+  [279] pusharglist 2 ........................... <[0, 0]>
+  [281] pushlist ................................ <[0, 0]>
+  [282] setlocal 24 ............................. spaceBetween = [0, 0]
+  [284] getlocal 0 .............................. <size>
+  [286] pushint8 25 ............................. <25>
+  [289] pushzero ................................ <0>
+  [290] pusharglist 2 ........................... <25, 0>
+  [292] extcall 568 ............................. <point(25, 0)>
+  [295] add ..................................... <size + point(25, 0)>
+  [296] setlocal 0 .............................. size = size + point(25, 0)
+  [298] getparam 56 ............................. <argDontShowControls>
+  [300] pushsymb 1630 ........................... <#DontShowControls>
+  [303] nteq .................................... <argDontShowControls <> #DontShowControls>
+  [304] jmpifz [1021] ........................... if argDontShowControls <> #DontShowControls then
+  [307] pushcons 16 ............................. <"RockScrollArrowUp">
+  [309] pusharglist 1 ........................... <"RockScrollArrowUp">
+  [311] extcall 296 ............................. <member("RockScrollArrowUp")>
+  [314] setlocal 32 ............................. memb = member("RockScrollArrowUp")
+  [316] getlocal 24 ............................. <spaceBetween>
+  [318] pushint8 1 .............................. <1>
+  [321] getlocal 32 ............................. <memb>
+  [323] getobjprop 558 .......................... <memb.height>
+  [326] pusharglistnoret 3 ...................... <spaceBetween, 1, memb.height>
+  [328] objcall 46 .............................. spaceBetween[1] = memb.height
+  [331] getprop 1624 ............................ <m_onScreenOffLoc>
+  [334] getlocal 0 .............................. <size>
+  [336] pushint8 1 .............................. <1>
+  [339] pusharglist 2 ........................... <size, 1>
+  [341] objcall 34 .............................. <size[1]>
+  [344] getlocal 32 ............................. <memb>
+  [346] pushsymb 1128 ........................... <#regPoint>
+  [349] pushint8 2 .............................. <2>
+  [352] pusharglist 3 ........................... <memb, #regPoint, 2>
+  [354] objcall 152 ............................. <memb.regPoint[2]>
+  [357] pusharglist 2 ........................... <size[1], memb.regPoint[2]>
+  [359] extcall 568 ............................. <point(size[1], memb.regPoint[2])>
+  [362] add ..................................... <m_onScreenOffLoc + point(size[1], memb.regPoint[2])>
+  [363] pushzero ................................ <0>
+  [364] getparam 48 ............................. <argOffsetRectForArrows>
+  [366] pushint8 2 .............................. <2>
+  [369] pusharglist 2 ........................... <argOffsetRectForArrows, 2>
+  [371] objcall 34 .............................. <argOffsetRectForArrows[2]>
+  [374] pusharglist 2 ........................... <0, argOffsetRectForArrows[2]>
+  [376] extcall 568 ............................. <point(0, argOffsetRectForArrows[2])>
+  [379] add ..................................... <m_onScreenOffLoc + point(size[1], memb.regPoint[2]) + point(0, argOffsetRectForArrows[2])>
+  [380] setlocal 40 ............................. tmpLoc = m_onScreenOffLoc + point(size[1], memb.regPoint[2]) + point(0, argOffsetRectForArrows[2])
+  [382] pushcons 24 ............................. <"ButtonScript">
+  [384] pusharglist 1 ........................... <"ButtonScript">
+  [386] extcall 284 ............................. <script("ButtonScript")>
+  [389] getparam 0 .............................. <me>
+  [391] getlocal 32 ............................. <memb>
+  [393] getlocal 40 ............................. <tmpLoc>
+  [395] getparam 16 ............................. <argSPNum>
+  [397] pushint8 3 .............................. <3>
+  [400] add ..................................... <argSPNum + 3>
+  [401] pushsymb 393 ............................ <#layer>
+  [404] getprop 1627 ............................ <m_layer>
+  [407] pushsymb 1631 ........................... <#states>
+  [410] pushsymb 871 ............................ <#enter>
+  [413] pushint8 1 .............................. <1>
+  [416] pushsymb 586 ............................ <#dim>
+  [419] pushint8 2 .............................. <2>
+  [422] pusharglist 4 ........................... <[#enter: 1, #dim: 2]>
+  [424] pushproplist ............................ <[#enter: 1, #dim: 2]>
+  [425] pusharglist 4 ........................... <[#layer: m_layer, #states: [#enter: 1, #dim: 2]]>
+  [427] pushproplist ............................ <[#layer: m_layer, #states: [#enter: 1, #dim: 2]]>
+  [428] pusharglist 6 ........................... <script("ButtonScript"), me, memb, tmpLoc, argSPNum + 3, [#layer: m_layer, #states: [#enter: 1, #dim: 2]]>
+  [430] objcall 0 ............................... <script("ButtonScript").new(me, memb, tmpLoc, argSPNum + 3, [#layer: m_layer, #states: [#enter: 1, #dim: 2]])>
+  [432] setlocal 48 ............................. arrowObj = script("ButtonScript").new(me, memb, tmpLoc, argSPNum + 3, [#layer: m_layer, #states: [#enter: 1, #dim: 2]])
+  [434] getprop 1629 ............................ <m_arrows>
+  [437] getlocal 48 ............................. <arrowObj>
+  [439] pusharglistnoret 2 ...................... <m_arrows, arrowObj>
+  [441] objcall 50 .............................. m_arrows.add(arrowObj)
+  [444] getlocal 16 ............................. <dimButtons>
+  [446] jmpifz [456] ............................ if dimButtons then
+  [449] getlocal 48 ............................. <arrowObj>
+  [451] pusharglistnoret 1 ...................... <arrowObj>
+  [453] objcall 586 ............................. arrowObj.dim()
+  [456] pushcons 32 ............................. <"RockScrollArrowDown">
+  [458] pusharglist 1 ........................... <"RockScrollArrowDown">
+  [460] extcall 296 ............................. <member("RockScrollArrowDown")>
+  [463] setlocal 32 ............................. memb = member("RockScrollArrowDown")
+  [465] getlocal 24 ............................. <spaceBetween>
+  [467] pushint8 2 .............................. <2>
+  [470] getlocal 0 .............................. <size>
+  [472] pushint8 2 .............................. <2>
+  [475] pusharglist 2 ........................... <size, 2>
+  [477] objcall 34 .............................. <size[2]>
+  [480] getlocal 32 ............................. <memb>
+  [482] getobjprop 558 .......................... <memb.height>
+  [485] sub ..................................... <size[2] - memb.height>
+  [486] pusharglistnoret 3 ...................... <spaceBetween, 2, size[2] - memb.height>
+  [488] objcall 46 .............................. spaceBetween[2] = size[2] - memb.height
+  [491] getprop 1624 ............................ <m_onScreenOffLoc>
+  [494] getlocal 0 .............................. <size>
+  [496] pushint8 1 .............................. <1>
+  [499] pusharglist 2 ........................... <size, 1>
+  [501] objcall 34 .............................. <size[1]>
+  [504] getlocal 0 .............................. <size>
+  [506] pushint8 2 .............................. <2>
+  [509] pusharglist 2 ........................... <size, 2>
+  [511] objcall 34 .............................. <size[2]>
+  [514] getlocal 32 ............................. <memb>
+  [516] getobjprop 558 .......................... <memb.height>
+  [519] sub ..................................... <size[2] - memb.height>
+  [520] getlocal 32 ............................. <memb>
+  [522] pushsymb 1128 ........................... <#regPoint>
+  [525] pushint8 2 .............................. <2>
+  [528] pusharglist 3 ........................... <memb, #regPoint, 2>
+  [530] objcall 152 ............................. <memb.regPoint[2]>
+  [533] add ..................................... <size[2] - memb.height + memb.regPoint[2]>
+  [534] pusharglist 2 ........................... <size[1], size[2] - memb.height + memb.regPoint[2]>
+  [536] extcall 568 ............................. <point(size[1], size[2] - memb.height + memb.regPoint[2])>
+  [539] add ..................................... <m_onScreenOffLoc + point(size[1], size[2] - memb.height + memb.regPoint[2])>
+  [540] pushzero ................................ <0>
+  [541] getparam 48 ............................. <argOffsetRectForArrows>
+  [543] pushint8 4 .............................. <4>
+  [546] pusharglist 2 ........................... <argOffsetRectForArrows, 4>
+  [548] objcall 34 .............................. <argOffsetRectForArrows[4]>
+  [551] pusharglist 2 ........................... <0, argOffsetRectForArrows[4]>
+  [553] extcall 568 ............................. <point(0, argOffsetRectForArrows[4])>
+  [556] add ..................................... <m_onScreenOffLoc + point(size[1], size[2] - memb.height + memb.regPoint[2]) + point(0, argOffsetRectForArrows[4])>
+  [557] setlocal 40 ............................. tmpLoc = m_onScreenOffLoc + point(size[1], size[2] - memb.height + memb.regPoint[2]) + point(0, argOffsetRectForArrows[4])
+  [559] pushcons 40 ............................. <"ButtonScript">
+  [561] pusharglist 1 ........................... <"ButtonScript">
+  [563] extcall 284 ............................. <script("ButtonScript")>
+  [566] getparam 0 .............................. <me>
+  [568] getlocal 32 ............................. <memb>
+  [570] getlocal 40 ............................. <tmpLoc>
+  [572] getparam 16 ............................. <argSPNum>
+  [574] pushint8 4 .............................. <4>
+  [577] add ..................................... <argSPNum + 4>
+  [578] pushsymb 393 ............................ <#layer>
+  [581] getprop 1627 ............................ <m_layer>
+  [584] pushsymb 1631 ........................... <#states>
+  [587] pushsymb 871 ............................ <#enter>
+  [590] pushint8 1 .............................. <1>
+  [593] pushsymb 586 ............................ <#dim>
+  [596] pushint8 2 .............................. <2>
+  [599] pusharglist 4 ........................... <[#enter: 1, #dim: 2]>
+  [601] pushproplist ............................ <[#enter: 1, #dim: 2]>
+  [602] pusharglist 4 ........................... <[#layer: m_layer, #states: [#enter: 1, #dim: 2]]>
+  [604] pushproplist ............................ <[#layer: m_layer, #states: [#enter: 1, #dim: 2]]>
+  [605] pusharglist 6 ........................... <script("ButtonScript"), me, memb, tmpLoc, argSPNum + 4, [#layer: m_layer, #states: [#enter: 1, #dim: 2]]>
+  [607] objcall 0 ............................... <script("ButtonScript").new(me, memb, tmpLoc, argSPNum + 4, [#layer: m_layer, #states: [#enter: 1, #dim: 2]])>
+  [609] setlocal 48 ............................. arrowObj = script("ButtonScript").new(me, memb, tmpLoc, argSPNum + 4, [#layer: m_layer, #states: [#enter: 1, #dim: 2]])
+  [611] getprop 1629 ............................ <m_arrows>
+  [614] getlocal 48 ............................. <arrowObj>
+  [616] pusharglistnoret 2 ...................... <m_arrows, arrowObj>
+  [618] objcall 50 .............................. m_arrows.add(arrowObj)
+  [621] getlocal 16 ............................. <dimButtons>
+  [623] jmpifz [633] ............................ if dimButtons then
+  [626] getlocal 48 ............................. <arrowObj>
+  [628] pusharglistnoret 1 ...................... <arrowObj>
+  [630] objcall 586 ............................. arrowObj.dim()
+  [633] getprop 1624 ............................ <m_onScreenOffLoc>
+  [636] getlocal 0 .............................. <size>
+  [638] pushint8 1 .............................. <1>
+  [641] pusharglist 2 ........................... <size, 1>
+  [643] objcall 34 .............................. <size[1]>
+  [646] pushzero ................................ <0>
+  [647] pusharglist 2 ........................... <size[1], 0>
+  [649] extcall 568 ............................. <point(size[1], 0)>
+  [652] add ..................................... <m_onScreenOffLoc + point(size[1], 0)>
+  [653] setlocal 40 ............................. tmpLoc = m_onScreenOffLoc + point(size[1], 0)
+  [655] pushint8 7 .............................. <7>
+  [658] inv ..................................... <-7>
+  [659] getlocal 24 ............................. <spaceBetween>
+  [661] pushint8 1 .............................. <1>
+  [664] pusharglist 2 ........................... <spaceBetween, 1>
+  [666] objcall 34 .............................. <spaceBetween[1]>
+  [669] pusharglist 2 ........................... <-7, spaceBetween[1]>
+  [671] extcall 568 ............................. <point(-7, spaceBetween[1])>
+  [674] pushint8 6 .............................. <6>
+  [677] getlocal 24 ............................. <spaceBetween>
+  [679] pushint8 2 .............................. <2>
+  [682] pusharglist 2 ........................... <spaceBetween, 2>
+  [684] objcall 34 .............................. <spaceBetween[2]>
+  [687] pusharglist 2 ........................... <6, spaceBetween[2]>
+  [689] extcall 568 ............................. <point(6, spaceBetween[2])>
+  [692] pusharglist 2 ........................... <point(-7, spaceBetween[1]), point(6, spaceBetween[2])>
+  [694] extcall 555 ............................. <rect(point(-7, spaceBetween[1]), point(6, spaceBetween[2]))>
+  [697] getlocal 40 ............................. <tmpLoc>
+  [699] getlocal 40 ............................. <tmpLoc>
+  [701] pusharglist 2 ........................... <tmpLoc, tmpLoc>
+  [703] extcall 555 ............................. <rect(tmpLoc, tmpLoc)>
+  [706] add ..................................... <rect(point(-7, spaceBetween[1]), point(6, spaceBetween[2])) + rect(tmpLoc, tmpLoc)>
+  [707] getparam 48 ............................. <argOffsetRectForArrows>
+  [709] add ..................................... <rect(point(-7, spaceBetween[1]), point(6, spaceBetween[2])) + rect(tmpLoc, tmpLoc) + argOffsetRectForArrows>
+  [710] pushzero ................................ <0>
+  [711] pushint8 3 .............................. <3>
+  [714] pushzero ................................ <0>
+  [715] pushint8 4 .............................. <4>
+  [718] inv ..................................... <-4>
+  [719] pusharglist 4 ........................... <0, 3, 0, -4>
+  [721] extcall 555 ............................. <rect(0, 3, 0, -4)>
+  [724] add ..................................... <rect(point(-7, spaceBetween[1]), point(6, spaceBetween[2])) + rect(tmpLoc, tmpLoc) + argOffsetRectForArrows + rect(0, 3, 0, -4)>
+  [725] setlocal 56 ............................. tmpRect = rect(point(-7, spaceBetween[1]), point(6, spaceBetween[2])) + rect(tmpLoc, tmpLoc) + argOffsetRectForArrows + rect(0, 3, 0, -4)
+  [727] getparam 16 ............................. <argSPNum>
+  [729] pushint8 1 .............................. <1>
+  [732] add ..................................... <argSPNum + 1>
+  [733] pusharglist 1 ........................... <argSPNum + 1>
+  [735] extcall 540 ............................. <sprite(argSPNum + 1)>
+  [738] pushcons 48 ............................. <"BehindScrollerPic">
+  [740] pusharglist 1 ........................... <"BehindScrollerPic">
+  [742] extcall 296 ............................. <member("BehindScrollerPic")>
+  [745] setobjprop 296 .......................... sprite(argSPNum + 1).member = member("BehindScrollerPic")
+  [748] getparam 16 ............................. <argSPNum>
+  [750] pushint8 1 .............................. <1>
+  [753] add ..................................... <argSPNum + 1>
+  [754] pusharglist 1 ........................... <argSPNum + 1>
+  [756] extcall 540 ............................. <sprite(argSPNum + 1)>
+  [759] getlocal 56 ............................. <tmpRect>
+  [761] setobjprop 555 .......................... sprite(argSPNum + 1).rect = tmpRect
+  [764] getlocal 16 ............................. <dimButtons>
+  [766] pushzero ................................ <0>
+  [767] eq ...................................... <dimButtons = 0>
+  [768] jmpifz [1021] ........................... if dimButtons = 0 then
+  [771] pushcons 56 ............................. <"RockScrollBarPic">
+  [773] pusharglist 1 ........................... <"RockScrollBarPic">
+  [775] extcall 296 ............................. <member("RockScrollBarPic")>
+  [778] setlocal 32 ............................. memb = member("RockScrollBarPic")
+  [780] getlocal 0 .............................. <size>
+  [782] pushint8 1 .............................. <1>
+  [785] pusharglist 2 ........................... <size, 1>
+  [787] objcall 34 .............................. <size[1]>
+  [790] getlocal 32 ............................. <memb>
+  [792] pushsymb 1128 ........................... <#regPoint>
+  [795] pushint8 2 .............................. <2>
+  [798] pusharglist 3 ........................... <memb, #regPoint, 2>
+  [800] objcall 152 ............................. <memb.regPoint[2]>
+  [803] pusharglist 2 ........................... <size[1], memb.regPoint[2]>
+  [805] extcall 568 ............................. <point(size[1], memb.regPoint[2])>
+  [808] getprop 1624 ............................ <m_onScreenOffLoc>
+  [811] add ..................................... <point(size[1], memb.regPoint[2]) + m_onScreenOffLoc>
+  [812] setlocal 64 ............................. barLoc = point(size[1], memb.regPoint[2]) + m_onScreenOffLoc
+  [814] getlocal 64 ............................. <barLoc>
+  [816] pushzero ................................ <0>
+  [817] getlocal 24 ............................. <spaceBetween>
+  [819] pushint8 1 .............................. <1>
+  [822] pusharglist 2 ........................... <spaceBetween, 1>
+  [824] objcall 34 .............................. <spaceBetween[1]>
+  [827] pusharglist 2 ........................... <0, spaceBetween[1]>
+  [829] extcall 568 ............................. <point(0, spaceBetween[1])>
+  [832] add ..................................... <barLoc + point(0, spaceBetween[1])>
+  [833] getlocal 64 ............................. <barLoc>
+  [835] pushzero ................................ <0>
+  [836] getlocal 24 ............................. <spaceBetween>
+  [838] pushint8 2 .............................. <2>
+  [841] pusharglist 2 ........................... <spaceBetween, 2>
+  [843] objcall 34 .............................. <spaceBetween[2]>
+  [846] getlocal 32 ............................. <memb>
+  [848] getobjprop 558 .......................... <memb.height>
+  [851] sub ..................................... <spaceBetween[2] - memb.height>
+  [852] pusharglist 2 ........................... <0, spaceBetween[2] - memb.height>
+  [854] extcall 568 ............................. <point(0, spaceBetween[2] - memb.height)>
+  [857] add ..................................... <barLoc + point(0, spaceBetween[2] - memb.height)>
+  [858] pusharglist 2 ........................... <barLoc + point(0, spaceBetween[1]), barLoc + point(0, spaceBetween[2] - memb.height)>
+  [860] extcall 555 ............................. <rect(barLoc + point(0, spaceBetween[1]), barLoc + point(0, spaceBetween[2] - memb.height))>
+  [863] getparam 48 ............................. <argOffsetRectForArrows>
+  [865] add ..................................... <rect(barLoc + point(0, spaceBetween[1]), barLoc + point(0, spaceBetween[2] - memb.height)) + argOffsetRectForArrows>
+  [866] setlocal 56 ............................. tmpRect = rect(barLoc + point(0, spaceBetween[1]), barLoc + point(0, spaceBetween[2] - memb.height)) + argOffsetRectForArrows
+  [868] pushcons 64 ............................. <"SliderScript">
+  [870] pusharglist 1 ........................... <"SliderScript">
+  [872] extcall 284 ............................. <script("SliderScript")>
+  [875] getparam 0 .............................. <me>
+  [877] getparam 16 ............................. <argSPNum>
+  [879] pushint8 2 .............................. <2>
+  [882] add ..................................... <argSPNum + 2>
+  [883] getlocal 32 ............................. <memb>
+  [885] getlocal 56 ............................. <tmpRect>
+  [887] pusharglist 0 ........................... <>
+  [889] extcall 190 ............................. <VOID>
+  [892] pushsymb 393 ............................ <#layer>
+  [895] getprop 1627 ............................ <m_layer>
+  [898] pusharglist 2 ........................... <[#layer: m_layer]>
+  [900] pushproplist ............................ <[#layer: m_layer]>
+  [901] pusharglist 7 ........................... <script("SliderScript"), me, argSPNum + 2, memb, tmpRect, VOID, [#layer: m_layer]>
+  [903] objcall 0 ............................... <script("SliderScript").new(me, argSPNum + 2, memb, tmpRect, VOID, [#layer: m_layer])>
+  [905] setprop 1632 ............................ m_scrollBar = script("SliderScript").new(me, argSPNum + 2, memb, tmpRect, VOID, [#layer: m_layer])
+  [908] getprop 1628 ............................ <m_wholeSize>
+  [911] pushint8 2 .............................. <2>
+  [914] pusharglist 2 ........................... <m_wholeSize, 2>
+  [916] objcall 34 .............................. <m_wholeSize[2]>
+  [919] getprop 1626 ............................ <m_items>
+  [922] getobjprop 32 ........................... <m_items.count>
+  [925] div ..................................... <m_wholeSize[2] / m_items.count>
+  [926] setlocal 72 ............................. oneItemSize = m_wholeSize[2] / m_items.count
+  [928] getlocal 0 .............................. <size>
+  [930] pushint8 2 .............................. <2>
+  [933] pusharglist 2 ........................... <size, 2>
+  [935] objcall 34 .............................. <size[2]>
+  [938] pusharglist 1 ........................... <size[2]>
+  [940] extcall 175 ............................. <float(size[2])>
+  [943] getlocal 72 ............................. <oneItemSize>
+  [945] div ..................................... <float(size[2]) / oneItemSize>
+  [946] setlocal 80 ............................. numItemsInView = float(size[2]) / oneItemSize
+  [948] getprop 1626 ............................ <m_items>
+  [951] getobjprop 32 ........................... <m_items.count>
+  [954] getlocal 80 ............................. <numItemsInView>
+  [956] gt ...................................... <m_items.count > numItemsInView>
+  [957] jmpifz [1004] ........................... if m_items.count > numItemsInView then / else
+  [960] pushcons 72 ............................. <1.0>
+  [962] getprop 1626 ............................ <m_items>
+  [965] getobjprop 32 ........................... <m_items.count>
+  [968] pusharglist 1 ........................... <m_items.count>
+  [970] extcall 175 ............................. <float(m_items.count)>
+  [973] getlocal 80 ............................. <numItemsInView>
+  [975] sub ..................................... <float(m_items.count) - numItemsInView>
+  [976] div ..................................... <1.0 / (float(m_items.count) - numItemsInView)>
+  [977] getlocal 56 ............................. <tmpRect>
+  [979] pushint8 4 .............................. <4>
+  [982] pusharglist 2 ........................... <tmpRect, 4>
+  [984] objcall 34 .............................. <tmpRect[4]>
+  [987] getlocal 56 ............................. <tmpRect>
+  [989] pushint8 2 .............................. <2>
+  [992] pusharglist 2 ........................... <tmpRect, 2>
+  [994] objcall 34 .............................. <tmpRect[2]>
+  [997] sub ..................................... <tmpRect[4] - tmpRect[2]>
+  [998] mul ..................................... <1.0 / (float(m_items.count) - numItemsInView) * (tmpRect[4] - tmpRect[2])>
+  [999] setlocal 88 ............................. scrollBarMove = 1.0 / (float(m_items.count) - numItemsInView) * (tmpRect[4] - tmpRect[2])
+  [1001] jmp [1007]
+  [1004] pushzero ............................... <0>
+  [1005] setlocal 88 ............................ scrollBarMove = 0
+  [1007] getprop 1632 ........................... <m_scrollBar>
+  [1010] pushzero ............................... <0>
+  [1011] getlocal 88 ............................ <scrollBarMove>
+  [1013] pusharglist 2 .......................... <0, scrollBarMove>
+  [1015] extcall 568 ............................ <point(0, scrollBarMove)>
+  [1018] setobjprop 1633 ........................ m_scrollBar.clickBehindStep = point(0, scrollBarMove)
+  [1021] pushzero ............................... <0>
+  [1022] setprop 1634 ........................... m_downOnTime = 0
+  [1025] getprop 1010 ........................... <m_SP>
+  [1028] getprop 1620 ........................... <m_member>
+  [1031] setobjprop 296 ......................... m_SP.member = m_member
+  [1034] getprop 1010 ........................... <m_SP>
+  [1037] pushzero ............................... <0>
+  [1038] setobjprop 1073 ........................ m_SP.ink = 0
+  [1041] pushzero ............................... <0>
+  [1042] setprop 1635 ........................... m_selectedItem = 0
+  [1045] getparam 0 ............................. <me>
+  [1047] pusharglistnoret 1 ..................... <me>
+  [1049] extcall 21 ............................. return me
+  [1051] ret
+end
+
+on kill me
+  [  0] getprop 1626 ............................ <m_items>
+  [  3] peek 0
+  [  5] pusharglist 1
+  [  7] extcall 32
+  [ 10] pushint8 1
+  [ 12] peek 0
+  [ 14] peek 2
+  [ 16] lteq
+  [ 17] jmpifz [ 42] ............................ repeat with obj in m_items
+  [ 20] peek 2
+  [ 22] peek 1
+  [ 24] pusharglist 2
+  [ 26] extcall 34
+  [ 29] setlocal 0
+  [ 31] getlocal 0 .............................. <obj>
+  [ 33] pusharglistnoret 1 ...................... <obj>
+  [ 35] objcall 1 ............................... obj.kill()
+  [ 37] pushint8 1
+  [ 39] add
+  [ 40] endrepeat [ 12]
+  [ 42] pop 3
+  [ 44] pusharglist 0 ........................... <[:]>
+  [ 46] pushproplist ............................ <[:]>
+  [ 47] setprop 1626 ............................ m_items = [:]
+  [ 50] getprop 1629 ............................ <m_arrows>
+  [ 53] peek 0
+  [ 55] pusharglist 1
+  [ 57] extcall 32
+  [ 60] pushint8 1
+  [ 62] peek 0
+  [ 64] peek 2
+  [ 66] lteq
+  [ 67] jmpifz [ 92] ............................ repeat with obj in m_arrows
+  [ 70] peek 2
+  [ 72] peek 1
+  [ 74] pusharglist 2
+  [ 76] extcall 34
+  [ 79] setlocal 0
+  [ 81] getlocal 0 .............................. <obj>
+  [ 83] pusharglistnoret 1 ...................... <obj>
+  [ 85] objcall 1 ............................... obj.kill()
+  [ 87] pushint8 1
+  [ 89] add
+  [ 90] endrepeat [ 62]
+  [ 92] pop 3
+  [ 94] pusharglist 0 ........................... <[]>
+  [ 96] pushlist ................................ <[]>
+  [ 97] setprop 1629 ............................ m_arrows = []
+  [100] pushzero ................................ <0>
+  [101] setprop 1649 ............................ m_lastClickInfo = 0
+  [104] getprop 1010 ............................ <m_SP>
+  [107] pushcons 80 ............................. <"Dummy">
+  [109] pusharglist 1 ........................... <"Dummy">
+  [111] extcall 296 ............................. <member("Dummy")>
+  [114] setobjprop 296 .......................... m_SP.member = member("Dummy")
+  [117] getprop 1620 ............................ <m_member>
+  [120] pusharglistnoret 1 ...................... <m_member>
+  [122] objcall 1650 ............................ m_member.erase()
+  [125] getprop 1010 ............................ <m_SP>
+  [128] getobjprop 1296 ......................... <m_SP.spriteNum>
+  [131] pushint8 1 .............................. <1>
+  [134] add ..................................... <m_SP.spriteNum + 1>
+  [135] pusharglist 1 ........................... <m_SP.spriteNum + 1>
+  [137] extcall 540 ............................. <sprite(m_SP.spriteNum + 1)>
+  [140] pushcons 88 ............................. <"Dummy">
+  [142] pusharglist 1 ........................... <"Dummy">
+  [144] extcall 296 ............................. <member("Dummy")>
+  [147] setobjprop 296 .......................... sprite(m_SP.spriteNum + 1).member = member("Dummy")
+  [150] getprop 1010 ............................ <m_SP>
+  [153] getobjprop 1296 ......................... <m_SP.spriteNum>
+  [156] pushint8 1 .............................. <1>
+  [159] add ..................................... <m_SP.spriteNum + 1>
+  [160] pusharglist 1 ........................... <m_SP.spriteNum + 1>
+  [162] extcall 540 ............................. <sprite(m_SP.spriteNum + 1)>
+  [165] pushzero ................................ <0>
+  [166] setobjprop 556 .......................... sprite(m_SP.spriteNum + 1).stretch = 0
+  [169] getprop 1632 ............................ <m_scrollBar>
+  [172] pusharglist 1 ........................... <m_scrollBar>
+  [174] extcall 71 .............................. <objectp(m_scrollBar)>
+  [177] jmpifz [190] ............................ if objectp(m_scrollBar) then
+  [180] getprop 1632 ............................ <m_scrollBar>
+  [183] pusharglist 1 ........................... <m_scrollBar>
+  [185] objcall 1 ............................... <m_scrollBar.kill()>
+  [187] setprop 1632 ............................ m_scrollBar = m_scrollBar.kill()
+  [190] pushzero ................................ <0>
+  [191] setprop 1002 ............................ m_reportObj = 0
+  [194] pushzero ................................ <0>
+  [195] pusharglistnoret 1 ...................... <0>
+  [197] extcall 21 .............................. return 0
+  [199] ret
+end
+
+on GetSPNeed me
+  [  0] pushint8 5 .............................. <5>
+  [  3] pusharglistnoret 1 ...................... <5>
+  [  5] extcall 21 .............................. return 5
+  [  7] ret
+end
+
+on Report me, argObj, argWhat, argOption
+  [  0] getparam 8 .............................. <argObj>
+  [  2] getprop 1632 ............................ <m_scrollBar>
+  [  5] eq ...................................... <argObj = m_scrollBar>
+  [  6] jmpifz [ 30] ............................ if argObj = m_scrollBar then / else
+  [  9] getparam 16 ............................. <argWhat>
+  [ 11] pushsymb 1651 ........................... <#changed>
+  [ 14] eq ...................................... <argWhat = #changed>
+  [ 15] jmpifz [ 27] ............................ if argWhat = #changed then
+  [ 18] getparam 0 .............................. <me>
+  [ 20] getparam 24 ............................. <argOption>
+  [ 22] pusharglistnoret 2 ...................... <me, argOption>
+  [ 24] objcall 562 ............................. me.scroll(argOption)
+  [ 27] jmp [164]
+  [ 30] getprop 1626 ............................ <m_items>
+  [ 33] getparam 8 .............................. <argObj>
+  [ 35] pusharglist 2 ........................... <m_items, argObj>
+  [ 37] objcall 92 .............................. <m_items.getPos(argObj)>
+  [ 40] jmpifz [164] ............................ if m_items.getPos(argObj) then / else
+  [ 43] getparam 16 ............................. <argWhat>
+  [ 45] pushsymb 316 ............................ <#select>
+  [ 48] eq ...................................... <argWhat = #select>
+  [ 49] jmpifz [125] ............................ if argWhat = #select then / else
+  [ 52] getprop 1635 ............................ <m_selectedItem>
+  [ 55] pusharglist 1 ........................... <m_selectedItem>
+  [ 57] extcall 71 .............................. <objectp(m_selectedItem)>
+  [ 60] jmpifz [ 72] ............................ if objectp(m_selectedItem) then
+  [ 63] getprop 1635 ............................ <m_selectedItem>
+  [ 66] pushzero ................................ <0>
+  [ 67] pusharglistnoret 2 ...................... <m_selectedItem, 0>
+  [ 69] objcall 1652 ............................ m_selectedItem.hilite(0)
+  [ 72] getparam 8 .............................. <argObj>
+  [ 74] setprop 1635 ............................ m_selectedItem = argObj
+  [ 77] getprop 1635 ............................ <m_selectedItem>
+  [ 80] pushint8 1 .............................. <1>
+  [ 83] pusharglistnoret 2 ...................... <m_selectedItem, 1>
+  [ 85] objcall 1652 ............................ m_selectedItem.hilite(1)
+  [ 88] getparam 0 .............................. <me>
+  [ 90] pusharglistnoret 1 ...................... <me>
+  [ 92] objcall 562 ............................. me.scroll()
+  [ 95] getprop 1002 ............................ <m_reportObj>
+  [ 98] pusharglist 1 ........................... <m_reportObj>
+  [100] extcall 71 .............................. <objectp(m_reportObj)>
+  [103] jmpifz [122] ............................ if objectp(m_reportObj) then
+  [106] getprop 1002 ............................ <m_reportObj>
+  [109] getparam 0 .............................. <me>
+  [111] pushsymb 316 ............................ <#select>
+  [114] getprop 1635 ............................ <m_selectedItem>
+  [117] pusharglistnoret 4 ...................... <m_reportObj, me, #select, m_selectedItem>
+  [119] objcall 74 .............................. m_reportObj.Report(me, #select, m_selectedItem)
+  [122] jmp [161]
+  [125] getparam 16 ............................. <argWhat>
+  [127] pushsymb 857 ............................ <#doubleClick>
+  [130] eq ...................................... <argWhat = #doubleClick>
+  [131] jmpifz [161] ............................ if argWhat = #doubleClick then
+  [134] getprop 1002 ............................ <m_reportObj>
+  [137] pusharglist 1 ........................... <m_reportObj>
+  [139] extcall 71 .............................. <objectp(m_reportObj)>
+  [142] jmpifz [161] ............................ if objectp(m_reportObj) then
+  [145] getprop 1002 ............................ <m_reportObj>
+  [148] getparam 0 .............................. <me>
+  [150] pushsymb 857 ............................ <#doubleClick>
+  [153] getprop 1635 ............................ <m_selectedItem>
+  [156] pusharglistnoret 4 ...................... <m_reportObj, me, #doubleClick, m_selectedItem>
+  [158] objcall 74 .............................. m_reportObj.Report(me, #doubleClick, m_selectedItem)
+  [161] jmp [164]
+  [164] ret
+end
+
+on mouse me, argObj, argWhat
+  [  0] getparam 16 ............................. <argWhat>
+  [  2] pushsymb 416 ............................ <#down>
+  [  5] eq ...................................... <argWhat = #down>
+  [  6] getparam 16 ............................. <argWhat>
+  [  8] pushsymb 870 ............................ <#stillDown>
+  [ 11] eq ...................................... <argWhat = #stillDown>
+  [ 12] or ...................................... <(argWhat = #down) or (argWhat = #stillDown)>
+  [ 13] jmpifz [152] ............................ if (argWhat = #down) or (argWhat = #stillDown) then
+  [ 16] getparam 16 ............................. <argWhat>
+  [ 18] pushsymb 416 ............................ <#down>
+  [ 21] eq ...................................... <argWhat = #down>
+  [ 22] jmpifz [ 34] ............................ if argWhat = #down then / else
+  [ 25] getmovieprop 53 ......................... <the milliSeconds>
+  [ 28] setprop 1634 ............................ m_downOnTime = the milliSeconds
+  [ 31] jmp [ 49]
+  [ 34] getmovieprop 53 ......................... <the milliSeconds>
+  [ 37] getprop 1634 ............................ <m_downOnTime>
+  [ 40] sub ..................................... <the milliSeconds - m_downOnTime>
+  [ 41] pushint8 300 ............................ <300>
+  [ 44] lt ...................................... <(the milliSeconds - m_downOnTime) < 300>
+  [ 45] jmpifz [ 49] ............................ if (the milliSeconds - m_downOnTime) < 300 then
+  [ 48] ret ..................................... exit
+  [ 49] pushint8 2 .............................. <2>
+  [ 52] getprop 1629 ............................ <m_arrows>
+  [ 55] getparam 8 .............................. <argObj>
+  [ 57] pusharglist 2 ........................... <m_arrows, argObj>
+  [ 59] objcall 92 .............................. <m_arrows.getPos(argObj)>
+  [ 62] mul ..................................... <2 * m_arrows.getPos(argObj)>
+  [ 63] pushint8 3 .............................. <3>
+  [ 66] sub ..................................... <(2 * m_arrows.getPos(argObj)) - 3>
+  [ 67] setlocal 0 .............................. tmp = (2 * m_arrows.getPos(argObj)) - 3
+  [ 69] getprop 1653 ............................ <m_viewRect>
+  [ 72] pusharglist 1 ........................... <m_viewRect>
+  [ 74] extcall 1076 ............................ <getRectSize(m_viewRect)>
+  [ 77] setlocal 8 .............................. size = getRectSize(m_viewRect)
+  [ 79] getprop 1628 ............................ <m_wholeSize>
+  [ 82] pushint8 2 .............................. <2>
+  [ 85] pusharglist 2 ........................... <m_wholeSize, 2>
+  [ 87] objcall 34 .............................. <m_wholeSize[2]>
+  [ 90] getlocal 8 .............................. <size>
+  [ 92] pushint8 2 .............................. <2>
+  [ 95] pusharglist 2 ........................... <size, 2>
+  [ 97] objcall 34 .............................. <size[2]>
+  [100] sub ..................................... <m_wholeSize[2] - size[2]>
+  [101] setlocal 16 ............................. tmpDivideBy = m_wholeSize[2] - size[2]
+  [103] getlocal 16 ............................. <tmpDivideBy>
+  [105] pushzero ................................ <0>
+  [106] lteq .................................... <tmpDivideBy <= 0>
+  [107] jmpifz [111] ............................ if tmpDivideBy <= 0 then
+  [110] ret ..................................... exit
+  [111] getprop 1625 ............................ <m_scrollOffLoc>
+  [114] pushint8 2 .............................. <2>
+  [117] pusharglist 2 ........................... <m_scrollOffLoc, 2>
+  [119] objcall 34 .............................. <m_scrollOffLoc[2]>
+  [122] getlocal 0 .............................. <tmp>
+  [124] pushint8 20 ............................. <20>
+  [127] mul ..................................... <tmp * 20>
+  [128] add ..................................... <m_scrollOffLoc[2] + (tmp * 20)>
+  [129] pusharglist 1 ........................... <m_scrollOffLoc[2] + (tmp * 20)>
+  [131] extcall 175 ............................. <float(m_scrollOffLoc[2] + (tmp * 20))>
+  [134] getlocal 16 ............................. <tmpDivideBy>
+  [136] div ..................................... <float(m_scrollOffLoc[2] + (tmp * 20)) / tmpDivideBy>
+  [137] setlocal 24 ............................. tmpNewFact = float(m_scrollOffLoc[2] + (tmp * 20)) / tmpDivideBy
+  [139] getprop 1632 ............................ <m_scrollBar>
+  [142] pushcons 96 ............................. <1.0>
+  [144] getlocal 24 ............................. <tmpNewFact>
+  [146] sub ..................................... <1.0 - tmpNewFact>
+  [147] pusharglistnoret 2 ...................... <m_scrollBar, 1.0 - tmpNewFact>
+  [149] objcall 1654 ............................ m_scrollBar.setFactor(1.0 - tmpNewFact)
+  [152] ret
+end
+
+on scroll me, argDeltaFromTop
+  [  0] getparam 8 .............................. <argDeltaFromTop>
+  [  2] pusharglist 1 ........................... <argDeltaFromTop>
+  [  4] extcall 1657 ............................ <floatp(argDeltaFromTop)>
+  [  7] jmpifz [ 58] ............................ if floatp(argDeltaFromTop) then
+  [ 10] getprop 1653 ............................ <m_viewRect>
+  [ 13] pusharglist 1 ........................... <m_viewRect>
+  [ 15] extcall 1076 ............................ <getRectSize(m_viewRect)>
+  [ 18] setlocal 0 .............................. size = getRectSize(m_viewRect)
+  [ 20] pushzero ................................ <0>
+  [ 21] getprop 1628 ............................ <m_wholeSize>
+  [ 24] pushint8 2 .............................. <2>
+  [ 27] pusharglist 2 ........................... <m_wholeSize, 2>
+  [ 29] objcall 34 .............................. <m_wholeSize[2]>
+  [ 32] getlocal 0 .............................. <size>
+  [ 34] pushint8 2 .............................. <2>
+  [ 37] pusharglist 2 ........................... <size, 2>
+  [ 39] objcall 34 .............................. <size[2]>
+  [ 42] sub ..................................... <m_wholeSize[2] - size[2]>
+  [ 43] getparam 8 .............................. <argDeltaFromTop>
+  [ 45] mul ..................................... <(m_wholeSize[2] - size[2]) * argDeltaFromTop>
+  [ 46] pusharglist 1 ........................... <(m_wholeSize[2] - size[2]) * argDeltaFromTop>
+  [ 48] extcall 54 .............................. <integer((m_wholeSize[2] - size[2]) * argDeltaFromTop)>
+  [ 51] pusharglist 2 ........................... <0, integer((m_wholeSize[2] - size[2]) * argDeltaFromTop)>
+  [ 53] extcall 568 ............................. <point(0, integer((m_wholeSize[2] - size[2]) * argDeltaFromTop))>
+  [ 56] setparam 8 .............................. argDeltaFromTop = point(0, integer((m_wholeSize[2] - size[2]) * argDeltaFromTop))
+  [ 58] getparam 8 .............................. <argDeltaFromTop>
+  [ 60] pusharglist 1 ........................... <argDeltaFromTop>
+  [ 62] extcall 68 .............................. <voidp(argDeltaFromTop)>
+  [ 65] jmpifz [ 73] ............................ if voidp(argDeltaFromTop) then
+  [ 68] getprop 1625 ............................ <m_scrollOffLoc>
+  [ 71] setparam 8 .............................. argDeltaFromTop = m_scrollOffLoc
+  [ 73] getprop 1658 ............................ <m_viewImage>
+  [ 76] getprop 1658 ............................ <m_viewImage>
+  [ 79] getobjprop 555 .......................... <m_viewImage.rect>
+  [ 82] getprop 1623 ............................ <m_bgColor>
+  [ 85] pusharglistnoret 3 ...................... <m_viewImage, m_viewImage.rect, m_bgColor>
+  [ 87] objcall 1016 ............................ m_viewImage.fill(m_viewImage.rect, m_bgColor)
+  [ 90] getprop 1626 ............................ <m_items>
+  [ 93] peek 0
+  [ 95] pusharglist 1
+  [ 97] extcall 32
+  [100] pushint8 1
+  [102] peek 0
+  [104] peek 2
+  [106] lteq
+  [107] jmpifz [139] ............................ repeat with obj in m_items
+  [110] peek 2
+  [112] peek 1
+  [114] pusharglist 2
+  [116] extcall 34
+  [119] setlocal 8
+  [121] getlocal 8 .............................. <obj>
+  [123] getparam 8 .............................. <argDeltaFromTop>
+  [125] getprop 1658 ............................ <m_viewImage>
+  [128] pusharglistnoret 3 ...................... <obj, argDeltaFromTop, m_viewImage>
+  [130] objcall 1659 ............................ obj.setScroll(argDeltaFromTop, m_viewImage)
+  [133] pushint8 1
+  [135] add
+  [136] endrepeat [102]
+  [139] pop 3
+  [141] getparam 8 .............................. <argDeltaFromTop>
+  [143] setprop 1625 ............................ m_scrollOffLoc = argDeltaFromTop
+  [146] getprop 1620 ............................ <m_member>
+  [149] getprop 1658 ............................ <m_viewImage>
+  [152] setobjprop 1014 ......................... m_member.image = m_viewImage
+  [155] getprop 1620 ............................ <m_member>
+  [158] pushzero ................................ <0>
+  [159] pushzero ................................ <0>
+  [160] pusharglist 2 ........................... <0, 0>
+  [162] extcall 568 ............................. <point(0, 0)>
+  [165] setobjprop 1128 ......................... m_member.regPoint = point(0, 0)
+  [168] ret
+end
+
+on prepare me, argInfoList, argSize
+  [  0] getparam 8 .............................. <argInfoList>
+  [  2] pusharglist 1 ........................... <argInfoList>
+  [  4] objcall 32 .............................. <argInfoList.count()>
+  [  7] pushzero ................................ <0>
+  [  8] eq ...................................... <argInfoList.count() = 0>
+  [  9] jmpifz [ 17] ............................ if argInfoList.count() = 0 then
+  [ 12] pushzero ................................ <0>
+  [ 13] pusharglistnoret 1 ...................... <0>
+  [ 15] extcall 21 .............................. return 0
+  [ 17] getparam 16 ............................. <argSize>
+  [ 19] pusharglist 1 ........................... <argSize>
+  [ 21] extcall 68 .............................. <voidp(argSize)>
+  [ 24] jmpifz [ 40] ............................ if voidp(argSize) then
+  [ 27] pushint8 300 ............................ <300>
+  [ 30] pushint8 100 ............................ <100>
+  [ 33] pusharglist 2 ........................... <300, 100>
+  [ 35] extcall 568 ............................. <point(300, 100)>
+  [ 38] setparam 16 ............................. argSize = point(300, 100)
+  [ 40] pushzero ................................ <0>
+  [ 41] pushzero ................................ <0>
+  [ 42] pusharglist 2 ........................... <0, 0>
+  [ 44] extcall 568 ............................. <point(0, 0)>
+  [ 47] getparam 16 ............................. <argSize>
+  [ 49] pusharglist 2 ........................... <point(0, 0), argSize>
+  [ 51] extcall 555 ............................. <rect(point(0, 0), argSize)>
+  [ 54] setprop 1653 ............................ m_viewRect = rect(point(0, 0), argSize)
+  [ 57] getparam 16 ............................. <argSize>
+  [ 59] pushint8 1 .............................. <1>
+  [ 62] pusharglist 2 ........................... <argSize, 1>
+  [ 64] objcall 34 .............................. <argSize[1]>
+  [ 67] getparam 16 ............................. <argSize>
+  [ 69] pushint8 2 .............................. <2>
+  [ 72] pusharglist 2 ........................... <argSize, 2>
+  [ 74] objcall 34 .............................. <argSize[2]>
+  [ 77] pushint8 24 ............................. <24>
+  [ 80] pushzero ................................ <0>
+  [ 81] pusharglist 4 ........................... <argSize[1], argSize[2], 24, 0>
+  [ 83] extcall 1014 ............................ <image(argSize[1], argSize[2], 24, 0)>
+  [ 86] setprop 1658 ............................ m_viewImage = image(argSize[1], argSize[2], 24, 0)
+  [ 89] pusharglist 0 ........................... <[:]>
+  [ 91] pushproplist ............................ <[:]>
+  [ 92] setprop 1626 ............................ m_items = [:]
+  [ 95] pushcons 104 ............................ <"CPScrollItemScript">
+  [ 97] pusharglist 1 ........................... <"CPScrollItemScript">
+  [ 99] extcall 284 ............................. <script("CPScrollItemScript")>
+  [102] getparam 0 .............................. <me>
+  [104] getparam 8 .............................. <argInfoList>
+  [106] pushint8 1 .............................. <1>
+  [109] pusharglist 2 ........................... <argInfoList, 1>
+  [111] objcall 34 .............................. <argInfoList[1]>
+  [114] getprop 1653 ............................ <m_viewRect>
+  [117] pushint8 1 .............................. <1>
+  [120] pusharglist 2 ........................... <m_viewRect, 1>
+  [122] objcall 34 .............................. <m_viewRect[1]>
+  [125] getprop 1653 ............................ <m_viewRect>
+  [128] pushint8 2 .............................. <2>
+  [131] pusharglist 2 ........................... <m_viewRect, 2>
+  [133] objcall 34 .............................. <m_viewRect[2]>
+  [136] pusharglist 2 ........................... <m_viewRect[1], m_viewRect[2]>
+  [138] extcall 568 ............................. <point(m_viewRect[1], m_viewRect[2])>
+  [141] getprop 1627 ............................ <m_layer>
+  [144] pusharglist 5 ........................... <script("CPScrollItemScript"), me, argInfoList[1], point(m_viewRect[1], m_viewRect[2]), m_layer>
+  [146] objcall 0 ............................... <script("CPScrollItemScript").new(me, argInfoList[1], point(m_viewRect[1], m_viewRect[2]), m_layer)>
+  [148] setlocal 0 .............................. obj = script("CPScrollItemScript").new(me, argInfoList[1], point(m_viewRect[1], m_viewRect[2]), m_layer)
+  [150] getprop 1626 ............................ <m_items>
+  [153] getlocal 0 .............................. <obj>
+  [155] getobjprop 1039 ......................... <obj.m_ID>
+  [158] getlocal 0 .............................. <obj>
+  [160] pusharglistnoret 3 ...................... <m_items, obj.m_ID, obj>
+  [162] objcall 307 ............................. m_items.addProp(obj.m_ID, obj)
+  [165] getlocal 0 .............................. <obj>
+  [167] pusharglist 1 ........................... <obj>
+  [169] objcall 1661 ............................ <obj.calcSrndSize()>
+  [172] setlocal 8 .............................. size = obj.calcSrndSize()
+  [174] getlocal 8 .............................. <size>
+  [176] pushint8 2 .............................. <2>
+  [179] getlocal 8 .............................. <size>
+  [181] pushint8 2 .............................. <2>
+  [184] pusharglist 2 ........................... <size, 2>
+  [186] objcall 34 .............................. <size[2]>
+  [189] pushint8 1 .............................. <1>
+  [192] add ..................................... <size[2] + 1>
+  [193] pusharglistnoret 3 ...................... <size, 2, size[2] + 1>
+  [195] objcall 46 .............................. size[2] = size[2] + 1
+  [198] getlocal 8 .............................. <size>
+  [200] pushint8 1 .............................. <1>
+  [203] pusharglist 2 ........................... <size, 1>
+  [205] objcall 34 .............................. <size[1]>
+  [208] getlocal 8 .............................. <size>
+  [210] pushint8 2 .............................. <2>
+  [213] pusharglist 2 ........................... <size, 2>
+  [215] objcall 34 .............................. <size[2]>
+  [218] getparam 8 .............................. <argInfoList>
+  [220] getobjprop 32 ........................... <argInfoList.count>
+  [223] mul ..................................... <size[2] * argInfoList.count>
+  [224] pusharglist 2 ........................... <size[1], size[2] * argInfoList.count>
+  [226] extcall 568 ............................. <point(size[1], size[2] * argInfoList.count)>
+  [229] setprop 1628 ............................ m_wholeSize = point(size[1], size[2] * argInfoList.count)
+  [232] pushint8 2 .............................. <2>
+  [235] setlocal 16
+  [237] getlocal 16
+  [239] getparam 8 .............................. <argInfoList>
+  [241] getobjprop 32 ........................... <argInfoList.count>
+  [244] lteq
+  [245] jmpifz [356] ............................ repeat with n = 2 to argInfoList.count
+  [248] pushzero ................................ <0>
+  [249] getlocal 16 ............................. <n>
+  [251] pushint8 1 .............................. <1>
+  [254] sub ..................................... <n - 1>
+  [255] getlocal 8 .............................. <size>
+  [257] pushint8 2 .............................. <2>
+  [260] pusharglist 2 ........................... <size, 2>
+  [262] objcall 34 .............................. <size[2]>
+  [265] mul ..................................... <(n - 1) * size[2]>
+  [266] pusharglist 2 ........................... <0, (n - 1) * size[2]>
+  [268] extcall 568 ............................. <point(0, (n - 1) * size[2])>
+  [271] setlocal 24 ............................. off = point(0, (n - 1) * size[2])
+  [273] pushcons 112 ............................ <"CPScrollItemScript">
+  [275] pusharglist 1 ........................... <"CPScrollItemScript">
+  [277] extcall 284 ............................. <script("CPScrollItemScript")>
+  [280] getparam 0 .............................. <me>
+  [282] getparam 8 .............................. <argInfoList>
+  [284] getlocal 16 ............................. <n>
+  [286] pusharglist 2 ........................... <argInfoList, n>
+  [288] objcall 34 .............................. <argInfoList[n]>
+  [291] getlocal 24 ............................. <off>
+  [293] getprop 1653 ............................ <m_viewRect>
+  [296] pushint8 1 .............................. <1>
+  [299] pusharglist 2 ........................... <m_viewRect, 1>
+  [301] objcall 34 .............................. <m_viewRect[1]>
+  [304] getprop 1653 ............................ <m_viewRect>
+  [307] pushint8 2 .............................. <2>
+  [310] pusharglist 2 ........................... <m_viewRect, 2>
+  [312] objcall 34 .............................. <m_viewRect[2]>
+  [315] pusharglist 2 ........................... <m_viewRect[1], m_viewRect[2]>
+  [317] extcall 568 ............................. <point(m_viewRect[1], m_viewRect[2])>
+  [320] add ..................................... <off + point(m_viewRect[1], m_viewRect[2])>
+  [321] getprop 1627 ............................ <m_layer>
+  [324] pusharglist 5 ........................... <script("CPScrollItemScript"), me, argInfoList[n], off + point(m_viewRect[1], m_viewRect[2]), m_layer>
+  [326] objcall 0 ............................... <script("CPScrollItemScript").new(me, argInfoList[n], off + point(m_viewRect[1], m_viewRect[2]), m_layer)>
+  [328] setlocal 0 .............................. obj = script("CPScrollItemScript").new(me, argInfoList[n], off + point(m_viewRect[1], m_viewRect[2]), m_layer)
+  [330] getprop 1626 ............................ <m_items>
+  [333] getlocal 0 .............................. <obj>
+  [335] getobjprop 1039 ......................... <obj.m_ID>
+  [338] getlocal 0 .............................. <obj>
+  [340] pusharglistnoret 3 ...................... <m_items, obj.m_ID, obj>
+  [342] objcall 307 ............................. m_items.addProp(obj.m_ID, obj)
+  [345] pushint8 1
+  [348] getlocal 16
+  [350] add
+  [351] setlocal 16
+  [353] endrepeat [237]
+  [356] ret
+end

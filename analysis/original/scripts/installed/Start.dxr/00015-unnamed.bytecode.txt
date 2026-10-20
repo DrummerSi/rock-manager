@@ -1,0 +1,347 @@
+on checkForPlugins argPluginsPath
+  [  0] pusharglist 0 ........................... <[]>
+  [  2] pushlist ................................ <[]>
+  [  3] setlocal 0 .............................. tmpCasts = []
+  [  5] pushint8 1 .............................. <1>
+  [  8] setlocal 8
+  [ 10] getlocal 8
+  [ 12] pusharglist 0 ........................... <>
+  [ 14] thebuiltin 53 ........................... <the maxinteger>
+  [ 17] lteq
+  [ 18] jmpifz [ 85] ............................ repeat with n = 1 to the maxinteger
+  [ 21] getparam 0 .............................. <argPluginsPath>
+  [ 23] getlocal 8 .............................. <n>
+  [ 25] pusharglist 2 ........................... <argPluginsPath, n>
+  [ 27] extcall 54 .............................. <getNthFileNameInFolder(argPluginsPath, n)>
+  [ 30] setlocal 16 ............................. tmpName = getNthFileNameInFolder(argPluginsPath, n)
+  [ 32] getlocal 16 ............................. <tmpName>
+  [ 34] pushcons 0 .............................. <EMPTY>
+  [ 36] eq ...................................... <tmpName = EMPTY>
+  [ 37] jmpifz [ 43] ............................ if tmpName = EMPTY then
+  [ 40] jmp [ 85] ............................... exit repeat
+  [ 43] pushcons 8 .............................. <".cst">
+  [ 45] getlocal 16 ............................. <tmpName>
+  [ 47] pusharglist 2 ........................... <".cst", tmpName>
+  [ 49] extcall 55 .............................. <offset(".cst", tmpName)>
+  [ 52] pushcons 16 ............................. <".cxt">
+  [ 54] getlocal 16 ............................. <tmpName>
+  [ 56] pusharglist 2 ........................... <".cxt", tmpName>
+  [ 58] extcall 55 .............................. <offset(".cxt", tmpName)>
+  [ 61] or ...................................... <offset(".cst", tmpName) or offset(".cxt", tmpName)>
+  [ 62] jmpifz [ 74] ............................ if offset(".cst", tmpName) or offset(".cxt", tmpName) then
+  [ 65] getlocal 0 .............................. <tmpCasts>
+  [ 67] getlocal 16 ............................. <tmpName>
+  [ 69] pusharglistnoret 2 ...................... <tmpCasts, tmpName>
+  [ 71] extcall 56 .............................. add(tmpCasts, tmpName)
+  [ 74] pushint8 1
+  [ 77] getlocal 8
+  [ 79] add
+  [ 80] setlocal 8
+  [ 82] endrepeat [ 10]
+  [ 85] getlocal 0 .............................. <tmpCasts>
+  [ 87] pusharglistnoret 1 ...................... <tmpCasts>
+  [ 89] extcall 2 ............................... return tmpCasts
+  [ 91] ret
+end
+
+on xferPlugins argPluginsPath, argCasts, argCopyToCastName, argCallBackInfo
+  [  0] pushcons 24 ............................. <"Source">
+  [  2] setlocal 0 .............................. tmpSwitchCastLibName = "Source"
+  [  4] getlocal 0 .............................. <tmpSwitchCastLibName>
+  [  6] pusharglist 1 ........................... <tmpSwitchCastLibName>
+  [  8] extcall 61 .............................. <castLib(tmpSwitchCastLibName)>
+  [ 11] setlocal 8 .............................. tmpSwitchCastLib = castLib(tmpSwitchCastLibName)
+  [ 13] getparam 16 ............................. <argCopyToCastName>
+  [ 15] pusharglist 1 ........................... <argCopyToCastName>
+  [ 17] extcall 223 ............................. <voidp(argCopyToCastName)>
+  [ 20] jmpifz [ 27] ............................ if voidp(argCopyToCastName) then
+  [ 23] pushcons 32 ............................. <"Destination">
+  [ 25] setparam 16 ............................. argCopyToCastName = "Destination"
+  [ 27] pusharglist 0 ........................... <[]>
+  [ 29] pushlist ................................ <[]>
+  [ 30] setlocal 16 ............................. tmpDeleteCasts = []
+  [ 32] getparam 8 .............................. <argCasts>
+  [ 34] peek 0
+  [ 36] pusharglist 1
+  [ 38] extcall 62
+  [ 41] pushint8 1
+  [ 43] peek 0
+  [ 45] peek 2
+  [ 47] lteq
+  [ 48] jmpifz [536] ............................ repeat with tmpCast in argCasts
+  [ 51] peek 2
+  [ 53] peek 1
+  [ 55] pusharglist 2
+  [ 57] extcall 63
+  [ 60] setlocal 24
+  [ 62] pushint8 1 .............................. <1>
+  [ 65] setlocal 32 ............................. tmpXferOK = 1
+  [ 67] getlocal 8 .............................. <tmpSwitchCastLib>
+  [ 69] getparam 0 .............................. <argPluginsPath>
+  [ 71] getlocal 24 ............................. <tmpCast>
+  [ 73] joinstr ................................. <argPluginsPath & tmpCast>
+  [ 74] setobjprop 64 ........................... tmpSwitchCastLib.fileName = argPluginsPath & tmpCast
+  [ 77] getlocal 8 .............................. <tmpSwitchCastLib>
+  [ 79] getobjprop 64 ........................... <tmpSwitchCastLib.fileName>
+  [ 82] getparam 0 .............................. <argPluginsPath>
+  [ 84] getlocal 24 ............................. <tmpCast>
+  [ 86] joinstr ................................. <argPluginsPath & tmpCast>
+  [ 87] nteq .................................... <tmpSwitchCastLib.fileName <> (argPluginsPath & tmpCast)>
+  [ 88] jmpifz [109] ............................ if tmpSwitchCastLib.fileName <> (argPluginsPath & tmpCast) then
+  [ 91] getlocal 24 ............................. <tmpCast>
+  [ 93] pusharglist 1 ........................... <tmpCast>
+  [ 95] extcall 93 .............................. <string(tmpCast)>
+  [ 98] pushcons 40 ............................. <" is corrupt.">
+  [100] joinstr ................................. <string(tmpCast) & " is corrupt.">
+  [101] pusharglistnoret 1 ...................... <string(tmpCast) & " is corrupt.">
+  [103] extcall 72 .............................. alert(string(tmpCast) & " is corrupt.")
+  [106] jmp [530] ............................... next repeat
+  [109] getlocal 0 .............................. <tmpSwitchCastLibName>
+  [111] pushint8 2 .............................. <2>
+  [114] get 8 ................................... <the number of castMembers of castLib tmpSwitchCastLibName>
+  [116] setlocal 40 ............................. numMembersInCast = the number of castMembers of castLib tmpSwitchCastLibName
+  [118] pushzero ................................ <0>
+  [119] setlocal 48 ............................. numMembersToCopy = 0
+  [121] pushzero ................................ <0>
+  [122] setlocal 56 ............................. numBytes = 0
+  [124] pushint8 1 .............................. <1>
+  [127] setlocal 64
+  [129] getlocal 64
+  [131] getlocal 40 ............................. <numMembersInCast>
+  [133] lteq
+  [134] jmpifz [195] ............................ repeat with n = 1 to numMembersInCast
+  [137] getlocal 64 ............................. <n>
+  [139] getlocal 0 .............................. <tmpSwitchCastLibName>
+  [141] pusharglist 2 ........................... <n, tmpSwitchCastLibName>
+  [143] extcall 65 .............................. <member(n, tmpSwitchCastLibName)>
+  [146] setlocal 72 ............................. srcMember = member(n, tmpSwitchCastLibName)
+  [148] getlocal 72 ............................. <srcMember>
+  [150] getobjprop 8 ............................ <srcMember.type>
+  [152] setlocal 80 ............................. tmpType = srcMember.type
+  [154] getlocal 80 ............................. <tmpType>
+  [156] pushsymb 66 ............................. <#empty>
+  [159] eq ...................................... <tmpType = #empty>
+  [160] jmpifz [166] ............................ if tmpType = #empty then
+  [163] jmp [184] ............................... next repeat
+  [166] getlocal 48 ............................. <numMembersToCopy>
+  [168] pushint8 1 .............................. <1>
+  [171] add ..................................... <numMembersToCopy + 1>
+  [172] setlocal 48 ............................. numMembersToCopy = numMembersToCopy + 1
+  [174] getlocal 56 ............................. <numBytes>
+  [176] getlocal 72 ............................. <srcMember>
+  [178] getobjprop 68 ........................... <srcMember.size>
+  [181] add ..................................... <numBytes + srcMember.size>
+  [182] setlocal 56 ............................. numBytes = numBytes + srcMember.size
+  [184] pushint8 1
+  [187] getlocal 64
+  [189] add
+  [190] setlocal 64
+  [192] endrepeat [129]
+  [195] getlocal 56 ............................. <numBytes>
+  [197] pushzero ................................ <0>
+  [198] eq ...................................... <numBytes = 0>
+  [199] jmpifz [207] ............................ if numBytes = 0 then
+  [202] pushint8 1 .............................. <1>
+  [205] setlocal 56 ............................. numBytes = 1
+  [207] pushzero ................................ <0>
+  [208] setlocal 88 ............................. bytesCopied = 0
+  [210] pushint8 1 .............................. <1>
+  [213] setlocal 64
+  [215] getlocal 64
+  [217] getlocal 40 ............................. <numMembersInCast>
+  [219] lteq
+  [220] jmpifz [464] ............................ repeat with n = 1 to numMembersInCast
+  [223] getlocal 64 ............................. <n>
+  [225] getlocal 0 .............................. <tmpSwitchCastLibName>
+  [227] pusharglist 2 ........................... <n, tmpSwitchCastLibName>
+  [229] extcall 65 .............................. <member(n, tmpSwitchCastLibName)>
+  [232] setlocal 72 ............................. srcMember = member(n, tmpSwitchCastLibName)
+  [234] getlocal 72 ............................. <srcMember>
+  [236] getobjprop 8 ............................ <srcMember.type>
+  [238] setlocal 80 ............................. tmpType = srcMember.type
+  [240] getlocal 80 ............................. <tmpType>
+  [242] pushsymb 66 ............................. <#empty>
+  [245] eq ...................................... <tmpType = #empty>
+  [246] jmpifz [252] ............................ if tmpType = #empty then
+  [249] jmp [453] ............................... next repeat
+  [252] pusharglist 0 ........................... <>
+  [254] thebuiltin 67 ........................... <the freeBlock>
+  [257] getlocal 72 ............................. <srcMember>
+  [259] getobjprop 68 ........................... <srcMember.size>
+  [262] lt ...................................... <the freeBlock < srcMember.size>
+  [263] jmpifz [272] ............................ if the freeBlock < srcMember.size then
+  [266] pushzero ................................ <0>
+  [267] setlocal 32 ............................. tmpXferOK = 0
+  [269] jmp [453] ............................... next repeat
+  [272] getlocal 72 ............................. <srcMember>
+  [274] getobjprop 69 ........................... <srcMember.name>
+  [277] setlocal 96 ............................. tmpName = srcMember.name
+  [279] getlocal 96 ............................. <tmpName>
+  [281] getparam 16 ............................. <argCopyToCastName>
+  [283] pushint8 10 ............................. <10>
+  [286] get 9 ................................... <the number of member tmpName of castLib argCopyToCastName>
+  [288] pushzero ................................ <0>
+  [289] lteq .................................... <the number of member tmpName of castLib argCopyToCastName <= 0>
+  [290] jmpifz [330] ............................ if the number of member tmpName of castLib argCopyToCastName <= 0 then / else
+  [293] getlocal 80 ............................. <tmpType>
+  [295] pushint8 1 .............................. <1>
+  [298] getparam 16 ............................. <argCopyToCastName>
+  [300] pushint8 2 .............................. <2>
+  [303] get 8 ................................... <the number of castMembers of castLib argCopyToCastName>
+  [305] add ..................................... <1 + the number of castMembers of castLib argCopyToCastName>
+  [306] getparam 16 ............................. <argCopyToCastName>
+  [308] pusharglist 2 ........................... <1 + the number of castMembers of castLib argCopyToCastName, argCopyToCastName>
+  [310] extcall 65 .............................. <member(1 + the number of castMembers of castLib argCopyToCastName, argCopyToCastName)>
+  [313] pusharglist 2 ........................... <tmpType, member(1 + the number of castMembers of castLib argCopyToCastName, argCopyToCastName)>
+  [315] extcall 37 .............................. <new(tmpType, member(1 + the number of castMembers of castLib argCopyToCastName, argCopyToCastName))>
+  [318] setlocal 104 ............................ DstMember = new(tmpType, member(1 + the number of castMembers of castLib argCopyToCastName, argCopyToCastName))
+  [320] getlocal 104 ............................ <DstMember>
+  [322] getlocal 96 ............................. <tmpName>
+  [324] setobjprop 69 ........................... DstMember.name = tmpName
+  [327] jmp [341]
+  [330] getlocal 96 ............................. <tmpName>
+  [332] getparam 16 ............................. <argCopyToCastName>
+  [334] pusharglist 2 ........................... <tmpName, argCopyToCastName>
+  [336] extcall 65 .............................. <member(tmpName, argCopyToCastName)>
+  [339] setlocal 104 ............................ DstMember = member(tmpName, argCopyToCastName)
+  [341] getlocal 104 ............................ <DstMember>
+  [343] getlocal 72 ............................. <srcMember>
+  [345] getobjprop 70 ........................... <srcMember.media>
+  [348] setobjprop 70 ........................... DstMember.media = srcMember.media
+  [351] getlocal 80 ............................. <tmpType>
+  [353] pushsymb 16 ............................. <#script>
+  [355] eq ...................................... <tmpType = #script>
+  [356] jmpifz [367] ............................ if tmpType = #script then
+  [359] getlocal 104 ............................ <DstMember>
+  [361] getlocal 72 ............................. <srcMember>
+  [363] getobjprop 20 ........................... <srcMember.scriptType>
+  [365] setobjprop 20 ........................... DstMember.scriptType = srcMember.scriptType
+  [367] getlocal 88 ............................. <bytesCopied>
+  [369] getlocal 72 ............................. <srcMember>
+  [371] getobjprop 68 ........................... <srcMember.size>
+  [374] add ..................................... <bytesCopied + srcMember.size>
+  [375] setlocal 88 ............................. bytesCopied = bytesCopied + srcMember.size
+  [377] pusharglist 0 ........................... <>
+  [379] thebuiltin 67 ........................... <the freeBlock>
+  [382] pushint8 512 ............................ <512>
+  [385] pushint8 1024 ........................... <1024>
+  [388] mul ..................................... <512 * 1024>
+  [389] lt ...................................... <the freeBlock < (512 * 1024)>
+  [390] jmpifz [405] ............................ if the freeBlock < (512 * 1024) then
+  [393] getparam 16 ............................. <argCopyToCastName>
+  [395] pusharglist 1 ........................... <argCopyToCastName>
+  [397] extcall 61 .............................. <castLib(argCopyToCastName)>
+  [400] pusharglistnoret 1 ...................... <castLib(argCopyToCastName)>
+  [402] objcall 71 .............................. castLib(argCopyToCastName).save()
+  [405] getparam 24 ............................. <argCallBackInfo>
+  [407] pusharglist 1 ........................... <argCallBackInfo>
+  [409] extcall 290 ............................. <listp(argCallBackInfo)>
+  [412] jmpifz [453] ............................ if listp(argCallBackInfo) then
+  [415] getparam 24 ............................. <argCallBackInfo>
+  [417] pushint8 1 .............................. <1>
+  [420] pusharglist 2 ........................... <argCallBackInfo, 1>
+  [422] objcall 63 .............................. <argCallBackInfo[1]>
+  [425] getparam 24 ............................. <argCallBackInfo>
+  [427] pushint8 2 .............................. <2>
+  [430] pusharglist 2 ........................... <argCallBackInfo, 2>
+  [432] objcall 63 .............................. <argCallBackInfo[2]>
+  [435] pushsymb 292 ............................ <#XferMember>
+  [438] getlocal 88 ............................. <bytesCopied>
+  [440] pusharglist 1 ........................... <bytesCopied>
+  [442] extcall 307 ............................. <float(bytesCopied)>
+  [445] getlocal 56 ............................. <numBytes>
+  [447] div ..................................... <float(bytesCopied) / numBytes>
+  [448] pusharglistnoret 4 ...................... <argCallBackInfo[1], argCallBackInfo[2], #XferMember, float(bytesCopied) / numBytes>
+  [450] extcall 291 ............................. call(argCallBackInfo[1], argCallBackInfo[2], #XferMember, float(bytesCopied) / numBytes)
+  [453] pushint8 1
+  [456] getlocal 64
+  [458] add
+  [459] setlocal 64
+  [461] endrepeat [215]
+  [464] getlocal 32 ............................. <tmpXferOK>
+  [466] not ..................................... <not tmpXferOK>
+  [467] jmpifz [480] ............................ if not tmpXferOK then / else
+  [470] pushcons 48 ............................. <"Out of memory.">
+  [472] pusharglistnoret 1 ...................... <"Out of memory.">
+  [474] extcall 72 .............................. alert("Out of memory.")
+  [477] jmp [492]
+  [480] getlocal 16 ............................. <tmpDeleteCasts>
+  [482] getparam 0 .............................. <argPluginsPath>
+  [484] getlocal 24 ............................. <tmpCast>
+  [486] joinstr ................................. <argPluginsPath & tmpCast>
+  [487] pusharglistnoret 2 ...................... <tmpDeleteCasts, argPluginsPath & tmpCast>
+  [489] extcall 56 .............................. add(tmpDeleteCasts, argPluginsPath & tmpCast)
+  [492] getparam 24 ............................. <argCallBackInfo>
+  [494] pusharglist 1 ........................... <argCallBackInfo>
+  [496] extcall 290 ............................. <listp(argCallBackInfo)>
+  [499] jmpifz [530] ............................ if listp(argCallBackInfo) then
+  [502] getparam 24 ............................. <argCallBackInfo>
+  [504] pushint8 1 .............................. <1>
+  [507] pusharglist 2 ........................... <argCallBackInfo, 1>
+  [509] objcall 63 .............................. <argCallBackInfo[1]>
+  [512] getparam 24 ............................. <argCallBackInfo>
+  [514] pushint8 2 .............................. <2>
+  [517] pusharglist 2 ........................... <argCallBackInfo, 2>
+  [519] objcall 63 .............................. <argCallBackInfo[2]>
+  [522] pushsymb 293 ............................ <#XferCast>
+  [525] pusharglistnoret 3 ...................... <argCallBackInfo[1], argCallBackInfo[2], #XferCast>
+  [527] extcall 291 ............................. call(argCallBackInfo[1], argCallBackInfo[2], #XferCast)
+  [530] pushint8 1
+  [532] add
+  [533] endrepeat [ 43]
+  [536] pop 3
+  [538] getlocal 0 .............................. <tmpSwitchCastLibName>
+  [540] pusharglist 1 ........................... <tmpSwitchCastLibName>
+  [542] extcall 61 .............................. <castLib(tmpSwitchCastLibName)>
+  [545] pushcons 56 ............................. <"Empty">
+  [547] setobjprop 64 ........................... castLib(tmpSwitchCastLibName).fileName = "Empty"
+  [550] getparam 16 ............................. <argCopyToCastName>
+  [552] pusharglist 1 ........................... <argCopyToCastName>
+  [554] extcall 61 .............................. <castLib(argCopyToCastName)>
+  [557] pusharglistnoret 1 ...................... <castLib(argCopyToCastName)>
+  [559] objcall 71 .............................. castLib(argCopyToCastName).save()
+  [562] pushcons 64 ............................. <"FileIO">
+  [564] pusharglist 1 ........................... <"FileIO">
+  [566] extcall 7 ............................... <xtra("FileIO")>
+  [568] pusharglist 1 ........................... <xtra("FileIO")>
+  [570] extcall 37 .............................. <new(xtra("FileIO"))>
+  [573] setlocal 112 ............................ tmpFileXtra = new(xtra("FileIO"))
+  [575] getlocal 16 ............................. <tmpDeleteCasts>
+  [577] peek 0
+  [579] pusharglist 1
+  [581] extcall 62
+  [584] pushint8 1
+  [586] peek 0
+  [588] peek 2
+  [590] lteq
+  [591] jmpifz [647] ............................ repeat with tmpFileName in tmpDeleteCasts
+  [594] peek 2
+  [596] peek 1
+  [598] pusharglist 2
+  [600] extcall 63
+  [603] setlocal 120
+  [605] getlocal 112 ............................ <tmpFileXtra>
+  [607] getlocal 120 ............................ <tmpFileName>
+  [609] pushzero ................................ <0>
+  [610] pusharglistnoret 3 ...................... <tmpFileXtra, tmpFileName, 0>
+  [612] extcall 38 .............................. openFile(tmpFileXtra, tmpFileName, 0)
+  [615] getlocal 112 ............................ <tmpFileXtra>
+  [617] pusharglist 1 ........................... <tmpFileXtra>
+  [619] extcall 40 .............................. <status(tmpFileXtra)>
+  [622] pushzero ................................ <0>
+  [623] eq ...................................... <status(tmpFileXtra) = 0>
+  [624] jmpifz [634] ............................ if status(tmpFileXtra) = 0 then
+  [627] getlocal 112 ............................ <tmpFileXtra>
+  [629] pusharglistnoret 1 ...................... <tmpFileXtra>
+  [631] extcall 73 .............................. delete(tmpFileXtra)
+  [634] getlocal 112 ............................ <tmpFileXtra>
+  [636] pusharglistnoret 1 ...................... <tmpFileXtra>
+  [638] extcall 43 .............................. closeFile(tmpFileXtra)
+  [641] pushint8 1
+  [643] add
+  [644] endrepeat [586]
+  [647] pop 3
+  [649] pushzero ................................ <0>
+  [650] setlocal 112 ............................ tmpFileXtra = 0
+  [652] ret
+end

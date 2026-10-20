@@ -1,0 +1,57 @@
+property itemObj, topWndObj
+
+on new me, argItemObj
+  [  0] getparam 8 .............................. <argItemObj>
+  [  2] setprop 581 ............................. itemObj = argItemObj
+  [  5] getparam 0 .............................. <me>
+  [  7] pusharglistnoret 1 ...................... <me>
+  [  9] extcall 96 .............................. return me
+  [ 12] ret
+end
+
+on kill me
+  [  0] pushzero ................................ <0>
+  [  1] setprop 581 ............................. itemObj = 0
+  [  4] pushzero ................................ <0>
+  [  5] pusharglistnoret 1 ...................... <0>
+  [  7] extcall 96 .............................. return 0
+  [ 10] ret
+end
+
+on mouse me, argObj, argWhat
+  [  0] getparam 16 ............................. <argWhat>
+  [  2] pushsymb 379 ............................ <#DownOnOther>
+  [  5] eq ...................................... <argWhat = #DownOnOther>
+  [  6] jmpifz [ 10] ............................ if argWhat = #DownOnOther then
+  [  9] ret ..................................... exit
+  [ 10] getparam 16 ............................. <argWhat>
+  [ 12] pushsymb 380 ............................ <#down>
+  [ 15] eq ...................................... <argWhat = #down>
+  [ 16] jmpifz [ 39] ............................ if argWhat = #down then / else
+  [ 19] getprop 581 ............................. <itemObj>
+  [ 22] getobjprop 247 .......................... <itemObj.ancestor>
+  [ 25] getobjprop 248 .......................... <itemObj.ancestor.masterObj>
+  [ 28] pusharglist 1 ........................... <itemObj.ancestor.masterObj>
+  [ 30] objcall 35 .............................. <itemObj.ancestor.masterObj.getTopWindow()>
+  [ 33] setprop 630 ............................. topWndObj = itemObj.ancestor.masterObj.getTopWindow()
+  [ 36] jmp [ 83]
+  [ 39] getparam 16 ............................. <argWhat>
+  [ 41] pushsymb 350 ............................ <#stillDown>
+  [ 44] eq ...................................... <argWhat = #stillDown>
+  [ 45] jmpifz [ 74] ............................ if argWhat = #stillDown then / else
+  [ 48] getprop 630 ............................. <topWndObj>
+  [ 51] pusharglist 1 ........................... <topWndObj>
+  [ 53] extcall 105 ............................. <objectp(topWndObj)>
+  [ 56] jmpifz [ 71] ............................ if objectp(topWndObj) then
+  [ 59] getprop 630 ............................. <topWndObj>
+  [ 62] getparam 8 .............................. <argObj>
+  [ 64] getobjprop 351 .......................... <argObj.deltaMove>
+  [ 67] pusharglistnoret 2 ...................... <topWndObj, argObj.deltaMove>
+  [ 69] objcall 20 .............................. topWndObj.move(argObj.deltaMove)
+  [ 71] jmp [ 83]
+  [ 74] getparam 16 ............................. <argWhat>
+  [ 76] pushsymb 346 ............................ <#click>
+  [ 79] eq ...................................... <argWhat = #click>
+  [ 80] jmpifz [ 83] ............................ if argWhat = #click then
+  [ 83] ret
+end

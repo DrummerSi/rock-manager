@@ -1,0 +1,184 @@
+property m_dataPath, m_editClassMaster, m_inFileName, m_outFileName
+global gClassManager
+
+on new me
+  m_dataPath = "\\resurs\Monsterland\_Projects\Rockmanager\Data\"
+  if not objectp(gClassManager) then
+    gClassManager = script("ClassManagerScript").new(m_dataPath)
+    gClassManager.instantiate(VOID, ["*"])
+    pott("Inited")
+  end if
+  m_editClassMaster = script("ImportSwitchesScript").new(m_dataPath)
+  m_inFileName = m_dataPath & "TranslationBig.txt"
+  m_outFileName = the moviePath & "TranslationBigNew.txt"
+  me.updateTranslationSheet()
+  return me
+end
+
+on updateTranslationSheet me
+  warningsStr = EMPTY
+  allExportData = [:]
+  realPropPaths = [:]
+  realFlatPropPaths = [:]
+  IDsNotInTranslation = []
+  IDsNotInData = []
+  repeat with classNr = 1 to gClassManager.m_objsByClass.count
+    className = gClassManager.m_objsByClass.getPropAt(classNr)
+    translateTheseProps = m_editClassMaster.getPropsWithInfoCriteria([className], [#Translate: 1])
+    if translateTheseProps.count = 0 then
+      next repeat
+    end if
+    instances = gClassManager.getObjsOfClass(className)
+    if instances.count = 0 then
+      next repeat
+    end if
+    flatPropList = flattenPropListStructure(translateTheseProps)
+    realPropPaths.addProp(className, translateTheseProps)
+    realFlatPropPaths.addProp(className, flatPropList)
+    classData = [:]
+    allExportData.addProp(className, classData)
+    repeat with instNr = 1 to instances.count
+      obj = instances[instNr]
+      instanceData = []
+      IDsNotInTranslation.add(obj.ID)
+      classData.addProp(obj.ID, instanceData)
+      repeat with propPath in flatPropList
+        instanceData.add([rgetProp(obj, propPath)])
+      end repeat
+    end repeat
+  end repeat
+  pott("Reading old export")
+  the itemDelimiter = numToChar(9)
+  transStr = readFile(m_inFileName)
+  if not stringp(transStr) then
+    transStr = EMPTY
+  end if
+  nextLineIsPropOrder = 0
+  propOrder = [:]
+  columnHeadlines = transStr.line[1]
+  repeat with itemNr = the number of items in columnHeadlines down to 1
+    if columnHeadlines.item[itemNr] = EMPTY then
+      delete realPropPaths.item[itemNr]
+    end if
+  end repeat
+  numLanguages = the number of items in columnHeadlines - 2
+  repeat with lineNr = 2 to the number of lines in transStr
+    tmpLine = transStr.line[lineNr]
+    if (lineNr mod 100) = 0 then
+      pott("lineNr:", lineNr)
+    end if
+    if tmpLine.item[1].length > 2 then
+      numItemsInClass = 0
+      currClass = symbol(tmpLine.item[1])
+      realClassList = allExportData.getaProp(currClass)
+      if voidp(realClassList) then
+        warningsStr = warningsStr & string(currClass) & ": class removed" & RETURN
+      end if
+      nextLineIsPropOrder = 1
+      pott("Class", currClass)
+      next repeat
+    end if
+    if nextLineIsPropOrder then
+      propOrder = value(tmpLine.item[2])
+      if voidp(propOrder) then
+        propOrder = [:]
+      else
+        nextLineIsPropOrder = 0
+        indexTranslateTable = []
+        flatPropOrder = flattenPropListStructure(propOrder)
+        realPropOrder = realFlatPropPaths.getaProp(currClass)
+        repeat with n = 1 to flatPropOrder.count
+          indexTranslateTable.add(realPropOrder.getPos(flatPropOrder[n]))
+        end repeat
+        tmpUnionInfo = getUniqueItemsInLists(flatPropOrder, realPropOrder)
+        if (tmpUnionInfo[1].count > 0) or (tmpUnionInfo[2].count > 0) then
+          repeat with newProp in tmpUnionInfo[2]
+          end repeat
+          repeat with removedProp in tmpUnionInfo[1]
+            warningsStr = warningsStr & string(currClass) & " " & string(removedProp) & ": prop removed" & RETURN
+          end repeat
+        end if
+      end if
+      next repeat
+    end if
+    if tmpLine.item[2].length > 2 then
+      currID = symbol(tmpLine.item[2])
+      numItemsInClass = numItemsInClass + 1
+      realItemProps = realClassList.getaProp(currID)
+      if voidp(realItemProps) then
+        IDsNotInData.add(currID)
+      end if
+      IDsNotInTranslation.deleteOne(currID)
+      propCnt = 1
+    end if
+    if propCnt <= propOrder.count then
+      tmpLangWords = []
+      repeat with langCol = 3 to the number of items in tmpLine
+        tmpThisItem = tmpLine.item[langCol]
+        if tmpThisItem.length > 1 then
+          if tmpThisItem.char[1] = QUOTE then
+            tmpThisItem = removeExcelQuotes(tmpThisItem)
+          end if
+        end if
+        tmpLangWords.add(tmpThisItem)
+      end repeat
+      if tmpLangWords.count < numLanguages then
+        repeat with n = tmpLangWords.count + 1 to numLanguages
+          tmpLangWords.add(EMPTY)
+        end repeat
+      end if
+      tmpInsertInRealPos = indexTranslateTable[propCnt]
+      if (tmpInsertInRealPos > 0) and listp(realItemProps) then
+        if tmpLangWords[1] <> realItemProps[tmpInsertInRealPos][1] then
+          tmpLangWords[1] = realItemProps[tmpInsertInRealPos][1] & " __CHANGED " & tmpLangWords[1]
+        end if
+        realItemProps[tmpInsertInRealPos] = tmpLangWords
+      end if
+      propCnt = propCnt + 1
+    end if
+  end repeat
+  pott("IDsNotInTranslation", IDsNotInTranslation)
+  pott("IDsNotInData", IDsNotInData)
+  pott("warningsStr", warningsStr)
+  nl = RETURN & numToChar(10)
+  pott("Generating text")
+  delim = numToChar(9)
+  if columnHeadlines = EMPTY then
+    columnHeadlines = "Class" & delim & "ID" & delim & "English"
+  end if
+  exportStr = columnHeadlines & nl
+  repeat with classNr = 1 to allExportData.count
+    className = allExportData.getPropAt(classNr)
+    exportStr = exportStr & className & nl
+    pott("class", className)
+    props = realPropPaths.getaProp(className)
+    exportStr = exportStr & delim & string(props) & nl
+    classInstancesStr = EMPTY
+    classData = allExportData[classNr]
+    repeat with instNr = 1 to classData.count
+      if (instNr mod 100) = 0 then
+        pott("InstNr", instNr)
+      end if
+      instID = classData.getPropAt(instNr)
+      exportStr = exportStr & delim & instID
+      tmpLineStartStr = EMPTY
+      instData = classData[instNr]
+      repeat with propData in instData
+        exportStr = exportStr & tmpLineStartStr
+        gotOrgLangStr = propData[1].length > 1
+        repeat with langNr = 1 to propData.count
+          langStr = propData[langNr]
+          if gotOrgLangStr and (langStr = EMPTY) and (langNr <= numLanguages) then
+            langStr = "__EMPTY"
+          end if
+          exportStr = exportStr & delim & langStr
+        end repeat
+        exportStr = exportStr & nl
+        tmpLineStartStr = delim
+      end repeat
+    end repeat
+    exportStr = exportStr & nl
+  end repeat
+  pott("Writing file")
+  writeFile(m_outFileName, exportStr)
+end

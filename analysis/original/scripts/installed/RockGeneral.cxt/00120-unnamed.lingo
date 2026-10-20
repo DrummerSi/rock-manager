@@ -1,0 +1,29 @@
+on readLineAsList argLineStr, argStartReadFromItemNr
+  valList = []
+  valNr = 1
+  if integerp(argStartReadFromItemNr) then
+    itemNr = argStartReadFromItemNr
+  else
+    tmpWord = word 2 of argLineStr
+    put EMPTY into argLineStr.word[1]
+    tmpOff = offset(tmpWord, argLineStr)
+    itemNr = the number of items in argLineStr.char[1..tmpOff]
+  end if
+  numItems = the number of items in argLineStr
+  repeat while itemNr <= numItems
+    currItem = argLineStr.item[itemNr]
+    if currItem.char[1] = QUOTE then
+      currItem = removeExcelQuotes(currItem)
+    end if
+    valList.add(currItem)
+    valNr = valNr + 1
+    itemNr = itemNr + 1
+  end repeat
+  repeat with n = valList.count down to 1
+    if valList[n] <> EMPTY then
+      exit repeat
+    end if
+    valList.deleteAt(n)
+  end repeat
+  return valList
+end

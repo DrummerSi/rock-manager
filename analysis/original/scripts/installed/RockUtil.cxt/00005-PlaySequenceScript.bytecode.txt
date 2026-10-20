@@ -1,0 +1,800 @@
+property m_tracks, m_nextEventTime, m_ticksPerQuarternote, m_length, m_bpm, m_beatSignature, m_numBars, m_ticksPerMSec, m_msecsStart, m_lastTick, m_tick, m_totalMsecs, m_orgStartMSecs, m_loopObj, m_loopTracks, m_soundPath
+global gUseful
+
+on new me
+  [  0] pushint8 16 ............................. <16>
+  [  3] setprop 248 ............................. m_ticksPerQuarternote = 16
+  [  6] pusharglist 0 ........................... <[:]>
+  [  8] pushproplist ............................ <[:]>
+  [  9] setprop 249 ............................. m_loopTracks = [:]
+  [ 12] pusharglist 0 ........................... <[:]>
+  [ 14] pushproplist ............................ <[:]>
+  [ 15] setprop 250 ............................. m_tracks = [:]
+  [ 18] pushint8 1 .............................. <1>
+  [ 21] setprop 251 ............................. m_numBars = 1
+  [ 24] pushint8 4 .............................. <4>
+  [ 27] pushint8 4 .............................. <4>
+  [ 30] pusharglist 2 ........................... <[4, 4]>
+  [ 32] pushlist ................................ <[4, 4]>
+  [ 33] setprop 252 ............................. m_beatSignature = [4, 4]
+  [ 36] pushcons 0 .............................. <120.0>
+  [ 38] setprop 253 ............................. m_bpm = 120.0
+  [ 41] getglobal 7 ............................. <gRock>
+  [ 43] pusharglist 1 ........................... <gRock>
+  [ 45] extcall 71 .............................. <objectp(gRock)>
+  [ 48] jmpifz [ 67] ............................ if objectp(gRock) then / else
+  [ 51] getglobal 7 ............................. <gRock>
+  [ 53] getobjprop 8 ............................ <gRock.m_paths>
+  [ 55] pushsymb 15 ............................. <#RenderedMusic>
+  [ 57] pusharglist 2 ........................... <gRock.m_paths, #RenderedMusic>
+  [ 59] objcall 10 .............................. <gRock.m_paths.getPath(#RenderedMusic)>
+  [ 61] setprop 254 ............................. m_soundPath = gRock.m_paths.getPath(#RenderedMusic)
+  [ 64] jmp [ 73]
+  [ 67] getmovieprop 217 ........................ <the moviePath>
+  [ 70] setprop 254 ............................. m_soundPath = the moviePath
+  [ 73] getparam 0 .............................. <me>
+  [ 75] pusharglistnoret 1 ...................... <me>
+  [ 77] extcall 21 .............................. return me
+  [ 79] ret
+end
+
+on kill me
+  [  0] getprop 250 ............................. <m_tracks>
+  [  3] peek 0
+  [  5] pusharglist 1
+  [  7] extcall 32
+  [ 10] pushint8 1
+  [ 12] peek 0
+  [ 14] peek 2
+  [ 16] lteq
+  [ 17] jmpifz [ 42] ............................ repeat with obj in m_tracks
+  [ 20] peek 2
+  [ 22] peek 1
+  [ 24] pusharglist 2
+  [ 26] extcall 34
+  [ 29] setlocal 0
+  [ 31] getlocal 0 .............................. <obj>
+  [ 33] pusharglistnoret 1 ...................... <obj>
+  [ 35] objcall 1 ............................... obj.kill()
+  [ 37] pushint8 1
+  [ 39] add
+  [ 40] endrepeat [ 12]
+  [ 42] pop 3
+  [ 44] pusharglist 0 ........................... <[:]>
+  [ 46] pushproplist ............................ <[:]>
+  [ 47] setprop 250 ............................. m_tracks = [:]
+  [ 50] getprop 249 ............................. <m_loopTracks>
+  [ 53] peek 0
+  [ 55] pusharglist 1
+  [ 57] extcall 32
+  [ 60] pushint8 1
+  [ 62] peek 0
+  [ 64] peek 2
+  [ 66] lteq
+  [ 67] jmpifz [ 92] ............................ repeat with obj in m_loopTracks
+  [ 70] peek 2
+  [ 72] peek 1
+  [ 74] pusharglist 2
+  [ 76] extcall 34
+  [ 79] setlocal 0
+  [ 81] getlocal 0 .............................. <obj>
+  [ 83] pusharglistnoret 1 ...................... <obj>
+  [ 85] objcall 1 ............................... obj.kill()
+  [ 87] pushint8 1
+  [ 89] add
+  [ 90] endrepeat [ 62]
+  [ 92] pop 3
+  [ 94] pusharglist 0 ........................... <[:]>
+  [ 96] pushproplist ............................ <[:]>
+  [ 97] setprop 249 ............................. m_loopTracks = [:]
+  [100] getprop 255 ............................. <m_loopObj>
+  [103] pusharglist 1 ........................... <m_loopObj>
+  [105] extcall 71 .............................. <objectp(m_loopObj)>
+  [108] jmpifz [121] ............................ if objectp(m_loopObj) then
+  [111] getprop 255 ............................. <m_loopObj>
+  [114] pusharglist 1 ........................... <m_loopObj>
+  [116] objcall 1 ............................... <m_loopObj.kill()>
+  [118] setprop 255 ............................. m_loopObj = m_loopObj.kill()
+  [121] getglobal 23 ............................ <gUseful>
+  [123] getobjprop 256 .......................... <gUseful.idleTimer>
+  [126] getparam 0 .............................. <me>
+  [128] pusharglistnoret 2 ...................... <gUseful.idleTimer, me>
+  [130] objcall 25 .............................. gUseful.idleTimer.deleteObject(me)
+  [132] pushint8 1 .............................. <1>
+  [135] setmovieprop 257 ........................ the idleHandlerPeriod = 1
+  [138] pushzero ................................ <0>
+  [139] pusharglistnoret 1 ...................... <0>
+  [141] extcall 21 .............................. return 0
+  [143] ret
+end
+
+on setPaths me, argPaths
+  [  0] getparam 8 .............................. <argPaths>
+  [  2] pusharglist 1 ........................... <argPaths>
+  [  4] extcall 148 ............................. <stringp(argPaths)>
+  [  7] jmpifz [ 20] ............................ if stringp(argPaths) then
+  [ 10] pushsymb 259 ............................ <#sound>
+  [ 13] getparam 8 .............................. <argPaths>
+  [ 15] pusharglist 2 ........................... <[#sound: argPaths]>
+  [ 17] pushproplist ............................ <[#sound: argPaths]>
+  [ 18] setparam 8 .............................. argPaths = [#sound: argPaths]
+  [ 20] getparam 8 .............................. <argPaths>
+  [ 22] pushsymb 259 ............................ <#sound>
+  [ 25] pusharglist 2 ........................... <argPaths, #sound>
+  [ 27] objcall 34 .............................. <argPaths[#sound]>
+  [ 30] pusharglist 1 ........................... <argPaths[#sound]>
+  [ 32] extcall 148 ............................. <stringp(argPaths[#sound])>
+  [ 35] jmpifz [ 51] ............................ if stringp(argPaths[#sound]) then
+  [ 38] getparam 8 .............................. <argPaths>
+  [ 40] pushsymb 259 ............................ <#sound>
+  [ 43] pusharglist 2 ........................... <argPaths, #sound>
+  [ 45] objcall 34 .............................. <argPaths[#sound]>
+  [ 48] setprop 254 ............................. m_soundPath = argPaths[#sound]
+  [ 51] ret
+end
+
+on setBPM me, argBPM
+  [  0] ret
+end
+
+on getSequenceLength me, argFormat
+  [  0] getprop 252 ............................. <m_beatSignature>
+  [  3] pushint8 1 .............................. <1>
+  [  6] pusharglist 2 ........................... <m_beatSignature, 1>
+  [  8] objcall 34 .............................. <m_beatSignature[1]>
+  [ 11] pushint8 4 .............................. <4>
+  [ 14] mul ..................................... <m_beatSignature[1] * 4>
+  [ 15] getprop 252 ............................. <m_beatSignature>
+  [ 18] pushint8 2 .............................. <2>
+  [ 21] pusharglist 2 ........................... <m_beatSignature, 2>
+  [ 23] objcall 34 .............................. <m_beatSignature[2]>
+  [ 26] div ..................................... <m_beatSignature[1] * 4 / m_beatSignature[2]>
+  [ 27] setlocal 0 .............................. quartersPerBar = m_beatSignature[1] * 4 / m_beatSignature[2]
+  [ 29] getprop 251 ............................. <m_numBars>
+  [ 32] getlocal 0 .............................. <quartersPerBar>
+  [ 34] mul ..................................... <m_numBars * quartersPerBar>
+  [ 35] setlocal 8 .............................. totQuarters = m_numBars * quartersPerBar
+  [ 37] getlocal 8 .............................. <totQuarters>
+  [ 39] getprop 248 ............................. <m_ticksPerQuarternote>
+  [ 42] mul ..................................... <totQuarters * m_ticksPerQuarternote>
+  [ 43] setlocal 16 ............................. totTicks = totQuarters * m_ticksPerQuarternote
+  [ 45] getparam 8 .............................. <argFormat>
+  [ 47] pushsymb 262 ............................ <#ticks>
+  [ 50] eq ...................................... <argFormat = #ticks>
+  [ 51] jmpifz [ 63] ............................ if argFormat = #ticks then / else
+  [ 54] getlocal 16 ............................. <totTicks>
+  [ 56] pusharglistnoret 1 ...................... <totTicks>
+  [ 58] extcall 21 .............................. return totTicks
+  [ 60] jmp [108]
+  [ 63] getparam 8 .............................. <argFormat>
+  [ 65] pushsymb 263 ............................ <#Secs>
+  [ 68] eq ...................................... <argFormat = #Secs>
+  [ 69] jmpifz [ 93] ............................ if argFormat = #Secs then / else
+  [ 72] getlocal 8 .............................. <totQuarters>
+  [ 74] pusharglist 1 ........................... <totQuarters>
+  [ 76] extcall 175 ............................. <float(totQuarters)>
+  [ 79] pushcons 8 .............................. <60.0>
+  [ 81] getprop 253 ............................. <m_bpm>
+  [ 84] div ..................................... <60.0 / m_bpm>
+  [ 85] mul ..................................... <float(totQuarters) * (60.0 / m_bpm)>
+  [ 86] pusharglistnoret 1 ...................... <float(totQuarters) * (60.0 / m_bpm)>
+  [ 88] extcall 21 .............................. return float(totQuarters) * (60.0 / m_bpm)
+  [ 90] jmp [108]
+  [ 93] getparam 8 .............................. <argFormat>
+  [ 95] pushsymb 264 ............................ <#Quarters>
+  [ 98] eq ...................................... <argFormat = #Quarters>
+  [ 99] jmpifz [108] ............................ if argFormat = #Quarters then
+  [102] getlocal 8 .............................. <totQuarters>
+  [104] pusharglistnoret 1 ...................... <totQuarters>
+  [106] extcall 21 .............................. return totQuarters
+  [108] ret
+end
+
+on getSecsPerTick me
+  [  0] pushcons 16 ............................. <1.0>
+  [  2] getprop 253 ............................. <m_bpm>
+  [  5] pushcons 24 ............................. <60.0>
+  [  7] div ..................................... <m_bpm / 60.0>
+  [  8] div ..................................... <1.0 / (m_bpm / 60.0)>
+  [  9] setlocal 0 .............................. secsPerQuarterNote = 1.0 / (m_bpm / 60.0)
+  [ 11] getlocal 0 .............................. <secsPerQuarterNote>
+  [ 13] getprop 248 ............................. <m_ticksPerQuarternote>
+  [ 16] div ..................................... <secsPerQuarterNote / m_ticksPerQuarternote>
+  [ 17] pusharglistnoret 1 ...................... <secsPerQuarterNote / m_ticksPerQuarternote>
+  [ 19] extcall 21 .............................. return secsPerQuarterNote / m_ticksPerQuarternote
+  [ 21] ret
+end
+
+on getElapsedTime me, argOption
+  [  0] getparam 0 .............................. <me>
+  [  2] pushsymb 263 ............................ <#Secs>
+  [  5] pusharglist 2 ........................... <me, #Secs>
+  [  7] objcall 233 ............................. <me.getSequenceLength(#Secs)>
+  [ 10] setlocal 0 .............................. tmpLengthSecs = me.getSequenceLength(#Secs)
+  [ 12] getmovieprop 53 ......................... <the milliSeconds>
+  [ 15] getprop 269 ............................. <m_msecsStart>
+  [ 18] sub ..................................... <the milliSeconds - m_msecsStart>
+  [ 19] pushcons 32 ............................. <1000.0>
+  [ 21] div ..................................... <(the milliSeconds - m_msecsStart) / 1000.0>
+  [ 22] setlocal 8 .............................. tmpElapsedSecs = (the milliSeconds - m_msecsStart) / 1000.0
+  [ 24] getlocal 8 .............................. <tmpElapsedSecs>
+  [ 26] getlocal 0 .............................. <tmpLengthSecs>
+  [ 28] div ..................................... <tmpElapsedSecs / tmpLengthSecs>
+  [ 29] setlocal 16 ............................. tmp = tmpElapsedSecs / tmpLengthSecs
+  [ 31] getlocal 16 ............................. <tmp>
+  [ 33] getlocal 16 ............................. <tmp>
+  [ 35] pushcons 40 ............................. <0.5>
+  [ 37] sub ..................................... <tmp - 0.5>
+  [ 38] pusharglist 1 ........................... <tmp - 0.5>
+  [ 40] extcall 54 .............................. <integer(tmp - 0.5)>
+  [ 43] sub ..................................... <tmp - integer(tmp - 0.5)>
+  [ 44] setlocal 24 ............................. tmpFract = tmp - integer(tmp - 0.5)
+  [ 46] getparam 8 .............................. <argOption>
+  [ 48] pushsymb 270 ............................ <#Fraction>
+  [ 51] eq ...................................... <argOption = #Fraction>
+  [ 52] jmpifz [ 61] ............................ if argOption = #Fraction then
+  [ 55] getlocal 24 ............................. <tmpFract>
+  [ 57] pusharglistnoret 1 ...................... <tmpFract>
+  [ 59] extcall 21 .............................. return tmpFract
+  [ 61] getlocal 24 ............................. <tmpFract>
+  [ 63] getlocal 0 .............................. <tmpLengthSecs>
+  [ 65] mul ..................................... <tmpFract * tmpLengthSecs>
+  [ 66] setlocal 32 ............................. tmpSecs = tmpFract * tmpLengthSecs
+  [ 68] getlocal 32 ............................. <tmpSecs>
+  [ 70] pusharglistnoret 1 ...................... <tmpSecs>
+  [ 72] extcall 21 .............................. return tmpSecs
+  [ 74] ret
+end
+
+on prepare me
+  [  0] pushzero ................................ <0>
+  [  1] setlocal 0 .............................. totalLengthSecs = 0
+  [  3] getprop 249 ............................. <m_loopTracks>
+  [  6] getobjprop 32 ........................... <m_loopTracks.count>
+  [  9] jmpifz [ 45] ............................ if m_loopTracks.count then
+  [ 12] getprop 249 ............................. <m_loopTracks>
+  [ 15] pushint8 1 .............................. <1>
+  [ 18] pusharglist 2 ........................... <m_loopTracks, 1>
+  [ 20] objcall 34 .............................. <m_loopTracks[1]>
+  [ 23] setlocal 8 .............................. obj = m_loopTracks[1]
+  [ 25] getlocal 8 .............................. <obj>
+  [ 27] pusharglist 1 ........................... <obj>
+  [ 29] objcall 276 ............................. <obj.getLength()>
+  [ 32] pushcons 48 ............................. <1000.0>
+  [ 34] div ..................................... <obj.getLength() / 1000.0>
+  [ 35] setlocal 0 .............................. totalLengthSecs = obj.getLength() / 1000.0
+  [ 37] getprop 251 ............................. <m_numBars>
+  [ 40] getlocal 0 .............................. <totalLengthSecs>
+  [ 42] mul ..................................... <m_numBars * totalLengthSecs>
+  [ 43] setlocal 0 .............................. totalLengthSecs = m_numBars * totalLengthSecs
+  [ 45] getprop 251 ............................. <m_numBars>
+  [ 48] getprop 252 ............................. <m_beatSignature>
+  [ 51] pushint8 1 .............................. <1>
+  [ 54] pusharglist 2 ........................... <m_beatSignature, 1>
+  [ 56] objcall 34 .............................. <m_beatSignature[1]>
+  [ 59] mul ..................................... <m_numBars * m_beatSignature[1]>
+  [ 60] getprop 252 ............................. <m_beatSignature>
+  [ 63] pushint8 2 .............................. <2>
+  [ 66] pusharglist 2 ........................... <m_beatSignature, 2>
+  [ 68] objcall 34 .............................. <m_beatSignature[2]>
+  [ 71] mul ..................................... <m_numBars * m_beatSignature[1] * m_beatSignature[2]>
+  [ 72] pushint8 4 .............................. <4>
+  [ 75] div ..................................... <m_numBars * m_beatSignature[1] * m_beatSignature[2] / 4>
+  [ 76] setlocal 16 ............................. numQuarterNotes = m_numBars * m_beatSignature[1] * m_beatSignature[2] / 4
+  [ 78] pushzero ................................ <0>
+  [ 79] getlocal 0 .............................. <totalLengthSecs>
+  [ 81] pushzero ................................ <0>
+  [ 82] gt ...................................... <totalLengthSecs > 0>
+  [ 83] and ..................................... <0 and (totalLengthSecs > 0)>
+  [ 84] jmpifz [105] ............................ if 0 and (totalLengthSecs > 0) then / else
+  [ 87] getlocal 0 .............................. <totalLengthSecs>
+  [ 89] getlocal 16 ............................. <numQuarterNotes>
+  [ 91] div ..................................... <totalLengthSecs / numQuarterNotes>
+  [ 92] setlocal 24 ............................. secsPerQuarterNote = totalLengthSecs / numQuarterNotes
+  [ 94] pushcons 56 ............................. <60.0>
+  [ 96] getlocal 24 ............................. <secsPerQuarterNote>
+  [ 98] div ..................................... <60.0 / secsPerQuarterNote>
+  [ 99] setprop 253 ............................. m_bpm = 60.0 / secsPerQuarterNote
+  [102] jmp [123]
+  [105] pushcons 64 ............................. <1.0>
+  [107] getprop 253 ............................. <m_bpm>
+  [110] pushcons 72 ............................. <60.0>
+  [112] div ..................................... <m_bpm / 60.0>
+  [113] div ..................................... <1.0 / (m_bpm / 60.0)>
+  [114] setlocal 24 ............................. secsPerQuarterNote = 1.0 / (m_bpm / 60.0)
+  [116] getlocal 16 ............................. <numQuarterNotes>
+  [118] getlocal 24 ............................. <secsPerQuarterNote>
+  [120] mul ..................................... <numQuarterNotes * secsPerQuarterNote>
+  [121] setlocal 0 .............................. totalLengthSecs = numQuarterNotes * secsPerQuarterNote
+  [123] getlocal 0 .............................. <totalLengthSecs>
+  [125] pushint8 1000 ........................... <1000>
+  [128] mul ..................................... <totalLengthSecs * 1000>
+  [129] pusharglist 1 ........................... <totalLengthSecs * 1000>
+  [131] extcall 54 .............................. <integer(totalLengthSecs * 1000)>
+  [134] setprop 277 ............................. m_totalMsecs = integer(totalLengthSecs * 1000)
+  [137] getlocal 24 ............................. <secsPerQuarterNote>
+  [139] getprop 248 ............................. <m_ticksPerQuarternote>
+  [142] div ..................................... <secsPerQuarterNote / m_ticksPerQuarternote>
+  [143] setlocal 32 ............................. secsPerTick = secsPerQuarterNote / m_ticksPerQuarternote
+  [145] pushcons 80 ............................. <1.0>
+  [147] pushcons 88 ............................. <1000.0>
+  [149] getlocal 32 ............................. <secsPerTick>
+  [151] mul ..................................... <1000.0 * secsPerTick>
+  [152] div ..................................... <1.0 / (1000.0 * secsPerTick)>
+  [153] setprop 278 ............................. m_ticksPerMSec = 1.0 / (1000.0 * secsPerTick)
+  [156] ret
+end
+
+on play me
+  [  0] pushzero ................................ <0>
+  [  1] setmovieprop 257 ........................ the idleHandlerPeriod = 0
+  [  4] pushint8 1 .............................. <1>
+  [  7] inv ..................................... <-1>
+  [  8] setprop 282 ............................. m_nextEventTime = -1
+  [ 11] getparam 0 .............................. <me>
+  [ 13] pusharglistnoret 1 ...................... <me>
+  [ 15] objcall 241 ............................. me.restart()
+  [ 18] getglobal 23 ............................ <gUseful>
+  [ 20] getobjprop 256 .......................... <gUseful.idleTimer>
+  [ 23] getparam 0 .............................. <me>
+  [ 25] pusharglistnoret 2 ...................... <gUseful.idleTimer, me>
+  [ 27] objcall 56 .............................. gUseful.idleTimer.addObject(me)
+  [ 30] getmovieprop 53 ......................... <the milliSeconds>
+  [ 33] setprop 269 ............................. m_msecsStart = the milliSeconds
+  [ 36] getprop 269 ............................. <m_msecsStart>
+  [ 39] setprop 283 ............................. m_orgStartMSecs = m_msecsStart
+  [ 42] getprop 249 ............................. <m_loopTracks>
+  [ 45] peek 0
+  [ 47] pusharglist 1
+  [ 49] extcall 32
+  [ 52] pushint8 1
+  [ 54] peek 0
+  [ 56] peek 2
+  [ 58] lteq
+  [ 59] jmpifz [ 85] ............................ repeat with obj in m_loopTracks
+  [ 62] peek 2
+  [ 64] peek 1
+  [ 66] pusharglist 2
+  [ 68] extcall 34
+  [ 71] setlocal 0
+  [ 73] getlocal 0 .............................. <obj>
+  [ 75] pusharglistnoret 1 ...................... <obj>
+  [ 77] objcall 237 ............................. obj.play()
+  [ 80] pushint8 1
+  [ 82] add
+  [ 83] endrepeat [ 54]
+  [ 85] pop 3
+  [ 87] getparam 0 .............................. <me>
+  [ 89] pusharglistnoret 1 ...................... <me>
+  [ 91] objcall 5 ............................... me.timeTick()
+  [ 93] ret
+end
+
+on stop me
+  [  0] pushint8 1 .............................. <1>
+  [  3] setmovieprop 257 ........................ the idleHandlerPeriod = 1
+  [  6] getglobal 23 ............................ <gUseful>
+  [  8] getobjprop 256 .......................... <gUseful.idleTimer>
+  [ 11] getparam 0 .............................. <me>
+  [ 13] pusharglistnoret 2 ...................... <gUseful.idleTimer, me>
+  [ 15] objcall 25 .............................. gUseful.idleTimer.deleteObject(me)
+  [ 17] getprop 249 ............................. <m_loopTracks>
+  [ 20] peek 0
+  [ 22] pusharglist 1
+  [ 24] extcall 32
+  [ 27] pushint8 1
+  [ 29] peek 0
+  [ 31] peek 2
+  [ 33] lteq
+  [ 34] jmpifz [ 60] ............................ repeat with obj in m_loopTracks
+  [ 37] peek 2
+  [ 39] peek 1
+  [ 41] pusharglist 2
+  [ 43] extcall 34
+  [ 46] setlocal 0
+  [ 48] getlocal 0 .............................. <obj>
+  [ 50] pusharglistnoret 1 ...................... <obj>
+  [ 52] objcall 238 ............................. obj.stop()
+  [ 55] pushint8 1
+  [ 57] add
+  [ 58] endrepeat [ 29]
+  [ 60] pop 3
+  [ 62] ret
+end
+
+on test me
+  [  0] pushcons 96 ............................. <"TrackLoopScript">
+  [  2] pusharglist 1 ........................... <"TrackLoopScript">
+  [  4] extcall 284 ............................. <script("TrackLoopScript")>
+  [  7] pushcons 104 ............................ <"D:\\user\\beat\\11X.wav">
+  [  9] pusharglist 2 ........................... <script("TrackLoopScript"), "D:\\user\\beat\\11X.wav">
+  [ 11] objcall 0 ............................... <script("TrackLoopScript").new("D:\\user\\beat\\11X.wav")>
+  [ 13] setlocal 0 .............................. obj = script("TrackLoopScript").new("D:\\user\\beat\\11X.wav")
+  [ 15] getlocal 0 .............................. <obj>
+  [ 17] pusharglist 1 ........................... <obj>
+  [ 19] objcall 276 ............................. <obj.getLength()>
+  [ 22] pushcons 112 ............................ <1000.0>
+  [ 24] div ..................................... <obj.getLength() / 1000.0>
+  [ 25] setlocal 8 .............................. totalLengthSecs = obj.getLength() / 1000.0
+  [ 27] getparam 0 .............................. <me>
+  [ 29] getlocal 0 .............................. <obj>
+  [ 31] pushint8 1 .............................. <1>
+  [ 34] pusharglistnoret 3 ...................... <me, obj, 1>
+  [ 36] objcall 244 ............................. me.addLoopTrack(obj, 1)
+  [ 39] pushint8 2 .............................. <2>
+  [ 42] setprop 251 ............................. m_numBars = 2
+  [ 45] getparam 0 .............................. <me>
+  [ 47] pusharglistnoret 1 ...................... <me>
+  [ 49] objcall 236 ............................. me.prepare()
+  [ 52] getparam 0 .............................. <me>
+  [ 54] pusharglistnoret 1 ...................... <me>
+  [ 56] objcall 237 ............................. me.play()
+  [ 59] ret
+end
+
+on checkNextEvent me
+  [  0] pushcons 120 ............................ <999999>
+  [  2] setprop 282 ............................. m_nextEventTime = 999999
+  [  5] getprop 250 ............................. <m_tracks>
+  [  8] peek 0
+  [ 10] pusharglist 1
+  [ 12] extcall 32
+  [ 15] pushint8 1
+  [ 17] peek 0
+  [ 19] peek 2
+  [ 21] lteq
+  [ 22] jmpifz [ 77] ............................ repeat with track in m_tracks
+  [ 25] peek 2
+  [ 27] peek 1
+  [ 29] pusharglist 2
+  [ 31] extcall 34
+  [ 34] setlocal 0
+  [ 36] getlocal 0 .............................. <track>
+  [ 38] getprop 285 ............................. <m_tick>
+  [ 41] pushint8 1 .............................. <1>
+  [ 44] add ..................................... <m_tick + 1>
+  [ 45] pusharglist 2 ........................... <track, m_tick + 1>
+  [ 47] objcall 286 ............................. <track.whenIsNextEvent(m_tick + 1)>
+  [ 50] setlocal 8 .............................. time = track.whenIsNextEvent(m_tick + 1)
+  [ 52] getlocal 8 .............................. <time>
+  [ 54] pushzero ................................ <0>
+  [ 55] gteq .................................... <time >= 0>
+  [ 56] getlocal 8 .............................. <time>
+  [ 58] getprop 282 ............................. <m_nextEventTime>
+  [ 61] lt ...................................... <time < m_nextEventTime>
+  [ 62] and ..................................... <(time >= 0) and (time < m_nextEventTime)>
+  [ 63] jmpifz [ 71] ............................ if (time >= 0) and (time < m_nextEventTime) then
+  [ 66] getlocal 8 .............................. <time>
+  [ 68] setprop 282 ............................. m_nextEventTime = time
+  [ 71] pushint8 1
+  [ 73] add
+  [ 74] endrepeat [ 17]
+  [ 77] pop 3
+  [ 79] ret
+end
+
+on restart me
+  [  0] pushint8 1 .............................. <1>
+  [  3] inv ..................................... <-1>
+  [  4] setprop 288 ............................. m_lastTick = -1
+  [  7] pushzero ................................ <0>
+  [  8] setprop 285 ............................. m_tick = 0
+  [ 11] getparam 0 .............................. <me>
+  [ 13] pusharglistnoret 1 ...................... <me>
+  [ 15] objcall 240 ............................. me.checkNextEvent()
+  [ 18] pushint8 1 .............................. <1>
+  [ 21] setprop 285 ............................. m_tick = 1
+  [ 24] getmovieprop 53 ......................... <the milliSeconds>
+  [ 27] setprop 269 ............................. m_msecsStart = the milliSeconds
+  [ 30] ret
+end
+
+on timeTick me
+  [  0] pushzero ................................ <0>
+  [  1] setlocal 0 .............................. checkEvent = 0
+  [  3] getmovieprop 53 ......................... <the milliSeconds>
+  [  6] setlocal 8 .............................. tmpMsecs = the milliSeconds
+  [  8] getlocal 8 .............................. <tmpMsecs>
+  [ 10] getprop 269 ............................. <m_msecsStart>
+  [ 13] sub ..................................... <tmpMsecs - m_msecsStart>
+  [ 14] setlocal 16 ............................. msecs = tmpMsecs - m_msecsStart
+  [ 16] getlocal 16 ............................. <msecs>
+  [ 18] getprop 277 ............................. <m_totalMsecs>
+  [ 21] gteq .................................... <msecs >= m_totalMsecs>
+  [ 22] jmpifz [ 59] ............................ if msecs >= m_totalMsecs then
+  [ 25] getlocal 16 ............................. <msecs>
+  [ 27] getprop 277 ............................. <m_totalMsecs>
+  [ 30] mod ..................................... <msecs mod m_totalMsecs>
+  [ 31] setlocal 16 ............................. msecs = msecs mod m_totalMsecs
+  [ 33] getlocal 8 .............................. <tmpMsecs>
+  [ 35] getlocal 16 ............................. <msecs>
+  [ 37] sub ..................................... <tmpMsecs - msecs>
+  [ 38] setprop 269 ............................. m_msecsStart = tmpMsecs - msecs
+  [ 41] pushint8 1 .............................. <1>
+  [ 44] inv ..................................... <-1>
+  [ 45] setprop 288 ............................. m_lastTick = -1
+  [ 48] pushzero ................................ <0>
+  [ 49] setprop 285 ............................. m_tick = 0
+  [ 52] getparam 0 .............................. <me>
+  [ 54] pusharglistnoret 1 ...................... <me>
+  [ 56] objcall 240 ............................. me.checkNextEvent()
+  [ 59] pushint8 1 .............................. <1>
+  [ 62] getprop 278 ............................. <m_ticksPerMSec>
+  [ 65] getlocal 16 ............................. <msecs>
+  [ 67] mul ..................................... <m_ticksPerMSec * msecs>
+  [ 68] add ..................................... <1 + (m_ticksPerMSec * msecs)>
+  [ 69] pusharglist 1 ........................... <1 + (m_ticksPerMSec * msecs)>
+  [ 71] extcall 54 .............................. <integer(1 + (m_ticksPerMSec * msecs))>
+  [ 74] setprop 285 ............................. m_tick = integer(1 + (m_ticksPerMSec * msecs))
+  [ 77] getprop 285 ............................. <m_tick>
+  [ 80] getprop 288 ............................. <m_lastTick>
+  [ 83] nteq .................................... <m_tick <> m_lastTick>
+  [ 84] jmpifz [ 96] ............................ if m_tick <> m_lastTick then / else
+  [ 87] getprop 285 ............................. <m_tick>
+  [ 90] setprop 288 ............................. m_lastTick = m_tick
+  [ 93] jmp [ 97]
+  [ 96] ret ..................................... exit
+  [ 97] getprop 285 ............................. <m_tick>
+  [100] getprop 282 ............................. <m_nextEventTime>
+  [103] gteq .................................... <m_tick >= m_nextEventTime>
+  [104] jmpifz [260] ............................ if m_tick >= m_nextEventTime then
+  [107] getprop 285 ............................. <m_tick>
+  [110] getprop 282 ............................. <m_nextEventTime>
+  [113] sub ..................................... <m_tick - m_nextEventTime>
+  [114] pushzero ................................ <0>
+  [115] gt ...................................... <(m_tick - m_nextEventTime) > 0>
+  [116] jmpifz [156] ............................ if (m_tick - m_nextEventTime) > 0 then
+  [119] getprop 285 ............................. <m_tick>
+  [122] getprop 282 ............................. <m_nextEventTime>
+  [125] sub ..................................... <m_tick - m_nextEventTime>
+  [126] pushint8 3 .............................. <3>
+  [129] lt ...................................... <(m_tick - m_nextEventTime) < 3>
+  [130] jmpifz [148] ............................ if (m_tick - m_nextEventTime) < 3 then / else
+  [133] getprop 282 ............................. <m_nextEventTime>
+  [136] setprop 288 ............................. m_lastTick = m_nextEventTime
+  [139] getprop 282 ............................. <m_nextEventTime>
+  [142] setprop 285 ............................. m_tick = m_nextEventTime
+  [145] jmp [156]
+  [148] getparam 0 .............................. <me>
+  [150] pusharglistnoret 1 ...................... <me>
+  [152] objcall 240 ............................. me.checkNextEvent()
+  [155] ret ..................................... exit
+  [156] getprop 250 ............................. <m_tracks>
+  [159] peek 0
+  [161] pusharglist 1
+  [163] extcall 32
+  [166] pushint8 1
+  [168] peek 0
+  [170] peek 2
+  [172] lteq
+  [173] jmpifz [251] ............................ repeat with track in m_tracks
+  [176] peek 2
+  [178] peek 1
+  [180] pusharglist 2
+  [182] extcall 34
+  [185] setlocal 24
+  [187] getlocal 24 ............................. <track>
+  [189] getprop 285 ............................. <m_tick>
+  [192] pusharglist 2 ........................... <track, m_tick>
+  [194] objcall 289 ............................. <track.getNextEvents(m_tick)>
+  [197] setlocal 32 ............................. events = track.getNextEvents(m_tick)
+  [199] getlocal 32 ............................. <events>
+  [201] peek 0
+  [203] pusharglist 1
+  [205] extcall 32
+  [208] pushint8 1
+  [210] peek 0
+  [212] peek 2
+  [214] lteq
+  [215] jmpifz [243] ............................ repeat with Event in events
+  [218] peek 2
+  [220] peek 1
+  [222] pusharglist 2
+  [224] extcall 34
+  [227] setlocal 40
+  [229] getlocal 24 ............................. <track>
+  [231] getlocal 40 ............................. <Event>
+  [233] pusharglistnoret 2 ...................... <track, Event>
+  [235] objcall 290 ............................. track.playEvent(Event)
+  [238] pushint8 1
+  [240] add
+  [241] endrepeat [210]
+  [243] pop 3
+  [245] pushint8 1
+  [247] add
+  [248] endrepeat [168]
+  [251] pop 3
+  [253] getparam 0 .............................. <me>
+  [255] pusharglistnoret 1 ...................... <me>
+  [257] objcall 240 ............................. me.checkNextEvent()
+  [260] ret
+end
+
+on load me, argList
+  [  0] getparam 8 .............................. <argList>
+  [  2] pusharglist 1 ........................... <argList>
+  [  4] extcall 148 ............................. <stringp(argList)>
+  [  7] jmpifz [ 25] ............................ if stringp(argList) then
+  [ 10] getparam 8 .............................. <argList>
+  [ 12] pusharglist 1 ........................... <argList>
+  [ 14] extcall 296 ............................. <member(argList)>
+  [ 17] getobjprop 297 .......................... <member(argList).text>
+  [ 20] getobjprop 176 .......................... <member(argList).text.value>
+  [ 23] setparam 8 .............................. argList = member(argList).text.value
+  [ 25] getparam 8 .............................. <argList>
+  [ 27] pusharglist 1 ........................... <argList>
+  [ 29] extcall 68 .............................. <voidp(argList)>
+  [ 32] jmpifz [ 50] ............................ if voidp(argList) then
+  [ 35] pushcons 128 ............................ <"Sequence2">
+  [ 37] pusharglist 1 ........................... <"Sequence2">
+  [ 39] extcall 296 ............................. <member("Sequence2")>
+  [ 42] getobjprop 297 .......................... <member("Sequence2").text>
+  [ 45] getobjprop 176 .......................... <member("Sequence2").text.value>
+  [ 48] setparam 8 .............................. argList = member("Sequence2").text.value
+  [ 50] getparam 8 .............................. <argList>
+  [ 52] pushsymb 298 ............................ <#TPQ>
+  [ 55] pusharglist 2 ........................... <argList, #TPQ>
+  [ 57] objcall 34 .............................. <argList[#TPQ]>
+  [ 60] setlocal 0 .............................. fileTicksPerQuarternote = argList[#TPQ]
+  [ 62] getlocal 0 .............................. <fileTicksPerQuarternote>
+  [ 64] pusharglist 1 ........................... <fileTicksPerQuarternote>
+  [ 66] extcall 68 .............................. <voidp(fileTicksPerQuarternote)>
+  [ 69] jmpifz [ 77] ............................ if voidp(fileTicksPerQuarternote) then
+  [ 72] pushint8 4 .............................. <4>
+  [ 75] setlocal 0 .............................. fileTicksPerQuarternote = 4
+  [ 77] getprop 248 ............................. <m_ticksPerQuarternote>
+  [ 80] getlocal 0 .............................. <fileTicksPerQuarternote>
+  [ 82] div ..................................... <m_ticksPerQuarternote / fileTicksPerQuarternote>
+  [ 83] setlocal 8 .............................. ticksMultiplier = m_ticksPerQuarternote / fileTicksPerQuarternote
+  [ 85] getparam 8 .............................. <argList>
+  [ 87] pushsymb 186 ............................ <#tempo>
+  [ 90] pusharglist 2 ........................... <argList, #tempo>
+  [ 92] objcall 34 .............................. <argList[#tempo]>
+  [ 95] setprop 253 ............................. m_bpm = argList[#tempo]
+  [ 98] getparam 8 .............................. <argList>
+  [100] pushsymb 299 ............................ <#BeatSignature>
+  [103] pusharglist 2 ........................... <argList, #BeatSignature>
+  [105] objcall 34 .............................. <argList[#BeatSignature]>
+  [108] setprop 252 ............................. m_beatSignature = argList[#BeatSignature]
+  [111] getprop 252 ............................. <m_beatSignature>
+  [114] pusharglist 1 ........................... <m_beatSignature>
+  [116] extcall 68 .............................. <voidp(m_beatSignature)>
+  [119] jmpifz [134] ............................ if voidp(m_beatSignature) then
+  [122] pushint8 4 .............................. <4>
+  [125] pushint8 4 .............................. <4>
+  [128] pusharglist 2 ........................... <[4, 4]>
+  [130] pushlist ................................ <[4, 4]>
+  [131] setprop 252 ............................. m_beatSignature = [4, 4]
+  [134] getparam 8 .............................. <argList>
+  [136] pushsymb 300 ............................ <#numBars>
+  [139] pusharglist 2 ........................... <argList, #numBars>
+  [141] objcall 34 .............................. <argList[#numBars]>
+  [144] setprop 251 ............................. m_numBars = argList[#numBars]
+  [147] getprop 251 ............................. <m_numBars>
+  [150] pusharglist 1 ........................... <m_numBars>
+  [152] extcall 68 .............................. <voidp(m_numBars)>
+  [155] jmpifz [164] ............................ if voidp(m_numBars) then
+  [158] pushint8 1 .............................. <1>
+  [161] setprop 251 ............................. m_numBars = 1
+  [164] getprop 248 ............................. <m_ticksPerQuarternote>
+  [167] getprop 251 ............................. <m_numBars>
+  [170] mul ..................................... <m_ticksPerQuarternote * m_numBars>
+  [171] getprop 252 ............................. <m_beatSignature>
+  [174] pushint8 1 .............................. <1>
+  [177] pusharglist 2 ........................... <m_beatSignature, 1>
+  [179] objcall 34 .............................. <m_beatSignature[1]>
+  [182] mul ..................................... <m_ticksPerQuarternote * m_numBars * m_beatSignature[1]>
+  [183] getprop 252 ............................. <m_beatSignature>
+  [186] pushint8 2 .............................. <2>
+  [189] pusharglist 2 ........................... <m_beatSignature, 2>
+  [191] objcall 34 .............................. <m_beatSignature[2]>
+  [194] mul ..................................... <m_ticksPerQuarternote * m_numBars * m_beatSignature[1] * m_beatSignature[2]>
+  [195] pushint8 4 .............................. <4>
+  [198] div ..................................... <m_ticksPerQuarternote * m_numBars * m_beatSignature[1] * m_beatSignature[2] / 4>
+  [199] setprop 301 ............................. m_length = m_ticksPerQuarternote * m_numBars * m_beatSignature[1] * m_beatSignature[2] / 4
+  [202] getparam 8 .............................. <argList>
+  [204] pushsymb 302 ............................ <#tracks>
+  [207] pusharglist 2 ........................... <argList, #tracks>
+  [209] objcall 34 .............................. <argList[#tracks]>
+  [212] setlocal 16 ............................. tracks = argList[#tracks]
+  [214] pusharglist 0 ........................... <[:]>
+  [216] pushproplist ............................ <[:]>
+  [217] setprop 250 ............................. m_tracks = [:]
+  [220] getlocal 16 ............................. <tracks>
+  [222] pusharglist 1 ........................... <tracks>
+  [224] extcall 136 ............................. <listp(tracks)>
+  [227] jmpifz [314] ............................ if listp(tracks) then
+  [230] pushint8 1 .............................. <1>
+  [233] setlocal 24
+  [235] getlocal 24
+  [237] getlocal 16 ............................. <tracks>
+  [239] pusharglist 1 ........................... <tracks>
+  [241] objcall 32 .............................. <tracks.count()>
+  [244] lteq
+  [245] jmpifz [314] ............................ repeat with trackNr = 1 to tracks.count()
+  [248] getlocal 16 ............................. <tracks>
+  [250] getlocal 24 ............................. <trackNr>
+  [252] pusharglist 2 ........................... <tracks, trackNr>
+  [254] objcall 33 .............................. <tracks.getPropAt(trackNr)>
+  [257] setlocal 32 ............................. ID = tracks.getPropAt(trackNr)
+  [259] pushcons 136 ............................ <"TrackScript">
+  [261] pusharglist 1 ........................... <"TrackScript">
+  [263] extcall 284 ............................. <script("TrackScript")>
+  [266] getparam 0 .............................. <me>
+  [268] pusharglist 2 ........................... <script("TrackScript"), me>
+  [270] objcall 0 ............................... <script("TrackScript").new(me)>
+  [272] setlocal 40 ............................. obj = script("TrackScript").new(me)
+  [274] getlocal 40 ............................. <obj>
+  [276] getlocal 16 ............................. <tracks>
+  [278] getlocal 24 ............................. <trackNr>
+  [280] pusharglist 2 ........................... <tracks, trackNr>
+  [282] objcall 34 .............................. <tracks[trackNr]>
+  [285] getlocal 8 .............................. <ticksMultiplier>
+  [287] pusharglistnoret 3 ...................... <obj, tracks[trackNr], ticksMultiplier>
+  [289] objcall 242 ............................. obj.load(tracks[trackNr], ticksMultiplier)
+  [292] getparam 0 .............................. <me>
+  [294] getlocal 40 ............................. <obj>
+  [296] getlocal 32 ............................. <ID>
+  [298] pusharglistnoret 3 ...................... <me, obj, ID>
+  [300] objcall 243 ............................. me.addTrack(obj, ID)
+  [303] pushint8 1
+  [306] getlocal 24
+  [308] add
+  [309] setlocal 24
+  [311] endrepeat [235]
+  [314] ret
+end
+
+on addTrack me, argObj, argID
+  [  0] getprop 250 ............................. <m_tracks>
+  [  3] getparam 16 ............................. <argID>
+  [  5] getparam 8 .............................. <argObj>
+  [  7] pusharglistnoret 3 ...................... <m_tracks, argID, argObj>
+  [  9] objcall 307 ............................. m_tracks.addProp(argID, argObj)
+  [ 12] ret
+end
+
+on addLoopTrack me, argObj, argID
+  [  0] getprop 249 ............................. <m_loopTracks>
+  [  3] getparam 16 ............................. <argID>
+  [  5] getparam 8 .............................. <argObj>
+  [  7] pusharglistnoret 3 ...................... <m_loopTracks, argID, argObj>
+  [  9] objcall 307 ............................. m_loopTracks.addProp(argID, argObj)
+  [ 12] ret
+end
+
+on getNumTracks me
+  [  0] pushsymb 309 ............................ <#LoopTracks>
+  [  3] getprop 249 ............................. <m_loopTracks>
+  [  6] getobjprop 32 ........................... <m_loopTracks.count>
+  [  9] pushsymb 302 ............................ <#tracks>
+  [ 12] getprop 250 ............................. <m_tracks>
+  [ 15] getobjprop 32 ........................... <m_tracks.count>
+  [ 18] pusharglist 4 ........................... <[#LoopTracks: m_loopTracks.count, #tracks: m_tracks.count]>
+  [ 20] pushproplist ............................ <[#LoopTracks: m_loopTracks.count, #tracks: m_tracks.count]>
+  [ 21] pusharglistnoret 1 ...................... <[#LoopTracks: m_loopTracks.count, #tracks: m_tracks.count]>
+  [ 23] extcall 21 .............................. return [#LoopTracks: m_loopTracks.count, #tracks: m_tracks.count]
+  [ 25] ret
+end
+
+on deleteTrack me, argObj
+  [  0] getprop 250 ............................. <m_tracks>
+  [  3] getparam 8 .............................. <argObj>
+  [  5] pusharglistnoret 2 ...................... <m_tracks, argObj>
+  [  7] objcall 104 ............................. m_tracks.deleteOne(argObj)
+  [ 10] getprop 249 ............................. <m_loopTracks>
+  [ 13] getparam 8 .............................. <argObj>
+  [ 15] pusharglistnoret 2 ...................... <m_loopTracks, argObj>
+  [ 17] objcall 104 ............................. m_loopTracks.deleteOne(argObj)
+  [ 20] ret
+end
+
+on getTrack me, argID
+  [  0] getprop 250 ............................. <m_tracks>
+  [  3] getparam 8 .............................. <argID>
+  [  5] pusharglist 2 ........................... <m_tracks, argID>
+  [  7] objcall 34 .............................. <m_tracks[argID]>
+  [ 10] pusharglistnoret 1 ...................... <m_tracks[argID]>
+  [ 12] extcall 21 .............................. return m_tracks[argID]
+  [ 14] ret
+end

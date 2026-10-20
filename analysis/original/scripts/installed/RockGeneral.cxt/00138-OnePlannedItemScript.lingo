@@ -1,0 +1,195 @@
+property m_channelObj, m_startDate, m_endDate, m_name, m_color, m_visibleRect, m_mouseObj, m_canBeMoved, m_subChannel, m_event_r, m_icon, m_format_r
+
+on new me, argChannelObj, argInfo, argAdditionalInfo, argMoveable, argFormat_r
+  m_channelObj = argChannelObj
+  if listp(argInfo) then
+  else
+    me.setEvent(argInfo)
+    m_icon = "icon_flash02"
+    m_subChannel = 1
+  end if
+  if voidp(argAdditionalInfo) then
+    argAdditionalInfo = [:]
+  end if
+  if integerp(argAdditionalInfo[#channel]) then
+    m_subChannel = argAdditionalInfo[#channel]
+  end if
+  m_rollText = "Here's extra info!"
+  m_visibleRect = rect(0, 0, 0, 0)
+  m_canBeMoved = argMoveable
+  if voidp(m_canBeMoved) then
+    m_canBeMoved = 1
+  end if
+  m_format_r = argFormat_r
+  if objectp(m_format_r) then
+    m_icon = m_format_r.Gfx
+    m_color = m_format_r.clr
+  end if
+  if voidp(m_color) then
+    m_color = "1"
+  end if
+  if stringp(m_icon) then
+    m_icon = member(m_icon)
+  end if
+  return me
+end
+
+on kill me
+  if objectp(m_mouseObj) then
+    m_mouseObj = m_mouseObj.kill()
+  end if
+  m_format_r = 0
+  m_channelObj = 0
+  m_event_r = 0
+  return 0
+end
+
+on setEvent me, argEventObj
+  m_event_r = argEventObj
+  m_startDate = m_event_r.StartDate
+  m_endDate = m_event_r.StartDate + m_event_r.duration
+  m_name = m_event_r.name
+end
+
+on setInfo me, argInfo
+  tmp = argInfo[#StartDate]
+  if not voidp(tmp) then
+    m_startDate = tmp
+    if objectp(m_event_r) then
+      m_event_r.setDates(tmp)
+    end if
+    m_endDate = tmp + m_event_r.duration
+  end if
+  tmp = argInfo[#channel]
+  if not voidp(tmp) then
+    m_channelObj = tmp
+  end if
+  tmp = argInfo[#SubChannel]
+  if not voidp(tmp) then
+    m_subChannel = tmp
+  end if
+end
+
+on getOneProp me, argProp
+  if argProp = #StartDate then
+    return m_event_r.StartDate
+  else
+    if argProp = #EndDate then
+      return m_event_r.StartDate + m_event_r.duration
+    else
+      if argProp = #duration then
+        return m_event_r.duration
+      end if
+    end if
+  end if
+end
+
+on display me, argIsTRUE
+  if objectp(m_mouseObj) then
+    m_mouseObj.activate(argIsTRUE)
+  end if
+end
+
+on putIntoFreeChannel me
+  tmpFreeChannels = m_channelObj.checkFreeDates(m_event_r.StartDate, m_event_r.duration, me)
+  if tmpFreeChannels.count > 0 then
+    if tmpFreeChannels.getPos(m_subChannel) = 0 then
+      m_subChannel = tmpFreeChannels[1]
+    end if
+    return 1
+  else
+    return 0
+  end if
+end
+
+on calcVisibleRect me
+  startLocH = m_channelObj.m_agenda.dateToLocH(m_startDate)
+  endLocH = m_channelObj.m_agenda.dateToLocH(m_endDate)
+  m_visibleRect = rect(startLocH, 0, endLocH, 0)
+  m_visibleRect = m_visibleRect + rect(0, (m_subChannel - 1) * m_channelObj.m_subChannelHeight, 0, m_subChannel * m_channelObj.m_subChannelHeight)
+  return m_visibleRect
+end
+
+on draw me, argStartAndEndDates, argImage, argOffsetLoc, argInvalidatedRect
+  if (argStartAndEndDates[1] > m_endDate) or (argStartAndEndDates[2] < (m_startDate - 1)) then
+    if objectp(m_mouseObj) then
+      m_mouseObj.myRect = rect(0, 0, 0, 0)
+    end if
+    exit
+  end if
+  startLocH = m_channelObj.m_agenda.dateToLocH(m_startDate)
+  endLocH = m_channelObj.m_agenda.dateToLocH(m_endDate)
+  if voidp(argImage) then
+    endLocH = endLocH - startLocH
+    startLocH = 0
+    m_visibleRect = rect(0, 0, endLocH, m_channelObj.m_subChannelHeight)
+    argImage = image(m_visibleRect[3], m_visibleRect[4], 16)
+  else
+    m_visibleRect = rect(startLocH, argOffsetLoc[2], endLocH, argOffsetLoc[2])
+    m_visibleRect = m_visibleRect + rect(0, (m_subChannel - 1) * m_channelObj.m_subChannelHeight, 0, m_subChannel * m_channelObj.m_subChannelHeight)
+    tmpR = m_visibleRect + rect(m_channelObj.m_agenda.m_viewRectOnStage[1], m_channelObj.m_agenda.m_viewRectOnStage[2], m_channelObj.m_agenda.m_viewRectOnStage[1], m_channelObj.m_agenda.m_viewRectOnStage[2]) + rect(m_channelObj.m_blitOffset, m_channelObj.m_blitOffset)
+    if objectp(m_mouseObj) then
+      m_mouseObj.myRect = tmpR
+    else
+      m_mouseObj = script("MouseObject").new(me, tmpR, [#layer: m_channelObj.m_agenda.m_mouseLayer])
+    end if
+    m_mouseObj.downOn = 0
+    m_mouseObj.activate(1)
+    if intersectRects(m_visibleRect, argInvalidatedRect) = 0 then
+      exit
+    end if
+  end if
+  tmpClrSettings = [value(m_color), 1]
+  if m_canBeMoved then
+    tmpClrSettings[2] = 1
+  else
+    tmpClrSettings[2] = 2
+  end if
+  tmpDragMembPrefix = "slider" & convItoS(tmpClrSettings[1], 2) & "_" & string(tmpClrSettings[2]) & "_"
+  tmpDragMemb = member(tmpDragMembPrefix & "1")
+  tmpLeftTop = point(m_visibleRect[1], m_visibleRect[2])
+  argImage.copyPixels(member(tmpDragMemb).image, tmpDragMemb.rect + rect(tmpLeftTop, tmpLeftTop), tmpDragMemb.rect)
+  tmpStretchRect = rect(tmpLeftTop + point(tmpDragMemb.rect[3], 0), point(0, 0))
+  tmpDragMemb = member(tmpDragMembPrefix & "3")
+  tmpLeftTop = point(m_visibleRect[3] - tmpDragMemb.rect[3], m_visibleRect[2])
+  argImage.copyPixels(member(tmpDragMemb).image, tmpDragMemb.rect + rect(tmpLeftTop, tmpLeftTop), tmpDragMemb.rect)
+  tmpStretchRect = tmpStretchRect + rect(point(0, 0), point(tmpLeftTop[1], m_visibleRect[4]))
+  tmpDragMemb = member(tmpDragMembPrefix & "2")
+  argImage.copyPixels(member(tmpDragMemb).image, tmpStretchRect, tmpDragMemb.rect)
+  if objectp(m_icon) then
+    tmpOff = point(startLocH + 3, m_visibleRect[2] + 1) + point(argOffsetLoc[1], 0)
+    argImage.copyPixels(m_icon.image, rect(tmpOff, tmpOff) + (m_icon.rect / 2), m_icon.rect)
+  end if
+  return argImage
+end
+
+on mouse me, argObj, argWhat
+  if argWhat = #down then
+    if m_canBeMoved then
+      tmpInvalidateRect = m_visibleRect.duplicate()
+      img = me.draw([m_startDate, m_endDate], VOID, point(0, 0))
+      downOnDate = m_channelObj.m_agenda.locHtoDate(the mouseH, #Screen)
+      tmpMouseOffset = the mouseLoc - point(m_channelObj.m_agenda.m_viewRectOnStage[1], m_channelObj.m_agenda.m_viewRectOnStage[2]) - point(tmpInvalidateRect[1], tmpInvalidateRect[2]) - m_channelObj.m_blitOffset
+      member("DragItemPic").image = img
+      member("DragItemPic").regPoint = tmpMouseOffset
+      m_channelObj.deleteItem(me, #draw, tmpInvalidateRect)
+      m_mouseObj.activate(0)
+      X = script("DragPlannedItemScript").new(m_channelObj.m_agenda, me, [#member: member("DragItemPic")], m_channelObj.m_agenda.m_spriteList[#Drag])
+    end if
+  else
+    if argWhat = #click then
+    else
+      if argWhat = #enter then
+        if objectp(m_channelObj.m_reportToAboutItems) then
+          m_channelObj.m_reportToAboutItems.Report(me, argWhat, m_event_r, me)
+        end if
+      else
+        if argWhat = #Leave then
+          if objectp(m_channelObj.m_reportToAboutItems) then
+            m_channelObj.m_reportToAboutItems.Report(me, argWhat, m_event_r, me)
+          end if
+        end if
+      end if
+    end if
+  end if
+end

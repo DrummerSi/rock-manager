@@ -1,0 +1,399 @@
+property m_filePath, m_allStrings, m_language, m_contextWords, m_contextSpecifiers, m_allContexts, m_classManager
+
+on new me, argFilePath, argLanguage
+  m_filePath = argFilePath
+  m_language = argLanguage
+  m_allStrings = [:]
+  me.setLanguage(m_language)
+  me.readContextWords(m_filePath)
+  return me
+end
+
+on kill me
+  return 0
+end
+
+on setClassManager me, argClassManager
+  m_classManager = argClassManager
+end
+
+on setLanguage me, argLanguage
+  m_language = argLanguage
+  me.readLanguage(m_filePath, m_language)
+end
+
+on readLanguage me, argPath, argLanguage
+  str = readFile(argPath & "Translation.txt")
+  the itemDelimiter = numToChar(9)
+  m_allStrings = [:]
+  catStr = str.line[1]
+  tmpOff = offset(argLanguage, catStr)
+  if not tmpOff then
+    exit
+  end if
+  langCol = the number of items in catStr.char[1..tmpOff]
+  repeat with lineNr = 2 to the number of lines in str
+    lineStr = str.line[lineNr]
+    ID = lineStr.item[1]
+    if ID.length > 1 then
+      tmpThisItem = removeExcelQuotes(lineStr.item[langCol])
+      m_allStrings.addProp(symbol(ID), tmpThisItem)
+    end if
+  end repeat
+  str = 0
+end
+
+on getStr me, argID, argOptions
+  str = m_allStrings[argID]
+  if voidp(str) then
+    return EMPTY
+  end if
+  if listp(argOptions) then
+    if argOptions[#FirstUppercase] > 0 then
+      repeat while 1
+        tmpOff = offset("\n", str)
+        if tmpOff then
+          put RETURN into str.char[tmpOff..tmpOff + 1]
+          next repeat
+        end if
+        exit repeat
+      end repeat
+      return me.makeUppercase(str, #first)
+    end if
+  end if
+  return str
+end
+
+on makeUppercase me, argStr, argWhat
+  X = script("LettersScript").new()
+  if voidp(argWhat) or (argWhat = #first) then
+    argWhat = [1, 1]
+  end if
+  if argWhat = #word then
+    argWhat = [1, argStr.length]
+  end if
+  repeat with n = argWhat[1] to argWhat[2]
+    put numToChar(X.getUpperCase(charToNum(argStr.char[n]))) into me.char[n]
+  end repeat
+  return argStr
+end
+
+on readMultiReplaceStrings me, argPath, argLanguage
+  if voidp(argPath) then
+    argPath = m_filePath
+  end if
+  me.readInstanceReplaceStrings(argPath & "TranslationBig.txt", argLanguage)
+end
+
+on readInstanceReplaceStrings me, argFilePath, argLanguage
+  global gRock
+  if voidp(argFilePath) then
+    argFilePath = m_filePath & "TranslationBig.txt"
+  end if
+  tmpStr = readFile(argFilePath)
+  if not stringp(tmpStr) then
+    exit
+  end if
+  if voidp(argLanguage) then
+    argLanguage = m_language
+  end if
+  catStr = tmpStr.line[1]
+  tmpOff = offset(argLanguage, catStr)
+  if not tmpOff then
+    pott(argLanguage, "Not found!!")
+    exit
+  end if
+  langCol = the number of items in catStr.char[1..tmpOff]
+  currClass = VOID
+  nextLineIsPropOrder = 0
+  propOrder = [:]
+  the itemDelimiter = numToChar(9)
+  repeat with tmpLineNr = 2 to the number of lines in tmpStr
+    tmpLine = line tmpLineNr of tmpStr
+    if (tmpLineNr mod 100) = 0 then
+      pott("Line " & string(tmpLineNr))
+    end if
+    if tmpLine.item[1].length > 2 then
+      currClass = symbol(tmpLine.item[1])
+      nextLineIsPropOrder = 1
+      next repeat
+    end if
+    if nextLineIsPropOrder then
+      propOrder = value(tmpLine.item[2])
+      if voidp(propOrder) then
+        propOrder = [:]
+      else
+        propOrder = flattenPropListStructure(propOrder)
+        nextLineIsPropOrder = 0
+      end if
+      next repeat
+    end if
+    if tmpLine.item[2].length > 2 then
+      currID = symbol(tmpLine.item[2])
+      currObj_r = m_classManager.getObjByIDAndClass(currID, currClass)
+      propCnt = 1
+    end if
+    if objectp(currObj_r) and (propCnt <= propOrder.count()) then
+      tmpThisItem = tmpLine.item[langCol]
+      if (tmpThisItem.length > 0) and (tmpThisItem <> " ") then
+        if tmpThisItem.char[1] = QUOTE then
+          tmpThisItem = removeExcelQuotes(tmpThisItem)
+        end if
+        rsetProp(currObj_r, propOrder[propCnt], tmpThisItem)
+        if tmpLineNr <= 5 then
+          pott(rgetProp(currObj_r, propOrder[propCnt]))
+        end if
+      end if
+      propCnt = propCnt + 1
+    end if
+  end repeat
+end
+
+on readContextWords me, argPath
+  the itemDelimiter = numToChar(9)
+  m_allContexts = [:]
+  m_contextWords = [:]
+  tmpStr = readFile(argPath & "Language.txt")
+  tmpNumLines = the number of lines in tmpStr
+  lastLineWasEmpty = 1
+  repeat with tmpLineNr = 1 to tmpNumLines
+    tmpLine = tmpStr.line[tmpLineNr]
+    if tmpLine.length > 1 then
+      if lastLineWasEmpty then
+        lastLineWasEmpty = 0
+        mainCat = symbol(tmpLine.word[1])
+        contextSpecifiers = []
+        contextWords = [:]
+        thisCatLists = [#Specifiers: contextSpecifiers, #words: contextWords]
+        m_allContexts.addProp(mainCat, thisCatLists)
+        repeat with tmpItemNr = 3 to the number of items in tmpLine
+          tmp = value(tmpLine.item[tmpItemNr])
+          if listp(tmp) then
+            tmp.sort()
+            contextSpecifiers.add(tmp)
+          end if
+        end repeat
+      else
+        wordID = tmpLine.item[1]
+        tmpInfo = []
+        contextWords.addProp(symbol(wordID), tmpInfo)
+        repeat with tmpItemNr = 3 to the number of items in tmpLine
+          tmpInfo.add(tmpLine.item[tmpItemNr])
+        end repeat
+      end if
+      next repeat
+    end if
+    lastLineWasEmpty = 1
+  end repeat
+  me.getContextWord(#S1, [#Gender: #Male, #Genitive: 1])
+end
+
+on getContextWord me, argID, argSpecifiers, argType, argOptions
+  if voidp(argType) then
+    argType = #Pron
+  end if
+  if not listp(argSpecifiers) then
+    return "ERR_SPECIFIERS"
+  end if
+  argSpecifiers.sort()
+  tmpPos = 0
+  Context = m_allContexts[argType]
+  if voidp(Context) then
+    return "ERR_TYPE"
+  end if
+  contextSpecifiers = Context[#Specifiers]
+  repeat with n = 1 to contextSpecifiers.count()
+    tmpSpec = contextSpecifiers[n]
+    if tmpSpec.count() = argSpecifiers.count() then
+      tmpPos = n
+      repeat with m = 1 to tmpSpec.count()
+        if (tmpSpec.getPropAt(m) <> argSpecifiers.getPropAt(m)) or (tmpSpec[m] <> argSpecifiers[m]) then
+          tmpPos = 0
+          exit repeat
+        end if
+      end repeat
+      if tmpPos then
+        exit repeat
+      end if
+    end if
+  end repeat
+  if not tmpPos then
+    return "ERR_CONTEXT"
+  end if
+  words = Context[#words]
+  tmp = words.getaProp(argID)
+  if not listp(tmp) then
+    return "ERR_WORD"
+  end if
+  str = tmp[tmpPos]
+  if listp(argOptions) then
+    if argOptions[#FirstUppercase] > 0 then
+      return me.makeUppercase(str, #first)
+    end if
+  end if
+  return str
+end
+
+on test me
+  global gRock
+  mus = gRock.m_context.getFocus(#RealMusician)
+  if not objectp(mus) then
+    mus = gRock.m_classManager.getObjByIDAndClass(#RMCJerka, #RealMusician)
+    gRock.m_context.setFocus(#RealMusician, mus)
+  end if
+  argStr = "<ÛCHuman.name> {Pron;S3;[#Genitive:1]}"
+  me.dereference(argStr)
+end
+
+on dereference me, argStr
+  global gRock
+  repeat while 1
+    tmpStart = offset("<", argStr)
+    if not tmpStart then
+      exit repeat
+    end if
+    tmpEnd = offset(">", argStr)
+    if not tmpEnd then
+      exit repeat
+    end if
+    expressionStr = argStr.char[tmpStart + 1..tmpEnd - 1]
+    tmp = rParseAndCalc(expressionStr)
+    if symbolp(tmp) then
+      tmp = "#" & string(tmp)
+    else
+      tmp = string(tmp)
+    end if
+    put tmp into me.char[tmpStart..tmpEnd]
+  end repeat
+  the itemDelimiter = ";"
+  repeat while 1
+    tmpStart = offset("{", argStr)
+    if not tmpStart then
+      exit repeat
+    end if
+    tmpEnd = offset("}", argStr)
+    if not tmpEnd then
+      exit repeat
+    end if
+    tmpExpr = argStr.char[tmpStart + 1..tmpEnd - 1]
+    tmpCommand = tmpExpr.item[1]
+    if tmpCommand = "Pron" then
+      if the number of items in tmpExpr = 2 then
+        tmpContextItem = "[:]"
+        tmpExpr = tmpExpr & ";" & tmpContextItem
+      end if
+      tmpContextItem = tmpExpr.item[3]
+      tmpContext = value(tmpContextItem)
+      if not listp(tmpContext) then
+        alert("Language error! " & string(argStr))
+        tmpContext = [:]
+      end if
+      human_r = gRock.m_context.getFocus(#Human)
+      if not objectp(human_r) then
+        pott("Lang: No human")
+        return argStr
+      end if
+      tmpContext.addProp(#Gender, human_r.Gender)
+      tmpContextItem = string(tmpContext)
+      put tmpContextItem into tmpStart.item[3]
+      if charToNum(tmpCommand.char[1]) < 97 then
+        tmpCommand = "X"
+      else
+        tmpCommand = "x"
+      end if
+      tmpExpr = tmpCommand & ";" & tmpExpr
+    end if
+    if tmpCommand = "x" then
+      tmpWordClass = symbol(tmpExpr.item[2])
+      tmpWordID = tmpExpr.item[3]
+      if tmpWordID.char[1] = "#" then
+        delete tmpEnd.char[1]
+      end if
+      tmpContext = tmpExpr.item[4]
+      tmpWord = gRock.m_languageManager.getContextWord(symbol(tmpWordID), value(tmpContext), tmpWordClass)
+      if charToNum(tmpExpr.char[1]) < 97 then
+        tmpWord = gRock.m_languageManager.makeUppercase(tmpWord, #first)
+      end if
+      put tmpWord into me.char[tmpStart..tmpEnd]
+      next repeat
+    end if
+    alert("No command between {}: " & argStr)
+    exit repeat
+  end repeat
+  return replaceEscapeChars(argStr)
+end
+
+on zzdereference me, argStr
+  global gRock
+  repeat while 1
+    tmpExprStart = offset("<", argStr)
+    if not tmpExprStart then
+      exit repeat
+    end if
+    tmpExprEnd = 0
+    repeat with n = tmpExprStart + 1 to argStr.length
+      if argStr.char[n] = ">" then
+        tmpExprEnd = n - 1
+        exit repeat
+      end if
+    end repeat
+    if tmpExprEnd = 0 then
+      pott("No end of expression >")
+      exit
+    end if
+    if tmpExprEnd then
+      tmpExpr = argStr.char[tmpExprStart + 1..tmpExprEnd]
+      repeat while 1
+        tmpSpecialStart = offset("Û", tmpExpr)
+        if not tmpSpecialStart then
+          exit repeat
+        end if
+        tmpLen = tmpExpr.length
+        repeat with n = tmpSpecialStart to tmpLen
+          if (tmpExpr.char[n] = ",") or (tmpExpr.char[n] = ";") or (n = tmpLen) then
+            if n = tmpLen then
+              tmpSpecialStr = tmpExpr.char[tmpSpecialStart..n]
+            else
+              tmpSpecialStr = tmpExpr.char[tmpSpecialStart..n - 1]
+            end if
+            tmpReplacement = gRock.m_executor.rParseAndCalc(tmpSpecialStr)
+            if symbolp(tmpReplacement) then
+              tmpReplacementStr = "#" & string(tmpReplacement)
+            else
+              if not voidp(tmpReplacement) then
+                tmpReplacementStr = string(tmpReplacement)
+              end if
+            end if
+            if voidp(tmpReplacement) then
+              put "ERRX" into tmpExprStart.char[tmpSpecialStart..n - 1]
+            else
+              put tmpReplacementStr into tmpExprStart.char[tmpSpecialStart..n - 1]
+            end if
+            exit repeat
+          end if
+        end repeat
+      end repeat
+      if tmpExpr.char[1] = "x" then
+        the itemDelimiter = ";"
+        tmpWordClass = symbol(tmpExpr.item[2])
+        tmpWordID = tmpExpr.item[3]
+        if tmpWordID.char[1] = "#" then
+          delete tmpExprEnd.char[1]
+        end if
+        tmpContext = tmpExpr.item[4]
+        tmpWord = gRock.m_languageManager.getContextWord(symbol(tmpWordID), value(tmpContext), tmpWordClass)
+        if charToNum(tmpExpr.char[1]) < 97 then
+          tmpWord = gRock.m_languageManager.makeUppercase(tmpWord, #first)
+        end if
+        put tmpWord into me.char[tmpExprStart..tmpExprEnd + 1]
+        next repeat
+      end if
+      if stringp(tmpReplacementStr) then
+        put tmpReplacementStr into me.char[tmpExprStart..tmpExprEnd + 1]
+        next repeat
+      end if
+      put EMPTY into me.char[tmpExprStart..tmpExprEnd + 1]
+    end if
+  end repeat
+  return argStr
+end

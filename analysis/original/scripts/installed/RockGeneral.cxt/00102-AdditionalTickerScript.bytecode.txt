@@ -1,0 +1,60 @@
+property m_callBackInfo, m_timerObj
+
+on new me, argTimerObj, argPrio, argWhen, argCallBackInfo
+  [  0] getparam 8 .............................. <argTimerObj>
+  [  2] setprop 2141 ............................ m_timerObj = argTimerObj
+  [  5] getparam 32 ............................. <argCallBackInfo>
+  [  7] setprop 2142 ............................ m_callBackInfo = argCallBackInfo
+  [ 10] getprop 2141 ............................ <m_timerObj>
+  [ 13] getparam 0 .............................. <me>
+  [ 15] getparam 16 ............................. <argPrio>
+  [ 17] getparam 24 ............................. <argWhen>
+  [ 19] pusharglistnoret 4 ...................... <m_timerObj, me, argPrio, argWhen>
+  [ 21] objcall 282 ............................. m_timerObj.addObject(me, argPrio, argWhen)
+  [ 24] getparam 0 .............................. <me>
+  [ 26] pusharglistnoret 1 ...................... <me>
+  [ 28] extcall 69 .............................. return me
+  [ 31] ret
+end
+
+on kill me
+  [  0] getprop 2141 ............................ <m_timerObj>
+  [  3] getparam 0 .............................. <me>
+  [  5] pusharglistnoret 2 ...................... <m_timerObj, me>
+  [  7] objcall 280 ............................. m_timerObj.deleteObject(me)
+  [ 10] pushzero ................................ <0>
+  [ 11] setprop 2142 ............................ m_callBackInfo = 0
+  [ 14] pushzero ................................ <0>
+  [ 15] pusharglistnoret 1 ...................... <0>
+  [ 17] extcall 69 .............................. return 0
+  [ 20] ret
+end
+
+on timeTick me
+  [  0] getprop 2142 ............................ <m_callBackInfo>
+  [  3] pushsymb 2047 ........................... <#object>
+  [  6] pusharglist 2 ........................... <m_callBackInfo, #object>
+  [  8] objcall 119 ............................. <m_callBackInfo[#object]>
+  [ 11] pusharglist 1 ........................... <m_callBackInfo[#object]>
+  [ 13] extcall 8 ............................... <objectp(m_callBackInfo[#object])>
+  [ 15] jmpifz [ 64] ............................ if objectp(m_callBackInfo[#object]) then
+  [ 18] getprop 2142 ............................ <m_callBackInfo>
+  [ 21] pushsymb 180 ............................ <#handler>
+  [ 24] pusharglist 2 ........................... <m_callBackInfo, #handler>
+  [ 26] objcall 119 ............................. <m_callBackInfo[#handler]>
+  [ 29] setlocal 0 .............................. tmpHandler = m_callBackInfo[#handler]
+  [ 31] getlocal 0 .............................. <tmpHandler>
+  [ 33] pusharglist 1 ........................... <tmpHandler>
+  [ 35] extcall 61 .............................. <voidp(tmpHandler)>
+  [ 38] jmpifz [ 46] ............................ if voidp(tmpHandler) then
+  [ 41] pushsymb 2146 ........................... <#callback>
+  [ 44] setlocal 0 .............................. tmpHandler = #callback
+  [ 46] getlocal 0 .............................. <tmpHandler>
+  [ 48] getprop 2142 ............................ <m_callBackInfo>
+  [ 51] pushsymb 2047 ........................... <#object>
+  [ 54] pusharglist 2 ........................... <m_callBackInfo, #object>
+  [ 56] objcall 119 ............................. <m_callBackInfo[#object]>
+  [ 59] pusharglistnoret 2 ...................... <tmpHandler, m_callBackInfo[#object]>
+  [ 61] extcall 305 ............................. call(tmpHandler, m_callBackInfo[#object])
+  [ 64] ret
+end

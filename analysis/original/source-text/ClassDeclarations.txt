@@ -1,0 +1,607 @@
+							Format	Value range	Default	constant	translate	Comment
+##Abstract concepts												
+DynamicVar												
+	Normal						float	0.0 - 1.0	0	1		"What Current is under ""normal circumstances"""
+	Current						float	0.0 - 1.0	0	0		
+	Min						float	0.0 - 1.0	0	1		How low Current can go
+	Max						float	0.0 - 1.0	1	1		How high
+	GainFact						float	0.0 - 1.0	1	1		"Sensitivity to ""positive"" influence"
+	LoseFact						float	0.0 - 1.0	1	1		"Sensitivity, ""negative"""
+
+DynamicTriggerVar												
+	Normal						float	0.0 - 1.0	0	1		"What Current is under ""normal circumstances"""
+	Current						float	0.0 - 1.0	0	0		
+	Min						float	0.0 - 1.0	0	1		How low Current can go
+	Max						float	0.0 - 1.0	1	1		How high
+	GainFact						float	0.0 - 1.0	0	1		"Sensitivity to ""positive"" influence"
+	LoseFact						float	0.0 - 1.0	0	1		"Sensitivity, ""negative"""
+	ValTriggers						propList					When a val in list is passed by Current, something will happen. #Trigger:<TriggerID>, eg: [0.4:1]
+	Mode						symbol					#AutoNormalize / #AutoGain / #AutoXGain / #AutoLose
+	DefaultNotify						symbol					If nothing else is specified (in ValTriggers), notify this ID of trigging
+	LastTriggerListPos						integer					which pos in ValTriggers did Current have last time we checked
+	SuspendedVal						float		0	0		
+	IsSuspended						integer		0	0		
+
+Range												
+	Min						float					
+	Max						float					
+
+CoolVar												
+	NotifyList						list [objects]			1		list with objects that should be notified whenever Val is changed
+	:CoolInt											
+		val					integer			0		
+
+StyleMix												
+	Metal						float	0.0 - 1.0	0	0		Klassisk långhårig hårdrock: Deep Purple, Iron Maiden, Judas Priest, Whitesnake, Def Leppard, Aerosmith, Guns'n'Roses, Pantera, Drain och Hammerfall, m fl m fl
+	Rock						float	0.0 - 1.0	0	0		Rak, gitarrbaserad rock: Elvis, Rolling Stones, Bruce Springsteen, Simple Minds, Dire Straits, REM, Oasis och Soundtrack of our Lives (m fl)
+	Punk						float	0.0 - 1.0	0	0		Arg, uppkäftig punk med tralliga refränger och få ackord: Stooges, Ramones, Sham 69, Undertones, Sex Pistols, Black Flag och Ebba Grön.
+	Pop						float	0.0 - 1.0	0	0		Bred kategori: många band här drar åt rock (Pulp), punk (Offspring) eller dance (Backstreet Boys). Ren pop är Travis, Jakob Hellman, tidiga Cardigans, Belle and Sebastian och allt annat snällt där det är tjejer som sjunger.
+	Dance						float	0.0 - 1.0	0	0		Rytmisk musik för dansgolv och topplistor: James Brown, Gloria Gaynor, Village People, Chaka Khan, Whitney Houston, En Vogue, Dr Alban, Pandora, E-Type och en hel drös andra. 
+	Boring						float	0.0 - 1.0	0	0		För gubbar och tanter som inte gillar musik: Sinatra, Yanni, visor, opera, dansband, schlager, pan-flöjter och Snoddas. Enya och Enigma. World Music. Så ska det låta.
+
+SongType												
+	Hit						float	0.0 - 1.0		0		
+	Alternative						float	0.0 - 1.0		0		
+
+PriceModel												
+	BasePrice						integer	0 - ?	0	0		
+	Royalty						float	0.0 - 1.0	0	0		 0 - 100% per unit
+	UnitPrice						float	0 - ?	0	0		
+
+Attitudes												For handling attitudes towards other entities in game
+	Attitudes						propList			1		
+
+InstrumentalSkills												
+	Guitar						float		0			
+	Bass						float		0			
+	Keyboards						float		0			
+	Drums						float		0			
+	Vocals						float		0			
+	##Wind						float		0			
+
+Button												This should be a subclass of Concrete - but the initializer cannot handle this yet (that a class with an base class has a variable that has the same base class)
+	ID						symbol					
+	Comment						string				1	
+	Name						string				1	
+	Gfx						string					
+	Link						string					
+	ExecuteThis						string					same as action's executeThis
+
+Action												This should be a subclass of Concrete - but the initializer cannot handle this yet (that a class with an base class has a variable that has the same base class)
+	ID						symbol					
+	Comment						string				1	
+	Name						string				1	
+	Gfx						string					
+	PreExecuteThis						string					
+	ExecuteThis						string					stuff to execute (by rExecuteActions), eg activate triggers, play sounds etc
+	Price						integer					
+
+ActionCategory												
+	ID						symbol					
+	Comment						string					
+	Name						string					
+	Gfx						string					
+	Actions						list [Action IDs]					
+	CategoryType						symbol					
+	PreExecuteThis						string					
+												
+InstrumentInfo												
+	ID						symbol					eg #Guitar
+	Comment						string				1	
+	Name						string				1	"eg ""gitarr"""
+	Gfx						string					
+	WordUserM						string				1	"eg ""gitarrist"""
+	WordUserF						string				1	if there's a different form for female users
+	WordVitalPart						string				1	"eg ""plektrum"""
+	WordVitalPartUser						string				1	"eg ""finger"""
+	PossibleSpatialPos						list					
+	DesignEditorInfix						string					
+												
+Trigger												
+	ID						symbol			1		
+	Active						boolean			0		
+	ReactToMsgStr						string			1		Which msg(s) does it react to
+	ExecuteThis						string			1		Expression (can include if-else statements) checks conditions and executes stuff
+	ReactToMsgParsed						list			1		parsed version of ReactToMsgStr
+	ExecuteThisParsed						list			1		TODO: store pre-parsed ExecuteThis here for faster execution (very important for condition checking)
+	TriggerActivateDate						integer			0		gets set automatically when activated
+
+Need												
+	DynamicTrigger						DynamicTriggerVar					
+	SatisfyChanges						propList					[#Health:-0.01, #Patience:0.1]
+	HighNeedChanges						propList					daily changes when need over affectLimit
+	NegativeNeedChanges						propList					daily changes when need less than zero
+	AffectLimit						float					
+	ModifierIDNr						integer					the IDNr of the modifier - used for save/load (retrieves the right modifier)
+	:NeedDrugs											
+		mrCP					integer					
+	:NeedParty											
+		mrCP					integer					
+	:NeedVacation											
+		mrCP					integer					
+	:NeedLive											
+		mrCP					integer					
+	##ID						symbol					##eg NeedDrugs, NeedSex, NeedParty, NeedFame, NeedVacation
+												
+##Concrete entities												
+Concrete												
+	ID						symbol					
+	Comment						string				1	
+	Name						string			0	1	
+	Gfx						string			0		
+												
+	:ChartSong											
+		BandName					string			1		
+		LifeCounter					integer			0		
+		ChartMovementID					symbol			0		
+		PossibleMovementIDs					list			1		
+		Genre					string			1		
+												
+	:ChartMovement											
+		Movement					propList			1		eg [#Radio:[#0, 10,9,7,5,4,4,5,6], #TV:[#5,10,7,4,3,4,5]] First in sub-list is offset from first day, the rest are expected chart positions
+												
+	:Album											
+		SongID					symbol			0		The recorded song's id
+		MusicStyle					StyleMix			0		??	
+		ImageStyle					StyleMix			0			
+													Musikernas värde (viktning efter sångare osv, men ven efter spelarens inställningar) Spelarens val under inspelningen (effekter osv)
+		Quality					float			0		The studio's quality value	
+													"InstrumentalSkills för de aktuella musikerna. Specialeffekter som stämmer med StyleMix? Hur nära låten ligger vårt ""ideal""?"
+		Hype					float			0		??	
+		HypeGraph					list						
+													Marknadsföringsåtgärder, Medias uppfattning, Mediaexponering, Försäljning
+		SongType					float			0			
+		PublisherCosts					PriceModel			0		How much we must pay the publisher for the songs (nothing if a band member wrote the song)	
+		RecordIncomes					PriceModel			0		How much we get from the record company per sold record	
+		Penetration					float			0		??	Total 
+													Sales Marknadsföring Mediaexponering Antal spelningar (stora turnéspelningar viktigare)
+		Sales					integer			0		Total number of copies sold	
+		SalesGraph					propList					List with dates and sold copies.	
+		ReleaseDate					integer			0			
+		RecordingStartedDate					integer			0		
+
+		Mix					MixerSettings			0		How it was mixed in the studio
+		DesignSettings					propList			0		Cover settings (from Design studio)
+		Video					symbol			0		VideoConcept ID
+		SignedToRecord					symbol			0		ID of Record comp that its contracted to
+		Royalty					float			0		
+		ReviewsMediaIDs					list [ID media]			0		Which media have reviewed the album
+		Freshness					float		1.0	0		"Starts as 1, diminuishes linearly over time; reaches 0 in 6 months. ??Can be affected by hype??"
+												
+	:Band											
+		Members					list [ID (realMusician)]			0		
+		ImageStyle					StyleMix			0		Note: Strong members influence the band's stylemix more than weak
+		MusicStyle					StyleMix			0		
+		StyleMix					StyleMix			0		
+		SongType					float			0		
+		RecordedAlbumIDs					list [ID (album)]			0		IDs of all albums that the band has recorded
+		Merchandise					list [ID merchandise]			0		Bought merchandise
+		LiveReputation					float	0.0 - 1.0		0		How well the band has performed in concerts in the past
+												
+
+	:Group											
+		StyleMix					StyleMix			1		
+		StyleMixTolerance					StyleMix			1		How much can it differ (per style) before they don't like it
+		SongType					float			1		
+		SongTypeTolerance					float			1		How much can it differ before they don't like it
+		MinQuality					float	0.0 - 1.0		1		The album's (and other's, like ads etc?) min quality for acceptance by group
+		Economy					float	0.0 - 1.0	0.5	1		Very poor - very rich
+		Loyalty					float	0.0 - 1.0	0	1		
+		AgeRange										
+			Min				integer	0 - 100	0	1		yrs
+			Max				integer	0 - 100	100	1		yrs
+		Education					float	0.0 - 1.0	0.5	1		no education - university degree
+		Size					integer	0 - ?	1	1		Number of people in this group
+		Resistance					float					
+
+		##Calculated										
+		Attitudes					Attitudes			0		
+
+	:Human											
+		Age					integer			1		
+		Gender					symbol	#Male / #Female		0		
+		MusicStyle					StyleMix			1		
+		MusicStyleTolerance					StyleMix					
+		Musicality					DynamicVar			0		
+		Patience					DynamicTriggerVar			0		
+		##Loyalty					float			0		
+		Attitudes					Attitudes			0		
+		##Honesty					float	0.0 - 1.0		1		
+		Economy					float	0.0 - 1.0		0		
+		RefNr					integer			1		Used to identify filenames: currently extracted from the 2 last chars of Gfx
+		SoundPrefix					string			1		
+		##ModifiesMe					list			1		(DONT SAVE but NOT CONST) list with objs (currently Events) that modifies stuff in me
+		BelongsToPlace					symbol			1		Which place does he work at? Media01 etc
+
+		:Reporter										
+			InterviewSkill				float	0.0 - 1.0		1		
+			AccumBribes				float			0		Accumulated value of bribes
+			AccumAds				float			0		Accumulated value of ads
+			ConcertTickets				list [ConcertID]			0		Which concerts has he been given tickets to?
+			PressKits				propList			0		Which albums/videos have we got? [#Album:[#AlbumID, #AlbumID], #Video:[#AlbumID, ...]] (Videos are tied to albums)
+			Mood				float	 -1.0 - 1.0		0		Affected by bad bribes mainly (through Modifiers)
+			DaysToNextPlaylist				integer			0		When shall we recalc how much video / album is played
+			RotationExpoID				symbol			0		ID of the currently used AudienceExposure object (Reporter must delete it / add a new one each week)
+			AddedExpoProbability				float			0		Modifiers change this value (eg when Tour starts, , can increase probability of reporter doing a piece on the band
+			AvoidExpo				float			0		Each expo adds to this value, and it automatically lessens over time. Higher AvoidExpo = less probability of doing an expo. Reduces the chance of doing several expos in a row
+			BribeSensitivity				float			1		How touchy is he about bribing
+			MinHype				float			1		Threshold when checking for doing media activities
+
+		:Musician										
+			InstrumentalSkills				InstrumentalSkills			0		ONLY used to see if a person can play an instrument or not (value > 0). Musicality is used for all other purposes
+			Selfperception				float	 -1.0 - 1.0		1		 -1.0 = I'm worthless 0.0 = Thinks he is as good as he actually is 1.0 = Thinks he is so much better than he actually is ##Each property could have this as a value
+			OccupiedWith				propList [ID event : event className]			0		
+			Charisma				float			0		Replaces Looks/LiveSkill/MediaSkill (combined with Musicality)
+			Genre				string					One word for describing musician's genre / style
+												
+			:StudioMusician									
+				WantedSalary			integer			1		Different calculation from realMusicians
+
+			:RealMusician									
+				InBand			integer		0	0		
+				Alive			integer		1	0		
+				##Looks			DynamicVar			0		
+				##LiveSkill			DynamicVar			0		How good at performing live
+				##MediaSkill			DynamicVar			0		How good at talking to the media
+				Health			DynamicTriggerVar			0		
+				##Songwriting			DynamicVar			0		"How creative the musician is; how often he/she comes up with a new song"
+				Excentricity			DynamicVar			0		
+				##SongInclination			float			1		Ability / inclination to make hit / catchy songs and alt. / serious songs
+				FakeSkill			float	0.0 - 1.0				Ability to fake a personality / image, and to feel comfortable doing it for a long time
+				##ImageStyle			StyleMix			0		
+				NowPlaying			symbol			0		Which instrument is he currently playing (in the band)
+				SpatialPos			integer			0		graphical position in rehearsal / on stage / on photos etc
+				Gifts			propList			0		Gifts given to musician (date:action)
+				Mood			DynamicTriggerVar			0		Forced to fake excessively? Done boring stuff? Good salary?
+				InstrumentGFX								
+					Guitar		string					
+					Bass		string					
+					Keyboards		string					
+					Drums		string					
+					Vocals		string					
+					Wind		string					
+				Needs						0		
+					NeedsInitList		propList					[#NeedSex:1, #NeedParty:[#DynamicTrigger:[#Max:0.4, #GainFact:0.01]]]
+					NeedObjs		propList [Need objs]					
+
+				##Calculated values:								
+				WantedSalary			integer	0 - ?				Selfperception * musicality * songwriting
+				BandInfluence			float	0.0 - 1.0				How much does he influence what the band does (music, image)
+
+	:Song											
+		StyleMix					StyleMix			1		
+		Genre					string			1				
+		PriceModel					PriceModel			1				
+		Quality					float			1		??		
+		SongType					float			1				
+		Loops					list [loop IDs]			1		The loops (sounds) that are available when mixing the song		
+		MixerDefault					symbol (ID MixerSettings)			1		Which loops, the volume/pan etc settings are used by default. First entry is most important (if not enough channels/people to play all of it)		
+		BPM					float			1				
+		TimeSignature					list			1		eg [4,4]		
+		NumBars					integer			1		number of bars in the song		
+
+	:Loop													
+		File					string			1		"eg ""sg01gt01.wav"""		"eg #LO_SG01GT01  eg ""Rythm guitar"""
+		LoopType					symbol			1		NOT USED either #Single (one wav), #Multi (sliced) or #MIDI		
+		Instrument					symbol			1		eg #Guitar		
+		##Quality					float			1		NOT USED		
+		StyleMix					StyleMix			1		SPECIAL: Values range from -1 to 1. Value is _added_ to the song's StyleMix (not average). Most loops have 0 in all values, probably.		
+		BelongsToSong					symbol			1		eg #SG01
+		Groove					symbol			1		NOT USED
+		Difficulty					float			1		NOT USED ANYMORE
+		NumBars					integer			1		nr of bars in loop
+		BPM					float			1		
+												
+	:Place											
+		Actions					list [Action or ActionCategoryID]			1		All actions / Action categories that can be done from a certain place
+		Human					symbol			1		Human that belongs to place (reporter, record company boss, live venue owner)
+		Available					boolean			0		
+		Icon					string			1		Standard icon in dialogs if nothing else is specified
+		:Live										
+			Owner				symbol (ID human)			1		
+			StyleMix				StyleMix			1		
+			StyleMixTolerance				StyleMix			1		
+			SongType				float			1		
+			SongTypeTolerance				float			1		
+			MinQuality				float	0.0 - 1.0		1		
+			MediaTargets				list			1		MediaTarget IDs
+			Size				integer			1		Number of people
+			PreferredPriceModel				PriceModel			0		Temporary!!!! Should be calculated depending on what they think
+			PriceModels				list [PriceModel]			0		
+			MinAge				integer			1		
+			Regulars				float	0.0 - 1.0		1		Customers who visit the place regardless of band ads/reputation. 1.0 = Size people, 0.0 = 0 people
+			MinDaysBetweenConcerts				integer			1		How many days must pass before band can play there again
+
+		:Studio										
+			Quality				float			1		
+			Producer				symbol (ID human)			1		Just define name for producer?
+			AvailableFX				list [FX]					#FXDistortion, #FXTimeShift etc
+			Price				integer			1		Per day
+			StudioMusicians				list [ID Musician]					
+			NumChannels				integer			1		How many channels (tracks) maximum
+
+
+		:Record										
+			DistributionInfo				string			1		
+			StyleMix				StyleMix			1		
+			StyleMixTolerance				StyleMix			1		
+			SongType				float			1		
+			SongTypeTolerance				float			1		
+			MediaTargets				list			1		MediaTarget IDs
+			MinQuality				float	0.0 - 1.0		1		
+			PreferredPriceModel				PriceModel			0		Temporary!!!! Should be calculated depending on what they think
+			MinPriceModel				PriceModel			0		Lowest royalty / advance values
+			Albums				list [ID album]			0		Contracted albums
+			PreferredNumAlbums				integer			1		TEMP!!! Calced depending on what they think
+			DaysToNextPay				integer			0		
+			earnedMoneyFromEarlierAlbums				integer			0		Since we now only have 1 album at a time, we need to know how much money the earlier albums generated
+			ConditionalAdvances				propList			0		[<#CondID>:[#Triggers:[<id>, <id>], #Money:<amount>, ...]
+			Advance				integer			0		Total paid advance (including Conditional)
+			PayedToPlayer				integer			0		Money given to player as royalties
+			PlayerRepaidAdvance				integer			0		Money taken to pay off advance
+
+		:Publish										
+			Songs				list [ID song]			0		Which songs are available here
+
+		:Media										
+			MediaType				symbol			1		
+			StyleMix				StyleMix			1		
+			StyleMixTolerance				StyleMix			1		
+			SongType				float			1		
+			SongTypeTolerance				float			1		
+			MinQuality				float	0.0 - 1.0		1		
+			ReachesGroups				propList			0		##calculated or set, [<GroupID>:<reaches how many in group (as fraction, 0-1)>]
+			Reporter				symbol			1		Reporter ID 
+			MediaTargets				list			1		MediaTarget IDs
+			AdvertisingIDs				list			1		Possible Event:Advertisement IDs
+			CurrentChart				propList			0		Current chart (billboard, rotation chart)
+			ChartPic				string			1		Which picture is used for chart bg
+			ChartPosToRating				list			1		What does a position on the chart translate to in real-world numbers (sales, rotation)
+			ChartHeadline				string					Text used in headline for chart
+			WeightMusicAndImage				float			1		What is more important to the Media, do they mostly consider the Music (0.0) or the Image (1.0)
+
+		:Tour										
+			MrCP				integer					
+
+		:Gangsta										
+			MrCP				integer					
+
+		:Design										
+			MrCP				integer					
+
+		:Video										
+			MrCP				integer					
+
+	:MediaTarget											Use to calculate the audience that is reached by a Media/Live place AND when calc Like in Media/Live
+		Age					Range			1		Not for Like
+		Education					Range			1		Not for Like
+		Economy					Range			1		Not for Like
+		StyleMix					StyleMix			1		
+		StyleMixTolerance					StyleMix			1		
+		SongType					float			1		
+		SongTypeTolerance					float			1		
+		MinQuality					float					
+		MinLiveReputation					float					Only for Like
+
+	:Dialog											
+		DataMemberName					string			1		
+		Loc					point			1		
+		Icon					string			1		
+		ButtonOK					Button			1		
+		ButtonCancel					Button			1		
+		Button3					Button			1		
+		Actions					list [ID]			1		All actions that can be done in this dialog (use only when place.actions is not proper)
+		PreExecuteThis					string			1		
+		ExecuteThis					string			1		
+
+		:EventCard										
+			Headline				string			1	1	
+			Caption				string			1	1	
+
+			:EventCardMulti									Three (or more??) buttons with a text to the right of each button
+				Question			string					
+				AltText1			string			1	1	
+				AltText2			string			1	1	
+				AltText3			string			1	1	
+
+			:EventCardOKCancel									Can handle one (OK) or two (OK/Cancel) buttons
+				Question			string			1	1	
+
+			:EventCardChangeVal									Dialog where a value can be changed with up/down arrows
+				Question			string			1	1	
+
+	:Player											
+		Money					CoolInt			0		
+		MoneyGraph					propList					date:money
+		Accounts					propList					Info about money spent/earned on different things
+		OwnedSongs					list [song ID]			0		"The songs that have been ""bought"" from publisher (and those that the band made?)"
+		CPContractor					symbol			0		Record company ID
+		CPContractPriceModel					PriceModel			0		The contract price model
+		CPContractAlbumsLeft					integer			0		Albums left to make for contract to be finished
+		Cred					float			0		
+		Success					float			0		
+		Points					integer			0		
+		MissionsInfo					propList			0		[<#MissionID>:[#Completed:0, #Tries:0, #Money:-2000, #Points:10000], ...]
+
+	:VideoConcept											
+		Price					integer			1		
+		ProductionTime					integer			1		NumDays
+		Quality					float			1		
+
+	:TourCity											
+		Country					symbol			1		TODO: Will this be used?
+		StyleMix					StyleMix			1		Represents the country's
+		Size					integer			1		
+		PopulationFactor					float			1		How much larger population than RockCity's?
+		PreferredPriceModel					PriceModel			1		
+		TotalCost					integer			1		Sum of (calculated) travel cost and rent cost (and others?)
+		Coordinates					list			1		two-index list with lat / long in radians
+		TravelTime					integer			1		days to get there (from last tour city)
+		MediaTargets					list			0		
+		ReachesGroups					propList			1		
+		Available					integer			1		Not all cities should be available for all language versions
+
+	:Mission											
+		IntroText					string			1	1	
+		SucceedText					string			1	1	
+		FailText					string			1	1	
+		StartValues					list			1		
+		SucceedCriteria					list			0		Trigger IDs to fulfill (will be altered during game)
+		FailCriteria					list			0		Same
+		CriteriaText					string			1		Description of criteria (for player)
+		Status					symbol		#NotStarted	0		#NotStarted / #Active / #Failed / #Succeeded
+		StartTriggers					list [ID Trigger]			1		Triggers that will be started when mission starts. These can start others in turn.
+		Vars					propList			0		variables that the scripts (Events/WTHs) can set and get
+		AvailableMusicians					list [ID Musicians]			1		Which musicians are available in this mission
+		NeverAvailableMusicians					list [ID Places]			1		Musicians that won't be available, even when these have been locked up by playing later missions
+		AvailablePlaces					list [ID Places]			0		Which places (buildings) are avail. from the beginning of the mission
+		NeverAvailablePlaces					list [ID Places]			1		Places that won't be available, even if triggers try to do that.
+		UsedUpIDs					list [IDs]			1		Right now, only used for EventCards. If specified here, they won't show up in game.
+		AvailableSongs					list [ID Songs]			0		
+		StartMoney					integer			1		How much dough the player starts out with
+		NextMissions					propList			1		can be [#Failed1:#Mission02, #Failed2:#Mission09] etc
+		AutoLoad					string			1		Load this savegame when starting mission
+		StartDateAsList					propList			1		eg [#Year:2001, #Month:3, #Day:13]
+		MaxNumMusicians					integer			1		Limits the maximum number of musicians in the band
+
+	:Game											
+		DeadPeopleIDs					list			0		Dead people shouldn't show up in later missions!
+		UsedUpIDs					list			0		Actions, Triggers and EventCards that mustn't occur again in the game. Triggers check this automatically before they get Activated
+		Vars					propList			0		Same as Mission's Vars - for storing vals
+
+	:DesignCategory											
+		Elements					list [id DesignElement]			1		
+
+	:DesignElement											
+		Style					StyleMix			1		
+		Price					integer			1		
+		Quality					float			1		What is it really worth…
+
+	:Merchandise											
+		DesignCost					integer			1		Cost to design this type of merchandise
+		PriceLevel					float			1		For comparing with audience's economy - will they buy it
+		Revenue					integer			1		Money made per sold item
+		CompositeInfo					list			1		
+
+	:TourExpense											
+		Price					integer			1		Price to pay for this expense
+		LuxuryFactor					float			1		How much it contributes to bands well-being
+
+AgendaEventFormat												
+	ID						symbol			1		
+	Name						string			1		
+	Gfx						string			1		
+	Clr						string			1		
+	UsedByClass						symbol			1		
+
+Event												
+	ID						symbol			1		
+	Name						string			1	1	
+	Comment						string			1	1	
+	StartDate						integer			0		
+	Duration						integer			0		
+	NeededIDs						list			0		Which persons are needed (to be free from other events) to complete the event?
+	Visible						boolean			0		Can player see it in agenda?
+	##Modifies						propList			0		"Can change values in other objects, eg [#RMJimmy:[[[#mood],  0.5""]], #RMLisa:[[[#mood], 0.5]]]"
+	Moveable						boolean		1	0		Can the user move it in the agenda?
+	AutoRemove						integer		0	0		Will it automatically be removed from the system once end date has been passed?
+
+	:AudienceExposure											
+		Type					symbol			0		
+		MediaID					symbol			0		Which media is the expo in
+		Intensity					float			0		
+		ReachesGroups					propList			0		Per group: 
+		IntensityPerGroup					propList			0		Pre-calced: How much exposure per group.
+		QualityPerGroup					propList			0		Per group: does the group like the exposure
+		Quality					float			0		
+		InfluenceWhat					proplist			0		eg [#AlbumID:1.0, #BandID:0.2, #MusicianID:0.3]
+
+		:ExpoAd										
+			MusicStyle				StyleMix			0		
+			ImageStyle				StyleMix			0		
+			Price				integer			0		
+
+		:ExpoMediaActivity										Interviews, gameshows etc
+			EventCardID				symbol			0		Use this event card when done
+
+		:ExpoRotation										
+			RotationOfClass				symbol			0		#Video or #Album
+
+		:ExpoReview										
+			ReviewOfClass				symbol			0		#Concert or #Album
+			ReviewOfID				symbol			0		
+			Rating				float			0		0 (bad) -  1 (good)
+
+	:Concert											
+		Venue					symbol (ID Live)			0		
+		PriceModel					PriceModel			0		
+		NumAudience					integer			0		
+		Quality					float			0		
+		Income					integer			0		
+		VenueIncome					integer			0		
+		BandPerformance					float			0		
+
+	:TourConcert											
+		Tour					symbol			0		Which tour was it?
+		City					symbol			0		
+		NumAudience					integer			0		
+		Quality					float			0		
+		Income					integer			0		
+		VenueIncome					integer			0		
+		BandPerformance					float			0		
+
+	:BandTour											
+		Cities					list [ID TourCity]			0		Which cities will be visited
+		StageDesign					propList			0		
+		StageQuality					float			0		Affects num visitors and their satisfaction
+		ConcertDates					list			0		Dates for the concerts (offset from tour start)
+		Expenses					list [ID of what]			0		
+		ConcertIDs					list [ID TourConcert]			0		
+		Price					integer			0		Total cost of tour (rents, travel expenses, stage)
+
+	:VideoProduction											
+		Album					symbol (ID Album)			0		
+		Video					symbol (ID VideoConcept)			0		
+
+	:Training											
+		Type					symbol			0		#Detox / #Instrument / #PlasticSurgery / #Physical etc
+		AutoEventCard					integer			0		Will an eventCard automatically pop up at end of training? Can be set to a symbol, in that case that EC is shown at end instead.
+
+	:AlbumRelease											
+		AlbumID					symbol			0		
+
+	:Security											Hired security guards during this period
+		MrCP					integer					
+
+	:DivEvent											
+		AgendaFormat					symbol					For using correct gfx/info in agenda
+		AutoEventCard					integer			0		Will an eventCard automatically pop up at end of training? Can be set to a symbol, in that case that EC is shown at end instead.
+
+Channel												
+	ID						symbol					
+	LoopID						symbol					
+	Vol						float					
+	FX						list [FX IDs]					
+	Mute						integer					
+	Pan						float					
+
+MixerSettings												
+	ID						symbol			0		
+	Channels						list [channel IDs]			0		
+
+
+MediaActivityResult												
+	Quality						float					
+	Attitude						float					How will media's / reporter's attitude towards band change after the event
+	PassiveNumDays						integer					How long before media can consider doing another event?
+
+MediaActivity												
+	ID						symbol					
+	MediaID						symbol					Available from which media
+	LikeThreshold						float					
+	Chance						integer					What's the probability of this happening (in percent)
+	Type						string					What will happen? Used to generate an event card
+	Threshold						float					After calculating how the appearance went, compare with this value to see which result event card is shown
+	Viewers						float					How many viewers of the channel see this event
+	ResultGood						MediaActivityResult					
+	ResultBad						MediaActivityResult					

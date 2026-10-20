@@ -1,0 +1,304 @@
+property ancestor, child, className, belongsTo, _killed, NeedsInitList, NeedObjs
+global gRock
+
+on new me, argChild, argBelongsTo
+  [  0] getparam 8 .............................. <argChild>
+  [  2] pusharglist 1 ........................... <argChild>
+  [  4] extcall 8 ............................... <objectp(argChild)>
+  [  6] jmpifz [ 17] ............................ if objectp(argChild) then / else
+  [  9] getparam 8 .............................. <argChild>
+  [ 11] setprop 496 ............................. child = argChild
+  [ 14] jmp [ 22]
+  [ 17] getparam 0 .............................. <me>
+  [ 19] setprop 496 ............................. child = me
+  [ 22] getparam 16 ............................. <argBelongsTo>
+  [ 24] setprop 208 ............................. belongsTo = argBelongsTo
+  [ 27] pushsymb 939 ............................ <#Needs>
+  [ 30] setprop 224 ............................. className = #Needs
+  [ 33] pusharglist 0 ........................... <[:]>
+  [ 35] pushproplist ............................ <[:]>
+  [ 36] setprop 1521 ............................ NeedsInitList = [:]
+  [ 39] pusharglist 0 ........................... <[:]>
+  [ 41] pushproplist ............................ <[:]>
+  [ 42] setprop 1522 ............................ NeedObjs = [:]
+  [ 45] getparam 0 .............................. <me>
+  [ 47] pusharglistnoret 1 ...................... <me>
+  [ 49] extcall 69 .............................. return me
+  [ 52] ret
+end
+
+on kill me
+  [  0] pushint8 1 .............................. <1>
+  [  3] setprop 506 ............................. _killed = 1
+  [  6] getprop 1522 ............................ <NeedObjs>
+  [  9] peek 0
+  [ 11] pusharglist 1
+  [ 13] extcall 156
+  [ 16] pushint8 1
+  [ 18] peek 0
+  [ 20] peek 2
+  [ 22] lteq
+  [ 23] jmpifz [ 57] ............................ repeat with obj in NeedObjs
+  [ 26] peek 2
+  [ 28] peek 1
+  [ 30] pusharglist 2
+  [ 32] extcall 119
+  [ 35] setlocal 0
+  [ 37] getglobal 23 ............................ <gRock>
+  [ 39] getobjprop 82 ........................... <gRock.m_classManager>
+  [ 42] getlocal 0 .............................. <obj>
+  [ 44] pushsymb 31 ............................. <#kill>
+  [ 46] pusharglistnoret 3 ...................... <gRock.m_classManager, obj, #kill>
+  [ 48] objcall 240 ............................. gRock.m_classManager.removeObj(obj, #kill)
+  [ 51] pushint8 1
+  [ 53] add
+  [ 54] endrepeat [ 18]
+  [ 57] pop 3
+  [ 59] pusharglist 0 ........................... <[:]>
+  [ 61] pushproplist ............................ <[:]>
+  [ 62] setprop 1522 ............................ NeedObjs = [:]
+  [ 65] getprop 347 ............................. <ancestor>
+  [ 68] pusharglist 1 ........................... <ancestor>
+  [ 70] extcall 8 ............................... <objectp(ancestor)>
+  [ 72] jmpifz [ 85] ............................ if objectp(ancestor) then
+  [ 75] getprop 347 ............................. <ancestor>
+  [ 78] pusharglist 1 ........................... <ancestor>
+  [ 80] objcall 31 .............................. <ancestor.kill()>
+  [ 82] setprop 347 ............................. ancestor = ancestor.kill()
+  [ 85] pushzero ................................ <0>
+  [ 86] setprop 496 ............................. child = 0
+  [ 89] pushzero ................................ <0>
+  [ 90] setprop 208 ............................. belongsTo = 0
+  [ 93] pushzero ................................ <0>
+  [ 94] pusharglistnoret 1 ...................... <0>
+  [ 96] extcall 69 .............................. return 0
+  [ 99] ret
+end
+
+on PreInit me
+  [  0] getprop 1521 ............................ <NeedsInitList>
+  [  3] pusharglist 1 ........................... <NeedsInitList>
+  [  5] extcall 115 ............................. <listp(NeedsInitList)>
+  [  8] not ..................................... <not listp(NeedsInitList)>
+  [  9] jmpifz [ 25] ............................ if not listp(NeedsInitList) then
+  [ 12] pushcons 0 .............................. <"NeedsInitList empty">
+  [ 14] getprop 208 ............................. <belongsTo>
+  [ 17] getobjprop 154 .......................... <belongsTo.ID>
+  [ 20] pusharglistnoret 2 ...................... <"NeedsInitList empty", belongsTo.ID>
+  [ 22] extcall 122 ............................. pott("NeedsInitList empty", belongsTo.ID)
+  [ 25] pushint8 1 .............................. <1>
+  [ 28] setlocal 0
+  [ 30] getlocal 0
+  [ 32] getprop 1521 ............................ <NeedsInitList>
+  [ 35] getobjprop 156 .......................... <NeedsInitList.count>
+  [ 38] lteq
+  [ 39] jmpifz [164] ............................ repeat with n = 1 to NeedsInitList.count
+  [ 42] getprop 1521 ............................ <NeedsInitList>
+  [ 45] getlocal 0 .............................. <n>
+  [ 47] pusharglist 2 ........................... <NeedsInitList, n>
+  [ 49] objcall 295 ............................. <NeedsInitList.getPropAt(n)>
+  [ 52] setlocal 8 .............................. tmpClassName = NeedsInitList.getPropAt(n)
+  [ 54] getprop 1521 ............................ <NeedsInitList>
+  [ 57] getlocal 0 .............................. <n>
+  [ 59] pusharglist 2 ........................... <NeedsInitList, n>
+  [ 61] objcall 119 ............................. <NeedsInitList[n]>
+  [ 64] setlocal 16 ............................. tmpInits = NeedsInitList[n]
+  [ 66] getglobal 23 ............................ <gRock>
+  [ 68] getobjprop 82 ........................... <gRock.m_classManager>
+  [ 71] getlocal 8 .............................. <tmpClassName>
+  [ 73] pusharglist 2 ........................... <gRock.m_classManager, tmpClassName>
+  [ 75] objcall 153 ............................. <gRock.m_classManager.createUnregObj(tmpClassName)>
+  [ 78] setlocal 24 ............................. needObj = gRock.m_classManager.createUnregObj(tmpClassName)
+  [ 80] getlocal 24 ............................. <needObj>
+  [ 82] getparam 0 .............................. <me>
+  [ 84] setobjprop 208 .......................... needObj.belongsTo = me
+  [ 87] getlocal 16 ............................. <tmpInits>
+  [ 89] pusharglist 1 ........................... <tmpInits>
+  [ 91] extcall 115 ............................. <listp(tmpInits)>
+  [ 94] jmpifz [100] ............................ if listp(tmpInits) then / else
+  [ 97] jmp [138]
+  [100] getlocal 24 ............................. <needObj>
+  [102] getobjprop 1500 ......................... <needObj.DynamicTrigger>
+  [105] getlocal 16 ............................. <tmpInits>
+  [107] getlocal 24 ............................. <needObj>
+  [109] getobjprop 1500 ......................... <needObj.DynamicTrigger>
+  [112] getobjprop 502 .......................... <needObj.DynamicTrigger.GainFact>
+  [115] mul ..................................... <tmpInits * needObj.DynamicTrigger.GainFact>
+  [116] setobjprop 502 .......................... needObj.DynamicTrigger.GainFact = tmpInits * needObj.DynamicTrigger.GainFact
+  [119] getlocal 24 ............................. <needObj>
+  [121] getobjprop 1500 ......................... <needObj.DynamicTrigger>
+  [124] getlocal 16 ............................. <tmpInits>
+  [126] getlocal 24 ............................. <needObj>
+  [128] getobjprop 1500 ......................... <needObj.DynamicTrigger>
+  [131] getobjprop 501 .......................... <needObj.DynamicTrigger.max>
+  [134] mul ..................................... <tmpInits * needObj.DynamicTrigger.max>
+  [135] setobjprop 501 .......................... needObj.DynamicTrigger.max = tmpInits * needObj.DynamicTrigger.max
+  [138] getprop 1522 ............................ <NeedObjs>
+  [141] getlocal 24 ............................. <needObj>
+  [143] getobjprop 224 .......................... <needObj.className>
+  [146] getlocal 24 ............................. <needObj>
+  [148] pusharglistnoret 3 ...................... <NeedObjs, needObj.className, needObj>
+  [150] objcall 309 ............................. NeedObjs.addProp(needObj.className, needObj)
+  [153] pushint8 1
+  [156] getlocal 0
+  [158] add
+  [159] setlocal 0
+  [161] endrepeat [ 30]
+  [164] ret
+end
+
+on setActiveState me, argState
+  [  0] pushint8 1 .............................. <1>
+  [  3] setlocal 0
+  [  5] getlocal 0
+  [  7] getprop 1522 ............................ <NeedObjs>
+  [ 10] getobjprop 156 .......................... <NeedObjs.count>
+  [ 13] lteq
+  [ 14] jmpifz [ 45] ............................ repeat with n = 1 to NeedObjs.count
+  [ 17] getprop 1522 ............................ <NeedObjs>
+  [ 20] getlocal 0 .............................. <n>
+  [ 22] pusharglist 2 ........................... <NeedObjs, n>
+  [ 24] objcall 119 ............................. <NeedObjs[n]>
+  [ 27] getparam 8 .............................. <argState>
+  [ 29] pusharglistnoret 2 ...................... <NeedObjs[n], argState>
+  [ 31] objcall 732 ............................. NeedObjs[n].setActiveState(argState)
+  [ 34] pushint8 1
+  [ 37] getlocal 0
+  [ 39] add
+  [ 40] setlocal 0
+  [ 42] endrepeat [  5]
+  [ 45] ret
+end
+
+on suspend me, argIsTRUE
+  [  0] pushint8 1 .............................. <1>
+  [  3] setlocal 0
+  [  5] getlocal 0
+  [  7] getprop 1522 ............................ <NeedObjs>
+  [ 10] getobjprop 156 .......................... <NeedObjs.count>
+  [ 13] lteq
+  [ 14] jmpifz [ 45] ............................ repeat with n = 1 to NeedObjs.count
+  [ 17] getprop 1522 ............................ <NeedObjs>
+  [ 20] getlocal 0 .............................. <n>
+  [ 22] pusharglist 2 ........................... <NeedObjs, n>
+  [ 24] objcall 119 ............................. <NeedObjs[n]>
+  [ 27] getparam 8 .............................. <argIsTRUE>
+  [ 29] pusharglistnoret 2 ...................... <NeedObjs[n], argIsTRUE>
+  [ 31] objcall 740 ............................. NeedObjs[n].suspend(argIsTRUE)
+  [ 34] pushint8 1
+  [ 37] getlocal 0
+  [ 39] add
+  [ 40] setlocal 0
+  [ 42] endrepeat [  5]
+  [ 45] ret
+end
+
+on satisfy me, argNeedClassName, argVal
+  [  0] getprop 1522 ............................ <NeedObjs>
+  [  3] getparam 8 .............................. <argNeedClassName>
+  [  5] pusharglist 2 ........................... <NeedObjs, argNeedClassName>
+  [  7] objcall 119 ............................. <NeedObjs[argNeedClassName]>
+  [ 10] setlocal 0 .............................. obj = NeedObjs[argNeedClassName]
+  [ 12] getlocal 0 .............................. <obj>
+  [ 14] pusharglist 1 ........................... <obj>
+  [ 16] extcall 8 ............................... <objectp(obj)>
+  [ 18] not ..................................... <not objectp(obj)>
+  [ 19] jmpifz [ 32] ............................ if not objectp(obj) then
+  [ 22] pushcons 8 .............................. <"Don't have that need">
+  [ 24] getparam 8 .............................. <argNeedClassName>
+  [ 26] pusharglistnoret 2 ...................... <"Don't have that need", argNeedClassName>
+  [ 28] extcall 122 ............................. pott("Don't have that need", argNeedClassName)
+  [ 31] ret ..................................... exit
+  [ 32] getlocal 0 .............................. <obj>
+  [ 34] getparam 16 ............................. <argVal>
+  [ 36] pusharglistnoret 2 ...................... <obj, argVal>
+  [ 38] objcall 1509 ............................ obj.satisfy(argVal)
+  [ 41] ret
+end
+
+on getNeed me, argNeedClassName
+  [  0] getprop 1522 ............................ <NeedObjs>
+  [  3] getparam 8 .............................. <argNeedClassName>
+  [  5] pusharglist 2 ........................... <NeedObjs, argNeedClassName>
+  [  7] objcall 119 ............................. <NeedObjs[argNeedClassName]>
+  [ 10] setlocal 0 .............................. obj = NeedObjs[argNeedClassName]
+  [ 12] getlocal 0 .............................. <obj>
+  [ 14] pushsymb 499 ............................ <#Current>
+  [ 17] pusharglist 2 ........................... <obj, #Current>
+  [ 19] objcall 495 ............................. <obj.getOneProp(#Current)>
+  [ 22] pusharglistnoret 1 ...................... <obj.getOneProp(#Current)>
+  [ 24] extcall 69 .............................. return obj.getOneProp(#Current)
+  [ 27] ret
+end
+
+on save me
+  [  0] pusharglist 0 ........................... <[:]>
+  [  2] pushproplist ............................ <[:]>
+  [  3] setlocal 0 .............................. tmp = [:]
+  [  5] pushint8 1 .............................. <1>
+  [  8] setlocal 8
+  [ 10] getlocal 8
+  [ 12] getprop 1522 ............................ <NeedObjs>
+  [ 15] getobjprop 156 .......................... <NeedObjs.count>
+  [ 18] lteq
+  [ 19] jmpifz [ 65] ............................ repeat with n = 1 to NeedObjs.count
+  [ 22] getlocal 0 .............................. <tmp>
+  [ 24] getprop 1522 ............................ <NeedObjs>
+  [ 27] getlocal 8 .............................. <n>
+  [ 29] pusharglist 2 ........................... <NeedObjs, n>
+  [ 31] objcall 295 ............................. <NeedObjs.getPropAt(n)>
+  [ 34] getprop 1522 ............................ <NeedObjs>
+  [ 37] getlocal 8 .............................. <n>
+  [ 39] pusharglist 2 ........................... <NeedObjs, n>
+  [ 41] objcall 119 ............................. <NeedObjs[n]>
+  [ 44] pusharglist 1 ........................... <NeedObjs[n]>
+  [ 46] objcall 39 .............................. <NeedObjs[n].save()>
+  [ 49] pusharglistnoret 3 ...................... <tmp, NeedObjs.getPropAt(n), NeedObjs[n].save()>
+  [ 51] objcall 309 ............................. tmp.addProp(NeedObjs.getPropAt(n), NeedObjs[n].save())
+  [ 54] pushint8 1
+  [ 57] getlocal 8
+  [ 59] add
+  [ 60] setlocal 8
+  [ 62] endrepeat [ 10]
+  [ 65] getlocal 0 .............................. <tmp>
+  [ 67] pusharglistnoret 1 ...................... <tmp>
+  [ 69] extcall 69 .............................. return tmp
+  [ 72] ret
+end
+
+on load me, argList
+  [  0] pushint8 1 .............................. <1>
+  [  3] setlocal 0
+  [  5] getlocal 0
+  [  7] getparam 8 .............................. <argList>
+  [  9] getobjprop 156 .......................... <argList.count>
+  [ 12] lteq
+  [ 13] jmpifz [ 75] ............................ repeat with n = 1 to argList.count
+  [ 16] getparam 8 .............................. <argList>
+  [ 18] getlocal 0 .............................. <n>
+  [ 20] pusharglist 2 ........................... <argList, n>
+  [ 22] objcall 295 ............................. <argList.getPropAt(n)>
+  [ 25] setlocal 8 .............................. tmpID = argList.getPropAt(n)
+  [ 27] getprop 1522 ............................ <NeedObjs>
+  [ 30] getlocal 8 .............................. <tmpID>
+  [ 32] pusharglist 2 ........................... <NeedObjs, tmpID>
+  [ 34] objcall 183 ............................. <NeedObjs.getaProp(tmpID)>
+  [ 37] setlocal 16 ............................. tmpObj = NeedObjs.getaProp(tmpID)
+  [ 39] getlocal 16 ............................. <tmpObj>
+  [ 41] pusharglist 1 ........................... <tmpObj>
+  [ 43] extcall 8 ............................... <objectp(tmpObj)>
+  [ 45] jmpifz [ 64] ............................ if objectp(tmpObj) then
+  [ 48] getlocal 16 ............................. <tmpObj>
+  [ 50] getparam 8 .............................. <argList>
+  [ 52] getlocal 0 .............................. <n>
+  [ 54] pusharglist 2 ........................... <argList, n>
+  [ 56] objcall 119 ............................. <argList[n]>
+  [ 59] pusharglistnoret 2 ...................... <tmpObj, argList[n]>
+  [ 61] objcall 41 .............................. tmpObj.load(argList[n])
+  [ 64] pushint8 1
+  [ 67] getlocal 0
+  [ 69] add
+  [ 70] setlocal 0
+  [ 72] endrepeat [  5]
+  [ 75] ret
+end

@@ -1,0 +1,148 @@
+property ancestor, m_succeeded, m_mission_r
+global gDir, gRock
+
+on new me, argOptions
+  ID = argOptions[#ID]
+  argOptions.setaProp(#ReportTo, me)
+  argOptions.setaProp(#child, me)
+  m_mission_r = gRock.m_context.getFocus(#Mission)
+  m_succeeded = m_mission_r.status = #succeeded
+  pott("m_mission_r.status", m_mission_r.status, m_succeeded)
+  dialog_r = gRock.m_classManager.getObjByIDAndClass(#DlgMissionOutro, #Dialog)
+  dialog_r.dataMemberName = "DlgMissionOutroData"
+  dialog_r.name = m_mission_r.name
+  argOptions[#DlgInfoObj] = dialog_r
+  ancestor = script("DlgRockAncestorScript").new(argOptions)
+  itemObj = ancestor.m_objDlg.getItemByPath([#InfoDlg, #Head, #icon])
+  itemObj.setOneProp(#Pic, "icon_money02")
+  itemObj = ancestor.m_objDlg.getItemByPath([#InfoDlg, #Head, #Info])
+  itemObj.setOneProp(#editData, rGetStr(#szidEconomy))
+  itemObj = ancestor.m_objDlg.getItem(#Pic)
+  if m_succeeded = 1 then
+    tmpPic = string(m_mission_r.ID) & "_success01"
+  else
+    tmpPic = string(m_mission_r.ID) & "_failure01"
+  end if
+  itemObj.setOneProp(#Pic, tmpPic)
+  itemObj = ancestor.m_objDlg.getItem(#Info)
+  if m_succeeded = 1 then
+    itemObj.setOneProp(#Pic, rFormatText([m_mission_r.SucceedText], "MissionOutroFormatting", [#shadow: 1]))
+  else
+    itemObj.setOneProp(#Pic, rFormatText([m_mission_r.FailText], "MissionOutroFormatting", [#shadow: 1]))
+  end if
+  me.setPlace()
+  ancestor.render()
+  return me
+end
+
+on kill me
+  ancestor.kill()
+  return 0
+end
+
+on Report me, argObj, argWhat
+end
+
+on mouse me, argObj, argWhat, argOption
+  if objectp(argOption) then
+    if argWhat = #click then
+      ID = argOption.getOneProp(#ID)
+      IDStr = string(ID)
+      if ID = #ButtonOK then
+        if m_succeeded then
+          nextID = gRock.m_player.getNextMissionID(m_mission_r)
+          if nextID = #ClockedGame then
+            alert("Game clocked!!")
+            exit
+          else
+            m_mission_r = gRock.m_classManager.getObjByIDAndClass(nextID, #Mission)
+            if not objectp(m_mission_r) then
+              pott("That mission doesn't exist", nextID)
+              m_mission_r = gRock.m_classManager.getObjByIDAndClass(#Mission01, #Mission)
+            end if
+            gRock.m_context.setFocus(#Mission, m_mission_r)
+          end if
+        end if
+        gDir.m_objDialogsMaster.ImNOTExitingToCity()
+        gDir.m_objDialogsMaster.closeAllDialogs()
+        goMovie("Mission")
+        exit
+      end if
+    end if
+  end if
+end
+
+on setPlace me
+  dlgObj = ancestor.m_objDlg
+  strLst1 = []
+  strLst2 = []
+  totalMoney = 0
+  totalPoints = 0
+  strLst1.add([#CharSpacing: -1])
+  strLst2.add([#CharSpacing: -1])
+  strLst1.add([#FixedLinespace: 15])
+  strLst2.add([#FixedLinespace: 15])
+  strLst1.add([#fontStyle: [#bold]])
+  strLst1.add(rGetStr(#szidIncome) & RETURN)
+  strLst1.add([#fontStyle: [#plain]])
+  strLst2.add([#fontStyle: [#plain]])
+  strLst2.add(RETURN)
+  strLst1.add(rGetStr(#szidConcerts) & RETURN)
+  val = m_mission_r.Vars[#ConcertEarnings]
+  strLst2.add(rCurrency(val, 0, 1) & RETURN)
+  totalMoney = totalMoney + val
+  strLst1.add(rGetStr(#szidMerchandize) & RETURN)
+  strLst2.add(rCurrency(val, 0, 1) & RETURN)
+  totalMoney = totalMoney + val
+  strLst1.add(rGetStr(#szidAlbums) & RETURN)
+  strLst2.add(rCurrency(val, 0, 1) & RETURN)
+  totalMoney = totalMoney + val
+  strLst1.add(rGetStr(#szidTours) & RETURN)
+  strLst2.add(rCurrency(val, 0, 1) & RETURN)
+  totalMoney = totalMoney + val
+  strLst1.add(RETURN)
+  strLst2.add(RETURN)
+  strLst1.add([#fontStyle: [#bold]])
+  strLst1.add(rGetStr(#szidExpenses) & RETURN)
+  strLst1.add([#fontStyle: [#plain]])
+  strLst2.add(RETURN)
+  strLst1.add(rGetStr(#szidBand_D) & RETURN)
+  val = m_mission_r.Vars[#ExpensesBand]
+  strLst2.add(rCurrency(val, 0, 1) & RETURN)
+  totalMoney = totalMoney - val
+  strLst1.add(rGetStr(#szidTours) & RETURN)
+  strLst2.add(rCurrency(val, 0, 1) & RETURN)
+  totalMoney = totalMoney - val
+  strLst1.add(rGetStr(#szidAdvertisement) & RETURN)
+  strLst2.add(rCurrency(val, 0, 1) & RETURN)
+  totalMoney = totalMoney - val
+  strLst1.add(rGetStr(#szidMiscellaneous) & RETURN)
+  strLst2.add(rCurrency(val, 0, 1) & RETURN)
+  totalMoney = totalMoney - val
+  strLst1.add(RETURN)
+  strLst2.add(RETURN)
+  strLst1.add([#fontStyle: [#bold]])
+  strLst1.add(rGetStr(#szidDebts) & RETURN)
+  strLst1.add([#fontStyle: [#plain]])
+  strLst2.add(RETURN)
+  strLst1.add(rGetStr(#szidAdvancePay) & RETURN)
+  strLst2.add(rCurrency(val, 0, 1) & RETURN)
+  totalMoney = totalMoney - val
+  strLst1.add([#CharSpacing: -2])
+  strLst1.add("ÑÑÑÑÑÑÑÑÑÑÑÑÑÑÑÑÑÑÑÑÑÑÑ" & RETURN)
+  strLst2.add(RETURN)
+  strLst1.add([#CharSpacing: -1])
+  strLst1.add([#fontStyle: [#bold]])
+  strLst1.add(rGetStr(#szidTotal))
+  strLst2.add(rCurrency(totalMoney, 0, 1) & RETURN)
+  formatFromList(member("RockInfoText"), [#member: [#width: 200, #color: rgb(255, 251, 240), #wordWrap: 0, #alignment: #left], #char: strLst1])
+  img1 = member("RockInfoText").image.duplicate()
+  formatFromList(member("RockInfoText"), [#member: [#width: 200, #color: rgb(255, 251, 240), #wordWrap: 0, #alignment: #right], #char: strLst2])
+  img2 = member("RockInfoText").image.duplicate()
+  img1.copyPixels(img2, img2.rect, img2.rect, [#ink: 36])
+  itemObj = ancestor.m_objDlg.getItemByPath([#InfoDlg, #dlg, #Pic])
+  itemObj.setOneProp(#ink, 36)
+  itemObj.setOneProp(#Pic, img1)
+  gRock.m_player.MissionEnd(m_mission_r, m_succeeded, [#points: totalPoints])
+  gRock.autoSave()
+end

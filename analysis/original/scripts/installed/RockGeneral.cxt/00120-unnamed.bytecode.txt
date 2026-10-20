@@ -1,0 +1,116 @@
+on readLineAsList argLineStr, argStartReadFromItemNr
+  [  0] pusharglist 0 ........................... <[]>
+  [  2] pushlist ................................ <[]>
+  [  3] setlocal 0 .............................. valList = []
+  [  5] pushint8 1 .............................. <1>
+  [  8] setlocal 8 .............................. valNr = 1
+  [ 10] getparam 8 .............................. <argStartReadFromItemNr>
+  [ 12] pusharglist 1 ........................... <argStartReadFromItemNr>
+  [ 14] extcall 1044 ............................ <integerp(argStartReadFromItemNr)>
+  [ 17] jmpifz [ 27] ............................ if integerp(argStartReadFromItemNr) then / else
+  [ 20] getparam 8 .............................. <argStartReadFromItemNr>
+  [ 22] setlocal 16 ............................. itemNr = argStartReadFromItemNr
+  [ 24] jmp [ 97]
+  [ 27] pushzero ................................ <0>
+  [ 28] pushzero ................................ <0>
+  [ 29] pushint8 2 .............................. <2>
+  [ 32] pushzero ................................ <0>
+  [ 33] pushzero ................................ <0>
+  [ 34] pushzero ................................ <0>
+  [ 35] pushzero ................................ <0>
+  [ 36] pushzero ................................ <0>
+  [ 37] getparam 0 .............................. <argLineStr>
+  [ 39] getchunk ................................ <word 2 of argLineStr>
+  [ 40] setlocal 24 ............................. tmpWord = word 2 of argLineStr
+  [ 42] pushcons 0 .............................. <EMPTY>
+  [ 44] pushzero ................................ <0>
+  [ 45] pushchunkvarref 4 ....................... <argLineStr>
+  [ 47] pushsymb 396 ............................ <#word>
+  [ 50] pushint8 1 .............................. <1>
+  [ 53] pusharglist 3 ........................... <argLineStr, #word, 1>
+  [ 55] objcall 416 ............................. <argLineStr.word[1]>
+  [ 58] swap
+  [ 59] pusharglistnoret 2 ...................... <argLineStr.word[1], EMPTY>
+  [ 61] objcall 421 ............................. put EMPTY into argLineStr.word[1]
+  [ 64] getlocal 24 ............................. <tmpWord>
+  [ 66] getparam 0 .............................. <argLineStr>
+  [ 68] pusharglist 2 ........................... <tmpWord, argLineStr>
+  [ 70] extcall 384 ............................. <offset(tmpWord, argLineStr)>
+  [ 73] setlocal 32 ............................. tmpOff = offset(tmpWord, argLineStr)
+  [ 75] getparam 0 .............................. <argLineStr>
+  [ 77] pushsymb 138 ............................ <#char>
+  [ 80] pushint8 1 .............................. <1>
+  [ 83] getlocal 32 ............................. <tmpOff>
+  [ 85] pusharglist 4 ........................... <argLineStr, #char, 1, tmpOff>
+  [ 87] objcall 113 ............................. <argLineStr.char[1..tmpOff]>
+  [ 90] pushint8 3 .............................. <3>
+  [ 93] get 1 ................................... <the number of items in argLineStr.char[1..tmpOff]>
+  [ 95] setlocal 16 ............................. itemNr = the number of items in argLineStr.char[1..tmpOff]
+  [ 97] getparam 0 .............................. <argLineStr>
+  [ 99] pushint8 3 .............................. <3>
+  [102] get 1 ................................... <the number of items in argLineStr>
+  [104] setlocal 40 ............................. numItems = the number of items in argLineStr
+  [106] getlocal 16 ............................. <itemNr>
+  [108] getlocal 40 ............................. <numItems>
+  [110] lteq .................................... <itemNr <= numItems>
+  [111] jmpifz [184] ............................ repeat while itemNr <= numItems
+  [114] getparam 0 .............................. <argLineStr>
+  [116] pushsymb 397 ............................ <#item>
+  [119] getlocal 16 ............................. <itemNr>
+  [121] pusharglist 3 ........................... <argLineStr, #item, itemNr>
+  [123] objcall 113 ............................. <argLineStr.item[itemNr]>
+  [126] setlocal 48 ............................. currItem = argLineStr.item[itemNr]
+  [128] getlocal 48 ............................. <currItem>
+  [130] pushsymb 138 ............................ <#char>
+  [133] pushint8 1 .............................. <1>
+  [136] pusharglist 3 ........................... <currItem, #char, 1>
+  [138] objcall 113 ............................. <currItem.char[1]>
+  [141] pushcons 8 .............................. <QUOTE>
+  [143] eq ...................................... <currItem.char[1] = QUOTE>
+  [144] jmpifz [156] ............................ if currItem.char[1] = QUOTE then
+  [147] getlocal 48 ............................. <currItem>
+  [149] pusharglist 1 ........................... <currItem>
+  [151] extcall 1904 ............................ <removeExcelQuotes(currItem)>
+  [154] setlocal 48 ............................. currItem = removeExcelQuotes(currItem)
+  [156] getlocal 0 .............................. <valList>
+  [158] getlocal 48 ............................. <currItem>
+  [160] pusharglistnoret 2 ...................... <valList, currItem>
+  [162] objcall 229 ............................. valList.add(currItem)
+  [165] getlocal 8 .............................. <valNr>
+  [167] pushint8 1 .............................. <1>
+  [170] add ..................................... <valNr + 1>
+  [171] setlocal 8 .............................. valNr = valNr + 1
+  [173] getlocal 16 ............................. <itemNr>
+  [175] pushint8 1 .............................. <1>
+  [178] add ..................................... <itemNr + 1>
+  [179] setlocal 16 ............................. itemNr = itemNr + 1
+  [181] endrepeat [106]
+  [184] getlocal 0 .............................. <valList>
+  [186] getobjprop 156 .......................... <valList.count>
+  [189] setlocal 56
+  [191] getlocal 56
+  [193] pushint8 1 .............................. <1>
+  [196] gteq
+  [197] jmpifz [238] ............................ repeat with n = valList.count down to 1
+  [200] getlocal 0 .............................. <valList>
+  [202] getlocal 56 ............................. <n>
+  [204] pusharglist 2 ........................... <valList, n>
+  [206] objcall 119 ............................. <valList[n]>
+  [209] pushcons 16 ............................. <EMPTY>
+  [211] nteq .................................... <valList[n] <> EMPTY>
+  [212] jmpifz [218] ............................ if valList[n] <> EMPTY then
+  [215] jmp [238] ............................... exit repeat
+  [218] getlocal 0 .............................. <valList>
+  [220] getlocal 56 ............................. <n>
+  [222] pusharglistnoret 2 ...................... <valList, n>
+  [224] objcall 221 ............................. valList.deleteAt(n)
+  [227] pushint8 -1
+  [230] getlocal 56
+  [232] add
+  [233] setlocal 56
+  [235] endrepeat [191]
+  [238] getlocal 0 .............................. <valList>
+  [240] pusharglistnoret 1 ...................... <valList>
+  [242] extcall 69 .............................. return valList
+  [245] ret
+end

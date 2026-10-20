@@ -1,0 +1,70 @@
+property m_keyObj1, m_keyObj2
+global gRock
+
+on new me
+  m_keyObj1 = script("KeyObject").new(me, "s", [#prio: 10])
+  m_keyObj2 = script("KeyObject").new(me, "o", [#prio: 10])
+  return me
+end
+
+on kill me
+  if objectp(m_keyObj1) then
+    m_keyObj1 = m_keyObj1.kill()
+  end if
+  if objectp(m_keyObj2) then
+    m_keyObj2 = m_keyObj2.kill()
+  end if
+  return 0
+end
+
+on key me, argObj, argWhat, argWhich
+  if (the runMode = "Author") and not (the shiftDown) then
+    exit
+  end if
+  if (the runMode <> "Author") and not (the controlDown) then
+    exit
+  end if
+  if argWhat = #down then
+    if argWhich = "s" then
+      me.save()
+    else
+      me.load()
+    end if
+  end if
+end
+
+on save me
+  file = xtra("FileIO").new()
+  file.setFilterMask(".sav")
+  path = file.displaySave("Spara spel", the moviePath & "Game.sav")
+  if not stringp(path) then
+    exit
+  end if
+  if path.length = 0 then
+    exit
+  end if
+  tmpName = fileExtractName(path)
+  tmpOff = offset(".", tmpName)
+  if tmpOff = 0 then
+    exit
+  end if
+  tmpName = tmpName.char[1..tmpOff] & "sav"
+  tmpPath = fileExtractPath(path)
+  path = tmpPath & tmpName
+  gRock.save(path)
+end
+
+on load me
+  file = xtra("FileIO").new()
+  file.setFilterMask(".sav")
+  path = file.displayOpen()
+  if not stringp(path) then
+    exit
+  end if
+  if path.length = 0 then
+    exit
+  end if
+  if path.char[path.length - 3..path.length] = ".sav" then
+    gRock.load(path)
+  end if
+end

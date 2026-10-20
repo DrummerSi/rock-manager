@@ -1,0 +1,176 @@
+property m_dlg, m_fxGfxObjs, m_fxObjs, m_channel, m_sndObj, m_protectMouseObj, m_renderProtectMouseObj, m_waitingForRenderer
+global gDir, gRock
+
+on new me, argChannelObj, argFXObjs
+  m_channel = argChannelObj
+  m_fxObjs = argFXObjs
+  if not listp(m_fxObjs) then
+    m_fxObjs = [:]
+  end if
+  if m_fxObjs.count = 0 then
+    studio_r = gRock.m_context.getFocus(#Studio)
+    repeat with FXID in studio_r.AvailableFX
+      scriptName = string(FXID) & "Script"
+      if member(scriptName).number > 0 then
+        m_fxObjs.addProp(FXID, script(scriptName).new())
+        next repeat
+      end if
+      pott("FX undefined", FXID)
+    end repeat
+  end if
+  m_dlg = script("Dialog").new([#AttachImageToMember: #temp, #StartSpriteNum: gDir.m_spriteList[#FX], #NumSprites: 2, #OKtoResize: 1])
+  sprite(gDir.m_spriteList[#FX]).ink = 8
+  lst = member("DlgMixerFXData").text.value
+  m_dlg.rawCreate(lst)
+  obj = m_dlg.getItem(#BG)
+  if objectp(obj) then
+    obj.setOneProp(#rel, [0, 0, [#ZYXSrnd, 3], [#ZYXSrnd, 4]])
+    obj.setOneProp(#inOffsetRect, rect(0, 0, 10, 16))
+  end if
+  obj = m_dlg.getItem(#close)
+  if objectp(obj) then
+    obj.scriptInstanceList.addAt(1, me)
+  end if
+  m_protectMouseObj = script("MouseObject").new(me, rect(0, 0, 1000, 1000), [#layer: 100, #noPassRoll: 1, #cursorRoll: #NoClick])
+  m_waitingForRenderer = 0
+  return me
+end
+
+on init me
+  m_fxGfxObjs = []
+  lastRel = [#FramedText, 4]
+  extraSpace = 20
+  itemObj = m_dlg.getItem(#FXDummy)
+  itemObj.setOneProp(#Pic, "Dummy")
+  rct = itemObj.getOneProp(#inOffsetRect).duplicate()
+  rel = itemObj.getOneProp(#rel).duplicate()
+  pott(rct)
+  repeat with n = 1 to m_fxObjs.count
+    fxObj = m_fxObjs[n]
+    fxType = m_fxObjs.getPropAt(n)
+    obj = script("FXGfxScript").new(me, fxType, fxObj)
+    lst = [#ID: symbol("FX" & string(n)), #type: #Dialog, #inOffsetRect: rct, #rel: rel, #dialogDataMemberName: "DlgSimpleData", #ch: n + 1, #usingMouse: 0]
+    newObj = m_dlg.addItem(lst)
+    newObj.attachDlg(obj.m_dlg)
+    m_fxGfxObjs.add(obj)
+    rel = rel.duplicate()
+    rel[2] = [lst[#ID], 4]
+    rct = rct.duplicate()
+    rct[2] = -10
+  end repeat
+  itemObj = m_dlg.getItem(#FramedText)
+  rel = itemObj.getOneProp(#rel)
+  rel[2] = [lst[#ID], 4]
+  itemObj.setOneProp(#rel, rel)
+  itemObj = m_dlg.getItem(#ButtonNote)
+  itemObj.scriptInstanceList.add(me)
+  setMixerMusicianInfoSheet(m_channel.channelMusicianObj.m_musician_r, m_dlg, m_channel.m_loopObj_r.Instrument)
+  rDlgSetTitleAndButtons(m_dlg, me, gRock.m_classManager.getObjByIDAndClass(#DlgMixerFX, #Dialog), "UOU")
+  me.changeLoop(0)
+  m_dlg.renderAtLoc(point(100, 100))
+  if not objectp(m_channel.channelMusicianObj.m_musician_r) or 1 then
+    me.launchMusicianDlg()
+  end if
+end
+
+on kill me
+  repeat with obj in m_fxGfxObjs
+    obj.kill()
+  end repeat
+  m_fxGfxObjs = []
+  if objectp(m_protectMouseObj) then
+    m_protectMouseObj = m_protectMouseObj.kill()
+  end if
+  if objectp(m_renderProtectMouseObj) then
+    m_renderProtectMouseObj = m_renderProtectMouseObj.kill()
+  end if
+  if objectp(m_sndObj) then
+    m_sndObj = m_sndObj.kill()
+  end if
+  if objectp(m_dlg) then
+    m_dlg = m_dlg.kill()
+  end if
+  return me
+end
+
+on Report me, argObj, argWhat
+  if (argObj = m_sndObj) and objectp(argObj) then
+    if argWhat = #finished then
+      m_renderProtectMouseObj = m_renderProtectMouseObj.kill()
+      if objectp(m_sndObj) then
+        m_sndObj = m_sndObj.kill()
+      end if
+    end if
+  end if
+end
+
+on launchMusicianDlg me
+  tmpInstrument = m_channel.m_loopObj_r.Instrument
+  gDir.m_objDialogsMaster.openDialog(#MixerChooseMusician, [#ReportTo: me, #Instrument: tmpInstrument, #CurrentlyPlaying: m_channel.channelMusicianObj.m_musician_r, #StudioMusicianIDs: gDir.m_mixerObj.m_studio_r.StudioMusicians])
+end
+
+on playPreview me
+  global gDir
+  m_waitingForRenderer = 0
+  file = gDir.m_waveRenderer.getRendered(m_channel.m_orgFile, m_channel.m_orgFile)
+  file = fileExtractName(file)
+  m_sndObj = script("SoundScript").new(gDir.m_mixerObj.m_sequencer.m_soundPath & file, [#ReportTo: me, #PlayDirect: 1])
+end
+
+on mouse me, argObj, argWhat, argOption
+  global gDir
+  if argWhat = #click then
+    if objectp(argOption) then
+      if argOption.ID = #ButtonNote then
+        if m_waitingForRenderer then
+          exit
+        end if
+        m_waitingForRenderer = 1
+        m_renderProtectMouseObj = script("MouseObject").new(me, rect(0, 0, 1000, 1000), [#layer: 1000000, #noPassRoll: 1, #cursorRoll: #wait])
+        m_channel.channelMusicianObj.modifyLoop(m_channel.m_loopObj_r, m_channel.m_orgFile, [#PlayPerfect: 1])
+        gDir.m_waveRenderer.m_doWhatWhenDoneList = [#ReportTo: me, #handler: #playPreview]
+        gDir.m_waveRenderer.renderQueue()
+      else
+        if argOption.ID = #ButtonOK then
+          if objectp(m_channel) then
+            m_channel.Report(me, #Ok, m_fxObjs)
+          end if
+          me.kill()
+        else
+          if argOption.ID = #ButtonCancel then
+            if m_waitingForRenderer then
+              exit
+            end if
+            if objectp(m_channel) then
+              m_channel.Report(me, #Cancel, m_fxObjs)
+            end if
+            me.kill()
+          else
+            if argOption.ID = #ArrowUp then
+              me.changeLoop(-1)
+            else
+              if argOption.ID = #ArrowDown then
+                me.changeLoop(1)
+              end if
+            end if
+          end if
+        end if
+      end if
+    else
+      if argObj = m_renderProtectMouseObj then
+        m_renderProtectMouseObj = m_renderProtectMouseObj.kill()
+        if objectp(m_sndObj) then
+          m_sndObj = m_sndObj.kill()
+        end if
+      end if
+    end if
+  end if
+end
+
+on changeLoop me, argDir
+  global gDir
+  m_channel.prepareLoop(argDir)
+  loopObj_r = m_channel.m_loopObj_r
+  itemObj = m_dlg.getItemByPath([#FramedText, #text])
+  itemObj.setOneProp(#editData, loopObj_r.name)
+end

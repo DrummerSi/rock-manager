@@ -1,0 +1,303 @@
+global gRock
+
+on rExecuteActions argActionList, argExtraVars, argReportObj, argSendMsg
+  [  0] getparam 0 .............................. <argActionList>
+  [  2] pusharglist 1 ........................... <argActionList>
+  [  4] extcall 13 .............................. <stringp(argActionList)>
+  [  6] jmpifz [ 20] ............................ if stringp(argActionList) then
+  [  9] getparam 0 .............................. <argActionList>
+  [ 11] setlocal 0 .............................. tmpOrgStr = argActionList
+  [ 13] getparam 0 .............................. <argActionList>
+  [ 15] getobjprop 116 .......................... <argActionList.value>
+  [ 18] setparam 0 .............................. argActionList = argActionList.value
+  [ 20] getparam 0 .............................. <argActionList>
+  [ 22] pusharglist 1 ........................... <argActionList>
+  [ 24] extcall 115 ............................. <listp(argActionList)>
+  [ 27] not ..................................... <not listp(argActionList)>
+  [ 28] jmpifz [ 71] ............................ if not listp(argActionList) then
+  [ 31] getlocal 0 .............................. <tmpOrgStr>
+  [ 33] pusharglist 1 ........................... <tmpOrgStr>
+  [ 35] extcall 13 .............................. <stringp(tmpOrgStr)>
+  [ 37] jmpifz [ 61] ............................ if stringp(tmpOrgStr) then
+  [ 40] getlocal 0 .............................. <tmpOrgStr>
+  [ 42] getobjprop 135 .......................... <tmpOrgStr.length>
+  [ 45] pushint8 1 .............................. <1>
+  [ 48] gt ...................................... <tmpOrgStr.length > 1>
+  [ 49] jmpifz [ 61] ............................ if tmpOrgStr.length > 1 then
+  [ 52] pushcons 0 .............................. <"Err in execute!">
+  [ 54] getlocal 0 .............................. <tmpOrgStr>
+  [ 56] pusharglistnoret 2 ...................... <"Err in execute!", tmpOrgStr>
+  [ 58] extcall 122 ............................. pott("Err in execute!", tmpOrgStr)
+  [ 61] pusharglist 0 ........................... <>
+  [ 63] extcall 151 ............................. <VOID>
+  [ 66] pusharglistnoret 1 ...................... <VOID>
+  [ 68] extcall 69 .............................. return VOID
+  [ 71] getglobal 23 ............................ <gRock>
+  [ 73] getobjprop 75 ........................... <gRock.m_executor>
+  [ 76] getparam 0 .............................. <argActionList>
+  [ 78] getparam 8 .............................. <argExtraVars>
+  [ 80] getparam 16 ............................. <argReportObj>
+  [ 82] pusharglist 4 ........................... <gRock.m_executor, argActionList, argExtraVars, argReportObj>
+  [ 84] objcall 2825 ............................ <gRock.m_executor.executeActions(argActionList, argExtraVars, argReportObj)>
+  [ 87] pusharglistnoret 1 ...................... <gRock.m_executor.executeActions(argActionList, argExtraVars, argReportObj)>
+  [ 89] extcall 69 .............................. return gRock.m_executor.executeActions(argActionList, argExtraVars, argReportObj)
+  [ 92] ret
+end
+
+on rPlayerOkayedAction argAction
+  [  0] getparam 0 .............................. <argAction>
+  [  2] getobjprop 565 .......................... <argAction.ExecuteThis>
+  [  5] pusharglist 0 ........................... <[:]>
+  [  7] pushproplist ............................ <[:]>
+  [  8] getparam 0 .............................. <argAction>
+  [ 10] pusharglist 3 ........................... <argAction.ExecuteThis, [:], argAction>
+  [ 12] localcall 0 ............................. <rExecuteActions(argAction.ExecuteThis, [:], argAction)>
+  [ 14] setlocal 0 .............................. tmp = rExecuteActions(argAction.ExecuteThis, [:], argAction)
+  [ 16] getglobal 23 ............................ <gRock>
+  [ 18] getobjprop 77 ........................... <gRock.m_msgManager>
+  [ 21] pushsymb 566 ............................ <#Action>
+  [ 24] getparam 0 .............................. <argAction>
+  [ 26] pusharglistnoret 3 ...................... <gRock.m_msgManager, #Action, argAction>
+  [ 28] objcall 621 ............................. gRock.m_msgManager.msg(#Action, argAction)
+  [ 31] getlocal 0 .............................. <tmp>
+  [ 33] pusharglistnoret 1 ...................... <tmp>
+  [ 35] extcall 69 .............................. return tmp
+  [ 38] ret
+end
+
+on rSetParserVariable argProp, argVal, argRemove
+  [  0] getparam 16 ............................. <argRemove>
+  [  2] pushsymb 520 ............................ <#Remove>
+  [  5] eq ...................................... <argRemove = #Remove>
+  [  6] jmpifz [ 30] ............................ if argRemove = #Remove then / else
+  [  9] getglobal 23 ............................ <gRock>
+  [ 11] getobjprop 75 ........................... <gRock.m_executor>
+  [ 14] getobjprop 2170 ......................... <gRock.m_executor.m_parseAndCalcObj>
+  [ 17] getobjprop 2523 ......................... <gRock.m_executor.m_parseAndCalcObj.m_expressionCreatedVars>
+  [ 20] getparam 0 .............................. <argProp>
+  [ 22] pusharglistnoret 2 ...................... <gRock.m_executor.m_parseAndCalcObj.m_expressionCreatedVars, argProp>
+  [ 24] objcall 624 ............................. gRock.m_executor.m_parseAndCalcObj.m_expressionCreatedVars.deleteProp(argProp)
+  [ 27] jmp [ 50]
+  [ 30] getglobal 23 ............................ <gRock>
+  [ 32] getobjprop 75 ........................... <gRock.m_executor>
+  [ 35] getobjprop 2170 ......................... <gRock.m_executor.m_parseAndCalcObj>
+  [ 38] getobjprop 2523 ......................... <gRock.m_executor.m_parseAndCalcObj.m_expressionCreatedVars>
+  [ 41] getparam 0 .............................. <argProp>
+  [ 43] getparam 8 .............................. <argVal>
+  [ 45] pusharglistnoret 3 ...................... <gRock.m_executor.m_parseAndCalcObj.m_expressionCreatedVars, argProp, argVal>
+  [ 47] objcall 296 ............................. gRock.m_executor.m_parseAndCalcObj.m_expressionCreatedVars.setaProp(argProp, argVal)
+  [ 50] ret
+end
+
+on rParse argExpressionStr
+  [  0] getglobal 23 ............................ <gRock>
+  [  2] getobjprop 75 ........................... <gRock.m_executor>
+  [  5] getparam 0 .............................. <argExpressionStr>
+  [  7] pusharglist 2 ........................... <gRock.m_executor, argExpressionStr>
+  [  9] objcall 1402 ............................ <gRock.m_executor.rParse(argExpressionStr)>
+  [ 12] pusharglistnoret 1 ...................... <gRock.m_executor.rParse(argExpressionStr)>
+  [ 14] extcall 69 .............................. return gRock.m_executor.rParse(argExpressionStr)
+  [ 17] ret
+end
+
+on rParseAndCalc argExpressionStr, argExtraVars, argCallingObj
+  [  0] getglobal 23 ............................ <gRock>
+  [  2] getobjprop 75 ........................... <gRock.m_executor>
+  [  5] getparam 0 .............................. <argExpressionStr>
+  [  7] getparam 8 .............................. <argExtraVars>
+  [  9] getparam 16 ............................. <argCallingObj>
+  [ 11] pusharglist 4 ........................... <gRock.m_executor, argExpressionStr, argExtraVars, argCallingObj>
+  [ 13] objcall 1938 ............................ <gRock.m_executor.rParseAndCalc(argExpressionStr, argExtraVars, argCallingObj)>
+  [ 16] pusharglistnoret 1 ...................... <gRock.m_executor.rParseAndCalc(argExpressionStr, argExtraVars, argCallingObj)>
+  [ 18] extcall 69 .............................. return gRock.m_executor.rParseAndCalc(argExpressionStr, argExtraVars, argCallingObj)
+  [ 21] ret
+end
+
+on rCalc argParsed, argExtraVars, argCallingObj
+  [  0] getglobal 23 ............................ <gRock>
+  [  2] getobjprop 75 ........................... <gRock.m_executor>
+  [  5] getparam 0 .............................. <argParsed>
+  [  7] getparam 8 .............................. <argExtraVars>
+  [  9] getparam 16 ............................. <argCallingObj>
+  [ 11] pusharglist 4 ........................... <gRock.m_executor, argParsed, argExtraVars, argCallingObj>
+  [ 13] objcall 1407 ............................ <gRock.m_executor.rCalc(argParsed, argExtraVars, argCallingObj)>
+  [ 16] pusharglistnoret 1 ...................... <gRock.m_executor.rCalc(argParsed, argExtraVars, argCallingObj)>
+  [ 18] extcall 69 .............................. return gRock.m_executor.rCalc(argParsed, argExtraVars, argCallingObj)
+  [ 21] ret
+end
+
+on rex argExpressionStr
+  [  0] getglobal 23 ............................ <gRock>
+  [  2] getobjprop 75 ........................... <gRock.m_executor>
+  [  5] getparam 0 .............................. <argExpressionStr>
+  [  7] pusharglist 2 ........................... <gRock.m_executor, argExpressionStr>
+  [  9] objcall 1938 ............................ <gRock.m_executor.rParseAndCalc(argExpressionStr)>
+  [ 12] pusharglistnoret 1 ...................... <gRock.m_executor.rParseAndCalc(argExpressionStr)>
+  [ 14] extcall 69 .............................. return gRock.m_executor.rParseAndCalc(argExpressionStr)
+  [ 17] ret
+end
+
+on xxxNewParser
+  [  0] getglobal 23 ............................ <gRock>
+  [  2] pushcons 8 .............................. <"ExecuteListsScript">
+  [  4] pusharglist 1 ........................... <"ExecuteListsScript">
+  [  6] extcall 10 .............................. <script("ExecuteListsScript")>
+  [  8] pusharglist 1 ........................... <script("ExecuteListsScript")>
+  [ 10] objcall 11 .............................. <script("ExecuteListsScript").new()>
+  [ 12] setobjprop 75 ........................... gRock.m_executor = script("ExecuteListsScript").new()
+  [ 15] ret
+end
+
+on xxxCheckParserStuff
+  [  0] pushcons 16 ............................. <"a = 1">
+  [  2] pusharglistnoret 1 ...................... <"a = 1">
+  [  4] localcall 6 ............................. rex("a = 1")
+  [  6] pushcons 24 ............................. <"a++">
+  [  8] pusharglistnoret 1 ...................... <"a++">
+  [ 10] localcall 6 ............................. rex("a++")
+  [ 12] pushcons 32 ............................. <"2">
+  [ 14] pushcons 40 ............................. <"a">
+  [ 16] pusharglist 1 ........................... <"a">
+  [ 18] localcall 6 ............................. <rex("a")>
+  [ 20] pusharglistnoret 2 ...................... <"2", rex("a")>
+  [ 22] extcall 122 ............................. pott("2", rex("a"))
+  [ 25] pushcons 48 ............................. <"makeList(#Gangsta, #Loan)">
+  [ 27] pusharglistnoret 1 ...................... <"makeList(#Gangsta, #Loan)">
+  [ 29] localcall 6 ............................. rex("makeList(#Gangsta, #Loan)")
+  [ 31] pushcons 56 ............................. <"[#Gangsta, #Loan]">
+  [ 33] pushcons 64 ............................. <"makeList(#Gangsta, #Loan)">
+  [ 35] pusharglist 1 ........................... <"makeList(#Gangsta, #Loan)">
+  [ 37] localcall 6 ............................. <rex("makeList(#Gangsta, #Loan)")>
+  [ 39] pusharglistnoret 2 ...................... <"[#Gangsta, #Loan]", rex("makeList(#Gangsta, #Loan)")>
+  [ 41] extcall 122 ............................. pott("[#Gangsta, #Loan]", rex("makeList(#Gangsta, #Loan)"))
+  [ 44] pushcons 72 ............................. <"\u00DBCPlayer.Accounts.Gangsta.Loan = 0">
+  [ 46] pusharglistnoret 1 ...................... <"\u00DBCPlayer.Accounts.Gangsta.Loan = 0">
+  [ 48] localcall 6 ............................. rex("\u00DBCPlayer.Accounts.Gangsta.Loan = 0")
+  [ 50] pushcons 80 ............................. <"\u00DBCPlayer.transactMoney(999, makeList(#Gangsta, #Loan))">
+  [ 52] pusharglistnoret 1 ...................... <"\u00DBCPlayer.transactMoney(999, makeList(#Gangsta, #Loan))">
+  [ 54] localcall 6 ............................. rex("\u00DBCPlayer.transactMoney(999, makeList(#Gangsta, #Loan))")
+  [ 56] pushcons 88 ............................. <"999">
+  [ 58] pushcons 96 ............................. <"\u00DBCPlayer.Accounts.Gangsta.Loan">
+  [ 60] pusharglist 1 ........................... <"\u00DBCPlayer.Accounts.Gangsta.Loan">
+  [ 62] localcall 6 ............................. <rex("\u00DBCPlayer.Accounts.Gangsta.Loan")>
+  [ 64] pusharglistnoret 2 ...................... <"999", rex("\u00DBCPlayer.Accounts.Gangsta.Loan")>
+  [ 66] extcall 122 ............................. pott("999", rex("\u00DBCPlayer.Accounts.Gangsta.Loan"))
+  [ 69] pushcons 104 ............................ <"\u00DBCPlayer.transactMoney(-\u00DBCPlayer.Accounts.Gangsta.Loan, makeList(#Gangsta, #Loan))">
+  [ 71] pusharglistnoret 1 ...................... <"\u00DBCPlayer.transactMoney(-\u00DBCPlayer.Accounts.Gangsta.Loan, makeList(#Gangsta, #Loan))">
+  [ 73] localcall 6 ............................. rex("\u00DBCPlayer.transactMoney(-\u00DBCPlayer.Accounts.Gangsta.Loan, makeList(#Gangsta, #Loan))")
+  [ 75] pushcons 112 ............................ <"\u00DBCPlayer.transactMoney(111, makeList(#Gangsta, #Loan))">
+  [ 77] pusharglistnoret 1 ...................... <"\u00DBCPlayer.transactMoney(111, makeList(#Gangsta, #Loan))">
+  [ 79] localcall 6 ............................. rex("\u00DBCPlayer.transactMoney(111, makeList(#Gangsta, #Loan))")
+  [ 81] pushcons 120 ............................ <"111">
+  [ 83] pushcons 128 ............................ <"\u00DBCPlayer.Accounts.Gangsta.Loan">
+  [ 85] pusharglist 1 ........................... <"\u00DBCPlayer.Accounts.Gangsta.Loan">
+  [ 87] localcall 6 ............................. <rex("\u00DBCPlayer.Accounts.Gangsta.Loan")>
+  [ 89] pusharglistnoret 2 ...................... <"111", rex("\u00DBCPlayer.Accounts.Gangsta.Loan")>
+  [ 91] extcall 122 ............................. pott("111", rex("\u00DBCPlayer.Accounts.Gangsta.Loan"))
+  [ 94] pushcons 136 ............................ <"-8">
+  [ 96] pushcons 144 ............................ <"a = (20 + 1) - (4 + 25)">
+  [ 98] pusharglist 1 ........................... <"a = (20 + 1) - (4 + 25)">
+  [100] localcall 6 ............................. <rex("a = (20 + 1) - (4 + 25)")>
+  [102] pusharglistnoret 2 ...................... <"-8", rex("a = (20 + 1) - (4 + 25)")>
+  [104] extcall 122 ............................. pott("-8", rex("a = (20 + 1) - (4 + 25)"))
+  [107] pushcons 152 ............................ <"42">
+  [109] pushcons 160 ............................ <"a = 20 + 1 - 4 + 25">
+  [111] pusharglist 1 ........................... <"a = 20 + 1 - 4 + 25">
+  [113] localcall 6 ............................. <rex("a = 20 + 1 - 4 + 25")>
+  [115] pusharglistnoret 2 ...................... <"42", rex("a = 20 + 1 - 4 + 25")>
+  [117] extcall 122 ............................. pott("42", rex("a = 20 + 1 - 4 + 25"))
+  [120] pushcons 168 ............................ <"TEST">
+  [122] pushcons 176 ............................ <"ab">
+  [124] pusharglist 0 ........................... <>
+  [126] extcall 151 ............................. <VOID>
+  [129] pusharglistnoret 3 ...................... <"TEST", "ab", VOID>
+  [131] extcall 2197 ............................ put "TEST", "ab", VOID
+  [134] pushcons 184 ............................ <"debug(">
+  [136] pushcons 192 ............................ <QUOTE>
+  [138] joinstr ................................. <"debug(" & QUOTE>
+  [139] pushcons 200 ............................ <"TEST">
+  [141] joinstr ................................. <"debug(" & QUOTE & "TEST">
+  [142] pushcons 208 ............................ <QUOTE>
+  [144] joinstr ................................. <"debug(" & QUOTE & "TEST" & QUOTE>
+  [145] pushcons 216 ............................ <", strcat(">
+  [147] joinstr ................................. <"debug(" & QUOTE & "TEST" & QUOTE & ", strcat(">
+  [148] pushcons 224 ............................ <QUOTE>
+  [150] joinstr ................................. <"debug(" & QUOTE & "TEST" & QUOTE & ", strcat(" & QUOTE>
+  [151] pushcons 232 ............................ <"a">
+  [153] joinstr ................................. <"debug(" & QUOTE & "TEST" & QUOTE & ", strcat(" & QUOTE & "a">
+  [154] pushcons 240 ............................ <QUOTE>
+  [156] joinstr ................................. <"debug(" & QUOTE & "TEST" & QUOTE & ", strcat(" & QUOTE & "a" & QUOTE>
+  [157] pushcons 248 ............................ <", ">
+  [159] joinstr ................................. <"debug(" & QUOTE & "TEST" & QUOTE & ", strcat(" & QUOTE & "a" & QUOTE & ", ">
+  [160] pushcons 256 ............................ <QUOTE>
+  [163] joinstr ................................. <"debug(" & QUOTE & "TEST" & QUOTE & ", strcat(" & QUOTE & "a" & QUOTE & ", " & QUOTE>
+  [164] pushcons 264 ............................ <"b">
+  [167] joinstr ................................. <"debug(" & QUOTE & "TEST" & QUOTE & ", strcat(" & QUOTE & "a" & QUOTE & ", " & QUOTE & "b">
+  [168] pushcons 272 ............................ <QUOTE>
+  [171] joinstr ................................. <"debug(" & QUOTE & "TEST" & QUOTE & ", strcat(" & QUOTE & "a" & QUOTE & ", " & QUOTE & "b" & QUOTE>
+  [172] pushcons 280 ............................ <"))">
+  [175] joinstr ................................. <"debug(" & QUOTE & "TEST" & QUOTE & ", strcat(" & QUOTE & "a" & QUOTE & ", " & QUOTE & "b" & QUOTE & "))">
+  [176] pusharglistnoret 1 ...................... <"debug(" & QUOTE & "TEST" & QUOTE & ", strcat(" & QUOTE & "a" & QUOTE & ", " & QUOTE & "b" & QUOTE & "))">
+  [178] localcall 6 ............................. rex("debug(" & QUOTE & "TEST" & QUOTE & ", strcat(" & QUOTE & "a" & QUOTE & ", " & QUOTE & "b" & QUOTE & "))")
+  [180] pushcons 288 ............................ <"0.5">
+  [183] pushcons 296 ............................ <"\u00DBCRealMusician.mood = 0.5">
+  [186] pusharglist 1 ........................... <"\u00DBCRealMusician.mood = 0.5">
+  [188] localcall 6 ............................. <rex("\u00DBCRealMusician.mood = 0.5")>
+  [190] pusharglistnoret 2 ...................... <"0.5", rex("\u00DBCRealMusician.mood = 0.5")>
+  [192] extcall 122 ............................. pott("0.5", rex("\u00DBCRealMusician.mood = 0.5"))
+  [195] pushcons 304 ............................ <"1">
+  [198] pushcons 312 ............................ <"\u00DBCRealMusician.mood == 0.5">
+  [201] pusharglist 1 ........................... <"\u00DBCRealMusician.mood == 0.5">
+  [203] localcall 6 ............................. <rex("\u00DBCRealMusician.mood == 0.5")>
+  [205] pusharglistnoret 2 ...................... <"1", rex("\u00DBCRealMusician.mood == 0.5")>
+  [207] extcall 122 ............................. pott("1", rex("\u00DBCRealMusician.mood == 0.5"))
+  [210] pushcons 320 ............................ <"RMCJerka">
+  [213] pushcons 328 ............................ <"getObjByID(#RMCJerka).ID">
+  [216] pusharglist 1 ........................... <"getObjByID(#RMCJerka).ID">
+  [218] localcall 6 ............................. <rex("getObjByID(#RMCJerka).ID")>
+  [220] pushcons 336 ............................ <"\u00DB#RMCJerka.ID">
+  [223] pusharglist 1 ........................... <"\u00DB#RMCJerka.ID">
+  [225] localcall 6 ............................. <rex("\u00DB#RMCJerka.ID")>
+  [227] pusharglistnoret 3 ...................... <"RMCJerka", rex("getObjByID(#RMCJerka).ID"), rex("\u00DB#RMCJerka.ID")>
+  [229] extcall 122 ............................. pott("RMCJerka", rex("getObjByID(#RMCJerka).ID"), rex("\u00DB#RMCJerka.ID"))
+  [232] pushcons 344 ............................ <"a = makePropList(#A, ">
+  [235] pushcons 352 ............................ <QUOTE>
+  [238] joinstr ................................. <"a = makePropList(#A, " & QUOTE>
+  [239] pushcons 360 ............................ <"aa">
+  [242] joinstr ................................. <"a = makePropList(#A, " & QUOTE & "aa">
+  [243] pushcons 368 ............................ <QUOTE>
+  [246] joinstr ................................. <"a = makePropList(#A, " & QUOTE & "aa" & QUOTE>
+  [247] pushcons 376 ............................ <")">
+  [250] joinstr ................................. <"a = makePropList(#A, " & QUOTE & "aa" & QUOTE & ")">
+  [251] pusharglistnoret 1 ...................... <"a = makePropList(#A, " & QUOTE & "aa" & QUOTE & ")">
+  [253] localcall 6 ............................. rex("a = makePropList(#A, " & QUOTE & "aa" & QUOTE & ")")
+  [255] pushsymb 2844 ........................... <#b>
+  [258] pushcons 384 ............................ <"bb">
+  [261] pushsymb 2845 ........................... <#c>
+  [264] pushsymb 127 ............................ <#a>
+  [267] pushcons 392 ............................ <"aa">
+  [270] pusharglist 2 ........................... <[#a: "aa"]>
+  [272] pushproplist ............................ <[#a: "aa"]>
+  [273] pusharglist 4 ........................... <[#b: "bb", #c: [#a: "aa"]]>
+  [275] pushproplist ............................ <[#b: "bb", #c: [#a: "aa"]]>
+  [276] pushcons 400 ............................ <"makePropList(#B, ">
+  [279] pushcons 408 ............................ <QUOTE>
+  [282] joinstr ................................. <"makePropList(#B, " & QUOTE>
+  [283] pushcons 416 ............................ <"bb">
+  [286] joinstr ................................. <"makePropList(#B, " & QUOTE & "bb">
+  [287] pushcons 424 ............................ <QUOTE>
+  [290] joinstr ................................. <"makePropList(#B, " & QUOTE & "bb" & QUOTE>
+  [291] pushcons 432 ............................ <", #C, a)">
+  [294] joinstr ................................. <"makePropList(#B, " & QUOTE & "bb" & QUOTE & ", #C, a)">
+  [295] pusharglist 1 ........................... <"makePropList(#B, " & QUOTE & "bb" & QUOTE & ", #C, a)">
+  [297] localcall 6 ............................. <rex("makePropList(#B, " & QUOTE & "bb" & QUOTE & ", #C, a)")>
+  [299] pusharglistnoret 2 ...................... <[#b: "bb", #c: [#a: "aa"]], rex("makePropList(#B, " & QUOTE & "bb" & QUOTE & ", #C, a)")>
+  [301] extcall 122 ............................. pott([#b: "bb", #c: [#a: "aa"]], rex("makePropList(#B, " & QUOTE & "bb" & QUOTE & ", #C, a)"))
+  [304] pushcons 440 ............................ <"\u00DBCBand.getTotalHype() >= 0.4 && (1 > 0)">
+  [307] pusharglistnoret 1 ...................... <"\u00DBCBand.getTotalHype() >= 0.4 && (1 > 0)">
+  [309] localcall 6 ............................. rex("\u00DBCBand.getTotalHype() >= 0.4 && (1 > 0)")
+  [311] pushcons 448 ............................ <"debug(#AA,makeList(#N),#VV)">
+  [314] pusharglistnoret 1 ...................... <"debug(#AA,makeList(#N),#VV)">
+  [316] localcall 6 ............................. rex("debug(#AA,makeList(#N),#VV)")
+  [318] ret
+end

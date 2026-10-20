@@ -1,0 +1,295 @@
+property ancestor, child, className, belongsTo, _killed, SongID, MusicStyle, ImageStyle, quality, Hype, hypeGraph, SongType, PublisherCosts, RecordIncomes, Penetration, Sales, salesGraph, ReleaseDate, RecordingStartedDate, Mix, DesignSettings, video, SignedToRecord, Royalty, ReviewsMediaIDs, Freshness, createdObjs, NumSalesPlatinum, NumSalesGold
+global gRock, gUseful
+
+on new me, argChild, argBelongsTo
+  if objectp(argChild) then
+    child = argChild
+  else
+    child = me
+  end if
+  belongsTo = argBelongsTo
+  ancestor = script("ClassConcreteScript").new(child)
+  className = #album
+  SongID = #none
+  MusicStyle = script("ClassStyleMixScript").new(VOID, me)
+  ImageStyle = script("ClassStyleMixScript").new(VOID, me)
+  quality = 0.0
+  Hype = 0.0
+  hypeGraph = []
+  SongType = 0.0
+  PublisherCosts = script("ClassPriceModelScript").new(VOID, me)
+  RecordIncomes = script("ClassPriceModelScript").new(VOID, me)
+  Penetration = 0.0
+  Sales = 0
+  salesGraph = [:]
+  ReleaseDate = 0
+  RecordingStartedDate = 0
+  Mix = script("ClassMixerSettingsScript").new(VOID, me)
+  DesignSettings = [:]
+  video = #none
+  SignedToRecord = #none
+  Royalty = 0.0
+  ReviewsMediaIDs = []
+  Freshness = 1.0
+  hypeGraph = []
+  gRock.m_gameTimer.addObject(me)
+  createdObjs = []
+  return me
+end
+
+on kill me
+  _killed = 1
+  me.Remove()
+  if objectp(MusicStyle) then
+    MusicStyle = MusicStyle.kill()
+  end if
+  if objectp(ImageStyle) then
+    ImageStyle = ImageStyle.kill()
+  end if
+  if objectp(PublisherCosts) then
+    PublisherCosts = PublisherCosts.kill()
+  end if
+  if objectp(RecordIncomes) then
+    RecordIncomes = RecordIncomes.kill()
+  end if
+  if objectp(Mix) then
+    Mix = Mix.kill()
+  end if
+  if objectp(ancestor) then
+    ancestor = ancestor.kill()
+  end if
+  gRock.m_gameTimer.deleteObject(me)
+  child = 0
+  belongsTo = 0
+  return 0
+end
+
+on recorded me, argSong_r
+  band_r = gRock.m_context.getFocus(#Band)
+  if objectp(argSong_r) then
+    ancestor.name = argSong_r.name
+  else
+    if objectp(band_r) then
+      ancestor.name = band_r.name
+    else
+      ancestor.name = "APOTEQ"
+    end if
+  end if
+  SongID = argSong_r.ID
+  band_r.recordedAlbum(me)
+  gRock.m_context.setFocus(#album, me)
+  gRock.m_msgManager.msg(#RecordAlbum, me)
+  RecordingStartedDate = gRock.m_date.getDateInt()
+  emptyList(hypeGraph)
+  hypeGraph.add(RecordingStartedDate)
+  event_r = gRock.m_classManager.createObj(#DivEvent)
+  event_r.ID = gRock.m_classManager.genUniqueID(event_r)
+  event_r.AgendaFormat = #AgFmRecording
+  event_r.setDates(RecordingStartedDate, 1)
+  event_r.visible = 1
+  audienceGroups_r = gRock.m_classManager.getObjsOfClass(#Group)
+  repeat with n = 1 to audienceGroups_r.count
+    grp_r = audienceGroups_r[n]
+    grp_r.newAlbum(me)
+  end repeat
+end
+
+on signed me, argRecordObj, argRoyalty
+  SignedToRecord = argRecordObj.ID
+  Royalty = argRoyalty
+end
+
+on timeTick me
+  if hypeGraph.count = 0 then
+    exit
+  end if
+  me.updateGraphs()
+  Freshness = Freshness - 0.006
+  if Freshness < 0 then
+    Freshness = 0
+  end if
+end
+
+on updateGraphs me, argTimeTick
+  tmpTotNumSold = 0
+  tmpTotHype = 0.0
+  tmpTotSize = 0
+  tmpWeightedHype = [:]
+  groups = gRock.m_classManager.getObjsOfClass(#Group)
+  repeat with group_r in groups
+    tmpTotNumSold = tmpTotNumSold + group_r.Attitudes.getAttitude([ancestor.ID, #Bought])
+    tmpWeightedHype.addProp(group_r.size, group_r.Attitudes.getAttitude([ancestor.ID, #Hype]))
+    tmpTotSize = tmpTotSize + group_r.size
+    tmpTotHype = tmpTotHype + group_r.Attitudes.getAttitude([ancestor.ID, #Hype])
+  end repeat
+  Hype = calcAverage(tmpWeightedHype)
+  if Hype < 0 then
+    Hype = 0
+  end if
+  if not voidp(argTimeTick) and (argTimeTick = 0) then
+    hypeGraph[hypeGraph.count] = Hype
+  else
+    hypeGraph.add(Hype)
+  end if
+  me.setOneProp(#Sales, tmpTotNumSold)
+end
+
+on getTotalHype me
+  return Hype
+end
+
+on getRevenue me, argDisregardPublisher
+  if me.getAlbumIsReleased() = 0 then
+    return 0
+  end if
+  tmpRevenue = Sales * gRock.m_player.CPContractPriceModel.UnitPrice
+  if argDisregardPublisher <> #DisregardPublisher then
+    song_r = gRock.m_classManager.getObjByIDAndClass(SongID, #Song)
+    tmpSongRoyalty = song_r.PriceModel.Royalty
+    tmpRevenue = (1.0 - tmpSongRoyalty) * tmpRevenue
+  end if
+  return tmpRevenue
+end
+
+on setOneProp me, argProp, argVal
+  if argProp = #Sales then
+    if not (NumSalesPlatinum > 0) then
+      NumSalesPlatinum = integer(gRock.m_languageManager.getStr(#szidNumSalesPlatinum))
+      NumSalesGold = integer(gRock.m_languageManager.getStr(#szidNumSalesGold))
+    end if
+    if (argVal >= NumSalesPlatinum) and (Sales < NumSalesPlatinum) then
+      gRock.m_msgManager.msg(#AlbumSoldPlatinum, me)
+    else
+      if (argVal >= NumSalesGold) and (Sales < NumSalesGold) then
+        gRock.m_msgManager.msg(#AlbumSoldGold, me)
+      end if
+    end if
+    Sales = argVal
+    tmpDate = gRock.m_date.getDateInt()
+    if salesGraph.count then
+      if salesGraph[salesGraph.count] <> Sales then
+        salesGraph.setaProp(tmpDate, Sales)
+      end if
+    else
+      salesGraph.setaProp(tmpDate, Sales)
+    end if
+  else
+    me.setaProp(argProp, argVal)
+  end if
+end
+
+on getAlbumIsSigned me
+  return SignedToRecord <> #none
+end
+
+on getAlbumGotVideo me
+  return video <> #none
+end
+
+on getAlbumGotSleeve me
+  return DesignSettings.count > 1
+end
+
+on getAlbumIsReleased me
+  return (gRock.m_date.getDateInt() >= ReleaseDate) and (ReleaseDate > 0)
+end
+
+on gotVideo me
+  if video = #none then
+    return 0
+  end if
+  objs = gRock.m_classManager.getObjsOfClass(#VideoProduction)
+  if listp(objs) then
+    repeat with obj_r in objs
+      if (obj_r.album = ancestor.ID) and (obj_r.StartDate >= gRock.m_date.getDateInt()) then
+        return 0
+      end if
+    end repeat
+  end if
+  return 1
+end
+
+on Remove me, argOption
+  audienceGroups_r = gRock.m_classManager.getObjsOfClass(#Group)
+  repeat with n = 1 to audienceGroups_r.count
+    grp_r = audienceGroups_r[n]
+    grp_r.removeAlbum(me)
+  end repeat
+  repeat with obj in createdObjs
+    gRock.m_classManager.removeObj(obj, #kill)
+  end repeat
+  createdObjs = []
+  objs = gRock.m_classManager.getObjsOfClass(#VideoProduction)
+  if listp(objs) then
+    repeat with obj_r in objs
+      if (obj_r.album = ancestor.ID) and (obj_r.StartDate >= gRock.m_date.getDateInt()) then
+        gRock.m_classManager.removeObj(obj_r, #kill)
+        exit repeat
+      end if
+    end repeat
+  end if
+  objs = gRock.m_classManager.getObjsOfClass(#AlbumRelease)
+  if listp(objs) then
+    repeat with obj_r in objs
+      if (obj_r.albumID = ancestor.ID) and (obj_r.StartDate >= gRock.m_date.getDateInt()) then
+        gRock.m_classManager.removeObj(obj_r, #kill)
+        exit repeat
+      end if
+    end repeat
+  end if
+  medias_r = gRock.m_classManager.getObjsOfClass(#media)
+  repeat with media_r in medias_r
+    reporter_r = media_r.getReporter()
+    if not objectp(reporter_r) then
+      next repeat
+    end if
+    reporter_r.removeAlbum(me)
+  end repeat
+  expos_r = gRock.m_classManager.getObjsWithBaseClass(#AudienceExposure)
+  repeat with expo_r in expos_r
+    expo_r.InfluenceWhat.deleteProp(ancestor.ID)
+  end repeat
+  if (me.getAlbumIsSigned() = 0) or (argOption = #KeepSong) then
+    band_r = gRock.m_context.getFocus(#Band)
+    if objectp(band_r) then
+      band_r.RecordedAlbumIDs.deleteOne(me.ID)
+    end if
+  end if
+  hypeGraph = []
+  salesGraph = [:]
+  pott("Removed album!")
+  gRock.m_context.setFocus(#album, 0)
+end
+
+on getSalesOfDate me, argDate
+  salesGraph.sort()
+  salesGraph.addProp(argDate, -99)
+  tmpPos = salesGraph.getPos(-99)
+  salesGraph.deleteAt(tmpPos)
+  if tmpPos > salesGraph.count then
+    return Sales
+  end if
+  if salesGraph.getPropAt(tmpPos) = argDate then
+    return salesGraph[tmpPos]
+  end if
+  if tmpPos = 1 then
+    return 0
+  end if
+  return salesGraph[tmpPos - 1]
+end
+
+on getSalesTheLastNDays me, argNDays
+  tmpDate = gRock.m_date.getDateInt() - argNDays
+  tmpSalesThatDate = me.getSalesOfDate(tmpDate)
+  return Sales - tmpSalesThatDate
+end
+
+on getIsOnChart me
+  objs = gRock.m_classManager.getObjsOfClass(#media)
+  repeat with media_r in objs
+    if media_r.getIsOnChart(ancestor.ID) then
+      return 1
+    end if
+  end repeat
+  return 0
+end

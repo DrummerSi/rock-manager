@@ -1,0 +1,167 @@
+property m_readFile, m_CDPath, m_iniPropEqualsVal, m_callBackInfo, m_timerObj, m_fxObj, m_MUIObj, m_startCheckMSecs, m_dontCareIfCDROM
+global gSystem
+
+on new me, argCDPath, argReadFile, argIniPropEqualsVal, argCallBackInfo
+  m_CDPath = argCDPath
+  if voidp(m_CDPath) then
+    m_CDPath = "E:\"
+  end if
+  m_readFile = argReadFile
+  if voidp(m_readFile) then
+    m_readFile = "RockCD.INF"
+  end if
+  m_iniPropEqualsVal = argIniPropEqualsVal
+  if voidp(m_iniPropEqualsVal) then
+    m_iniPropEqualsVal = [[#settings, #Language], "Swedish"]
+  end if
+  m_callBackInfo = argCallBackInfo
+  m_fxObj = xtra("FileXtra3").new()
+  member("StatusText").text = EMPTY
+  sendAllSprites(#setReportObj, me)
+  return me
+end
+
+on kill me
+  member("StatusText").text = EMPTY
+  if objectp(m_timerObj) then
+    m_timerObj.forget()
+  end if
+  m_timerObj = 0
+  if objectp(m_fxObj) then
+    m_fxObj = 0
+  end if
+  return 0
+end
+
+on tryReadDisc me
+  m_startCheckMSecs = the milliSeconds
+  me.verifyCD()
+end
+
+on startChecking me
+  if m_fxObj.fx_FileExists("D:\Dok\Jonas\Redovisn\1999.xls") = 1 then
+    tmpIsJonas = 1
+  end if
+  if tmpIsJonas then
+    m_dontCareIfCDROM = 1
+  end if
+  if not stringp(m_CDPath) then
+    if tmpIsJonas = 1 then
+      alert("Hi Jonas!")
+      m_CDPath = "D:\dok\Rock\"
+      gSystem.m_CDPath = m_CDPath
+      gSystem.resolveSearchPaths()
+    else
+      m_CDPath = 0
+    end if
+  end if
+  tmpMsg = "Please insert CD: " & m_iniPropEqualsVal[2] & ". Click OK when done."
+  m_startCheckMSecs = the milliSeconds
+  me.verifyCD(tmpMsg, #MsgNoCD)
+end
+
+on timeTick me
+  if (the milliSeconds - m_startCheckMSecs) > (10 * 1000) then
+    me.verifyCD(VOID, #MsgNoCD)
+  else
+    me.verifyCD()
+  end if
+end
+
+on verifyCD me, argMsgStr, argMsgNoCD
+  tmpOK = 0
+  if m_CDPath = 0 then
+    m_CDPath = gSystem.getCDPath([[m_readFile]])
+    if stringp(m_CDPath) then
+      gSystem.m_CDPath = m_CDPath
+      gSystem.resolveSearchPaths()
+    end if
+  end if
+  if m_CDPath = 0 then
+    msgStr = "No CD! Please insert CD: " & m_iniPropEqualsVal[2] & ". Click OK when done."
+  else
+    if (m_fxObj.fx_VolumeIsCDROM(m_CDPath) = 0) and (m_dontCareIfCDROM <> 1) then
+      if argMsgNoCD <> #MsgNoCD then
+        return 0
+      end if
+      msgStr = "No CD! Please insert CD: " & m_iniPropEqualsVal[2] & ". Click OK when done."
+    else
+      if m_fxObj.fx_FileExists(m_CDPath & m_readFile) = 0 then
+        msgStr = "Wrong CD! Please insert CD: " & m_iniPropEqualsVal[2] & ". Click OK when done."
+      else
+        str = readFile(m_CDPath & m_readFile)
+        if not stringp(str) then
+          msgStr = "Wrong CD!! Please insert CD: " & m_iniPropEqualsVal[2] & ". Click OK when done."
+        else
+          infoList = iniStrToPropList(str)
+          if not listp(infoList) then
+          else
+            tmpInfo = infoList[m_iniPropEqualsVal[1][1]]
+            if not listp(tmpInfo) then
+            else
+              val = tmpInfo[m_iniPropEqualsVal[1][2]]
+              if val <> m_iniPropEqualsVal[2] then
+                msgStr = "Wrong language CD! Please insert CD: " & m_iniPropEqualsVal[2] & ". Click OK when done."
+              else
+                tmpOK = 1
+              end if
+            end if
+          end if
+        end if
+      end if
+    end if
+  end if
+  if tmpOK = 0 then
+    member("StatusText").text = EMPTY
+    updateStage()
+    if 1 then
+      if stringp(argMsgStr) then
+        msgStr = argMsgStr
+      end if
+      if stringp(msgStr) then
+        lst = propListFromTable(member("MUIAlertDef").text)
+        lst[#window][#name] = "Wrong CD"
+        lst[#items][#text][#value] = msgStr
+        lst[#items][#Ok][#title] = "OK"
+        lst[#items][#Cancel][#title] = "Quit Program"
+        a = script("MUIScript").new(lst, [#CallBackInfo: [#object: me, #handler: #MUICallback]])
+        a.open()
+        a = a.kill()
+      end if
+    else
+      if stringp(argMsgStr) then
+        alert(argMsgStr)
+      else
+        if stringp(msgStr) then
+          alert(msgStr)
+        else
+          alert("Wrong CD!")
+        end if
+      end if
+    end if
+    member("StatusText").text = "Checking..."
+    if not objectp(m_timerObj) then
+      m_timerObj = timeout("CDTimer").new(500, #timeTick, me)
+    end if
+    m_startCheckMSecs = the milliSeconds
+  else
+    if objectp(m_timerObj) then
+      m_timerObj.forget()
+    end if
+    m_timerObj = 0
+    member("StatusText").text = "OK"
+    call(m_callBackInfo[#handler], m_callBackInfo[#object], #Ok)
+  end if
+  return tmpOK
+end
+
+on MUICallback me, argObj, argWhat, argID
+  if argWhat = #itemClicked then
+    argObj.close()
+    if argID = #Cancel then
+      if the runMode <> "Author" then
+        quit()
+      end if
+    end if
+  end if
+end

@@ -1,0 +1,151 @@
+property ancestor, child, className, belongsTo, DynamicTrigger, satisfyChanges, highNeedChanges, NegativeNeedChanges, affectLimit, modifier
+global gRock
+
+on new me, argChild, argBelongsTo
+  if objectp(argChild) then
+    child = argChild
+  else
+    child = me
+  end if
+  belongsTo = argBelongsTo
+  className = #Need
+  DynamicTrigger = script("ClassDynamicTriggerVarScript").new(VOID, me)
+  satisfyChanges = [:]
+  highNeedChanges = [:]
+  NegativeNeedChanges = [:]
+  affectLimit = 0.0
+  return me
+end
+
+on kill me
+  DynamicTrigger = DynamicTrigger.kill()
+  if objectp(modifier) then
+    gRock.m_classManager.removeObj(modifier)
+    modifier = modifier.kill()
+  end if
+  if objectp(ancestor) then
+    ancestor = ancestor.kill()
+  end if
+  child = 0
+  belongsTo = 0
+  return 0
+end
+
+on Report me, argObj, argWhat, argOptional
+  tmpSeriousness = argObj.Current
+  if argOptional[#Change] > 0 then
+    if argWhat = 1 then
+    else
+      if argWhat = 2 then
+        pott("Would really like to satisfy", child.className)
+      else
+        if argWhat > 2 then
+          eventCardID = symbol("ECOC" & string(child.className))
+          tmpMusicianID = child.belongsTo.belongsTo.ID
+          gRock.m_eventCardsManager.tryNewShowEventCard(eventCardID, [#EventCardOptions: [#HumanID: tmpMusicianID]])
+        end if
+      end if
+    end if
+  end if
+end
+
+on calcModifier me
+  tmp = DynamicTrigger.Current
+  tmpID = child.belongsTo.belongsTo.ID
+  modifier.Modifies = [:]
+  if tmp > affectLimit then
+    tmpList = []
+    repeat with n = 1 to highNeedChanges.count
+      tmpProp = highNeedChanges.getPropAt(n)
+      tmpVal = (tmp - affectLimit) * highNeedChanges[n]
+      tmpList.add([[tmpProp], tmpVal])
+    end repeat
+    modifier.Modifies.addProp(tmpID, tmpList)
+  else
+    if tmp < 0 then
+      tmpList = []
+      repeat with n = 1 to NegativeNeedChanges.count
+        tmpProp = NegativeNeedChanges.getPropAt(n)
+        tmpVal = -tmp * NegativeNeedChanges[n]
+        tmpList.add([[tmpProp], tmpVal])
+      end repeat
+      modifier.Modifies.addProp(tmpID, tmpList)
+    end if
+  end if
+end
+
+on satisfy me, argFact
+  changeStuff = [:]
+  tmpRealEffect = argFact * DynamicTrigger.LoseFact
+  DynamicTrigger.setOneProp(#Current, -tmpRealEffect)
+  tmpSatisfyChanges = argFact * satisfyChanges
+  pott("Satisfied", tmpSatisfyChanges)
+  child.calcModifier()
+  tmpMod = gRock.m_classManager.createObj(#Event)
+  tmpMod.AutoRemove = 1
+  tmpMod.ID = child.className
+  tmpID = child.belongsTo.belongsTo.ID
+  tmpMod.Modifies = [:]
+  tmp = []
+  repeat with n = 1 to tmpSatisfyChanges.count()
+    tmp.add([[tmpSatisfyChanges.getPropAt(n)], tmpSatisfyChanges[n]])
+  end repeat
+  tmpMod.Modifies.addProp(tmpID, tmp)
+  tmpMod.setDates(#Now, 3)
+  pott("Satisfy added", tmpMod.Modifies)
+  return changeStuff
+end
+
+on setActiveState me, argState
+  if argState = 1 then
+    gRock.m_gameTimer.addObject(child)
+    if objectp(modifier) then
+      pott("Already got modifier obj!")
+    else
+      modifier = gRock.m_classManager.createObj(#Event)
+      tmpID = child.belongsTo.belongsTo.ID
+      modifier.ID = child.className
+      modifier.Modifies = [:]
+      modifier.Modifies.addProp(tmpID, [])
+      modifier.setDates(#Now, 1000)
+    end if
+  else
+    if objectp(modifier) then
+      modifier.stopModifying()
+      gRock.m_classManager.removeObj(modifier)
+      modifier = modifier.kill()
+    end if
+    gRock.m_gameTimer.deleteObject(child)
+  end if
+  DynamicTrigger.setActiveState(argState)
+end
+
+on timeTick me
+  child.calcModifier()
+end
+
+on setOneProp me, argProp, argVal
+  if voidp(argProp) then
+    argProp = #Current
+  end if
+  if argProp = #Current then
+    DynamicTrigger.setOneProp(argProp, argVal)
+  end if
+end
+
+on getOneProp me, argProp
+  if voidp(argProp) then
+    argProp = #Current
+  end if
+  if argProp = #Current then
+    DynamicTrigger.getOneProp(argProp)
+  end if
+end
+
+on save me
+  return [#Current: DynamicTrigger.Current]
+end
+
+on load me, argList
+  DynamicTrigger.Current = argList[#Current]
+end

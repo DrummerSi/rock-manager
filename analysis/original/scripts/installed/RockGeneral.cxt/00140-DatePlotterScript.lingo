@@ -1,0 +1,94 @@
+property m_agenda, m_image, m_viewRect, m_blitOffset
+
+on new me, argMasterObj
+  m_agenda = argMasterObj
+  return me
+end
+
+on kill me
+  m_agenda = 0
+  m_image = 0
+  return 0
+end
+
+on getBottomV me
+  return m_viewRect[4]
+end
+
+on setViewRect me, argRect
+  m_viewRect = argRect
+  m_viewRect[4] = m_viewRect[2] + 15
+  size = getRectSize(m_viewRect)
+  m_blitOffset = point(m_viewRect[1], m_viewRect[2])
+  m_image = image(size[1], size[2], 1)
+end
+
+on scroll me, argPoint
+  imageMoveWithin(m_image, -argPoint, m_image.rect, m_image.rect)
+end
+
+on draw me, argStartAndEndDates, argInvalidatedRect
+  global gRock
+  m_image.fill(argInvalidatedRect, rgb(255, 255, 255))
+  tmpStartEnd = [integer(m_agenda.locHtoDate(argInvalidatedRect[1])), integer(m_agenda.locHtoDate(argInvalidatedRect[3]))]
+  tmpDrawRange = [argInvalidatedRect[1], argInvalidatedRect[3]]
+  dateStr = me.tmpGetDateStr()
+  neededPixelsPerDate = 4.0 * length(dateStr)
+  tmpDaysNeededToShowDate = neededPixelsPerDate / float(m_agenda.m_pixelsPerDay)
+  step = calcGoodStep(tmpDaysNeededToShowDate, 0)
+  tmpCPZeroDate = gRock.m_date.m_dayZeroDate
+  tmpZeroDate = date(tmpCPZeroDate[#year], tmpCPZeroDate[#month], tmpCPZeroDate[#day])
+  tmpStartDate = tmpZeroDate + m_agenda.m_datesViewRange[1]
+  tmpEndDate = tmpZeroDate + m_agenda.m_datesViewRange[2]
+  tmpNumDays = m_agenda.m_datesViewRange[2] - m_agenda.m_datesViewRange[1]
+  tmpNumNewMonths = ((tmpEndDate.year - tmpStartDate.year) * 12) + tmpEndDate.month - tmpStartDate.month
+  tmpXDate = tmpZeroDate.duplicate() + m_agenda.m_datesViewRange[1]
+  tmpXDate.day = 1
+  tmpLastDate = tmpXDate.duplicate()
+  tmpLastStart = m_agenda.dateToLocH(tmpXDate - tmpZeroDate)
+  tmpCP = 0
+  repeat with tmpMonthNr = 0 to tmpNumNewMonths
+    if tmpXDate.month = 12 then
+      tmpXDate.year = tmpXDate.year + 1
+      tmpXDate.month = 1
+    else
+      tmpXDate.month = tmpXDate.month + 1
+    end if
+    tmpStart = m_agenda.dateToLocH(tmpXDate - tmpZeroDate)
+    n = 1
+    repeat while n < (tmpXDate - tmpLastDate + 1)
+      renderThisDate = date(tmpLastDate.year, tmpLastDate.month, n)
+      tmp = [0, neededPixelsPerDate] + m_agenda.dateToLocH(renderThisDate - tmpZeroDate)
+      if tmp[2] < tmpStart then
+        if intersectRanges(tmp, tmpDrawRange) then
+          me.renderOneDate(renderThisDate, tmp[1])
+          tmpCP = 1
+        end if
+      end if
+      n = n + step
+    end repeat
+    tmpLastDate = tmpXDate.duplicate()
+    tmpLastStart = tmpStart
+  end repeat
+  m_agenda.m_imagePtr[1].copyPixels(m_image, rect(m_blitOffset, m_blitOffset) + m_image.rect, m_image.rect, [#ink: 36, #color: m_agenda.m_stdTextClr])
+end
+
+on renderOneDate me, argDate, argLocH
+  global gRock
+  memb = member("DatePlotText")
+  str = me.tmpGetDateStr(argDate)
+  memb.text = str & " "
+  tmpWidth = charPosToLoc(memb, str.length + 1)[1]
+  tmpDestLoc = point(argLocH, 0) + point(2, 0)
+  m_image.copyPixels(memb.image, rect(tmpDestLoc, tmpDestLoc) + memb.image.rect, memb.image.rect, [#ink: 36])
+  m_image.draw(point(argLocH, 0), point(argLocH, m_image.rect[4]), [#shapeType: #line, #color: rgb(90, 90, 90)])
+end
+
+on tmpGetDateStr me, argDate
+  global gRock
+  if ilk(argDate) = #date then
+    argDate = [#year: argDate.year, #month: argDate.month, #day: argDate.day]
+  end if
+  str = gRock.m_date.getDateStr("MMM DD", argDate)
+  return str
+end

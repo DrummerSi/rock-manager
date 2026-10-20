@@ -1,0 +1,130 @@
+property ancestor, child, className, belongsTo, _killed, NotifyList
+
+on new me, argChild, argBelongsTo
+  [  0] getparam 8 .............................. <argChild>
+  [  2] pusharglist 1 ........................... <argChild>
+  [  4] extcall 8 ............................... <objectp(argChild)>
+  [  6] jmpifz [ 17] ............................ if objectp(argChild) then / else
+  [  9] getparam 8 .............................. <argChild>
+  [ 11] setprop 496 ............................. child = argChild
+  [ 14] jmp [ 22]
+  [ 17] getparam 0 .............................. <me>
+  [ 19] setprop 496 ............................. child = me
+  [ 22] getparam 16 ............................. <argBelongsTo>
+  [ 24] setprop 208 ............................. belongsTo = argBelongsTo
+  [ 27] pushsymb 516 ............................ <#CoolVar>
+  [ 30] setprop 224 ............................. className = #CoolVar
+  [ 33] pusharglist 0 ........................... <[]>
+  [ 35] pushlist ................................ <[]>
+  [ 36] setprop 517 ............................. NotifyList = []
+  [ 39] getparam 0 .............................. <me>
+  [ 41] pusharglistnoret 1 ...................... <me>
+  [ 43] extcall 69 .............................. return me
+  [ 46] ret
+end
+
+on kill me
+  [  0] pushint8 1 .............................. <1>
+  [  3] setprop 506 ............................. _killed = 1
+  [  6] getprop 347 ............................. <ancestor>
+  [  9] pusharglist 1 ........................... <ancestor>
+  [ 11] extcall 8 ............................... <objectp(ancestor)>
+  [ 13] jmpifz [ 26] ............................ if objectp(ancestor) then
+  [ 16] getprop 347 ............................. <ancestor>
+  [ 19] pusharglist 1 ........................... <ancestor>
+  [ 21] objcall 31 .............................. <ancestor.kill()>
+  [ 23] setprop 347 ............................. ancestor = ancestor.kill()
+  [ 26] pusharglist 0 ........................... <[]>
+  [ 28] pushlist ................................ <[]>
+  [ 29] setprop 517 ............................. NotifyList = []
+  [ 32] pushzero ................................ <0>
+  [ 33] setprop 496 ............................. child = 0
+  [ 36] pushzero ................................ <0>
+  [ 37] setprop 208 ............................. belongsTo = 0
+  [ 40] pushzero ................................ <0>
+  [ 41] pusharglistnoret 1 ...................... <0>
+  [ 43] extcall 69 .............................. return 0
+  [ 46] ret
+end
+
+on setVal me, argVal
+  [  0] getprop 496 ............................. <child>
+  [  3] getparam 8 .............................. <argVal>
+  [  5] setobjprop 489 .......................... child.val = argVal
+  [  8] getparam 0 .............................. <me>
+  [ 10] pushsymb 513 ............................ <#setVal>
+  [ 13] pusharglistnoret 2 ...................... <me, #setVal>
+  [ 15] objcall 510 ............................. me.notifyThem(#setVal)
+  [ 18] ret
+end
+
+on getVal me
+  [  0] getprop 496 ............................. <child>
+  [  3] getobjprop 489 .......................... <child.val>
+  [  6] pusharglistnoret 1 ...................... <child.val>
+  [  8] extcall 69 .............................. return child.val
+  [ 11] ret
+end
+
+on notifyThem me, argWhat
+  [  0] getprop 517 ............................. <NotifyList>
+  [  3] peek 0
+  [  5] pusharglist 1
+  [  7] extcall 156
+  [ 10] pushint8 1
+  [ 12] peek 0
+  [ 14] peek 2
+  [ 16] lteq
+  [ 17] jmpifz [ 49] ............................ repeat with obj in NotifyList
+  [ 20] peek 2
+  [ 22] peek 1
+  [ 24] pusharglist 2
+  [ 26] extcall 119
+  [ 29] setlocal 0
+  [ 31] getlocal 0 .............................. <obj>
+  [ 33] getprop 496 ............................. <child>
+  [ 36] getparam 8 .............................. <argWhat>
+  [ 38] pusharglistnoret 3 ...................... <obj, child, argWhat>
+  [ 40] objcall 518 ............................. obj.notification(child, argWhat)
+  [ 43] pushint8 1
+  [ 45] add
+  [ 46] endrepeat [ 12]
+  [ 49] pop 3
+  [ 51] ret
+end
+
+on notifyMe me, argObj, argWhat
+  [  0] getparam 16 ............................. <argWhat>
+  [  2] pushsymb 520 ............................ <#Remove>
+  [  5] eq ...................................... <argWhat = #Remove>
+  [  6] getparam 16 ............................. <argWhat>
+  [  8] pushzero ................................ <0>
+  [  9] eq ...................................... <argWhat = 0>
+  [ 10] or ...................................... <(argWhat = #Remove) or (argWhat = 0)>
+  [ 11] jmpifz [ 27] ............................ if (argWhat = #Remove) or (argWhat = 0) then / else
+  [ 14] getprop 517 ............................. <NotifyList>
+  [ 17] getparam 8 .............................. <argObj>
+  [ 19] pusharglistnoret 2 ...................... <NotifyList, argObj>
+  [ 21] objcall 335 ............................. NotifyList.deleteOne(argObj)
+  [ 24] jmp [ 37]
+  [ 27] getprop 517 ............................. <NotifyList>
+  [ 30] getparam 8 .............................. <argObj>
+  [ 32] pusharglistnoret 2 ...................... <NotifyList, argObj>
+  [ 34] objcall 229 ............................. NotifyList.add(argObj)
+  [ 37] ret
+end
+
+on setOneProp me, argProp, argVal
+  [  0] getparam 0 .............................. <me>
+  [  2] getparam 16 ............................. <argVal>
+  [  4] pusharglistnoret 2 ...................... <me, argVal>
+  [  6] objcall 513 ............................. me.setVal(argVal)
+  [  9] ret
+end
+
+on getOneProp me, argProp
+  [  0] getparam 0 .............................. <me>
+  [  2] pusharglistnoret 1 ...................... <me>
+  [  4] objcall 514 ............................. me.getVal()
+  [  7] ret
+end

@@ -1,0 +1,98 @@
+property ancestor, m_musicians_r, m_musician_r, m_pos, m_callBackInfo
+global gDir, gRock
+
+on new me, argOptions
+  ID = argOptions[#ID]
+  argOptions.setaProp(#ReportTo, me)
+  argOptions.setaProp(#child, me)
+  dialog_r = gRock.m_classManager.getObjByIDAndClass(#DlgRehearsalGift, #Dialog)
+  dialog_r.dataMemberName = "DlgMerchandiseData"
+  argOptions[#DlgInfoObj] = dialog_r
+  m_callBackInfo = argOptions[#callback]
+  if stringp(argOptions[#icon]) then
+    dialog_r.icon = argOptions[#icon]
+  end if
+  if stringp(argOptions[#name]) then
+    dialog_r.name = argOptions[#name]
+  end if
+  ancestor = script("DlgRockAncestorScript").new(argOptions)
+  band_r = gRock.m_context.getFocus(#Band)
+  m_musicians_r = band_r.getMusicianObjs()
+  m_pos = 0
+  if m_musicians_r.count = 1 then
+    ancestor.m_objDlg.deleteItem(#ArrowLeft)
+    ancestor.m_objDlg.deleteItem(#ArrowRight)
+  end if
+  ancestor.m_objDlg.recalc(#DontPaint)
+  itemObj = ancestor.m_objDlg.getItem(#Pic)
+  r = itemObj.getOneProp(#inOffsetRect)
+  r = r + rect(-3, 1, 0, 0)
+  itemObj.setOneProp(#inOffsetRect, r)
+  me.setMusician(1)
+  ancestor.render()
+  return me
+end
+
+on kill me
+  ancestor.kill()
+  m_musician_r = 0
+  m_musicians_r = []
+  m_callBackInfo = 0
+  return 0
+end
+
+on Report me, argObj, argWhat
+end
+
+on mouse me, argObj, argWhat, argOption
+  if objectp(argOption) then
+    if argWhat = #click then
+      ID = argOption.getOneProp(#ID)
+      IDStr = string(ID)
+      if offset("Arrow", IDStr) then
+        if ID = #ArrowRight then
+          me.setMusician(1)
+        else
+          if ID = #ArrowLeft then
+            me.setMusician(-1)
+          end if
+        end if
+        exit
+      end if
+      if ID = #ButtonOK then
+        if listp(m_callBackInfo) then
+          if objectp(m_callBackInfo[#object]) then
+            tmpHandler = m_callBackInfo[#handler]
+            if voidp(tmpHandler) then
+              tmpHandler = #callback
+            end if
+            call(tmpHandler, m_callBackInfo[#object], me, #ChoseMusician, m_musician_r)
+            exit
+          end if
+        end if
+        overDlg = gDir.m_objDialogsMaster.getDialogUnder(me)
+        if objectp(overDlg) then
+          overDlg.Report(me, #ChoseMusician, m_musician_r)
+          exit
+        end if
+      end if
+      ancestor.mouse(argObj, argWhat, argOption)
+    end if
+  end if
+end
+
+on setMusician me, argDir
+  if m_musicians_r.count = 0 then
+    exit
+  end if
+  m_pos = m_pos + argDir
+  m_pos = rDlgCheckDimArrows(ancestor.m_objDlg, m_pos, m_musicians_r.count)
+  m_musician_r = m_musicians_r[m_pos]
+  gRock.m_context.setFocus(#RealMusician, m_musician_r)
+  itemObj = ancestor.m_objDlg.getItem(#ButtonOK)
+  itemObj = ancestor.m_objDlg.getItem(#Pic)
+  itemObj.setOneProp(#Pic, m_musician_r.getCurrentPic(VOID, VOID, #Force))
+  formatList = [m_musician_r.name, EMPTY]
+  itemObj = ancestor.m_objDlg.getItem(#Info)
+  itemObj.setOneProp(#Pic, rFormatText(formatList, "GiftFormatting", [#shadow: 1]))
+end

@@ -1,0 +1,369 @@
+property m_replacements, m_widths, m_kerning, m_stdWidth, m_charSpace, m_charSpacePixels, m_memberOffsets, m_firstMemberNr, m_lineHeight, m_stats
+
+on new me
+  return me
+end
+
+on kill me
+  return 0
+end
+
+on checkSize me, argStr, argFormat
+  me.setFont(argFormat[#font])
+  me.setFormat(argFormat)
+  return me.calcWidths(argStr)
+end
+
+on calcWidths me, argStr
+  totWidth = 0
+  lastAnsi = 0
+  repeat with n = 1 to argStr.length
+    Ansi = charToNum(argStr.char[n])
+    Ansi = me.getUseThisInfo(Ansi)
+    if listp(Ansi) then
+      Ansi = Ansi[1]
+    end if
+    totWidth = totWidth + m_widths.getaProp(Ansi) + m_charSpacePixels
+    if lastAnsi > 0 then
+      totWidth = totWidth - me.getKerningPairPixels(lastAnsi, Ansi)
+    end if
+    lastAnsi = Ansi
+  end repeat
+  return totWidth
+end
+
+on setFormat me, argFormat
+  if voidp(argFormat[#Kerning]) then
+    argFormat[#Kerning] = 1.0
+  end if
+  if voidp(argFormat[#CharSpace]) then
+    argFormat[#CharSpace] = m_charSpace
+  end if
+  m_charSpace = argFormat[#CharSpace]
+  m_charSpacePixels = integer(m_charSpace)
+end
+
+on setFont me, argName
+  lst = member(argName & "FontInfo").text.value
+  m_replacements = lst[#Replace]
+  if voidp(m_replacements) then
+    m_replacements = [:]
+  end if
+  m_replacements = createReplaceList("CharReplacements")
+  m_widths = lst[#Widths]
+  if voidp(m_widths) then
+    m_widths = [:]
+  end if
+  m_kerning = lst[#Kern]
+  if voidp(m_kerning) then
+    m_kerning = [:]
+  end if
+  m_charSpace = lst[#CharSpace]
+  if voidp(m_charSpace) then
+    m_charSpace = 0.10000000000000001
+  end if
+  m_memberOffsets = lst[#MemberOffsets]
+  tmpFirstName = lst[#firstMember]
+  if voidp(tmpFirstName) then
+    tmpFirstName = argName & string(m_memberOffsets.getPropAt(1))
+  end if
+  m_firstMemberNr = member(tmpFirstName).number
+  if m_firstMemberNr < 1 then
+    put "EERR", m_firstMemberNr, tmpFirstName
+  end if
+  stdChars = [65, 66, 67]
+  totWidth = 0
+  repeat with tmp in stdChars
+    totWidth = totWidth + m_widths.getaProp(me.getExistingAnsi(tmp))
+  end repeat
+  m_stdWidth = totWidth / stdChars.count()
+  tmpSpace = m_widths.getaProp(32)
+  if voidp(tmpSpace) then
+    m_widths.setaProp(32, integer(0.29999999999999999 * m_stdWidth))
+  end if
+  m_lineHeight = integer(m_stdWidth * 1.5)
+  m_stats = lst[#Stats]
+  if listp(m_stats) then
+    if not voidp(m_stats[#height]) then
+      m_lineHeight = m_stats[#height]
+    else
+      m_lineHeight = m_stats[#bottom] - m_stats[#top]
+    end if
+  end if
+end
+
+on getExistingAnsi me, argAnsi
+  width = m_widths.getaProp(argAnsi)
+  if voidp(width) then
+    argAnsi = m_replacements.getaProp(argAnsi)
+    if listp(argAnsi) then
+      argAnsi = argAnsi[1]
+    else
+      if voidp(argAnsi) then
+        argAnsi = m_replacements.getaProp(#otherwise)
+      end if
+    end if
+  end if
+  return argAnsi
+end
+
+on getUseThisInfo me, argAnsi
+  width = m_widths.getaProp(argAnsi)
+  if voidp(width) then
+    argAnsi = m_replacements.getaProp(argAnsi)
+    if voidp(argAnsi) then
+      argAnsi = m_replacements.getaProp(#otherwise)
+    end if
+  end if
+  return argAnsi
+end
+
+on getKerningPairPixels me, argAnsi1, argAnsi2
+  lst = m_kerning.getaProp(argAnsi1)
+  if voidp(lst) then
+    return 0
+  end if
+  val = lst.getaProp(argAnsi2)
+  if voidp(val) then
+    return 0
+  end if
+  return val
+end
+
+on getNextCharOffset me, argLeftAnsi, argRightAnsi
+  tmpWidth = 0
+  if argLeftAnsi > 0 then
+    tmpWidth = m_charSpacePixels + m_widths.getaProp(argLeftAnsi)
+    if argRightAnsi > 0 then
+      tmpWidth = tmpWidth - me.getKerningPairPixels(argLeftAnsi, argRightAnsi)
+    end if
+  end if
+  return tmpWidth
+end
+
+on getMember me, argAnsi
+  tmpOffset = m_memberOffsets.getaProp(argAnsi)
+  if tmpOffset = -1 then
+    return 0
+  end if
+  return member(m_firstMemberNr + tmpOffset)
+end
+
+on getImage me, argAnsi
+  tmpMemb = me.getMember(argAnsi)
+  return tmpMemb.image
+end
+
+on calcString me, argStr, argMaxWidth
+  OKBreakAnsi = [RETURN, "-", " ", 150, 151]
+  repeat with n = 1 to OKBreakAnsi.count()
+    if stringp(OKBreakAnsi[n]) then
+      OKBreakAnsi[n] = charToNum(OKBreakAnsi[n])
+    end if
+  end repeat
+  lastKernToAnsi = 0
+  lineLocH = 0
+  possibleLineBreakPlaces = []
+  n = 1
+  lineStartCharNr = 1
+  allLines = []
+  allLinesInAnsi = []
+  thisLineInAnsi = []
+  allLinesLocs = []
+  thisLinesLocs = []
+  repeat while 1
+    tmpDontUseLastOnThisLine = 0
+    tmpNewLine = 0
+    if n > argStr.length then
+      tmpNewLine = 1
+      tmpOKBreak = n
+    end if
+    if not tmpNewLine then
+      Ansi = charToNum(argStr.char[n])
+      if OKBreakAnsi.getPos(Ansi) then
+        if Ansi = 13 then
+          tmpNewLine = 1
+          tmpOKBreak = n
+        else
+          possibleLineBreakPlaces.add(n)
+        end if
+      end if
+      renderCharInfo = me.getUseThisInfo(Ansi)
+      if listp(renderCharInfo) then
+        kernToAnsi = renderCharInfo[1]
+      else
+        kernToAnsi = renderCharInfo
+      end if
+    end if
+    if not tmpNewLine then
+      thisLineInAnsi.add(renderCharInfo)
+      if lastKernToAnsi > 0 then
+        lineLocH = lineLocH + me.getNextCharOffset(lastKernToAnsi, kernToAnsi)
+      end if
+      thisLinesLocs.add(lineLocH)
+      if lineLocH > argMaxWidth then
+        if possibleLineBreakPlaces.count() > 0 then
+          tmpOKBreak = possibleLineBreakPlaces[possibleLineBreakPlaces.count]
+        else
+          tmpOKBreak = n
+        end if
+        tmpNewLine = 1
+      end if
+    end if
+    if not tmpNewLine then
+      if n = argStr.length then
+        tmpNewLine = 1
+        tmpOKBreak = n
+      end if
+    end if
+    if tmpNewLine then
+      tmpNewLine = 1
+      tmpLine = argStr.char[lineStartCharNr..tmpOKBreak - tmpDontUseLastOnThisLine]
+      allLines.add(tmpLine)
+      allLinesInAnsi.add(thisLineInAnsi)
+      thisLineInAnsi = []
+      if thisLinesLocs.count < (tmpLine.length + 1) then
+        thisLinesLocs.add(lineLocH + me.getNextCharOffset(kernToAnsi))
+      end if
+      allLinesLocs.add(thisLinesLocs)
+      thisLinesLocs = []
+      lineStartCharNr = tmpOKBreak + 1
+      n = lineStartCharNr
+      lineLocH = 0
+      possibleLineBreakPlaces = []
+      lastKernToAnsi = 0
+    else
+      n = n + 1
+      lastKernToAnsi = kernToAnsi
+    end if
+    if n > argStr.length then
+      exit repeat
+    end if
+  end repeat
+  return [#Ansi: allLinesInAnsi, #locs: allLinesLocs, #Strings: allLines]
+end
+
+on renderString me, argStr, argMaxWidth, argImagePtr, argSizeFactor, argAlignment, argCreateShadow, argOffLoc
+  if voidp(argMaxWidth) then
+    argMaxWidth = 400
+  end if
+  if voidp(argSizeFactor) then
+    argSizeFactor = 1.0
+  end if
+  if not listp(argSizeFactor) then
+    argSizeFactor = point(argSizeFactor, argSizeFactor)
+  end if
+  m_charSpacePixels = m_charSpace * argSizeFactor[1]
+  if voidp(argAlignment) then
+    argAlignment = #left
+  end if
+  if voidp(argOffLoc) then
+    argOffLoc = point(0, 0)
+  end if
+  Info = me.calcString(argStr, argMaxWidth / argSizeFactor[1])
+  allLines = Info[#Strings]
+  allLinesInAnsi = Info[#Ansi]
+  allLinesLocs = Info[#locs]
+  numLines = allLinesLocs.count
+  if not voidp(argImagePtr) then
+    imageSize = point(argMaxWidth, numLines * m_lineHeight * argSizeFactor[2])
+    if listp(argImagePtr) then
+      if argImagePtr.count() then
+        m_image = argImagePtr[1]
+      end if
+    else
+      if ilk(argImagePtr) = #image then
+        m_image = argImagePtr
+      else
+        m_image = image(imageSize[1], imageSize[2], 16)
+      end if
+      argImagePtr = []
+    end if
+    if voidp(m_image) then
+      m_image = image(imageSize[1], imageSize[2], 16)
+    end if
+    argImagePtr[1] = m_image
+    argMaxWidth = m_image.rect[3]
+    sizeRect = [argSizeFactor[1], argSizeFactor[2], argSizeFactor[1], argSizeFactor[2]]
+    repeat with lineNr = 1 to numLines
+      lineStr = allLines[lineNr]
+      ansiList = allLinesInAnsi[lineNr]
+      locs = allLinesLocs[lineNr]
+      lineLen = lineStr.length
+      if argAlignment = #center then
+        if lineStr.char[lineLen] = " " then
+          lineLen = lineLen - 1
+        end if
+        tmpLineSize = locs[lineLen + 1]
+        tmpAlignOffsetH = ((argMaxWidth / argSizeFactor[1]) - tmpLineSize) / 2
+      else
+        tmpAlignOffsetH = 0
+      end if
+      repeat with chNr = 1 to lineLen
+        Ansi = ansiList[chNr]
+        tmpImage = 0
+        blitList = []
+        if listp(Ansi) then
+          tmpMemb = me.getMember(Ansi[1])
+          tmpOffY = tmpMemb.regPoint[2]
+          blitList.add([tmpMemb.image, point(0, -tmpOffY)])
+          repeat with n = 2 to Ansi.count
+            tmpMembOver = me.getMember(Ansi[n])
+            xOff = (tmpMemb.width - tmpMembOver.width) / 2
+            blitList.add([tmpMembOver.image, point(xOff, -tmpMembOver.regPoint[2])])
+          end repeat
+        else
+          tmpMemb = me.getMember(Ansi)
+          if not objectp(tmpMemb) then
+            next repeat
+          end if
+          tmpOffY = tmpMemb.regPoint[2]
+          blitList.add([tmpMemb.image, point(0, -tmpOffY)])
+        end if
+        tmpOff = point(locs[chNr] + tmpAlignOffsetH, (lineNr - 1) * m_lineHeight)
+        repeat with n = 1 to blitList.count
+          tmp = blitList[n]
+          tmpExtraOff = tmp[2]
+          img = tmp[1]
+          if argCreateShadow = 1 then
+            m_image.copyPixels(img.extractAlpha(), ((img.rect + rect(tmpOff + tmpExtraOff, tmpOff + tmpExtraOff)) * sizeRect) + rect(argOffLoc, argOffLoc), img.rect, [#ink: 39])
+            next repeat
+          end if
+          m_image.copyPixels(img, ((img.rect + rect(tmpOff + tmpExtraOff, tmpOff + tmpExtraOff)) * sizeRect) + rect(argOffLoc, argOffLoc), img.rect, [#ink: 0, #useFastQuads: 0])
+        end repeat
+      end repeat
+    end repeat
+  end if
+end
+
+on createReplaceList me, argMemberName
+  if voidp(argMemberName) then
+    argMemberName = "CharReplacements"
+  end if
+  str = member(argMemberName).text
+  numLines = the number of lines in str
+  lst = [:]
+  repeat with lineNr = 1 to numLines
+    tmpLine = str.line[lineNr]
+    if tmpLine.length = 0 then
+      next repeat
+    end if
+    ch = tmpLine.char[1]
+    if lineNr = numLines then
+      prop = #otherwise
+      Info = charToNum(ch)
+    else
+      prop = charToNum(ch)
+      if tmpLine.length = 2 then
+        Info = charToNum(tmpLine.char[2])
+      else
+        Info = []
+        repeat with chNr = 2 to tmpLine.length
+          Info.add(charToNum(tmpLine.char[chNr]))
+        end repeat
+      end if
+    end if
+    lst.addProp(prop, Info)
+  end repeat
+  return lst
+end

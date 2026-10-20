@@ -1,0 +1,42 @@
+property m_mouseObj, m_isWaiting
+global gUseful
+
+on new me
+  m_mouseObj = script("MouseObject").new(me, rect(-1000, -1000, 2000, 2000), [#layer: 1000000, #PassButton: 0, #noPassRoll: 1, #cursorRoll: #wait])
+  m_mouseObj.activate(0)
+  m_isWaiting = 0
+  return me
+end
+
+on kill me
+  if objectp(m_mouseObj) then
+    m_mouseObj = m_mouseObj.kill()
+  end if
+  gUseful.frameTimer.deleteObject(me)
+  return 0
+end
+
+on timeTick me
+  me.waitCursor(0)
+end
+
+on waitCursor me, argIsTRUE, argAuto
+  m_mouseObj.activate(argIsTRUE)
+  if argIsTRUE = 1 then
+    if m_isWaiting = 1 then
+      exit
+    end if
+    gUseful.cursors.setOverride(1, #wait)
+    gUseful.frameTimer.addObject(me)
+  else
+    if m_isWaiting = 0 then
+      exit
+    end if
+    gUseful.frameTimer.deleteObject(me)
+    gUseful.cursors.setOverride(0)
+  end if
+  m_isWaiting = argIsTRUE
+end
+
+on mouse me
+end

@@ -1,0 +1,40 @@
+property itemObj, wndObj, orgInRect
+
+on new me, argItemObj
+  itemObj = argItemObj
+  return me
+end
+
+on kill me
+  itemObj = 0
+  return 0
+end
+
+on mouse me, argObj, argWhat
+  if argWhat = #DownOnOther then
+    exit
+  end if
+  if argWhat = #down then
+    wndObj = itemObj.ancestor.masterObj.getItem(#Wnd)
+    if objectp(wndObj) then
+      orgInRect = wndObj.getOneProp(#inOffsetRect)
+    end if
+  else
+    if argWhat = #stillDown then
+      if objectp(wndObj) then
+        orgInRect = orgInRect + [0, 0, argObj.deltaMove[1], argObj.deltaMove[2]]
+        tmpSize = getRectSize(orgInRect)
+        if tmpSize[1] < 30 then
+          orgInRect[1] = 30
+        end if
+        if tmpSize[2] < 50 then
+          orgInRect[2] = 50
+        end if
+        wndObj.setOneProp(#inOffsetRect, orgInRect)
+      end if
+    else
+      if argWhat = #click then
+      end if
+    end if
+  end if
+end

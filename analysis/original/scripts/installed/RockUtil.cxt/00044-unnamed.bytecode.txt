@@ -1,0 +1,517 @@
+on zzrGenerateMeter argFraction, argPrefix, argImg, argOffsetLoc
+  [  0] getparam 16 ............................. <argImg>
+  [  2] pusharglist 1 ........................... <argImg>
+  [  4] extcall 68 .............................. <voidp(argImg)>
+  [  7] jmpifz [ 26] ............................ if voidp(argImg) then
+  [ 10] pushint8 100 ............................ <100>
+  [ 13] pushint8 100 ............................ <100>
+  [ 16] pushint8 24 ............................. <24>
+  [ 19] pusharglist 3 ........................... <100, 100, 24>
+  [ 21] extcall 1014 ............................ <image(100, 100, 24)>
+  [ 24] setparam 16 ............................. argImg = image(100, 100, 24)
+  [ 26] getparam 24 ............................. <argOffsetLoc>
+  [ 28] pusharglist 1 ........................... <argOffsetLoc>
+  [ 30] extcall 68 .............................. <voidp(argOffsetLoc)>
+  [ 33] jmpifz [ 45] ............................ if voidp(argOffsetLoc) then
+  [ 36] pushzero ................................ <0>
+  [ 37] pushzero ................................ <0>
+  [ 38] pusharglist 2 ........................... <0, 0>
+  [ 40] extcall 568 ............................. <point(0, 0)>
+  [ 43] setparam 24 ............................. argOffsetLoc = point(0, 0)
+  [ 45] getparam 8 .............................. <argPrefix>
+  [ 47] pusharglist 1 ........................... <argPrefix>
+  [ 49] extcall 68 .............................. <voidp(argPrefix)>
+  [ 52] jmpifz [ 59] ............................ if voidp(argPrefix) then
+  [ 55] pushcons 0 .............................. <"meter01_">
+  [ 57] setparam 8 .............................. argPrefix = "meter01_"
+  [ 59] getparam 8 .............................. <argPrefix>
+  [ 61] pushcons 8 .............................. <"background01">
+  [ 63] joinstr ................................. <argPrefix & "background01">
+  [ 64] pusharglist 1 ........................... <argPrefix & "background01">
+  [ 66] extcall 296 ............................. <member(argPrefix & "background01")>
+  [ 69] setlocal 0 .............................. bgMemb = member(argPrefix & "background01")
+  [ 71] pusharglist 0 ........................... <[]>
+  [ 73] pushlist ................................ <[]>
+  [ 74] setlocal 8 .............................. itemsList = []
+  [ 76] getparam 24 ............................. <argOffsetLoc>
+  [ 78] getlocal 0 .............................. <bgMemb>
+  [ 80] getobjprop 1128 ......................... <bgMemb.regPoint>
+  [ 83] add ..................................... <argOffsetLoc + bgMemb.regPoint>
+  [ 84] setparam 24 ............................. argOffsetLoc = argOffsetLoc + bgMemb.regPoint
+  [ 86] pushzero ................................ <0>
+  [ 87] setlocal 16 ............................. barTotWidth = 0
+  [ 89] pushcons 16 ............................. <"Left">
+  [ 91] pushcons 24 ............................. <"Mid">
+  [ 93] pushcons 32 ............................. <"Right">
+  [ 95] pusharglist 3 ........................... <["Left", "Mid", "Right"]>
+  [ 97] pushlist ................................ <["Left", "Mid", "Right"]>
+  [ 98] setlocal 24 ............................. barMembers = ["Left", "Mid", "Right"]
+  [100] pushint8 1 .............................. <1>
+  [103] setlocal 32
+  [105] getlocal 32
+  [107] getlocal 24 ............................. <barMembers>
+  [109] getobjprop 32 ........................... <barMembers.count>
+  [112] lteq
+  [113] jmpifz [170] ............................ repeat with n = 1 to barMembers.count
+  [116] getparam 8 .............................. <argPrefix>
+  [118] pushcons 40 ............................. <"line01">
+  [120] joinstr ................................. <argPrefix & "line01">
+  [121] getlocal 24 ............................. <barMembers>
+  [123] getlocal 32 ............................. <n>
+  [125] pusharglist 2 ........................... <barMembers, n>
+  [127] objcall 34 .............................. <barMembers[n]>
+  [130] joinstr ................................. <argPrefix & "line01" & barMembers[n]>
+  [131] pusharglist 1 ........................... <argPrefix & "line01" & barMembers[n]>
+  [133] extcall 296 ............................. <member(argPrefix & "line01" & barMembers[n])>
+  [136] setlocal 40 ............................. memb = member(argPrefix & "line01" & barMembers[n])
+  [138] getlocal 24 ............................. <barMembers>
+  [140] getlocal 32 ............................. <n>
+  [142] getlocal 40 ............................. <memb>
+  [144] pusharglistnoret 3 ...................... <barMembers, n, memb>
+  [146] objcall 46 .............................. barMembers[n] = memb
+  [149] getlocal 16 ............................. <barTotWidth>
+  [151] getlocal 40 ............................. <memb>
+  [153] getobjprop 557 .......................... <memb.width>
+  [156] add ..................................... <barTotWidth + memb.width>
+  [157] setlocal 16 ............................. barTotWidth = barTotWidth + memb.width
+  [159] pushint8 1
+  [162] getlocal 32
+  [164] add
+  [165] setlocal 32
+  [167] endrepeat [105]
+  [170] getparam 0 .............................. <argFraction>
+  [172] getlocal 16 ............................. <barTotWidth>
+  [174] mul ..................................... <argFraction * barTotWidth>
+  [175] pusharglist 1 ........................... <argFraction * barTotWidth>
+  [177] extcall 54 .............................. <integer(argFraction * barTotWidth)>
+  [180] setlocal 48 ............................. tmpWidth = integer(argFraction * barTotWidth)
+  [182] getlocal 16 ............................. <barTotWidth>
+  [184] getlocal 24 ............................. <barMembers>
+  [186] pushint8 2 .............................. <2>
+  [189] pusharglist 2 ........................... <barMembers, 2>
+  [191] objcall 34 .............................. <barMembers[2]>
+  [194] getobjprop 557 .......................... <barMembers[2].width>
+  [197] sub ..................................... <barTotWidth - barMembers[2].width>
+  [198] setlocal 56 ............................. barSidesWidth = barTotWidth - barMembers[2].width
+  [200] getlocal 48 ............................. <tmpWidth>
+  [202] getlocal 56 ............................. <barSidesWidth>
+  [204] sub ..................................... <tmpWidth - barSidesWidth>
+  [205] setlocal 64 ............................. midWidth = tmpWidth - barSidesWidth
+  [207] getparam 24 ............................. <argOffsetLoc>
+  [209] getparam 24 ............................. <argOffsetLoc>
+  [211] pusharglist 2 ........................... <argOffsetLoc, argOffsetLoc>
+  [213] extcall 555 ............................. <rect(argOffsetLoc, argOffsetLoc)>
+  [216] setlocal 72 ............................. offrect = rect(argOffsetLoc, argOffsetLoc)
+  [218] pushsymb 60 ............................. <#ID>
+  [221] pushsymb 1172 ........................... <#BG>
+  [224] pushsymb 738 ............................ <#type>
+  [227] pushsymb 1173 ........................... <#Pic>
+  [230] pushsymb 1173 ........................... <#Pic>
+  [233] getlocal 0 .............................. <bgMemb>
+  [235] getobjprop 1014 ......................... <bgMemb.image>
+  [238] pushsymb 1174 ........................... <#ch>
+  [241] pushint8 1 .............................. <1>
+  [244] pushsymb 1175 ........................... <#inOffsetRect>
+  [247] pushzero ................................ <0>
+  [248] pushzero ................................ <0>
+  [249] pushzero ................................ <0>
+  [250] pushzero ................................ <0>
+  [251] pusharglist 4 ........................... <0, 0, 0, 0>
+  [253] extcall 555 ............................. <rect(0, 0, 0, 0)>
+  [256] pushsymb 695 ............................ <#rel>
+  [259] pushzero ................................ <0>
+  [260] pushzero ................................ <0>
+  [261] pushsymb 1176 ........................... <#Auto>
+  [264] pushsymb 1176 ........................... <#Auto>
+  [267] pusharglist 4 ........................... <[0, 0, #Auto, #Auto]>
+  [269] pushlist ................................ <[0, 0, #Auto, #Auto]>
+  [270] pusharglist 12 .......................... <[#ID: #BG, #type: #Pic, #Pic: bgMemb.image, #ch: 1, #inOffsetRect: rect(0, 0, 0, 0), #rel: [0, 0, #Auto, #Auto]]>
+  [272] pushproplist ............................ <[#ID: #BG, #type: #Pic, #Pic: bgMemb.image, #ch: 1, #inOffsetRect: rect(0, 0, 0, 0), #rel: [0, 0, #Auto, #Auto]]>
+  [273] setlocal 80 ............................. itemDef = [#ID: #BG, #type: #Pic, #Pic: bgMemb.image, #ch: 1, #inOffsetRect: rect(0, 0, 0, 0), #rel: [0, 0, #Auto, #Auto]]
+  [275] getlocal 8 .............................. <itemsList>
+  [277] getlocal 80 ............................. <itemDef>
+  [279] pusharglistnoret 2 ...................... <itemsList, itemDef>
+  [281] objcall 50 .............................. itemsList.add(itemDef)
+  [284] getparam 16 ............................. <argImg>
+  [286] pusharglist 1 ........................... <argImg>
+  [288] extcall 71 .............................. <objectp(argImg)>
+  [291] jmpifz [335] ............................ if objectp(argImg) then
+  [294] getparam 16 ............................. <argImg>
+  [296] getlocal 0 .............................. <bgMemb>
+  [298] getobjprop 1014 ......................... <bgMemb.image>
+  [301] getlocal 72 ............................. <offrect>
+  [303] getlocal 0 .............................. <bgMemb>
+  [305] getobjprop 555 .......................... <bgMemb.rect>
+  [308] add ..................................... <offrect + bgMemb.rect>
+  [309] getlocal 0 .............................. <bgMemb>
+  [311] getobjprop 1128 ......................... <bgMemb.regPoint>
+  [314] getlocal 0 .............................. <bgMemb>
+  [316] getobjprop 1128 ......................... <bgMemb.regPoint>
+  [319] pusharglist 2 ........................... <bgMemb.regPoint, bgMemb.regPoint>
+  [321] extcall 555 ............................. <rect(bgMemb.regPoint, bgMemb.regPoint)>
+  [324] sub ..................................... <offrect + bgMemb.rect - rect(bgMemb.regPoint, bgMemb.regPoint)>
+  [325] getlocal 0 .............................. <bgMemb>
+  [327] getobjprop 555 .......................... <bgMemb.rect>
+  [330] pusharglistnoret 4 ...................... <argImg, bgMemb.image, offrect + bgMemb.rect - rect(bgMemb.regPoint, bgMemb.regPoint), bgMemb.rect>
+  [332] objcall 1075 ............................ argImg.copyPixels(bgMemb.image, offrect + bgMemb.rect - rect(bgMemb.regPoint, bgMemb.regPoint), bgMemb.rect)
+  [335] getlocal 0 .............................. <bgMemb>
+  [337] getobjprop 1128 ......................... <bgMemb.regPoint>
+  [340] getlocal 24 ............................. <barMembers>
+  [342] pushint8 1 .............................. <1>
+  [345] pusharglist 2 ........................... <barMembers, 1>
+  [347] objcall 34 .............................. <barMembers[1]>
+  [350] getobjprop 1128 ......................... <barMembers[1].regPoint>
+  [353] sub ..................................... <bgMemb.regPoint - barMembers[1].regPoint>
+  [354] setlocal 88 ............................. tmpRegDiffLoc = bgMemb.regPoint - barMembers[1].regPoint
+  [356] getlocal 88 ............................. <tmpRegDiffLoc>
+  [358] pushint8 1 .............................. <1>
+  [361] pusharglist 2 ........................... <tmpRegDiffLoc, 1>
+  [363] objcall 34 .............................. <tmpRegDiffLoc[1]>
+  [366] setlocal 96 ............................. tmpLeftsRightSide = tmpRegDiffLoc[1]
+  [368] pushsymb 60 ............................. <#ID>
+  [371] pushsymb 1178 ........................... <#left>
+  [374] pushsymb 738 ............................ <#type>
+  [377] pushsymb 1173 ........................... <#Pic>
+  [380] pushsymb 1173 ........................... <#Pic>
+  [383] getlocal 24 ............................. <barMembers>
+  [385] pushint8 1 .............................. <1>
+  [388] pusharglist 2 ........................... <barMembers, 1>
+  [390] objcall 34 .............................. <barMembers[1]>
+  [393] getobjprop 1014 ......................... <barMembers[1].image>
+  [396] pushsymb 1174 ........................... <#ch>
+  [399] pushint8 2 .............................. <2>
+  [402] pushsymb 1175 ........................... <#inOffsetRect>
+  [405] getlocal 88 ............................. <tmpRegDiffLoc>
+  [407] pushint8 1 .............................. <1>
+  [410] pusharglist 2 ........................... <tmpRegDiffLoc, 1>
+  [412] objcall 34 .............................. <tmpRegDiffLoc[1]>
+  [415] getlocal 88 ............................. <tmpRegDiffLoc>
+  [417] pushint8 2 .............................. <2>
+  [420] pusharglist 2 ........................... <tmpRegDiffLoc, 2>
+  [422] objcall 34 .............................. <tmpRegDiffLoc[2]>
+  [425] pushzero ................................ <0>
+  [426] pushzero ................................ <0>
+  [427] pusharglist 4 ........................... <tmpRegDiffLoc[1], tmpRegDiffLoc[2], 0, 0>
+  [429] extcall 555 ............................. <rect(tmpRegDiffLoc[1], tmpRegDiffLoc[2], 0, 0)>
+  [432] pushsymb 695 ............................ <#rel>
+  [435] pushzero ................................ <0>
+  [436] pushzero ................................ <0>
+  [437] pushsymb 1176 ........................... <#Auto>
+  [440] pushsymb 1176 ........................... <#Auto>
+  [443] pusharglist 4 ........................... <[0, 0, #Auto, #Auto]>
+  [445] pushlist ................................ <[0, 0, #Auto, #Auto]>
+  [446] pusharglist 12 .......................... <[#ID: #left, #type: #Pic, #Pic: barMembers[1].image, #ch: 2, #inOffsetRect: rect(tmpRegDiffLoc[1], tmpRegDiffLoc[2], 0, 0), #rel: [0, 0, #Auto, #Auto]]>
+  [448] pushproplist ............................ <[#ID: #left, #type: #Pic, #Pic: barMembers[1].image, #ch: 2, #inOffsetRect: rect(tmpRegDiffLoc[1], tmpRegDiffLoc[2], 0, 0), #rel: [0, 0, #Auto, #Auto]]>
+  [449] setlocal 80 ............................. itemDef = [#ID: #left, #type: #Pic, #Pic: barMembers[1].image, #ch: 2, #inOffsetRect: rect(tmpRegDiffLoc[1], tmpRegDiffLoc[2], 0, 0), #rel: [0, 0, #Auto, #Auto]]
+  [451] getlocal 8 .............................. <itemsList>
+  [453] getlocal 80 ............................. <itemDef>
+  [455] pusharglistnoret 2 ...................... <itemsList, itemDef>
+  [457] objcall 50 .............................. itemsList.add(itemDef)
+  [460] getparam 16 ............................. <argImg>
+  [462] pusharglist 1 ........................... <argImg>
+  [464] extcall 71 .............................. <objectp(argImg)>
+  [467] jmpifz [573] ............................ if objectp(argImg) then
+  [470] getlocal 24 ............................. <barMembers>
+  [472] pushint8 1 .............................. <1>
+  [475] pusharglist 2 ........................... <barMembers, 1>
+  [477] objcall 34 .............................. <barMembers[1]>
+  [480] getobjprop 555 .......................... <barMembers[1].rect>
+  [483] getlocal 24 ............................. <barMembers>
+  [485] pushint8 1 .............................. <1>
+  [488] pusharglist 2 ........................... <barMembers, 1>
+  [490] objcall 34 .............................. <barMembers[1]>
+  [493] getobjprop 1128 ......................... <barMembers[1].regPoint>
+  [496] getlocal 24 ............................. <barMembers>
+  [498] pushint8 1 .............................. <1>
+  [501] pusharglist 2 ........................... <barMembers, 1>
+  [503] objcall 34 .............................. <barMembers[1]>
+  [506] getobjprop 1128 ......................... <barMembers[1].regPoint>
+  [509] pusharglist 2 ........................... <barMembers[1].regPoint, barMembers[1].regPoint>
+  [511] extcall 555 ............................. <rect(barMembers[1].regPoint, barMembers[1].regPoint)>
+  [514] sub ..................................... <barMembers[1].rect - rect(barMembers[1].regPoint, barMembers[1].regPoint)>
+  [515] setlocal 104 ............................ tmpOffRect = barMembers[1].rect - rect(barMembers[1].regPoint, barMembers[1].regPoint)
+  [517] getparam 16 ............................. <argImg>
+  [519] getlocal 24 ............................. <barMembers>
+  [521] pushint8 1 .............................. <1>
+  [524] pusharglist 2 ........................... <barMembers, 1>
+  [526] objcall 34 .............................. <barMembers[1]>
+  [529] getobjprop 1014 ......................... <barMembers[1].image>
+  [532] getlocal 72 ............................. <offrect>
+  [534] getlocal 104 ............................ <tmpOffRect>
+  [536] add ..................................... <offrect + tmpOffRect>
+  [537] getlocal 24 ............................. <barMembers>
+  [539] pushint8 1 .............................. <1>
+  [542] pusharglist 2 ........................... <barMembers, 1>
+  [544] objcall 34 .............................. <barMembers[1]>
+  [547] getobjprop 555 .......................... <barMembers[1].rect>
+  [550] pusharglistnoret 4 ...................... <argImg, barMembers[1].image, offrect + tmpOffRect, barMembers[1].rect>
+  [552] objcall 1075 ............................ argImg.copyPixels(barMembers[1].image, offrect + tmpOffRect, barMembers[1].rect)
+  [555] getlocal 104 ............................ <tmpOffRect>
+  [557] pushint8 3 .............................. <3>
+  [560] pusharglist 2 ........................... <tmpOffRect, 3>
+  [562] objcall 34 .............................. <tmpOffRect[3]>
+  [565] pushzero ................................ <0>
+  [566] pusharglist 2 ........................... <tmpOffRect[3], 0>
+  [568] extcall 568 ............................. <point(tmpOffRect[3], 0)>
+  [571] setlocal 112 ............................ tmpLeftEndOff = point(tmpOffRect[3], 0)
+  [573] getlocal 64 ............................. <midWidth>
+  [575] pushzero ................................ <0>
+  [576] gt ...................................... <midWidth > 0>
+  [577] jmpifz [867] ............................ if midWidth > 0 then
+  [580] getlocal 0 .............................. <bgMemb>
+  [582] getobjprop 1128 ......................... <bgMemb.regPoint>
+  [585] getlocal 24 ............................. <barMembers>
+  [587] pushint8 2 .............................. <2>
+  [590] pusharglist 2 ........................... <barMembers, 2>
+  [592] objcall 34 .............................. <barMembers[2]>
+  [595] getobjprop 1128 ......................... <barMembers[2].regPoint>
+  [598] sub ..................................... <bgMemb.regPoint - barMembers[2].regPoint>
+  [599] setlocal 88 ............................. tmpRegDiffLoc = bgMemb.regPoint - barMembers[2].regPoint
+  [601] getlocal 24 ............................. <barMembers>
+  [603] pushint8 1 .............................. <1>
+  [606] pusharglist 2 ........................... <barMembers, 1>
+  [608] objcall 34 .............................. <barMembers[1]>
+  [611] pushsymb 555 ............................ <#rect>
+  [614] pushint8 3 .............................. <3>
+  [617] pusharglist 3 ........................... <barMembers[1], #rect, 3>
+  [619] objcall 152 ............................. <barMembers[1].rect[3]>
+  [622] getlocal 96 ............................. <tmpLeftsRightSide>
+  [624] add ..................................... <barMembers[1].rect[3] + tmpLeftsRightSide>
+  [625] getlocal 88 ............................. <tmpRegDiffLoc>
+  [627] pushint8 2 .............................. <2>
+  [630] pusharglist 2 ........................... <tmpRegDiffLoc, 2>
+  [632] objcall 34 .............................. <tmpRegDiffLoc[2]>
+  [635] pusharglist 2 ........................... <barMembers[1].rect[3] + tmpLeftsRightSide, tmpRegDiffLoc[2]>
+  [637] extcall 568 ............................. <point(barMembers[1].rect[3] + tmpLeftsRightSide, tmpRegDiffLoc[2])>
+  [640] setlocal 88 ............................. tmpRegDiffLoc = point(barMembers[1].rect[3] + tmpLeftsRightSide, tmpRegDiffLoc[2])
+  [642] pushsymb 60 ............................. <#ID>
+  [645] pushsymb 1179 ........................... <#Mid>
+  [648] pushsymb 738 ............................ <#type>
+  [651] pushsymb 1173 ........................... <#Pic>
+  [654] pushsymb 1173 ........................... <#Pic>
+  [657] getlocal 24 ............................. <barMembers>
+  [659] pushint8 2 .............................. <2>
+  [662] pusharglist 2 ........................... <barMembers, 2>
+  [664] objcall 34 .............................. <barMembers[2]>
+  [667] getobjprop 1014 ......................... <barMembers[2].image>
+  [670] pushsymb 1174 ........................... <#ch>
+  [673] pushint8 3 .............................. <3>
+  [676] pushsymb 1175 ........................... <#inOffsetRect>
+  [679] getlocal 88 ............................. <tmpRegDiffLoc>
+  [681] pushint8 1 .............................. <1>
+  [684] pusharglist 2 ........................... <tmpRegDiffLoc, 1>
+  [686] objcall 34 .............................. <tmpRegDiffLoc[1]>
+  [689] getlocal 88 ............................. <tmpRegDiffLoc>
+  [691] pushint8 2 .............................. <2>
+  [694] pusharglist 2 ........................... <tmpRegDiffLoc, 2>
+  [696] objcall 34 .............................. <tmpRegDiffLoc[2]>
+  [699] getlocal 88 ............................. <tmpRegDiffLoc>
+  [701] pushint8 1 .............................. <1>
+  [704] pusharglist 2 ........................... <tmpRegDiffLoc, 1>
+  [706] objcall 34 .............................. <tmpRegDiffLoc[1]>
+  [709] getlocal 64 ............................. <midWidth>
+  [711] add ..................................... <tmpRegDiffLoc[1] + midWidth>
+  [712] pushzero ................................ <0>
+  [713] pusharglist 4 ........................... <tmpRegDiffLoc[1], tmpRegDiffLoc[2], tmpRegDiffLoc[1] + midWidth, 0>
+  [715] extcall 555 ............................. <rect(tmpRegDiffLoc[1], tmpRegDiffLoc[2], tmpRegDiffLoc[1] + midWidth, 0)>
+  [718] pushsymb 695 ............................ <#rel>
+  [721] pushzero ................................ <0>
+  [722] pushzero ................................ <0>
+  [723] pushzero ................................ <0>
+  [724] pushsymb 1176 ........................... <#Auto>
+  [727] pusharglist 4 ........................... <[0, 0, 0, #Auto]>
+  [729] pushlist ................................ <[0, 0, 0, #Auto]>
+  [730] pusharglist 12 .......................... <[#ID: #Mid, #type: #Pic, #Pic: barMembers[2].image, #ch: 3, #inOffsetRect: rect(tmpRegDiffLoc[1], tmpRegDiffLoc[2], tmpRegDiffLoc[1] + midWidth, 0), #rel: [0, 0, 0, #Auto]]>
+  [732] pushproplist ............................ <[#ID: #Mid, #type: #Pic, #Pic: barMembers[2].image, #ch: 3, #inOffsetRect: rect(tmpRegDiffLoc[1], tmpRegDiffLoc[2], tmpRegDiffLoc[1] + midWidth, 0), #rel: [0, 0, 0, #Auto]]>
+  [733] setlocal 80 ............................. itemDef = [#ID: #Mid, #type: #Pic, #Pic: barMembers[2].image, #ch: 3, #inOffsetRect: rect(tmpRegDiffLoc[1], tmpRegDiffLoc[2], tmpRegDiffLoc[1] + midWidth, 0), #rel: [0, 0, 0, #Auto]]
+  [735] getlocal 8 .............................. <itemsList>
+  [737] getlocal 80 ............................. <itemDef>
+  [739] pusharglistnoret 2 ...................... <itemsList, itemDef>
+  [741] objcall 50 .............................. itemsList.add(itemDef)
+  [744] getparam 16 ............................. <argImg>
+  [746] pusharglist 1 ........................... <argImg>
+  [748] extcall 71 .............................. <objectp(argImg)>
+  [751] jmpifz [867] ............................ if objectp(argImg) then
+  [754] getlocal 112 ............................ <tmpLeftEndOff>
+  [756] pushzero ................................ <0>
+  [757] getlocal 24 ............................. <barMembers>
+  [759] pushint8 2 .............................. <2>
+  [762] pusharglist 2 ........................... <barMembers, 2>
+  [764] objcall 34 .............................. <barMembers[2]>
+  [767] pushsymb 1128 ........................... <#regPoint>
+  [770] pushint8 2 .............................. <2>
+  [773] pusharglist 3 ........................... <barMembers[2], #regPoint, 2>
+  [775] objcall 152 ............................. <barMembers[2].regPoint[2]>
+  [778] inv ..................................... <-barMembers[2].regPoint[2]>
+  [779] pusharglist 2 ........................... <0, -barMembers[2].regPoint[2]>
+  [781] extcall 568 ............................. <point(0, -barMembers[2].regPoint[2])>
+  [784] add ..................................... <tmpLeftEndOff + point(0, -barMembers[2].regPoint[2])>
+  [785] setlocal 120 ............................ tmpOff = tmpLeftEndOff + point(0, -barMembers[2].regPoint[2])
+  [787] pushzero ................................ <0>
+  [788] pushzero ................................ <0>
+  [789] getlocal 64 ............................. <midWidth>
+  [791] getlocal 24 ............................. <barMembers>
+  [793] pushint8 2 .............................. <2>
+  [796] pusharglist 2 ........................... <barMembers, 2>
+  [798] objcall 34 .............................. <barMembers[2]>
+  [801] pushsymb 555 ............................ <#rect>
+  [804] pushint8 4 .............................. <4>
+  [807] pusharglist 3 ........................... <barMembers[2], #rect, 4>
+  [809] objcall 152 ............................. <barMembers[2].rect[4]>
+  [812] pusharglist 4 ........................... <0, 0, midWidth, barMembers[2].rect[4]>
+  [814] extcall 555 ............................. <rect(0, 0, midWidth, barMembers[2].rect[4])>
+  [817] getlocal 120 ............................ <tmpOff>
+  [819] getlocal 120 ............................ <tmpOff>
+  [821] pusharglist 2 ........................... <tmpOff, tmpOff>
+  [823] extcall 555 ............................. <rect(tmpOff, tmpOff)>
+  [826] add ..................................... <rect(0, 0, midWidth, barMembers[2].rect[4]) + rect(tmpOff, tmpOff)>
+  [827] setlocal 104 ............................ tmpOffRect = rect(0, 0, midWidth, barMembers[2].rect[4]) + rect(tmpOff, tmpOff)
+  [829] getparam 16 ............................. <argImg>
+  [831] getlocal 24 ............................. <barMembers>
+  [833] pushint8 2 .............................. <2>
+  [836] pusharglist 2 ........................... <barMembers, 2>
+  [838] objcall 34 .............................. <barMembers[2]>
+  [841] getobjprop 1014 ......................... <barMembers[2].image>
+  [844] getlocal 72 ............................. <offrect>
+  [846] getlocal 104 ............................ <tmpOffRect>
+  [848] add ..................................... <offrect + tmpOffRect>
+  [849] getlocal 24 ............................. <barMembers>
+  [851] pushint8 2 .............................. <2>
+  [854] pusharglist 2 ........................... <barMembers, 2>
+  [856] objcall 34 .............................. <barMembers[2]>
+  [859] getobjprop 555 .......................... <barMembers[2].rect>
+  [862] pusharglistnoret 4 ...................... <argImg, barMembers[2].image, offrect + tmpOffRect, barMembers[2].rect>
+  [864] objcall 1075 ............................ argImg.copyPixels(barMembers[2].image, offrect + tmpOffRect, barMembers[2].rect)
+  [867] getlocal 64 ............................. <midWidth>
+  [869] pushzero ................................ <0>
+  [870] lt ...................................... <midWidth < 0>
+  [871] jmpifz [877] ............................ if midWidth < 0 then
+  [874] pushzero ................................ <0>
+  [875] setlocal 64 ............................. midWidth = 0
+  [877] getlocal 0 .............................. <bgMemb>
+  [879] getobjprop 1128 ......................... <bgMemb.regPoint>
+  [882] getlocal 24 ............................. <barMembers>
+  [884] pushint8 3 .............................. <3>
+  [887] pusharglist 2 ........................... <barMembers, 3>
+  [889] objcall 34 .............................. <barMembers[3]>
+  [892] getobjprop 1128 ......................... <barMembers[3].regPoint>
+  [895] sub ..................................... <bgMemb.regPoint - barMembers[3].regPoint>
+  [896] setlocal 88 ............................. tmpRegDiffLoc = bgMemb.regPoint - barMembers[3].regPoint
+  [898] getlocal 24 ............................. <barMembers>
+  [900] pushint8 1 .............................. <1>
+  [903] pusharglist 2 ........................... <barMembers, 1>
+  [905] objcall 34 .............................. <barMembers[1]>
+  [908] pushsymb 555 ............................ <#rect>
+  [911] pushint8 3 .............................. <3>
+  [914] pusharglist 3 ........................... <barMembers[1], #rect, 3>
+  [916] objcall 152 ............................. <barMembers[1].rect[3]>
+  [919] getlocal 64 ............................. <midWidth>
+  [921] add ..................................... <barMembers[1].rect[3] + midWidth>
+  [922] getlocal 96 ............................. <tmpLeftsRightSide>
+  [924] add ..................................... <barMembers[1].rect[3] + midWidth + tmpLeftsRightSide>
+  [925] getlocal 88 ............................. <tmpRegDiffLoc>
+  [927] pushint8 2 .............................. <2>
+  [930] pusharglist 2 ........................... <tmpRegDiffLoc, 2>
+  [932] objcall 34 .............................. <tmpRegDiffLoc[2]>
+  [935] pusharglist 2 ........................... <barMembers[1].rect[3] + midWidth + tmpLeftsRightSide, tmpRegDiffLoc[2]>
+  [937] extcall 568 ............................. <point(barMembers[1].rect[3] + midWidth + tmpLeftsRightSide, tmpRegDiffLoc[2])>
+  [940] setlocal 88 ............................. tmpRegDiffLoc = point(barMembers[1].rect[3] + midWidth + tmpLeftsRightSide, tmpRegDiffLoc[2])
+  [942] pushsymb 60 ............................. <#ID>
+  [945] pushsymb 1180 ........................... <#right>
+  [948] pushsymb 738 ............................ <#type>
+  [951] pushsymb 1173 ........................... <#Pic>
+  [954] pushsymb 1173 ........................... <#Pic>
+  [957] getlocal 24 ............................. <barMembers>
+  [959] pushint8 3 .............................. <3>
+  [962] pusharglist 2 ........................... <barMembers, 3>
+  [964] objcall 34 .............................. <barMembers[3]>
+  [967] getobjprop 1014 ......................... <barMembers[3].image>
+  [970] pushsymb 1174 ........................... <#ch>
+  [973] pushint8 4 .............................. <4>
+  [976] pushsymb 1175 ........................... <#inOffsetRect>
+  [979] getlocal 88 ............................. <tmpRegDiffLoc>
+  [981] pushint8 1 .............................. <1>
+  [984] pusharglist 2 ........................... <tmpRegDiffLoc, 1>
+  [986] objcall 34 .............................. <tmpRegDiffLoc[1]>
+  [989] getlocal 88 ............................. <tmpRegDiffLoc>
+  [991] pushint8 2 .............................. <2>
+  [994] pusharglist 2 ........................... <tmpRegDiffLoc, 2>
+  [996] objcall 34 .............................. <tmpRegDiffLoc[2]>
+  [999] pushzero ................................ <0>
+  [1000] pushzero ............................... <0>
+  [1001] pusharglist 4 .......................... <tmpRegDiffLoc[1], tmpRegDiffLoc[2], 0, 0>
+  [1003] extcall 555 ............................ <rect(tmpRegDiffLoc[1], tmpRegDiffLoc[2], 0, 0)>
+  [1006] pushsymb 695 ........................... <#rel>
+  [1009] pushzero ............................... <0>
+  [1010] pushzero ............................... <0>
+  [1011] pushsymb 1176 .......................... <#Auto>
+  [1014] pushsymb 1176 .......................... <#Auto>
+  [1017] pusharglist 4 .......................... <[0, 0, #Auto, #Auto]>
+  [1019] pushlist ............................... <[0, 0, #Auto, #Auto]>
+  [1020] pusharglist 12 ......................... <[#ID: #right, #type: #Pic, #Pic: barMembers[3].image, #ch: 4, #inOffsetRect: rect(tmpRegDiffLoc[1], tmpRegDiffLoc[2], 0, 0), #rel: [0, 0, #Auto, #Auto]]>
+  [1022] pushproplist ........................... <[#ID: #right, #type: #Pic, #Pic: barMembers[3].image, #ch: 4, #inOffsetRect: rect(tmpRegDiffLoc[1], tmpRegDiffLoc[2], 0, 0), #rel: [0, 0, #Auto, #Auto]]>
+  [1023] setlocal 80 ............................ itemDef = [#ID: #right, #type: #Pic, #Pic: barMembers[3].image, #ch: 4, #inOffsetRect: rect(tmpRegDiffLoc[1], tmpRegDiffLoc[2], 0, 0), #rel: [0, 0, #Auto, #Auto]]
+  [1025] getlocal 8 ............................. <itemsList>
+  [1027] getlocal 80 ............................ <itemDef>
+  [1029] pusharglistnoret 2 ..................... <itemsList, itemDef>
+  [1031] objcall 50 ............................. itemsList.add(itemDef)
+  [1034] getparam 16 ............................ <argImg>
+  [1036] pusharglist 1 .......................... <argImg>
+  [1038] extcall 71 ............................. <objectp(argImg)>
+  [1041] jmpifz [1152] .......................... if objectp(argImg) then
+  [1044] getlocal 112 ........................... <tmpLeftEndOff>
+  [1046] getlocal 64 ............................ <midWidth>
+  [1048] pushzero ............................... <0>
+  [1049] pusharglist 2 .......................... <midWidth, 0>
+  [1051] extcall 568 ............................ <point(midWidth, 0)>
+  [1054] add .................................... <tmpLeftEndOff + point(midWidth, 0)>
+  [1055] setlocal 120 ........................... tmpOff = tmpLeftEndOff + point(midWidth, 0)
+  [1057] getlocal 24 ............................ <barMembers>
+  [1059] pushint8 3 ............................. <3>
+  [1062] pusharglist 2 .......................... <barMembers, 3>
+  [1064] objcall 34 ............................. <barMembers[3]>
+  [1067] getobjprop 555 ......................... <barMembers[3].rect>
+  [1070] getlocal 24 ............................ <barMembers>
+  [1072] pushint8 3 ............................. <3>
+  [1075] pusharglist 2 .......................... <barMembers, 3>
+  [1077] objcall 34 ............................. <barMembers[3]>
+  [1080] getobjprop 1128 ........................ <barMembers[3].regPoint>
+  [1083] getlocal 24 ............................ <barMembers>
+  [1085] pushint8 3 ............................. <3>
+  [1088] pusharglist 2 .......................... <barMembers, 3>
+  [1090] objcall 34 ............................. <barMembers[3]>
+  [1093] getobjprop 1128 ........................ <barMembers[3].regPoint>
+  [1096] pusharglist 2 .......................... <barMembers[3].regPoint, barMembers[3].regPoint>
+  [1098] extcall 555 ............................ <rect(barMembers[3].regPoint, barMembers[3].regPoint)>
+  [1101] sub .................................... <barMembers[3].rect - rect(barMembers[3].regPoint, barMembers[3].regPoint)>
+  [1102] getlocal 120 ........................... <tmpOff>
+  [1104] getlocal 120 ........................... <tmpOff>
+  [1106] pusharglist 2 .......................... <tmpOff, tmpOff>
+  [1108] extcall 555 ............................ <rect(tmpOff, tmpOff)>
+  [1111] add .................................... <barMembers[3].rect - rect(barMembers[3].regPoint, barMembers[3].regPoint) + rect(tmpOff, tmpOff)>
+  [1112] setlocal 104 ........................... tmpOffRect = barMembers[3].rect - rect(barMembers[3].regPoint, barMembers[3].regPoint) + rect(tmpOff, tmpOff)
+  [1114] getparam 16 ............................ <argImg>
+  [1116] getlocal 24 ............................ <barMembers>
+  [1118] pushint8 3 ............................. <3>
+  [1121] pusharglist 2 .......................... <barMembers, 3>
+  [1123] objcall 34 ............................. <barMembers[3]>
+  [1126] getobjprop 1014 ........................ <barMembers[3].image>
+  [1129] getlocal 72 ............................ <offrect>
+  [1131] getlocal 104 ........................... <tmpOffRect>
+  [1133] add .................................... <offrect + tmpOffRect>
+  [1134] getlocal 24 ............................ <barMembers>
+  [1136] pushint8 3 ............................. <3>
+  [1139] pusharglist 2 .......................... <barMembers, 3>
+  [1141] objcall 34 ............................. <barMembers[3]>
+  [1144] getobjprop 555 ......................... <barMembers[3].rect>
+  [1147] pusharglistnoret 4 ..................... <argImg, barMembers[3].image, offrect + tmpOffRect, barMembers[3].rect>
+  [1149] objcall 1075 ........................... argImg.copyPixels(barMembers[3].image, offrect + tmpOffRect, barMembers[3].rect)
+  [1152] getlocal 8 ............................. <itemsList>
+  [1154] pusharglistnoret 1 ..................... <itemsList>
+  [1156] extcall 21 ............................. return itemsList
+  [1158] ret
+end
+
+on xChangeMeter argFract
+  [  0] ret
+end

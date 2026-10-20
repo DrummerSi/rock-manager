@@ -1,0 +1,60 @@
+property ancestor
+global gDir, gRock
+
+on new me, argOptions
+  argOptions[#child] = me
+  argOptions[#ReportTo] = me
+  ancestor = script("DlgEventCardAncestorScript").new(argOptions)
+  dialog_r = ancestor.m_dialogInfoObj_r
+  dialog_r.ButtonOK.name = ancestor.m_eventCard_r.ButtonOK.name
+  if dialog_r.ButtonOK.name.length <= 1 then
+    dialog_r.ButtonOK.name = "OK"
+  end if
+  dialog_r.ButtonOK.Gfx = ancestor.m_eventCard_r.ButtonOK.Gfx
+  dialog_r.ButtonCancel.name = ancestor.m_eventCard_r.ButtonCancel.name
+  dialog_r.ButtonCancel.Gfx = ancestor.m_eventCard_r.ButtonCancel.Gfx
+  obj = ancestor.m_objDlg.getItem(#bottom)
+  obj.setOneProp(#inOffsetRect, rect(0, 13, 0, 0))
+  obj.setOneProp(#rel, [[#top, #Mid], [#top, 4], #Auto, #Auto])
+  obj.setOneProp(#topLeftMeansWhat, [#Mid, 0])
+  if ancestor.m_eventCard_r.ButtonCancel.name.length > 1 then
+    obj.attachDlg(VOID, member("DlgButtonPairData").text.value)
+  else
+    obj.attachDlg(VOID, member("DlgButton2Data").text.value)
+    ancestor.prepareButton(obj, me, dialog_r.ButtonOK.Gfx, dialog_r.ButtonOK.name)
+  end if
+  ancestor.finishUp(#TitleAndButtons)
+  return me
+end
+
+on kill me
+  dialog_r = ancestor.m_dialogInfoObj_r
+  ancestor.kill()
+  return 0
+end
+
+on Report me, argObj, argWhat
+end
+
+on mouse me, argObj, argWhat, argOption
+  if objectp(argOption) then
+    if argWhat = #click then
+      ID = argOption.getOneProp(#ID)
+      IDStr = string(ID)
+      if ID = #bottom then
+        tmpExecute = ancestor.m_eventCard_r.ButtonOK.ExecuteThis
+        ID = #ButtonOK
+      else
+        if offset("Button", IDStr) then
+          tmpExecute = rgetProp(ancestor.m_eventCard_r, [ID, #ExecuteThis])
+        end if
+      end if
+      rExecuteActions(tmpExecute)
+      if (ancestor.m_eventCardOptions[#DontCloseOnOK] = 1) and (ID = #ButtonOK) then
+        nothing()
+      else
+        ancestor.mouse(argObj, argWhat, argOption)
+      end if
+    end if
+  end if
+end

@@ -1,0 +1,15 @@
+import fs from 'node:fs';
+import {indexedCast,digest} from './director-cast.mjs';
+const cast=indexedCast('analysis/original/scripts/cd/Main.dxr/metadata.json',process.argv[2]??'V:/Movies/Main.dxr');
+const member=cast.members.find(m=>m.id===760);
+if(member?.data.info.name!=='TestEnterField')throw new Error('Unexpected field identity');
+const key=cast.keys.find(k=>k.castID===760&&k.fourCC==='STXT');
+if(key?.sectionID!==1926)throw new Error('Unexpected field STXT mapping');
+const map=cast.metadata.chunks.find(c=>c.fourCC==='mmap').data.mapArray;
+const fontChunks=map.flatMap((entry,id)=>/Fmap|VWFM|FXmp|FOND|FONT/i.test(entry.fourCC??entry.tag??'')?[{id,...entry,hex:cast.chunk(id).toString('hex'),latin1:cast.chunk(id).toString('latin1')}]:[]);
+const evidence={source:cast.source,sourceSHA256:cast.sourceSHA256,member,castHex:cast.chunk(760).toString('hex'),stxt:{id:key.sectionID,sha256:digest(cast.chunk(key.sectionID)),hex:cast.chunk(key.sectionID).toString('hex'),latin1:cast.chunk(key.sectionID).toString('latin1')},fontChunks,mapTypes:[...new Set(map.map(e=>e.fourCC??e.tag))]};
+const stxt=cast.chunk(key.sectionID),textEnd=12+stxt.readUInt32BE(4),style=stxt.subarray(textEnd+2);
+if(stxt.readUInt16BE(textEnd)!==1||style.length!==20)throw new Error('Unexpected STXT style count/record width');
+evidence.decoded={text:stxt.subarray(12,textEnd).toString('latin1'),style:{characterOffset:style.readUInt32BE(0),height:style.readUInt16BE(4),ascent:style.readUInt16BE(6),fontId:style.readUInt16BE(8),fontFamily:'Arial',fontFamilyEvidence:'Fmap chunk1867 maps font0x8001 to first font name Arial',styleBits:style[10],bold:!!(style[10]&1),italic:!!(style[10]&2),fontSize:style.readUInt16BE(12),rgb16:[style.readUInt16BE(14),style.readUInt16BE(16),style.readUInt16BE(18)],color:'#ffffff'},geometry:{candidateInitialRect:{top:0,left:0,bottom:17,right:221},confidence:'CASt28-byte text specific data retained verbatim; rectangle interpretation is provisional, use dialog source offsets for live position.'}};
+fs.writeFileSync('analysis/original/name-field-evidence.json',JSON.stringify(evidence,null,2)+'\n');
+console.log(JSON.stringify({source:evidence.source,sourceSHA256:evidence.sourceSHA256,decoded:evidence.decoded},null,2));

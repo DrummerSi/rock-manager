@@ -1,0 +1,117 @@
+property SP, flipCnt, speed, currentLetter, startMemberUpper, startMemberLower, midCnt, endAtLetter, nextLetter, numFrames, myLoc, numAnimFrames, currentFrame, orgRect, reportObj
+
+on new me, argReportObj, argSP, argPos, argStartLoc, argImage
+  reportObj = argReportObj
+  SP = argSP
+  flipCnt = 0
+  speed = 0
+  currentLetter = 42
+  startMemberUpper = -1 + the number of member "letters01_0030"
+  startMemberLower = -1 + the number of member "letters02_0030"
+  orgRect = member(startMemberUpper + 1).rect
+  tmpWidth = 1 + getAt(orgRect, 3)
+  myLoc = argStartLoc + point((argPos - 1) * tmpWidth, 0) + point(0, 0)
+  endAtLetter = 0
+  numAnimFrames = 6
+  me.setFrame(SP, currentLetter, #Upper)
+  me.setFrame(SP + 1, currentLetter, #Lower)
+  return me
+end
+
+on kill me
+  return 0
+end
+
+on gotoLetter me, argNr
+  if endAtLetter then
+    endAtLetter = argNr
+  else
+    endAtLetter = argNr
+    if endAtLetter <> currentLetter then
+      flip(me, 12)
+    else
+      endAtLetter = 0
+      if objectp(reportObj) then
+        reportObj.oneDone(me)
+      end if
+    end if
+  end if
+end
+
+on flip me, argNumFrames
+  if endAtLetter then
+    tmpDiff = endAtLetter - currentLetter
+    if endAtLetter < currentLetter then
+      tmpDiff = tmpDiff + 42
+    end if
+    if tmpDiff >= 2 then
+      argNumFrames = 4
+    else
+      argNumFrames = 12
+    end if
+  end if
+  numFrames = argNumFrames
+  flipCnt = 1
+  midCnt = numFrames / 2
+  nextLetter = currentLetter + 1
+  if nextLetter > 42 then
+    nextLetter = 1
+  end if
+  set the rect of sprite (SP + 2) to orgRect
+  me.setFrame(SP, nextLetter, #Upper)
+  me.setFrame(SP + 1, currentLetter, #Lower)
+  me.setFrame(SP + 2, currentLetter, #Upper)
+end
+
+on timeTick me
+  if flipCnt then
+    me.setFlipFrame(SP + 2)
+    flipCnt = flipCnt + 1
+    if flipCnt > numFrames then
+      currentLetter = nextLetter
+      if endAtLetter then
+        if currentLetter = endAtLetter then
+          endAtLetter = 0
+          flipCnt = 0
+          if objectp(reportObj) then
+            reportObj.oneDone(me)
+          end if
+        else
+          me.flip(numFrames)
+        end if
+      end if
+    end if
+  end if
+end
+
+on setFlipFrame me, argSP
+  if flipCnt < midCnt then
+    tmpFact = (midCnt - flipCnt) / float(midCnt)
+    set the height of sprite argSP to integer(getAt(orgRect, 4) * tmpFact)
+    set the member of sprite argSP to me.getFrame(currentLetter, #Upper)
+    set the loc of sprite argSP to myLoc + ((1.0 - tmpFact) * point(0, 11))
+  else
+    tmpFact = (flipCnt - midCnt) / float(midCnt)
+    tmpHeight = integer(getAt(orgRect, 4) * tmpFact)
+    set the height of sprite argSP to tmpHeight
+    set the member of sprite argSP to me.getFrame(nextLetter, #Lower)
+    set the loc of sprite argSP to myLoc + point(0, 11) + (tmpFact * point(0, 11))
+  end if
+end
+
+on getFrame me, argLetterNum, argIsUpper
+  if argIsUpper = #Upper then
+    return startMemberUpper + argLetterNum
+  end if
+  return startMemberLower + argLetterNum
+end
+
+on setFrame me, argSP, argLetterNum, argIsUpper
+  tmpMemb = getFrame(me, argLetterNum, argIsUpper)
+  set the member of sprite argSP to tmpMemb
+  if argIsUpper = #Upper then
+    set the loc of sprite argSP to myLoc
+  else
+    set the loc of sprite argSP to myLoc + point(0, 22)
+  end if
+end

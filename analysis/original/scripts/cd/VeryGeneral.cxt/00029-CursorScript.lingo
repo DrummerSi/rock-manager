@@ -1,0 +1,67 @@
+property cursors, currentCursor, defaultCursor, overridden
+
+on new me, argCursorList
+  if voidp(argCursorList) then
+    argCursorList = [#click: "ActivePointer", #NoClick: "NoClickPointer", #Hand: "OpenHandPointer", #DragH: "DragHPointer", #DragV: "DragVPointer", #Grab: "ClosedHandPointer", #go: "GoPointer", #wait: "WaitPointer"]
+  end if
+  cursors = [:]
+  if listp(argCursorList) then
+    repeat with n = 1 to count(argCursorList)
+      tmpMembNum = getMemberNum(getAt(argCursorList, n))
+      addProp(cursors, getPropAt(argCursorList, n), tmpMembNum)
+    end repeat
+  end if
+  defaultCursor = #NoClick
+  currentCursor = 0
+  setCursor(me, defaultCursor)
+  overridden = 0
+  return me
+end
+
+on kill me
+  return 0
+end
+
+on setCursor me, argWhich
+  if voidp(argWhich) then
+    argWhich = defaultCursor
+  end if
+  if argWhich <> currentCursor then
+    currentCursor = argWhich
+    if voidp(currentCursor) then
+      currentCursor = defaultCursor
+    end if
+    display(me)
+  end if
+end
+
+on setOverride me, argIsTRUE, argWhich
+  if not voidp(argWhich) then
+    display(me, argWhich)
+  end if
+  if argIsTRUE then
+    overridden = argWhich
+  else
+    overridden = 0
+  end if
+end
+
+on display me, argWhich
+  if symbolp(overridden) then
+    exit
+  end if
+  if voidp(argWhich) then
+    argWhich = currentCursor
+  end if
+  if count(cursors) = 0 then
+    exit
+  end if
+  if integerp(argWhich) then
+    cursor(argWhich)
+  else
+    tmpMemb = getaProp(cursors, argWhich)
+    if voidp(tmpMemb) then
+    end if
+    cursor([tmpMemb, tmpMemb + 1])
+  end if
+end

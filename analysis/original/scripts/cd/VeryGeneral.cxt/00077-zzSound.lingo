@@ -1,0 +1,256 @@
+property channels, newSnd, channelInfo, ticksPerSec, soundIsOn, unloadMemberAfterUse
+
+on new me
+  channels = [0, 0, 0]
+  channelInfo = [[], [], []]
+  newSnd = 1
+  if the machineType = 256 then
+    ticksPerSec = 63
+  else
+    ticksPerSec = 60
+  end if
+  soundIsOn = 1
+  unloadMemberAfterUse = 1
+  return me
+end
+
+on kill me
+  nothing()
+end
+
+on switch me, onOff
+  soundIsOn = onOff
+end
+
+on finished me, sndId
+  purge(me)
+  if sndId <> 0 then
+    if getAt(channels, 2) = sndId then
+      return 0
+    else
+      if getAt(channels, 1) = sndId then
+        return 0
+      else
+        if getAt(channels, 3) = sndId then
+          return 0
+        else
+          return 1
+        end if
+      end if
+    end if
+  else
+    return 1
+  end if
+end
+
+on getChannel me, sndId
+  purge(me)
+  return getPos(channels, sndId)
+end
+
+on setVolume me, sndId, vol
+  if sndId <> 0 then
+    tempCh = 0
+    if getAt(channels, 2) = sndId then
+      tempCh = 2
+    else
+      if getAt(channels, 1) = sndId then
+        tempCh = 1
+      else
+        if getAt(channels, 3) = sndId then
+          tempCh = 3
+        end if
+      end if
+    end if
+    if tempCh then
+      set the volume of sound tempCh to vol
+    end if
+  end if
+end
+
+on restoreAllVolume me
+  repeat with n = 1 to 3
+    set the volume of sound n to 255
+  end repeat
+end
+
+on fade me, sndId, inOut, theLength
+  if sndId <> 0 then
+    tempCh = 0
+    if getAt(channels, 2) = sndId then
+      tempCh = 2
+    else
+      if getAt(channels, 1) = sndId then
+        tempCh = 1
+      else
+        if getAt(channels, 3) = sndId then
+          tempCh = 3
+        end if
+      end if
+    end if
+    if tempCh then
+      if inOut = #in then
+        sound fadeIn tempCh, theLength
+      else
+        sound fadeOut tempCh, theLength
+      end if
+    end if
+  end if
+end
+
+on stop me, sndId
+  if sndId <> 0 then
+    if getAt(channels, 2) = sndId then
+      sound stop 2
+      setAt(channels, 2, 0)
+      unloadChannel(me, 2)
+    else
+      if getAt(channels, 1) = sndId then
+        sound stop 1
+        setAt(channels, 1, 0)
+        unloadChannel(me, 1)
+      else
+        if getAt(channels, 3) = sndId then
+          sound stop 3
+          setAt(channels, 3, 0)
+          unloadChannel(me, 3)
+        end if
+      end if
+    end if
+  end if
+  return 0
+end
+
+on stopAll me
+  stopBG(me)
+  stopAllEffects(me)
+end
+
+on stopBG me
+  if getAt(channels, 1) <> 0 then
+    sound stop 1
+    setAt(channels, 1, 0)
+    unloadChannel(me, 1)
+  end if
+end
+
+on stopAllEffects me
+  if getAt(channels, 2) <> 0 then
+    sound stop 2
+    setAt(channels, 2, 0)
+    unloadChannel(me, 2)
+  end if
+  if getAt(channels, 3) <> 0 then
+    sound stop 3
+    setAt(channels, 3, 0)
+    unloadChannel(me, 3)
+  end if
+end
+
+on play me, soundMember, what, theOption, argUnload
+  if (soundIsOn = 0) and not (what = #BG) then
+    exit
+  end if
+  purge(me)
+  if voidp(theOption) then
+    theOption = #member
+    if (getMemberNum(soundMember) = -1) or (soundMember = EMPTY) then
+      put "Snd: ", soundMember
+      soundMember = "SoundNotFound"
+    end if
+  end if
+  case what of
+    #BG:
+      newSnd = newSnd + 1
+      setAt(channels, 1, newSnd)
+      lowLevelPlay(me, 1, theOption, soundMember, argUnload)
+      return newSnd
+    #TRANS:
+      newSnd = newSnd + 1
+      setAt(channels, 1, newSnd)
+      stopAllEffects(me)
+      lowLevelPlay(me, 1, theOption, soundMember, argUnload)
+      return newSnd
+    #EFFECT:
+      if getAt(channels, 3) = 0 then
+        newSnd = newSnd + 1
+        setAt(channels, 3, newSnd)
+        lowLevelPlay(me, 3, theOption, soundMember, argUnload)
+        return newSnd
+      else
+        newSnd = newSnd + 1
+        setAt(channels, 2, newSnd)
+        lowLevelPlay(me, 2, theOption, soundMember, argUnload)
+        return newSnd
+      end if
+    #OPEFFECT:
+      if getAt(channels, 2) = 0 then
+        newSnd = newSnd + 1
+        setAt(channels, 2, newSnd)
+        lowLevelPlay(me, 2, theOption, soundMember, argUnload)
+        return newSnd
+      else
+        if getAt(channels, 3) = 0 then
+          newSnd = newSnd + 1
+          setAt(channels, 3, newSnd)
+          lowLevelPlay(me, 3, theOption, soundMember, argUnload)
+          return newSnd
+        end if
+      end if
+  end case
+  return 0
+end
+
+on lowLevelPlay me, ch, how, theName, argUnload
+  if how = #file then
+    sound playFile ch, theName
+    if the result <> 0 then
+      put "Snd", theName
+      setAt(channelInfo, ch, [#member, the ticks, 0, 30, 0, 0])
+    else
+      setAt(channelInfo, ch, [#file])
+    end if
+  else
+    if how = #member then
+      puppetSound(ch, theName)
+      setAt(channelInfo, ch, [#member, the ticks, member(theName).loop, 90 + (member(theName).size * ticksPerSec / 11025), theName, argUnload])
+    end if
+  end if
+end
+
+on unloadChannel me, argChannel
+  if unloadMemberAfterUse then
+    tmpInfo = getAt(channelInfo, argChannel)
+    if getAt(tmpInfo, 1) = #member then
+      tmpMember = getAt(tmpInfo, 5)
+      if count(tmpInfo) > 5 then
+        tmpUnload = getAt(tmpInfo, 6)
+      end if
+      if not (tmpUnload = #NoUnload) then
+        safeUnloadMember(tmpMember)
+      end if
+    end if
+  end if
+end
+
+on purge me
+  repeat with n = 1 to count(channels)
+    if getAt(channels, n) then
+      if not soundBusy(n) then
+        setAt(channels, n, 0)
+        unloadChannel(me, n)
+        next repeat
+      end if
+      tempInfo = getAt(channelInfo, n)
+      if count(tempInfo) then
+        if getAt(tempInfo, 1) = #member then
+          if ((the ticks - getAt(tempInfo, 2)) > getAt(tempInfo, 4)) and (getAt(tempInfo, 3) = 0) then
+            setAt(channels, n, 0)
+            sound stop n
+            unloadChannel(me, n)
+          end if
+        end if
+      end if
+    end if
+  end repeat
+end

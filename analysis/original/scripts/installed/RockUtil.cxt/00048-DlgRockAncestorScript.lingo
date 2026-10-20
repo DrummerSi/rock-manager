@@ -1,0 +1,314 @@
+property m_objDlg, m_SP, m_objReportTo, m_dialogInfoObj_r, m_ID, m_basePlace_r, m_child, m_argOptions, m_faceObj, m_faceLoc, m_faceID, m_faceMood, m_keyObjs, m_testRenderSpeedStart, m_placeBgSnd, m_gotFocusSinceNewed
+global gDir, gRock, gUseful
+
+on new me, argOptions
+  m_argOptions = argOptions
+  m_objReportTo = argOptions[#ReportTo]
+  if not objectp(m_objReportTo) then
+    m_objReportTo = me
+  end if
+  m_child = argOptions[#child]
+  if voidp(m_child) then
+    pott("Warning, no child obj")
+    m_child = me
+  end if
+  gRock.m_context.setFocus(#dlg, m_child)
+  Over = gDir.m_objDialogsMaster.m_dlgObjList
+  if Over.count then
+    m_basePlace_r = Over[1].getaProp(#m_place_r)
+  else
+    if objectp(m_child) then
+      m_basePlace_r = m_child.getaProp(#m_place_r)
+    end if
+  end if
+  m_ID = symbol("Dlg" & string(argOptions[#ID]))
+  m_dialogInfoObj_r = argOptions[#DlgInfoObj]
+  if voidp(m_dialogInfoObj_r) then
+    m_dialogInfoObj_r = gRock.m_classManager.getObjByIDAndClass(m_ID, #Dialog)
+    if voidp(m_dialogInfoObj_r) then
+      m_dialogInfoObj_r = gRock.m_classManager.getObjByIDAndClass(symbol("Dlg" & string(m_ID)), #Dialog)
+    end if
+    if voidp(m_dialogInfoObj_r) then
+      pott("No dialogInfoObj!")
+    end if
+  end if
+  dialogProps = argOptions[#dialogProps]
+  if listp(dialogProps) then
+    repeat with n = 1 to dialogProps.count
+      rsetProp(m_dialogInfoObj_r, dialogProps.getPropAt(n), dialogProps[n])
+    end repeat
+  end if
+  if argOptions[#NoPreExecute] <> 1 then
+    rExecuteActions(m_dialogInfoObj_r.PreExecuteThis, [:], m_dialogInfoObj_r)
+  end if
+  place_r = m_child.getaProp(#m_place_r)
+  if objectp(place_r) then
+    gRock.m_msgManager.msg(#EnterPlace, place_r)
+    gRock.m_context.setContext(place_r.className)
+  end if
+  m_SP = sprite(argOptions[#SPNum])
+  m_objDlg = script("Dialog").new([#AttachImageToMember: argOptions[#renderMemberName], #StartSpriteNum: m_SP.spriteNum, #NumSprites: 3, #OKtoResize: 1, #ID: m_ID, #ImageSettings: [#depth: 16, #alpha: 0]])
+  m_SP.ink = 8
+  dataMemberName = m_dialogInfoObj_r.dataMemberName
+  if voidp(dataMemberName) then
+    dataMemberName = EMPTY
+  end if
+  if dataMemberName.length = 0 then
+    dataMemberName = string(m_dialogInfoObj_r.ID) & "Data"
+  end if
+  if member(dataMemberName).number < 1 then
+    dataMemberName = "DlgDefaultData"
+    alert("No DataMemberName specified!" && string(m_ID))
+  end if
+  lst = member(dataMemberName).text.value
+  m_gotFocusSinceNewed = 0
+  m_testRenderSpeedStart = the milliSeconds
+  m_objDlg.rawCreate(lst)
+  m_objDlg.setLoc(m_dialogInfoObj_r.loc)
+  if not (m_argOptions[#DontSetTitleAndButtons] = 1) then
+    me.setTitleAndButtons()
+  end if
+  m_keyObjs = []
+  if getSystemPref(#ReturnAccept) <> #No then
+    m_keyObjs.add(script("KeyObject").new(me, "RETURN", [#CodeType: #user, #prio: 100 * m_argOptions[#DlgNr]]))
+  end if
+  m_keyObjs.add(script("KeyObject").new(me, "Esc", [#CodeType: #user, #prio: 100 * m_argOptions[#DlgNr]]))
+  return me
+end
+
+on setTitleAndButtons me
+  if objectp(m_basePlace_r) then
+    tmpName = m_basePlace_r.name
+  end if
+  rDlgSetTitleAndButtons(m_objDlg, m_objReportTo, m_dialogInfoObj_r, tmpName)
+end
+
+on prepareButton me, argButtonDlgObj, argReportTo, argIconStr, argText
+  rDlgPrepareButton(argButtonDlgObj, argReportTo, argIconStr, argText)
+end
+
+on render me
+  m_objDlg.recalc()
+  if m_dialogInfoObj_r.loc = point(0, 0) then
+    size = getRectSize(m_objDlg.surroundRect)
+    m_objDlg.renderAtLoc(point(400, 305) - (size / 2))
+  else
+    m_objDlg.renderAtLoc(m_dialogInfoObj_r.loc)
+  end if
+  updateStage()
+end
+
+on kill me
+  repeat with obj in m_keyObjs
+    obj.kill()
+  end repeat
+  m_keyObjs = []
+  if objectp(m_placeBgSnd) then
+    m_placeBgSnd = m_placeBgSnd.kill()
+  end if
+  if objectp(m_faceObj) then
+    m_faceObj = m_faceObj.kill()
+  end if
+  m_SP.ink = 36
+  sprite(m_SP.spriteNum + 1).ink = 36
+  sprite(m_SP.spriteNum + 1).member = member("Dummy")
+  m_objDlg = m_objDlg.kill()
+  gDir.m_objDialogsMaster.closedDialog(m_child)
+  m_objReportTo = 0
+  m_child = 0
+  m_dialogInfoObj_r = 0
+  m_basePlace_r = 0
+  m_argOptions = 0
+  return 0
+end
+
+on GetSPNeed me
+  tmp = 2
+  if objectp(m_child.getaProp(#m_scroller)) then
+    tmp = tmp + m_child.m_scroller.GetSPNeed()
+  end if
+  return tmp
+end
+
+on getSPOverDlg me
+  return m_SP.spriteNum + 2
+end
+
+on key me, argObj, argWhat, argKey
+  if argWhat = #down then
+    if (argKey = "RETURN") and (the runMode <> "Author") then
+      obj = m_objDlg.getItem(#ButtonOK)
+      if not objectp(obj) then
+        obj = m_objDlg.getItem(#ButtonCancel)
+        if not objectp(obj) then
+          exit
+        end if
+      end if
+      if objectp(obj.mouseObj) then
+        m_child.mouse(obj.mouseObj, #click, obj)
+      end if
+    else
+      if argKey = "Esc" then
+        exit
+        buttonID = #ButtonCancel
+        obj = m_objDlg.getItem(buttonID)
+        if not objectp(obj) then
+          buttonID = #ButtonOK
+          obj = m_objDlg.getItem(buttonID)
+          if not objectp(obj) then
+            buttonID = 0
+            m_child.kill()
+            exit
+          end if
+        end if
+        if objectp(obj.mouseObj) then
+          buttonObj = rgetProp(m_dialogInfoObj_r, buttonID)
+          if string(buttonObj.ExecuteThis).length > 2 then
+            exit
+          end if
+          m_child.mouse(obj.mouseObj, #click, obj)
+        end if
+      end if
+    end if
+  end if
+end
+
+on Report me, argObj, argWhat
+end
+
+on focusChange me, argGotFocus
+  if not voidp(m_faceObj) then
+    if argGotFocus then
+      if not objectp(m_faceObj) then
+        m_child.showFace(1)
+      end if
+    else
+      if objectp(m_faceObj) then
+        m_child.showFace(0)
+      end if
+    end if
+  end if
+  if argGotFocus = 1 then
+    if m_gotFocusSinceNewed = 0 then
+      gRock.m_context.setFocus(#dlg, m_child)
+      place_r = m_child.getaProp(#m_place_r)
+      if objectp(place_r) then
+        if 0 then
+          tmpSnd = rgetProp(place_r, #Snd)
+          if not stringp(tmpSnd) then
+            tmpSnd = EMPTY
+          end if
+        else
+          tmpID = place_r.ID
+          tmpSnd = string(tmpID) & gUseful.soundFileExt
+        end if
+        if tmpSnd.length > 0 then
+          tmpSnd = gRock.m_paths.getPath(#sound) & tmpSnd
+          m_placeBgSnd = script("SoundScript").new(tmpSnd, [#DontPlayIfNotFound: 1, #vol: #PlaceVol])
+        end if
+      end if
+      m_gotFocusSinceNewed = 1
+    end if
+  else
+    if objectp(m_placeBgSnd) then
+      m_placeBgSnd = m_placeBgSnd.kill()
+    end if
+  end if
+end
+
+on mouse me, argObj, argWhat, argOption
+  if objectp(argOption) then
+    if argWhat <> #click then
+      exit
+    end if
+    ID = argOption.getOneProp(#ID)
+    if me.autoOpenNextDialog(ID) = 0 then
+      m_child.kill()
+    end if
+  end if
+end
+
+on autoOpenNextDialog me, argID, argReportObj
+  buttonInfo = m_dialogInfoObj_r.getaProp(argID)
+  if voidp(buttonInfo) then
+    return 0
+  end if
+  Link = buttonInfo.getaProp(#Link)
+  if Link.length > 0 then
+    if Link.char[1..3] = "Dlg" then
+      delete buttonInfo.char[1..3]
+      gDir.m_objDialogsMaster.openDialog(Link, [#ReportTo: argReportObj])
+      return 1
+    else
+      if Link.char[1] = "#" then
+        delete buttonInfo.char[1]
+        Link = symbol(Link)
+        if Link = #ReportBack then
+          if m_objReportTo <> me then
+            m_objReportTo.Report(m_child, m_ID, argID)
+            return 1
+          end if
+        end if
+      end if
+    end if
+  end if
+  return 0
+end
+
+on setFaceMode me, argMood
+  m_faceMood = argMood
+  if objectp(m_faceObj) then
+    m_faceObj.setMood(m_faceMood)
+  end if
+end
+
+on showFace me, argIsTRUE, argID, argLoc, argWhatIsLoc
+  if argIsTRUE then
+    if objectp(m_faceObj) then
+      m_faceObj = m_faceObj.kill()
+    end if
+    if voidp(argID) then
+      if not voidp(m_faceID) then
+        argID = m_faceID
+      end if
+    end if
+    if voidp(argID) then
+      if objectp(m_basePlace_r) then
+        argID = m_basePlace_r.ID
+      end if
+    end if
+    if voidp(argID) then
+      obj = gRock.m_context.getFocus(#place)
+      if objectp(obj) then
+        argID = obj.ID
+      end if
+    end if
+    m_faceID = argID
+    if voidp(m_faceMood) then
+      m_faceMood = #normal
+    end if
+    if listp(argLoc) then
+      m_faceLoc = argLoc
+    end if
+    if argWhatIsLoc = #LeftTop then
+      tmpBGMemb = CPgetActorInfo(string(m_faceID))[#BGMember]
+      if objectp(tmpBGMemb) then
+        m_faceLoc = m_faceLoc + tmpBGMemb.regPoint
+      end if
+    end if
+    m_faceObj = CPshowFace(string(m_faceID), m_faceLoc, m_faceMood)
+  else
+    if objectp(m_faceObj) then
+      m_faceObj = m_faceObj.kill()
+    end if
+  end if
+end
+
+on getDialogUnder me
+  tmp = gDir.m_objDialogsMaster.getDialogUnder(m_child)
+  return tmp
+end
+
+on getDialogOver me
+  return gDir.m_objDialogsMaster.getDialogOver(m_child)
+end

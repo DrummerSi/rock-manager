@@ -1,0 +1,405 @@
+property stringList, stringLengths, totLengths
+
+on new me
+  [  0] getparam 0 .............................. <me>
+  [  2] pusharglistnoret 1 ...................... <me>
+  [  4] extcall 32 .............................. return me
+  [  7] ret
+end
+
+on kill me
+  [  0] pushzero ................................ <0>
+  [  1] pusharglistnoret 1 ...................... <0>
+  [  3] extcall 32 .............................. return 0
+  [  6] ret
+end
+
+on readFields me, argField, argNr
+  [  0] pusharglist 0 ........................... <[]>
+  [  2] pushlist ................................ <[]>
+  [  3] setprop 611 ............................. stringList = []
+  [  6] pusharglist 0 ........................... <[]>
+  [  8] pushlist ................................ <[]>
+  [  9] setprop 612 ............................. totLengths = []
+  [ 12] getprop 612 ............................. <totLengths>
+  [ 15] pusharglistnoret 1 ...................... <totLengths>
+  [ 17] extcall 197 ............................. sort(totLengths)
+  [ 20] pusharglist 0 ........................... <[]>
+  [ 22] pushlist ................................ <[]>
+  [ 23] setprop 613 ............................. stringLengths = []
+  [ 26] pushzero ................................ <0>
+  [ 27] setlocal 0 .............................. tmpTot = 0
+  [ 29] pushint8 1 .............................. <1>
+  [ 32] setlocal 8
+  [ 34] getlocal 8
+  [ 36] getparam 16 ............................. <argNr>
+  [ 38] lteq
+  [ 39] jmpifz [119] ............................ repeat with n = 1 to argNr
+  [ 42] getparam 8 .............................. <argField>
+  [ 44] getlocal 8 .............................. <n>
+  [ 46] pusharglist 1 ........................... <n>
+  [ 48] extcall 68 .............................. <string(n)>
+  [ 51] joinstr ................................. <argField & string(n)>
+  [ 52] pusharglist 1 ........................... <argField & string(n)>
+  [ 54] extcall 307 ............................. <member(argField & string(n))>
+  [ 57] getobjprop 310 .......................... <member(argField & string(n)).text>
+  [ 60] setlocal 16 ............................. tmpStr = member(argField & string(n)).text
+  [ 62] getprop 611 ............................. <stringList>
+  [ 65] getlocal 16 ............................. <tmpStr>
+  [ 67] pusharglistnoret 2 ...................... <stringList, tmpStr>
+  [ 69] extcall 183 ............................. add(stringList, tmpStr)
+  [ 72] getlocal 16 ............................. <tmpStr>
+  [ 74] pusharglist 1 ........................... <tmpStr>
+  [ 76] extcall 556 ............................. <length(tmpStr)>
+  [ 79] setlocal 24 ............................. tmpLen = length(tmpStr)
+  [ 81] getlocal 0 .............................. <tmpTot>
+  [ 83] getlocal 24 ............................. <tmpLen>
+  [ 85] add ..................................... <tmpTot + tmpLen>
+  [ 86] setlocal 0 .............................. tmpTot = tmpTot + tmpLen
+  [ 88] getprop 613 ............................. <stringLengths>
+  [ 91] getlocal 24 ............................. <tmpLen>
+  [ 93] pusharglistnoret 2 ...................... <stringLengths, tmpLen>
+  [ 95] extcall 183 ............................. add(stringLengths, tmpLen)
+  [ 98] getprop 612 ............................. <totLengths>
+  [101] getlocal 0 .............................. <tmpTot>
+  [103] pusharglistnoret 2 ...................... <totLengths, tmpTot>
+  [105] extcall 183 ............................. add(totLengths, tmpTot)
+  [108] pushint8 1
+  [111] getlocal 8
+  [113] add
+  [114] setlocal 8
+  [116] endrepeat [ 34]
+  [119] ret
+end
+
+on read me, argFile
+  [  0] getmovieprop 108 ........................ <the moviePath>
+  [  3] pushcons 0 .............................. <"Data\\FileIO.dll">
+  [  5] joinstr ................................. <the moviePath & "Data\\FileIO.dll">
+  [  6] pusharglistnoret 1 ...................... <the moviePath & "Data\\FileIO.dll">
+  [  8] extcall 537 ............................. openXLib(the moviePath & "Data\\FileIO.dll")
+  [ 11] pusharglist 0 ........................... <[]>
+  [ 13] pushlist ................................ <[]>
+  [ 14] setprop 611 ............................. stringList = []
+  [ 17] pusharglist 0 ........................... <[]>
+  [ 19] pushlist ................................ <[]>
+  [ 20] setprop 612 ............................. totLengths = []
+  [ 23] getprop 612 ............................. <totLengths>
+  [ 26] pusharglistnoret 1 ...................... <totLengths>
+  [ 28] extcall 197 ............................. sort(totLengths)
+  [ 31] pusharglist 0 ........................... <[]>
+  [ 33] pushlist ................................ <[]>
+  [ 34] setprop 613 ............................. stringLengths = []
+  [ 37] pushsymb 539 ............................ <#mnew>
+  [ 40] pushcons 8 .............................. <"read">
+  [ 42] getparam 8 .............................. <argFile>
+  [ 44] pusharglist 3 ........................... <#mnew, "read", argFile>
+  [ 46] extcall 538 ............................. <fileio(#mnew, "read", argFile)>
+  [ 49] setlocal 0 .............................. tmpRead = fileio(#mnew, "read", argFile)
+  [ 51] getlocal 0 .............................. <tmpRead>
+  [ 53] pusharglist 1 ........................... <tmpRead>
+  [ 55] extcall 34 .............................. <objectp(tmpRead)>
+  [ 58] not ..................................... <not objectp(tmpRead)>
+  [ 59] jmpifz [ 77] ............................ if not objectp(tmpRead) then / else
+  [ 62] pushcons 16 ............................. <"Couldnt open">
+  [ 64] pusharglistnoret 1 ...................... <"Couldnt open">
+  [ 66] extcall 142 ............................. put "Couldnt open"
+  [ 69] pusharglistnoret 0 ...................... <>
+  [ 71] extcall 32 .............................. return 
+  [ 74] jmp [235]
+  [ 77] pushsymb 541 ............................ <#mGetLength>
+  [ 80] pusharglist 1 ........................... <#mGetLength>
+  [ 82] extcall 540 ............................. <tmpRead(#mGetLength)>
+  [ 85] setlocal 8 .............................. tmpLen = tmpRead(#mGetLength)
+  [ 87] getprop 611 ............................. <stringList>
+  [ 90] pushsymb 542 ............................ <#mReadFile>
+  [ 93] pusharglist 1 ........................... <#mReadFile>
+  [ 95] extcall 540 ............................. <tmpRead(#mReadFile)>
+  [ 98] pusharglistnoret 2 ...................... <stringList, tmpRead(#mReadFile)>
+  [100] extcall 183 ............................. add(stringList, tmpRead(#mReadFile))
+  [103] pushsymb 543 ............................ <#mGetPosition>
+  [106] pusharglist 1 ........................... <#mGetPosition>
+  [108] extcall 540 ............................. <tmpRead(#mGetPosition)>
+  [111] setlocal 16 ............................. tmpPos = tmpRead(#mGetPosition)
+  [113] getprop 612 ............................. <totLengths>
+  [116] getlocal 16 ............................. <tmpPos>
+  [118] pusharglistnoret 2 ...................... <totLengths, tmpPos>
+  [120] extcall 183 ............................. add(totLengths, tmpPos)
+  [123] getprop 613 ............................. <stringLengths>
+  [126] getlocal 16 ............................. <tmpPos>
+  [128] pusharglistnoret 2 ...................... <stringLengths, tmpPos>
+  [130] extcall 183 ............................. add(stringLengths, tmpPos)
+  [133] getlocal 16 ............................. <tmpPos>
+  [135] getlocal 8 .............................. <tmpLen>
+  [137] lt ...................................... <tmpPos < tmpLen>
+  [138] jmpifz [227] ............................ if tmpPos < tmpLen then
+  [141] pushint8 1 .............................. <1>
+  [144] jmpifz [227] ............................ repeat while 1
+  [147] getprop 611 ............................. <stringList>
+  [150] pushsymb 542 ............................ <#mReadFile>
+  [153] pusharglist 1 ........................... <#mReadFile>
+  [155] extcall 540 ............................. <tmpRead(#mReadFile)>
+  [158] pusharglistnoret 2 ...................... <stringList, tmpRead(#mReadFile)>
+  [160] extcall 183 ............................. add(stringList, tmpRead(#mReadFile))
+  [163] pushsymb 543 ............................ <#mGetPosition>
+  [166] pusharglist 1 ........................... <#mGetPosition>
+  [168] extcall 540 ............................. <tmpRead(#mGetPosition)>
+  [171] setlocal 16 ............................. tmpPos = tmpRead(#mGetPosition)
+  [173] getprop 612 ............................. <totLengths>
+  [176] getlocal 16 ............................. <tmpPos>
+  [178] pusharglistnoret 2 ...................... <totLengths, tmpPos>
+  [180] extcall 183 ............................. add(totLengths, tmpPos)
+  [183] getprop 613 ............................. <stringLengths>
+  [186] getlocal 16 ............................. <tmpPos>
+  [188] getprop 612 ............................. <totLengths>
+  [191] getprop 612 ............................. <totLengths>
+  [194] pusharglist 1 ........................... <totLengths>
+  [196] extcall 175 ............................. <count(totLengths)>
+  [199] pushint8 1 .............................. <1>
+  [202] sub ..................................... <count(totLengths) - 1>
+  [203] pusharglist 2 ........................... <totLengths, count(totLengths) - 1>
+  [205] extcall 23 .............................. <getAt(totLengths, count(totLengths) - 1)>
+  [207] sub ..................................... <tmpPos - getAt(totLengths, count(totLengths) - 1)>
+  [208] pusharglistnoret 2 ...................... <stringLengths, tmpPos - getAt(totLengths, count(totLengths) - 1)>
+  [210] extcall 183 ............................. add(stringLengths, tmpPos - getAt(totLengths, count(totLengths) - 1))
+  [213] getlocal 16 ............................. <tmpPos>
+  [215] getlocal 8 .............................. <tmpLen>
+  [217] gteq .................................... <tmpPos >= tmpLen>
+  [218] jmpifz [224] ............................ if tmpPos >= tmpLen then
+  [221] jmp [227] ............................... exit repeat
+  [224] endrepeat [141]
+  [227] pushsymb 544 ............................ <#mdispose>
+  [230] pusharglistnoret 1 ...................... <#mdispose>
+  [232] extcall 540 ............................. tmpRead(#mdispose)
+  [235] getmovieprop 108 ........................ <the moviePath>
+  [238] pushcons 24 ............................. <"Data\\FileIO.dll">
+  [240] joinstr ................................. <the moviePath & "Data\\FileIO.dll">
+  [241] pusharglistnoret 1 ...................... <the moviePath & "Data\\FileIO.dll">
+  [243] extcall 545 ............................. closeXLib(the moviePath & "Data\\FileIO.dll")
+  [246] ret
+end
+
+on getSize me
+  [  0] getprop 612 ............................. <totLengths>
+  [  3] getprop 612 ............................. <totLengths>
+  [  6] pusharglist 1 ........................... <totLengths>
+  [  8] extcall 175 ............................. <count(totLengths)>
+  [ 11] pusharglist 2 ........................... <totLengths, count(totLengths)>
+  [ 13] extcall 23 .............................. <getAt(totLengths, count(totLengths))>
+  [ 15] pusharglistnoret 1 ...................... <getAt(totLengths, count(totLengths))>
+  [ 17] extcall 32 .............................. return getAt(totLengths, count(totLengths))
+  [ 20] ret
+end
+
+on getChar me, argPos
+  [  0] getparam 8 .............................. <argPos>
+  [  2] getparam 0 .............................. <me>
+  [  4] pusharglist 1 ........................... <me>
+  [  6] localcall 4 ............................. <getSize(me)>
+  [  8] gt ...................................... <argPos > getSize(me)>
+  [  9] jmpifz [ 19] ............................ if argPos > getSize(me) then
+  [ 12] pushcons 32 ............................. <"0">
+  [ 14] pusharglistnoret 1 ...................... <"0">
+  [ 16] extcall 32 .............................. return "0"
+  [ 19] getprop 612 ............................. <totLengths>
+  [ 22] getparam 8 .............................. <argPos>
+  [ 24] pusharglistnoret 2 ...................... <totLengths, argPos>
+  [ 26] extcall 183 ............................. add(totLengths, argPos)
+  [ 29] getprop 612 ............................. <totLengths>
+  [ 32] getparam 8 .............................. <argPos>
+  [ 34] pusharglist 2 ........................... <totLengths, argPos>
+  [ 36] extcall 181 ............................. <getPos(totLengths, argPos)>
+  [ 39] setlocal 0 .............................. tmpPos = getPos(totLengths, argPos)
+  [ 41] getprop 612 ............................. <totLengths>
+  [ 44] getlocal 0 .............................. <tmpPos>
+  [ 46] pusharglistnoret 2 ...................... <totLengths, tmpPos>
+  [ 48] extcall 344 ............................. deleteAt(totLengths, tmpPos)
+  [ 51] getprop 611 ............................. <stringList>
+  [ 54] getlocal 0 .............................. <tmpPos>
+  [ 56] pusharglist 2 ........................... <stringList, tmpPos>
+  [ 58] extcall 23 .............................. <getAt(stringList, tmpPos)>
+  [ 60] setlocal 8 .............................. tmpStr = getAt(stringList, tmpPos)
+  [ 62] getlocal 0 .............................. <tmpPos>
+  [ 64] pushint8 1 .............................. <1>
+  [ 67] gt ...................................... <tmpPos > 1>
+  [ 68] jmpifz [ 89] ............................ if tmpPos > 1 then
+  [ 71] getparam 8 .............................. <argPos>
+  [ 73] getprop 612 ............................. <totLengths>
+  [ 76] getlocal 0 .............................. <tmpPos>
+  [ 78] pushint8 1 .............................. <1>
+  [ 81] sub ..................................... <tmpPos - 1>
+  [ 82] pusharglist 2 ........................... <totLengths, tmpPos - 1>
+  [ 84] extcall 23 .............................. <getAt(totLengths, tmpPos - 1)>
+  [ 86] sub ..................................... <argPos - getAt(totLengths, tmpPos - 1)>
+  [ 87] setparam 8 .............................. argPos = argPos - getAt(totLengths, tmpPos - 1)
+  [ 89] getparam 8 .............................. <argPos>
+  [ 91] pushzero ................................ <0>
+  [ 92] pushzero ................................ <0>
+  [ 93] pushzero ................................ <0>
+  [ 94] pushzero ................................ <0>
+  [ 95] pushzero ................................ <0>
+  [ 96] pushzero ................................ <0>
+  [ 97] pushzero ................................ <0>
+  [ 98] getlocal 8 .............................. <tmpStr>
+  [100] getchunk ................................ <char argPos of tmpStr>
+  [101] pusharglistnoret 1 ...................... <char argPos of tmpStr>
+  [103] extcall 32 .............................. return char argPos of tmpStr
+  [106] ret
+end
+
+on posToStrNr me, argPos
+  [  0] getprop 612 ............................. <totLengths>
+  [  3] getparam 8 .............................. <argPos>
+  [  5] pusharglistnoret 2 ...................... <totLengths, argPos>
+  [  7] extcall 183 ............................. add(totLengths, argPos)
+  [ 10] getprop 612 ............................. <totLengths>
+  [ 13] getparam 8 .............................. <argPos>
+  [ 15] pusharglist 2 ........................... <totLengths, argPos>
+  [ 17] extcall 181 ............................. <getPos(totLengths, argPos)>
+  [ 20] setlocal 0 .............................. tmpPos = getPos(totLengths, argPos)
+  [ 22] getprop 612 ............................. <totLengths>
+  [ 25] getlocal 0 .............................. <tmpPos>
+  [ 27] pusharglistnoret 2 ...................... <totLengths, tmpPos>
+  [ 29] extcall 344 ............................. deleteAt(totLengths, tmpPos)
+  [ 32] getlocal 0 .............................. <tmpPos>
+  [ 34] getprop 612 ............................. <totLengths>
+  [ 37] pusharglist 1 ........................... <totLengths>
+  [ 39] extcall 175 ............................. <count(totLengths)>
+  [ 42] gt ...................................... <tmpPos > count(totLengths)>
+  [ 43] jmpifz [ 52] ............................ if tmpPos > count(totLengths) then
+  [ 46] pushzero ................................ <0>
+  [ 47] pusharglistnoret 1 ...................... <0>
+  [ 49] extcall 32 .............................. return 0
+  [ 52] getlocal 0 .............................. <tmpPos>
+  [ 54] pushint8 1 .............................. <1>
+  [ 57] gt ...................................... <tmpPos > 1>
+  [ 58] jmpifz [ 79] ............................ if tmpPos > 1 then
+  [ 61] getparam 8 .............................. <argPos>
+  [ 63] getprop 612 ............................. <totLengths>
+  [ 66] getlocal 0 .............................. <tmpPos>
+  [ 68] pushint8 1 .............................. <1>
+  [ 71] sub ..................................... <tmpPos - 1>
+  [ 72] pusharglist 2 ........................... <totLengths, tmpPos - 1>
+  [ 74] extcall 23 .............................. <getAt(totLengths, tmpPos - 1)>
+  [ 76] sub ..................................... <argPos - getAt(totLengths, tmpPos - 1)>
+  [ 77] setparam 8 .............................. argPos = argPos - getAt(totLengths, tmpPos - 1)
+  [ 79] pushsymb 148 ............................ <#str>
+  [ 82] getlocal 0 .............................. <tmpPos>
+  [ 84] pushsymb 617 ............................ <#Pos>
+  [ 87] getparam 8 .............................. <argPos>
+  [ 89] pusharglist 4 ........................... <[#str: tmpPos, #Pos: argPos]>
+  [ 91] pushproplist ............................ <[#str: tmpPos, #Pos: argPos]>
+  [ 92] pusharglistnoret 1 ...................... <[#str: tmpPos, #Pos: argPos]>
+  [ 94] extcall 32 .............................. return [#str: tmpPos, #Pos: argPos]
+  [ 97] ret
+end
+
+on getString me, argStart, argLength
+  [  0] getparam 0 .............................. <me>
+  [  2] getparam 8 .............................. <argStart>
+  [  4] pusharglist 2 ........................... <me, argStart>
+  [  6] localcall 6 ............................. <posToStrNr(me, argStart)>
+  [  8] setlocal 0 .............................. tmpOK = posToStrNr(me, argStart)
+  [ 10] getlocal 0 .............................. <tmpOK>
+  [ 12] pushzero ................................ <0>
+  [ 13] eq ...................................... <tmpOK = 0>
+  [ 14] jmpifz [ 24] ............................ if tmpOK = 0 then
+  [ 17] pushcons 40 ............................. <EMPTY>
+  [ 19] pusharglistnoret 1 ...................... <EMPTY>
+  [ 21] extcall 32 .............................. return EMPTY
+  [ 24] getlocal 0 .............................. <tmpOK>
+  [ 26] pushsymb 148 ............................ <#str>
+  [ 29] pusharglist 2 ........................... <tmpOK, #str>
+  [ 31] extcall 124 ............................. <getProp(tmpOK, #str)>
+  [ 34] setlocal 8 .............................. tmpStrNr = getProp(tmpOK, #str)
+  [ 36] getprop 611 ............................. <stringList>
+  [ 39] getlocal 8 .............................. <tmpStrNr>
+  [ 41] pusharglist 2 ........................... <stringList, tmpStrNr>
+  [ 43] extcall 23 .............................. <getAt(stringList, tmpStrNr)>
+  [ 45] setlocal 16 ............................. tmpStr = getAt(stringList, tmpStrNr)
+  [ 47] getprop 613 ............................. <stringLengths>
+  [ 50] getlocal 8 .............................. <tmpStrNr>
+  [ 52] pusharglist 2 ........................... <stringLengths, tmpStrNr>
+  [ 54] extcall 23 .............................. <getAt(stringLengths, tmpStrNr)>
+  [ 56] setlocal 24 ............................. tmpStrLen = getAt(stringLengths, tmpStrNr)
+  [ 58] getprop 612 ............................. <totLengths>
+  [ 61] getlocal 8 .............................. <tmpStrNr>
+  [ 63] pusharglist 2 ........................... <totLengths, tmpStrNr>
+  [ 65] extcall 23 .............................. <getAt(totLengths, tmpStrNr)>
+  [ 67] getlocal 24 ............................. <tmpStrLen>
+  [ 69] sub ..................................... <getAt(totLengths, tmpStrNr) - tmpStrLen>
+  [ 70] setlocal 32 ............................. tmpTotLengthBeforeThisStr = getAt(totLengths, tmpStrNr) - tmpStrLen
+  [ 72] getlocal 0 .............................. <tmpOK>
+  [ 74] pushsymb 617 ............................ <#Pos>
+  [ 77] pusharglist 2 ........................... <tmpOK, #Pos>
+  [ 79] extcall 124 ............................. <getProp(tmpOK, #Pos)>
+  [ 82] setlocal 40 ............................. tmpPosInStr = getProp(tmpOK, #Pos)
+  [ 84] getlocal 24 ............................. <tmpStrLen>
+  [ 86] getlocal 40 ............................. <tmpPosInStr>
+  [ 88] sub ..................................... <tmpStrLen - tmpPosInStr>
+  [ 89] pushint8 1 .............................. <1>
+  [ 92] add ..................................... <tmpStrLen - tmpPosInStr + 1>
+  [ 93] setlocal 48 ............................. tmpRemainingInStr = tmpStrLen - tmpPosInStr + 1
+  [ 95] getlocal 48 ............................. <tmpRemainingInStr>
+  [ 97] getparam 16 ............................. <argLength>
+  [ 99] gteq .................................... <tmpRemainingInStr >= argLength>
+  [100] jmpifz [137] ............................ if tmpRemainingInStr >= argLength then / else
+  [103] getparam 8 .............................. <argStart>
+  [105] getlocal 32 ............................. <tmpTotLengthBeforeThisStr>
+  [107] sub ..................................... <argStart - tmpTotLengthBeforeThisStr>
+  [108] getparam 8 .............................. <argStart>
+  [110] getparam 16 ............................. <argLength>
+  [112] add ..................................... <argStart + argLength>
+  [113] pushint8 1 .............................. <1>
+  [116] sub ..................................... <argStart + argLength - 1>
+  [117] getlocal 32 ............................. <tmpTotLengthBeforeThisStr>
+  [119] sub ..................................... <argStart + argLength - 1 - tmpTotLengthBeforeThisStr>
+  [120] pushzero ................................ <0>
+  [121] pushzero ................................ <0>
+  [122] pushzero ................................ <0>
+  [123] pushzero ................................ <0>
+  [124] pushzero ................................ <0>
+  [125] pushzero ................................ <0>
+  [126] getlocal 16 ............................. <tmpStr>
+  [128] getchunk ................................ <char (argStart - tmpTotLengthBeforeThisStr) to (argStart + argLength - 1 - tmpTotLengthBeforeThisStr) of tmpStr>
+  [129] pusharglistnoret 1 ...................... <char (argStart - tmpTotLengthBeforeThisStr) to (argStart + argLength - 1 - tmpTotLengthBeforeThisStr) of tmpStr>
+  [131] extcall 32 .............................. return char (argStart - tmpTotLengthBeforeThisStr) to (argStart + argLength - 1 - tmpTotLengthBeforeThisStr) of tmpStr
+  [134] jmp [202]
+  [137] getparam 8 .............................. <argStart>
+  [139] getlocal 32 ............................. <tmpTotLengthBeforeThisStr>
+  [141] sub ..................................... <argStart - tmpTotLengthBeforeThisStr>
+  [142] getlocal 16 ............................. <tmpStr>
+  [144] pusharglist 1 ........................... <tmpStr>
+  [146] extcall 556 ............................. <length(tmpStr)>
+  [149] pushzero ................................ <0>
+  [150] pushzero ................................ <0>
+  [151] pushzero ................................ <0>
+  [152] pushzero ................................ <0>
+  [153] pushzero ................................ <0>
+  [154] pushzero ................................ <0>
+  [155] getlocal 16 ............................. <tmpStr>
+  [157] getchunk ................................ <char (argStart - tmpTotLengthBeforeThisStr) to length(tmpStr) of tmpStr>
+  [158] setlocal 56 ............................. tmpNewStr = char (argStart - tmpTotLengthBeforeThisStr) to length(tmpStr) of tmpStr
+  [160] getparam 8 .............................. <argStart>
+  [162] getlocal 56 ............................. <tmpNewStr>
+  [164] pusharglist 1 ........................... <tmpNewStr>
+  [166] extcall 556 ............................. <length(tmpNewStr)>
+  [169] add ..................................... <argStart + length(tmpNewStr)>
+  [170] setlocal 64 ............................. tmpNewStart = argStart + length(tmpNewStr)
+  [172] getparam 16 ............................. <argLength>
+  [174] getlocal 56 ............................. <tmpNewStr>
+  [176] pusharglist 1 ........................... <tmpNewStr>
+  [178] extcall 556 ............................. <length(tmpNewStr)>
+  [181] sub ..................................... <argLength - length(tmpNewStr)>
+  [182] setlocal 72 ............................. tmpNewLength = argLength - length(tmpNewStr)
+  [184] getlocal 56 ............................. <tmpNewStr>
+  [186] getparam 0 .............................. <me>
+  [188] getlocal 64 ............................. <tmpNewStart>
+  [190] getlocal 72 ............................. <tmpNewLength>
+  [192] pusharglist 3 ........................... <me, tmpNewStart, tmpNewLength>
+  [194] localcall 7 ............................. <getString(me, tmpNewStart, tmpNewLength)>
+  [196] joinstr ................................. <tmpNewStr & getString(me, tmpNewStart, tmpNewLength)>
+  [197] pusharglistnoret 1 ...................... <tmpNewStr & getString(me, tmpNewStart, tmpNewLength)>
+  [199] extcall 32 .............................. return tmpNewStr & getString(me, tmpNewStart, tmpNewLength)
+  [202] ret
+end

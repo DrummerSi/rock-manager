@@ -1,0 +1,195 @@
+property m_reasons, m_likesInfo
+global gRock
+
+on new me
+  return me
+end
+
+on kill me
+  return 0
+end
+
+on setInPropList me, argList, argPropPath, argVal
+  tmp = argPropPath.duplicate()
+  lastProp = tmp[tmp.count]
+  tmp.deleteAt(tmp.count)
+  repeat with n = 1 to tmp.count
+    tmpSub = argList.getaProp(tmp[n])
+    if voidp(tmpSub) then
+      tmpSub = [:]
+      argList.setaProp(tmp[n], tmpSub)
+    end if
+    argList = tmpSub
+  end repeat
+  argList.setaProp(lastProp, argVal)
+end
+
+on getFeedback me, argPlace, argLikesInfo
+  if voidp(argPlace) then
+    argPlace = gRock.m_context.getFocus(#place)
+  else
+    if symbolp(argPlace) then
+      argPlace = gRock.m_classManager.getObjByID(argPlace)
+    end if
+  end if
+  if voidp(argLikesInfo) then
+    argLikesInfo = rDefLikesAlbum(argPlace, VOID, [#music: 1, #image: 1, #SongType: 1, #quality: 1, #Freshness: 0.29999999999999999], #ExtraInfo)
+  end if
+  m_likesInfo = argLikesInfo
+  if 0 then
+    tmpLikeSorted = makePropListOfList([-2.33329999999999993, [#StyleMix, #Dance, #Hi], 0.25, [#StyleMix, #Punk, #Hi], 0.25, [#StyleMix, #Pop, #Hi], 0.15279999999999999, [#StyleMixTotal], 0.33329999999999999, [#StyleMix, #Metal, #Lo], -0.6522, [#quality], 0.66669999999999996, [#StyleMix, #Boring, #Hi], 0.75, [#StyleMix, #rock, #Hi], -1.0, [#SongType, #Hi]])
+    tmpLikeSorted.sort()
+    argLikesInfo = [#Like: -0.37469999999999998, #LikeSorted: tmpLikeSorted, #Freshness: -0.027]
+  end if
+  tmpLikeSorted = argLikesInfo[#LikeSorted]
+  tmpLike = argLikesInfo[#Like]
+  tmpLevels = makePropListOfList([-10, #Bad3, -1, #Bad2, 0, #Bad1, 0.5, #Good1, 10, #Good2])
+  tmpLevels.sort()
+  m_reasons = [:]
+  repeat with n = 1 to tmpLikeSorted.count
+    tmp = tmpLikeSorted[n].duplicate()
+    if tmp.count = 1 then
+      tmp.add(#none)
+    end if
+    tmpInfo = [tmpLikeSorted.getPropAt(n), tmp[tmp.count]]
+    tmp.deleteAt(tmp.count)
+    me.setInPropList(m_reasons, tmp, tmpInfo)
+  end repeat
+  tmpQuality = m_reasons[#quality][1]
+  if voidp(m_reasons[#SongType]) then
+    m_reasons[#SongType] = [0.01, #ignore]
+  end if
+  tmpSongType = m_reasons[#SongType][1]
+  tmpStyleSorted = [:]
+  tmpStyleSorted.sort()
+  repeat with n = 1 to m_reasons[#StyleMix].count
+    tmpStyleSorted.addProp(m_reasons[#StyleMix][n][1], [m_reasons[#StyleMix].getPropAt(n), m_reasons[#StyleMix][n][2]])
+  end repeat
+  if tmpStyleSorted.getPropAt(1) >= 0 then
+    tmpNoStyleMixSubZero = 1
+  else
+    tmpNoStyleMixSubZero = 0
+  end if
+  comments = [:]
+  str = EMPTY
+  if tmpQuality > 0 then
+    if tmpNoStyleMixSubZero = 1 then
+      if tmpSongType > 0 then
+      else
+        if m_reasons[#quality][1] > m_reasons[#StyleMixTotal][1] then
+          comments.addProp(#Good, me.makeComment(#quality))
+        else
+          comments.addProp(#Good, me.makeComment(#StyleMixTotal))
+        end if
+        comments.addProp(#Bad, me.makeComment(#SongType))
+      end if
+    else
+      comments.addProp(#Good, me.makeComment(#quality))
+      tmp = [:]
+      tmp.sort()
+      tmp.addProp(tmpStyleSorted.getPropAt(1), [#StyleMix, tmpStyleSorted[1][1]])
+      tmp.addProp(m_reasons[#SongType][1], #SongType)
+      comments.addProp(#Bad, me.makeComment(tmp[1]))
+    end if
+  else
+    if tmpNoStyleMixSubZero = 1 then
+      comments.addProp(#Good, me.makeComment(#StyleMixTotal))
+      if m_reasons[#SongType][1] < m_reasons[#quality][1] then
+        comments.addProp(#Bad, me.makeComment(#SongType))
+      else
+        comments.addProp(#Bad, me.makeComment(#quality))
+      end if
+    else
+      if tmpLike > -0.5 then
+        tmp = [:]
+        tmp.sort()
+        tmp.addProp(tmpStyleSorted.getPropAt(1), [#StyleMix, tmpStyleSorted[1][1]])
+        tmp.addProp(m_reasons[#SongType][1], #SongType)
+        tmp.addProp(m_reasons[#quality][1], #quality)
+        comments.addProp(#Bad, me.makeComment(tmp[1]))
+        comments.addProp(#Bad, me.makeComment(tmp[2]))
+      else
+        str = str & rGetStr(#szidDemoFbHopeless)
+      end if
+    end if
+  end if
+  if comments.count then
+    tmpCommentsCnt = [#Good: 0, #Bad: 0]
+    tmpPropStr = EMPTY
+    repeat with n = 1 to comments.count
+      prop = comments.getPropAt(n)
+      tmpCommentsCnt[prop] = tmpCommentsCnt[prop] + 1
+      gRock.m_executor.m_parseAndCalcObj.m_expressionCreatedVars.setaProp(symbol(string(prop) & string(tmpCommentsCnt[prop])), comments[n])
+      tmpPropStr = tmpPropStr & string(prop)
+    end repeat
+    szid = symbol("szidDemoFb" & tmpPropStr)
+    filloutStr = rGetStr(szid)
+    str = gRock.m_languageManager.dereference(filloutStr)
+  end if
+  band_r = gRock.m_context.getFocus(#Band)
+  if objectp(argLikesInfo[#target]) then
+    tmpMinReputation = argLikesInfo[#target].MinLiveReputation
+  else
+    tmpMinReputation = 0
+  end if
+  if voidp(argLikesInfo[#totalSubZero]) then
+    argLikesInfo[#totalSubZero] = 0
+  end if
+  if (argLikesInfo[#totalSubZero] >= 0) and (band_r.LiveReputation > tmpMinReputation) then
+    return EMPTY
+  end if
+  if ((band_r.LiveReputation < 0.29999999999999999) and (argLikesInfo[#totalSubZero] > -0.29999999999999999)) or (band_r.LiveReputation < tmpMinReputation) then
+    if argPlace.className = #Live then
+      if str.length = 0 then
+        str = rGetStr(#szidDemoFbLiveReputationOther)
+      else
+        str = str & " " & rGetStr(#szidDemoFbLiveReputationOther)
+      end if
+    else
+      if str.length = 0 then
+        str = rGetStr(#szidDemoFbLiveReputationOnly)
+      else
+        str = str & " " & rGetStr(#szidDemoFbLiveReputation)
+      end if
+    end if
+  end if
+  return str
+end
+
+on getWorstReason me
+  if not listp(m_likesInfo) then
+    return VOID
+  end if
+  if not listp(m_likesInfo[#LikeSorted]) then
+    return VOID
+  end if
+  return m_likesInfo[#LikeSorted][1]
+end
+
+on makeComment me, argPropPath
+  if not listp(argPropPath) then
+    argPropPath = [argPropPath]
+  end if
+  tmpInfo = descendIntoList(m_reasons, argPropPath)
+  val = tmpInfo[1]
+  reason = tmpInfo[2]
+  tmpLevels = makePropListOfList([-10, #Bad3, -1, #Bad2, 0, #Bad1, 0.5, #Good1, 10, #Good2])
+  tmpLevels.sort()
+  level = comesBeforeValInList(val, tmpLevels)
+  tmp = argPropPath.duplicate()
+  if reason <> #none then
+    tmp.add(reason)
+  end if
+  tmp.add(level)
+  prop = symbol(me.mergeListItemsIntoOne(tmp))
+  strId = symbol("szidDemoFb" & string(prop))
+  return gRock.m_languageManager.getStr(strId)
+end
+
+on mergeListItemsIntoOne me, argList
+  str = EMPTY
+  repeat with tmpItem in argList
+    str = str & string(tmpItem)
+  end repeat
+  return str
+end

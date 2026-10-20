@@ -1,0 +1,219 @@
+property ancestor, child, className, belongsTo, _killed, StyleMix, StyleMixTolerance, SongType, SongTypeTolerance, MinQuality, Economy, Loyalty, AgeRange, Education, size, Resistance, Attitudes, createdObjs
+global gRock
+
+on new me, argChild, argBelongsTo
+  if objectp(argChild) then
+    child = argChild
+  else
+    child = me
+  end if
+  belongsTo = argBelongsTo
+  ancestor = script("ClassConcreteScript").new(child)
+  className = #Group
+  StyleMix = script("ClassStyleMixScript").new(VOID, me)
+  StyleMixTolerance = script("ClassStyleMixScript").new(VOID, me)
+  SongType = 0.0
+  SongTypeTolerance = 0.0
+  MinQuality = 0.0
+  Economy = 0.5
+  Loyalty = 0
+  AgeRange = script("ClassAgeRangeScript").new(VOID, me)
+  Education = 0.5
+  size = 1
+  Resistance = 0.0
+  Attitudes = script("ClassAttitudesScript").new(VOID, me)
+  createdObjs = []
+  return me
+end
+
+on kill me
+  _killed = 1
+  repeat with obj in createdObjs
+    gRock.m_classManager.removeObj(obj, #kill)
+  end repeat
+  createdObjs = []
+  if objectp(StyleMix) then
+    StyleMix = StyleMix.kill()
+  end if
+  if objectp(StyleMixTolerance) then
+    StyleMixTolerance = StyleMixTolerance.kill()
+  end if
+  if objectp(AgeRange) then
+    AgeRange = AgeRange.kill()
+  end if
+  if objectp(Attitudes) then
+    Attitudes = Attitudes.kill()
+  end if
+  gRock.m_gameTimer.deleteObject(me)
+  if objectp(ancestor) then
+    ancestor = ancestor.kill()
+  end if
+  child = 0
+  belongsTo = 0
+  return 0
+end
+
+on init me
+  gRock.m_gameTimer.addObject(me)
+end
+
+on timeTick me
+  tmpAttitudes = Attitudes.Attitudes
+  repeat with n = 1 to tmpAttitudes.count
+    tmpTowardsID = tmpAttitudes.getPropAt(n)
+    tmpTowardsObj = gRock.m_classManager.getObjByID(tmpTowardsID)
+    if not objectp(tmpTowardsObj) then
+      alert("Group attitude err: " & string(tmpTowardsID))
+      exit
+    end if
+    tmpAttitude = tmpAttitudes[n]
+    if tmpTowardsObj.className = #album then
+      if tmpTowardsObj.getAlbumIsSigned() = 0 then
+        next repeat
+      end if
+      if tmpTowardsObj.getAlbumIsReleased() = 0 then
+        next repeat
+      end if
+      tmpHypeDrop = getSystemPref(#HypeDrop)
+      if voidp(tmpHypeDrop) then
+        tmpHypeDrop = 0.005
+      end if
+      tmpHypeFactor = getSystemPref(#HypeFactor)
+      if voidp(tmpHypeFactor) then
+        tmpHypeFactor = 0.96199999999999997
+      end if
+      tmpHype = tmpAttitude.getaProp(#Hype)
+      tmpHype = (tmpHype - tmpHypeDrop) * tmpHypeFactor
+      if tmpHype < 0 then
+        tmpHype = 0.0
+      end if
+      tmpWillBuyDrop = getSystemPref(#WillBuyDrop)
+      if voidp(tmpWillBuyDrop) then
+        tmpWillBuyDrop = 0.0065
+      end if
+      tmpWillBuyFactor = getSystemPref(#WillBuyFactor)
+      if voidp(tmpWillBuyFactor) then
+        tmpWillBuyFactor = 0.995
+      end if
+      tmpWillBuy = tmpAttitude.getaProp(#WillBuy)
+      tmpWillBuy = (tmpWillBuy + (Resistance * tmpHype) - tmpWillBuyDrop) * tmpWillBuyFactor
+      if tmpWillBuy < 0 then
+        tmpWillBuy = 0.0
+      end if
+      tmpAttitude[#Hype] = tmpHype
+      tmpAttitude[#WillBuy] = tmpWillBuy
+      me.buysAlbum(tmpTowardsID)
+    end if
+  end repeat
+end
+
+on buysAlbum me, argAlbumID
+  album_r = gRock.m_classManager.getObjByIDAndClass(argAlbumID, #album)
+  tmpAtt = me.Attitudes.getAttitude(argAlbumID)
+  tmpLike = tmpAtt.getaProp(#Likes)
+  tmpLike = tmpLike + album_r.Freshness
+  tmpWillBuy = tmpAtt.getaProp(#WillBuy)
+  if objectp(tmpWillBuy) then
+    if voidp(tmpWillBuy.getaProp(#Current)) then
+      pott("tmpWillBuy err", tmpWillBuy)
+    end if
+    tmpWillBuy = tmpWillBuy.Current
+  end if
+  if tmpWillBuy > 1 then
+    tmpWillBuy = 1
+  end if
+  tmpFractionWillBuy = tmpLike * tmpWillBuy
+  if tmpFractionWillBuy < 0 then
+    tmpFractionWillBuy = 0
+  end if
+  tmpTotalBuyers = size * tmpFractionWillBuy
+  tmpBoughtBefore = tmpAtt.getaProp(#Bought)
+  tmpBuysNow = tmpTotalBuyers - tmpBoughtBefore
+  if tmpBuysNow < 0 then
+    tmpBuysNow = 0
+  end if
+  me.Attitudes.changeAttitude([argAlbumID, #Bought], tmpBuysNow, "+=")
+end
+
+on expose me, argExposeWhat, argIntensity, argQuality
+  if ancestor.ID = #Grp01 then
+    if listp(argIntensity) or listp(argQuality) then
+      pott("WEROING", argExposeWhat, argIntensity, argQuality)
+    end if
+  end if
+  Attitudes.changeAttitude([argExposeWhat, #Expo], argIntensity, "+=")
+  tmpTotExpo = me.Attitudes.getAttitude([argExposeWhat, #Expo])
+  tmpHypeChange = argIntensity * argQuality
+  if 1 then
+    tmpAngle = 10.0
+    tmpHypeChange = tmpHypeChange * (0.29999999999999999 * tmpAngle / (tmpAngle + tmpTotExpo))
+    if Attitudes.hasAttitude([argExposeWhat, #Hype]) = 0 then
+      tmpHype = 0.0
+      Attitudes.changeAttitude([argExposeWhat, #Hype], tmpHype, "=")
+    else
+      tmpHype = Attitudes.getAttitude([argExposeWhat, #Hype])
+    end if
+    tmpHype = tmpHype + tmpHypeChange
+    if tmpHype > 1 then
+      tmpHype = 1.0
+    else
+      if tmpHype < -1 then
+        tmpHype = -1.0
+      end if
+    end if
+    Attitudes.setAttitude([argExposeWhat, #Hype], tmpHype)
+  else
+    tmpHypeChange = tmpHypeChange * (0.29999999999999999 * 20.0 / (tmpTotExpo + 1.0))
+    Attitudes.changeAttitude([argExposeWhat, #Hype], tmpHypeChange, "+=")
+  end if
+end
+
+on newAlbum me, argAlbum_r
+  grpAlbumAttitudes = [#Hype: 0.0, #Expo: 0.0, #WillBuy: 0.0, #Likes: 0.0, #Bought: 0]
+  me.Attitudes.setAttitude(argAlbum_r.ID, grpAlbumAttitudes)
+  if ancestor.ID = #Grp01 then
+    pott("NewAlbum in group", me.Attitudes.getAttitude(argAlbum_r.ID))
+  end if
+end
+
+on AlbumWasReleased me, argAlbum_r
+  tmpLikesInfo = me.getLikesAlbumInfo(argAlbum_r)
+  me.Attitudes.changeAttitude([argAlbum_r.ID, #Likes], tmpLikesInfo[#Like], "=")
+  if ancestor.ID = #Grp01 then
+    pott("Released in group", me.Attitudes.getAttitude(argAlbum_r.ID))
+  end if
+end
+
+on getLikesAlbumInfo me, argAlbum_r
+  tmpInfo = rDefLikesAlbum(me, argAlbum_r, [#music: 1.0, #image: 1.0, #type: 1.0, #SongType: 1.0, #quality: 1.0], #ExtraInfo)
+  mission_r = gRock.m_context.getFocus(#Mission)
+  tmpBoost = mission_r.Vars.getaProp(#GroupsLikeBoost)
+  if not voidp(tmpBoost) then
+    tmpInfo[#Likes] = tmpInfo[#Likes] + tmpBoost
+    if tmpInfo[#Likes] < tmpBoost then
+      tmpInfo[#Likes] = tmpBoost
+    end if
+    if tmpInfo[#Likes] > 1 then
+      tmpInfo[#Likes] = 1
+    end if
+  end if
+  return tmpInfo
+end
+
+on removeAlbum me, argAlbum_r
+  tmpAtts = me.Attitudes.getAttitude(argAlbum_r.ID)
+  if not listp(tmpAtts) then
+    exit
+  end if
+  repeat with n = 1 to tmpAtts.count
+    tmp = tmpAtts[n]
+    if objectp(tmp) then
+      tmpIsRockObj = rgetProp(tmp, #className)
+      if not voidp(tmpIsRockObj) then
+        gRock.m_classManager.removeObj(tmp, #kill)
+        createdObjs.deleteOne(tmp)
+      end if
+    end if
+  end repeat
+  me.Attitudes.removeAttitude(argAlbum_r.ID)
+end

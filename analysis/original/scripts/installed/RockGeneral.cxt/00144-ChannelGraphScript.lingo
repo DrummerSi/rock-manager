@@ -1,0 +1,85 @@
+property ancestor, m_displayMode, m_type, m_objs
+
+on new me, argMasterObj, argChildObj, argInfo
+  m_type = #point
+  argInfo[#ClrDepth] = 8
+  ancestor = script("ChannelAncestorScript").new(argMasterObj, me, argInfo)
+  ancestor.m_type = #Graph
+  ancestor.m_height = 80
+  m_displayMode = #line
+  tmpGraphsInfo = argInfo[#Graphs]
+  m_objs = [:]
+  repeat with n = 1 to tmpGraphsInfo.count
+    tmpInfo = tmpGraphsInfo[n]
+    tmpInfo.setaProp(#TodayDate, ancestor.m_agenda.m_todayDate)
+    obj = script("OneGraphScript").new(me, tmpInfo)
+    m_objs.addProp(n, obj)
+  end repeat
+  return me
+end
+
+on kill me
+  ancestor = ancestor.kill()
+  repeat with obj in m_objs
+    obj.kill()
+  end repeat
+  m_objs = [:]
+  return 0
+end
+
+on scroll me, argPoint
+  ancestor.scroll(argPoint)
+end
+
+on draw me, argStartAndEndDates, argRect
+  if ancestor.m_isExpanded = 0 then
+    ancestor.draw(argStartAndEndDates)
+    exit
+  end if
+  tmpStartEnd = [integer(ancestor.m_agenda.locHtoDate(argRect[1])), integer(ancestor.m_agenda.locHtoDate(argRect[3]))]
+  tmpImage = ancestor.m_image
+  argRect[2] = 0
+  argRect[4] = ancestor.m_image.rect[4]
+  tmpImage.fill(argRect, rgb(255, 255, 255))
+  repeat with n = 1 to m_objs.count
+    obj = m_objs[n]
+    obj.draw(argStartAndEndDates, argRect, tmpStartEnd, tmpImage)
+  end repeat
+  tmpLocH = ancestor.m_agenda.dateToLocH(ancestor.m_agenda.m_todayDate + 1) + 5
+  if intersectRanges([tmpLocH, tmpLocH + 150], [argRect[1], argRect[3]]) then
+    img = me.drawLegend(ancestor.m_agenda.m_todayDate)
+    tmpR = loc2Rect(point(tmpLocH, 5))
+    tmpImage.copyPixels(img, img.rect + tmpR, img.rect, [#ink: 36])
+  end if
+  blitOffset = point(ancestor.m_viewRect[1], ancestor.m_viewRect[2])
+  ancestor.m_agenda.m_imagePtr[1].copyPixels(tmpImage, tmpImage.rect + rect(blitOffset, blitOffset), tmpImage.rect, [#ink: 36])
+  ancestor.draw(argStartAndEndDates)
+end
+
+on setViewRect me, argRect
+  ancestor.setViewRect(argRect)
+  repeat with n = 1 to m_objs.count
+    obj = m_objs[n]
+    obj.setViewRect(argRect)
+  end repeat
+end
+
+on drawLegend me
+  tmpMemb = member("AgendaLegendText")
+  tmpLineHeight = 15
+  img = image(tmpMemb.rect[3], m_objs.count * tmpLineHeight, 16)
+  blitRectOffset = loc2Rect(point(0, 0))
+  repeat with n = 1 to m_objs.count
+    tmpLineRectOff = loc2Rect(point(0, (n - 1) * tmpLineHeight))
+    obj = m_objs[n]
+    tmpName = obj.getName()
+    tmpVal = obj.getValueOfDate(ancestor.m_agenda.m_todayDate)
+    tmpSize = point(6, 6)
+    tmpR = rect(0, -tmpSize[2] / 2, tmpSize[1], tmpSize[2] / 2)
+    img.fill(tmpR + tmpLineRectOff + rect(0, tmpLineHeight / 2, 0, tmpLineHeight / 2), [#color: obj.m_clr])
+    tmpMemb.text = tmpName & numToChar(9) & string(tmpVal)
+    tmpR = loc2Rect(point(tmpR[3] + 3, 0))
+    img.copyPixels(tmpMemb.image, tmpMemb.rect + tmpR + tmpLineRectOff, tmpMemb.rect, [#ink: 36])
+  end repeat
+  return img
+end

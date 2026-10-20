@@ -1,0 +1,59 @@
+global gRock
+
+on loadSpecial argList, argReturnCreatedObjs, argSetList
+  if voidp(argSetList) then
+    argSetList = [:]
+  end if
+  if voidp(argReturnCreatedObjs) then
+    argReturnCreatedObjs = []
+  end if
+  repeat with n = 1 to argList.count
+    tmpVal = argList[n]
+    tmpIlk = ilk(tmpVal)
+    if tmpIlk = #list then
+      if tmpVal.count > 1 then
+        if symbolp(tmpVal[1]) then
+          obj = gRock.m_classManager.getObjByIDAndClass(tmpVal[1], tmpVal[2])
+        else
+          obj = gRock.m_classManager.createUnregObj(tmpVal[2])
+          argReturnCreatedObjs.add(obj)
+          gRock.m_classManager.loadObj(tmpVal[1])
+        end if
+        argSetList.setaProp(argList.getPropAt(n), obj)
+      else
+        argSetList.setaProp(argList.getPropAt(n), tmpVal[1])
+      end if
+      next repeat
+    end if
+    tmp = [:]
+    argSetList.setaProp(argList.getPropAt(n), tmp)
+    loadSpecial(tmpVal, argReturnCreatedObjs, tmp)
+  end repeat
+  return argSetList
+end
+
+on saveSpecial argList, argSaveWholeObjsOrAsIDs, argSaveList
+  if voidp(argSaveList) then
+    argSaveList = [:]
+  end if
+  repeat with n = 1 to argList.count
+    tmpVal = argList[n]
+    tmpIlk = ilk(tmpVal)
+    if tmpIlk = #instance then
+      if argSaveWholeObjsOrAsIDs = #ID then
+        argSaveList.addProp(argList.getPropAt(n), [tmpVal.ID, tmpVal.className])
+      else
+        argSaveList.addProp(argList.getPropAt(n), [gRock.m_classManager.saveObj(tmpVal, [tmpVal.className], #Force), tmpVal.className])
+      end if
+      next repeat
+    end if
+    if tmpIlk = #propList then
+      tmpSave = [:]
+      argSaveList.addProp(argList.getPropAt(n), tmpSave)
+      saveSpecial(tmpVal, argSaveWholeObjsOrAsIDs, tmpSave)
+      next repeat
+    end if
+    argSaveList.addProp(argList.getPropAt(n), [tmpVal])
+  end repeat
+  return argSaveList
+end

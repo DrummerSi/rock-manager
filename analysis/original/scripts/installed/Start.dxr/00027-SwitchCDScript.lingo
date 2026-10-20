@@ -1,0 +1,161 @@
+property m_fxObj, m_neededFiles, m_CDDrivePath, m_callBackInfo, m_timerObj, m_isEjected, m_checking, m_mustBeRemovableRemovable, m_isRemovable, m_mustBeVolumeRoot
+
+on new me, argCDDrivePath, argOptions
+  m_CDDrivePath = argCDDrivePath
+  if voidp(argOptions) then
+    argOptions = [:]
+  end if
+  m_neededFiles = argOptions[#NeededFiles]
+  if voidp(m_neededFiles) then
+    m_neededFiles = []
+  end if
+  m_callBackInfo = argOptions[#CallBackInfo]
+  if voidp(m_callBackInfo) then
+    m_callBackInfo = [:]
+  end if
+  m_mustBeRemovableRemovable = argOptions[#MustBeRemovable]
+  if voidp(m_mustBeRemovableRemovable) then
+    m_mustBeRemovableRemovable = 1
+  end if
+  m_mustBeVolumeRoot = argOptions[#MustBeVolumeRoot]
+  if voidp(m_mustBeVolumeRoot) then
+    m_mustBeVolumeRoot = 1
+  end if
+  m_fxObj = xtra("FileXtra3").new()
+  return me
+end
+
+on kill me
+  me.stopChecking()
+  m_callBackInfo = 0
+  m_fxObj = 0
+  return 0
+end
+
+on firstCheck me
+  volumeExists = 0
+  volumes = m_fxObj.fx_VolumesToList()
+  repeat with n = 1 to volumes.count
+    if volumes[n] = m_CDDrivePath then
+      volumeExists = 1
+      exit repeat
+    end if
+  end repeat
+  m_isRemovable = m_fxObj.fx_VolumeIsRemovable(m_CDDrivePath)
+  if (m_mustBeVolumeRoot = 1) and (volumeExists = 0) then
+    me.makeCallBack(#NoVolume)
+  else
+    if (m_mustBeRemovableRemovable = 1) and (m_isRemovable = 0) then
+      me.makeCallBack(#NotRemovable)
+    else
+      if me.checkHasTheseFiles() = 1 then
+        me.makeCallBack(#RightMedia)
+      else
+        me.startChecking()
+      end if
+    end if
+  end if
+end
+
+on startChecking me
+  m_checking = 1
+  m_checkFilesWhenInserted = 1
+  m_isEjected = me.getIsEjected()
+  if m_isEjected then
+    me.Ejected()
+  end if
+  me.eject()
+  me.makeCallBack(#startChecking)
+  m_timerObj = timeout("CDTimer").new(500, #timeTick, me)
+end
+
+on stopChecking me
+  m_checking = 0
+  if objectp(m_timerObj) then
+    m_timerObj.forget()
+    m_timerObj = 0
+  end if
+end
+
+on makeCallBack me, argInfo
+  if objectp(m_callBackInfo[#object]) then
+    call(m_callBackInfo[#handler], m_callBackInfo[#object], argInfo)
+  end if
+end
+
+on userSaysSwitchIsDone me
+end
+
+on getIsEjected me
+  return m_fxObj.fx_VolumeIsCDROM(m_CDDrivePath) = 0
+end
+
+on eject me
+  if me.getIsEjected() = 0 then
+    me.makeCallBack(#Ejecting)
+    m_fxObj.fx_VolumeEject(m_CDDrivePath)
+    if me.getIsEjected() = 0 then
+      me.makeCallBack(#EjectingFailed)
+      return 0
+    end if
+    return 1
+  end if
+  return 1
+end
+
+on checkHasTheseFiles me, argFileList
+  if voidp(argFileList) then
+    argFileList = m_neededFiles
+  end if
+  foundFiles = 1
+  repeat with n = 1 to argFileList.count
+    if m_fxObj.fx_FileExists(m_CDDrivePath & argFileList[n]) = 0 then
+      foundFiles = 0
+      exit repeat
+    end if
+  end repeat
+  return foundFiles
+end
+
+on Inserted me
+  m_checking = 0
+  me.makeCallBack(#Inserted)
+  m_checkFilesWhenInserted = 1
+  if m_checkFilesWhenInserted = 1 then
+    foundFiles = me.checkHasTheseFiles()
+    if foundFiles = 0 then
+      me.makeCallBack(#WrongMedia)
+    else
+      me.makeCallBack(#RightMedia)
+    end if
+  end if
+end
+
+on Ejected me
+  me.makeCallBack(#Ejected)
+end
+
+on timeTick me
+  if not m_checking then
+    exit
+  end if
+  if m_isRemovable then
+    tmpEjected = me.getIsEjected()
+    put "CHECK", tmpEjected
+    if tmpEjected <> m_isEjected then
+      m_isEjected = tmpEjected
+      if m_isEjected then
+        me.Ejected()
+      else
+        me.Inserted()
+      end if
+    end if
+  else
+    foundFiles = me.checkHasTheseFiles()
+    if foundFiles = 0 then
+      me.makeCallBack(#WrongMedia)
+    else
+      me.makeCallBack(#RightMedia)
+    end if
+  end if
+end

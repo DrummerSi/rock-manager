@@ -1,0 +1,56 @@
+property ancestor, child, className, belongsTo, _killed, Actions, Human, Available, icon
+global gRock
+
+on new me, argChild, argBelongsTo
+  if objectp(argChild) then
+    child = argChild
+  else
+    child = me
+  end if
+  belongsTo = argBelongsTo
+  ancestor = script("ClassConcreteScript").new(child)
+  className = #place
+  Actions = []
+  Human = #none
+  Available = 0
+  icon = EMPTY
+  return me
+end
+
+on kill me
+  _killed = 1
+  if objectp(ancestor) then
+    ancestor = ancestor.kill()
+  end if
+  child = 0
+  belongsTo = 0
+  return 0
+end
+
+on likesAlbum me, argAlbum_r
+  tmp = rDefLikesAlbum(me, argAlbum_r, [#music: 1, #image: 1, #SongType: 1, #quality: 1], #ExtraInfo)
+  return tmp[#Like]
+end
+
+on makeAvailable me, argIsTRUE
+  global gDir
+  if argIsTRUE = Available then
+    exit
+  end if
+  mission_r = gRock.m_context.getFocus(#Mission)
+  if (argIsTRUE = 1) and mission_r.NeverAvailablePlaces.getPos(ancestor.ID) then
+    exit
+  end if
+  Available = argIsTRUE
+  if not objectp(gDir) then
+    exit
+  end if
+  if objectp(gDir.getaProp(#m_objScrollingCity)) then
+    obj = gDir.m_objScrollingCity.getPlaceGfxObjByID(ancestor.ID)
+    obj.show(argIsTRUE)
+  end if
+end
+
+on getHuman me
+  return gRock.m_classManager.getObjByIDAndClass(Human, #Human)
+end

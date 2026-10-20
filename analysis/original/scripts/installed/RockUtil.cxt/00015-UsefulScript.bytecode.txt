@@ -1,0 +1,443 @@
+property frameTimer, mouseObjects, cuePointMaster, animationTimer, speedCategory, checkTicksAfterNFrames, startTicks, memoryLevel, keyObjects, systemKeys, angles, MIAWs, cursors, currentMovie, soundObj, idleTimer, xtrasList, currentMovieObj, debug, isRunning, soundFileExt
+
+on new me
+  [  0] getparam 0 .............................. <me>
+  [  2] pusharglistnoret 1 ...................... <me>
+  [  4] extcall 21 .............................. return me
+  [  6] ret
+end
+
+on init me
+  [  0] pushzero ................................ <0>
+  [  1] setprop 96 .............................. isRunning = 0
+  [  4] getparam 0 .............................. <me>
+  [  6] pusharglistnoret 1 ...................... <me>
+  [  8] localcall 9 ............................. findXtras(me)
+  [ 10] pushcons 0 .............................. <"CurrentMovieScript">
+  [ 12] pusharglist 1 ........................... <"CurrentMovieScript">
+  [ 14] extcall 284 ............................. <script("CurrentMovieScript")>
+  [ 17] pusharglist 1 ........................... <script("CurrentMovieScript")>
+  [ 19] extcall 0 ............................... <new(script("CurrentMovieScript"))>
+  [ 21] setprop 603 ............................. currentMovieObj = new(script("CurrentMovieScript"))
+  [ 24] pushcons 8 .............................. <"DebugToolsScript">
+  [ 26] pusharglist 1 ........................... <"DebugToolsScript">
+  [ 28] extcall 284 ............................. <script("DebugToolsScript")>
+  [ 31] pusharglist 1 ........................... <script("DebugToolsScript")>
+  [ 33] objcall 0 ............................... <script("DebugToolsScript").new()>
+  [ 35] setprop 604 ............................. debug = script("DebugToolsScript").new()
+  [ 38] pushcons 16 ............................. <"Timer">
+  [ 40] pusharglist 1 ........................... <"Timer">
+  [ 42] extcall 284 ............................. <script("Timer")>
+  [ 45] pushint8 1 .............................. <1>
+  [ 48] pushzero ................................ <0>
+  [ 49] pushsymb 605 ............................ <#frame>
+  [ 52] pusharglist 4 ........................... <script("Timer"), 1, 0, #frame>
+  [ 54] extcall 0 ............................... <new(script("Timer"), 1, 0, #frame)>
+  [ 56] setprop 24 .............................. frameTimer = new(script("Timer"), 1, 0, #frame)
+  [ 58] pushcons 24 ............................. <"Timer">
+  [ 60] pusharglist 1 ........................... <"Timer">
+  [ 62] extcall 284 ............................. <script("Timer")>
+  [ 65] pushint8 1 .............................. <1>
+  [ 68] pushzero ................................ <0>
+  [ 69] pushsymb 601 ............................ <#idle>
+  [ 72] pusharglist 4 ........................... <script("Timer"), 1, 0, #idle>
+  [ 74] extcall 0 ............................... <new(script("Timer"), 1, 0, #idle)>
+  [ 76] setprop 256 ............................. idleTimer = new(script("Timer"), 1, 0, #idle)
+  [ 79] pushcons 32 ............................. <"KeysManager">
+  [ 81] pusharglist 1 ........................... <"KeysManager">
+  [ 83] extcall 284 ............................. <script("KeysManager")>
+  [ 86] pusharglist 1 ........................... <script("KeysManager")>
+  [ 88] extcall 0 ............................... <new(script("KeysManager"))>
+  [ 90] setprop 606 ............................. keyObjects = new(script("KeysManager"))
+  [ 93] getprop 24 .............................. <frameTimer>
+  [ 95] getprop 606 ............................. <keyObjects>
+  [ 98] pusharglistnoret 2 ...................... <frameTimer, keyObjects>
+  [100] extcall 56 .............................. addObject(frameTimer, keyObjects)
+  [103] pushcons 40 ............................. <"Timer">
+  [105] pusharglist 1 ........................... <"Timer">
+  [107] extcall 284 ............................. <script("Timer")>
+  [110] pushint8 2 .............................. <2>
+  [113] getprop 24 .............................. <frameTimer>
+  [115] pushsymb 608 ............................ <#anim>
+  [118] pusharglist 4 ........................... <script("Timer"), 2, frameTimer, #anim>
+  [120] extcall 0 ............................... <new(script("Timer"), 2, frameTimer, #anim)>
+  [122] setprop 607 ............................. animationTimer = new(script("Timer"), 2, frameTimer, #anim)
+  [125] pushcons 48 ............................. <"MouseObjectManager">
+  [127] pusharglist 1 ........................... <"MouseObjectManager">
+  [129] extcall 284 ............................. <script("MouseObjectManager")>
+  [132] pusharglist 1 ........................... <script("MouseObjectManager")>
+  [134] extcall 0 ............................... <new(script("MouseObjectManager"))>
+  [136] setprop 609 ............................. mouseObjects = new(script("MouseObjectManager"))
+  [139] getprop 24 .............................. <frameTimer>
+  [141] getprop 609 ............................. <mouseObjects>
+  [144] pusharglistnoret 2 ...................... <frameTimer, mouseObjects>
+  [146] extcall 56 .............................. addObject(frameTimer, mouseObjects)
+  [149] getprop 609 ............................. <mouseObjects>
+  [152] pushsymb 596 ............................ <#init>
+  [155] pusharglist 2 ........................... <mouseObjects, #init>
+  [157] objcall 73 .............................. <mouseObjects.handler(#init)>
+  [160] jmpifz [171] ............................ if mouseObjects.handler(#init) then
+  [163] getprop 609 ............................. <mouseObjects>
+  [166] pusharglistnoret 1 ...................... <mouseObjects>
+  [168] objcall 596 ............................. mouseObjects.init()
+  [171] pushcons 56 ............................. <".swa">
+  [173] setprop 610 ............................. soundFileExt = ".swa"
+  [176] getparam 0 .............................. <me>
+  [178] pushsymb 506 ............................ <#Director>
+  [181] pusharglistnoret 2 ...................... <me, #Director>
+  [183] objcall 507 ............................. me.setSoundSystem(#Director)
+  [186] pushcons 64 ............................. <"CuePointMaster">
+  [188] pusharglist 1 ........................... <"CuePointMaster">
+  [190] extcall 284 ............................. <script("CuePointMaster")>
+  [193] pusharglist 1 ........................... <script("CuePointMaster")>
+  [195] extcall 0 ............................... <new(script("CuePointMaster"))>
+  [197] setprop 611 ............................. cuePointMaster = new(script("CuePointMaster"))
+  [200] pushcons 72 ............................. <"AnglesScript">
+  [202] pusharglist 1 ........................... <"AnglesScript">
+  [204] extcall 284 ............................. <script("AnglesScript")>
+  [207] pushint8 360 ............................ <360>
+  [210] pusharglist 2 ........................... <script("AnglesScript"), 360>
+  [212] extcall 0 ............................... <new(script("AnglesScript"), 360)>
+  [214] setprop 612 ............................. angles = new(script("AnglesScript"), 360)
+  [217] pushcons 80 ............................. <"MIAWsScript">
+  [219] pusharglist 1 ........................... <"MIAWsScript">
+  [221] extcall 284 ............................. <script("MIAWsScript")>
+  [224] pusharglist 1 ........................... <script("MIAWsScript")>
+  [226] extcall 0 ............................... <new(script("MIAWsScript"))>
+  [228] setprop 613 ............................. MIAWs = new(script("MIAWsScript"))
+  [231] pushcons 88 ............................. <"CursorScript">
+  [233] pusharglist 1 ........................... <"CursorScript">
+  [235] extcall 284 ............................. <script("CursorScript")>
+  [238] pusharglist 1 ........................... <script("CursorScript")>
+  [240] extcall 0 ............................... <new(script("CursorScript"))>
+  [242] setprop 614 ............................. cursors = new(script("CursorScript"))
+  [245] pushint8 1 .............................. <1>
+  [248] setprop 615 ............................. speedCategory = 1
+  [251] getparam 0 .............................. <me>
+  [253] pusharglistnoret 1 ...................... <me>
+  [255] localcall 6 ............................. startCheckingSpeed(me)
+  [257] pusharglist 0 ........................... <>
+  [259] thebuiltin 616 .......................... <the freeBlock>
+  [262] pushint8 10 ............................. <10>
+  [265] pushint8 1024 ........................... <1024>
+  [268] mul ..................................... <10 * 1024>
+  [269] pushint8 1024 ........................... <1024>
+  [272] mul ..................................... <10 * 1024 * 1024>
+  [273] gt ...................................... <the freeBlock > (10 * 1024 * 1024)>
+  [274] jmpifz [286] ............................ if the freeBlock > (10 * 1024 * 1024) then / else
+  [277] pushint8 10 ............................. <10>
+  [280] setprop 617 ............................. memoryLevel = 10
+  [283] jmp [321]
+  [286] pusharglist 0 ........................... <>
+  [288] thebuiltin 616 .......................... <the freeBlock>
+  [291] pushint8 4 .............................. <4>
+  [294] pushint8 1024 ........................... <1024>
+  [297] mul ..................................... <4 * 1024>
+  [298] pushint8 1024 ........................... <1024>
+  [301] mul ..................................... <4 * 1024 * 1024>
+  [302] gt ...................................... <the freeBlock > (4 * 1024 * 1024)>
+  [303] jmpifz [315] ............................ if the freeBlock > (4 * 1024 * 1024) then / else
+  [306] pushint8 5 .............................. <5>
+  [309] setprop 617 ............................. memoryLevel = 5
+  [312] jmp [321]
+  [315] pushint8 2 .............................. <2>
+  [318] setprop 617 ............................. memoryLevel = 2
+  [321] pushcons 96 ............................. <"SystemKeys">
+  [323] pusharglist 1 ........................... <"SystemKeys">
+  [325] extcall 284 ............................. <script("SystemKeys")>
+  [328] pusharglist 1 ........................... <script("SystemKeys")>
+  [330] extcall 0 ............................... <new(script("SystemKeys"))>
+  [332] setprop 618 ............................. systemKeys = new(script("SystemKeys"))
+  [335] ret
+end
+
+on kill me
+  [  0] getprop 619 ............................. <soundObj>
+  [  3] pusharglist 1 ........................... <soundObj>
+  [  5] extcall 71 .............................. <objectp(soundObj)>
+  [  8] jmpifz [ 21] ............................ if objectp(soundObj) then
+  [ 11] getprop 619 ............................. <soundObj>
+  [ 14] pusharglist 1 ........................... <soundObj>
+  [ 16] objcall 1 ............................... <soundObj.kill()>
+  [ 18] setprop 619 ............................. soundObj = soundObj.kill()
+  [ 21] getprop 614 ............................. <cursors>
+  [ 24] pusharglist 1 ........................... <cursors>
+  [ 26] extcall 71 .............................. <objectp(cursors)>
+  [ 29] jmpifz [ 42] ............................ if objectp(cursors) then
+  [ 32] getprop 614 ............................. <cursors>
+  [ 35] pusharglist 1 ........................... <cursors>
+  [ 37] objcall 1 ............................... <cursors.kill()>
+  [ 39] setprop 614 ............................. cursors = cursors.kill()
+  [ 42] getprop 613 ............................. <MIAWs>
+  [ 45] pusharglist 1 ........................... <MIAWs>
+  [ 47] extcall 71 .............................. <objectp(MIAWs)>
+  [ 50] jmpifz [ 63] ............................ if objectp(MIAWs) then
+  [ 53] getprop 613 ............................. <MIAWs>
+  [ 56] pusharglist 1 ........................... <MIAWs>
+  [ 58] objcall 1 ............................... <MIAWs.kill()>
+  [ 60] setprop 613 ............................. MIAWs = MIAWs.kill()
+  [ 63] getprop 612 ............................. <angles>
+  [ 66] pusharglist 1 ........................... <angles>
+  [ 68] extcall 71 .............................. <objectp(angles)>
+  [ 71] jmpifz [ 84] ............................ if objectp(angles) then
+  [ 74] getprop 612 ............................. <angles>
+  [ 77] pusharglist 1 ........................... <angles>
+  [ 79] objcall 1 ............................... <angles.kill()>
+  [ 81] setprop 612 ............................. angles = angles.kill()
+  [ 84] getprop 618 ............................. <systemKeys>
+  [ 87] pusharglist 1 ........................... <systemKeys>
+  [ 89] extcall 71 .............................. <objectp(systemKeys)>
+  [ 92] jmpifz [105] ............................ if objectp(systemKeys) then
+  [ 95] getprop 618 ............................. <systemKeys>
+  [ 98] pusharglist 1 ........................... <systemKeys>
+  [100] objcall 1 ............................... <systemKeys.kill()>
+  [102] setprop 618 ............................. systemKeys = systemKeys.kill()
+  [105] getprop 24 .............................. <frameTimer>
+  [107] getprop 609 ............................. <mouseObjects>
+  [110] pusharglistnoret 2 ...................... <frameTimer, mouseObjects>
+  [112] extcall 25 .............................. deleteObject(frameTimer, mouseObjects)
+  [114] getprop 609 ............................. <mouseObjects>
+  [117] pusharglist 1 ........................... <mouseObjects>
+  [119] extcall 71 .............................. <objectp(mouseObjects)>
+  [122] jmpifz [135] ............................ if objectp(mouseObjects) then
+  [125] getprop 609 ............................. <mouseObjects>
+  [128] pusharglist 1 ........................... <mouseObjects>
+  [130] objcall 1 ............................... <mouseObjects.kill()>
+  [132] setprop 609 ............................. mouseObjects = mouseObjects.kill()
+  [135] getprop 256 ............................. <idleTimer>
+  [138] pusharglist 1 ........................... <idleTimer>
+  [140] extcall 71 .............................. <objectp(idleTimer)>
+  [143] jmpifz [156] ............................ if objectp(idleTimer) then
+  [146] getprop 256 ............................. <idleTimer>
+  [149] pusharglist 1 ........................... <idleTimer>
+  [151] objcall 1 ............................... <idleTimer.kill()>
+  [153] setprop 256 ............................. idleTimer = idleTimer.kill()
+  [156] getprop 24 .............................. <frameTimer>
+  [158] pusharglist 1 ........................... <frameTimer>
+  [160] extcall 71 .............................. <objectp(frameTimer)>
+  [163] jmpifz [174] ............................ if objectp(frameTimer) then
+  [166] getprop 24 .............................. <frameTimer>
+  [168] pusharglist 1 ........................... <frameTimer>
+  [170] objcall 1 ............................... <frameTimer.kill()>
+  [172] setprop 24 .............................. frameTimer = frameTimer.kill()
+  [174] getprop 611 ............................. <cuePointMaster>
+  [177] pusharglist 1 ........................... <cuePointMaster>
+  [179] extcall 71 .............................. <objectp(cuePointMaster)>
+  [182] jmpifz [195] ............................ if objectp(cuePointMaster) then
+  [185] getprop 611 ............................. <cuePointMaster>
+  [188] pusharglist 1 ........................... <cuePointMaster>
+  [190] objcall 1 ............................... <cuePointMaster.kill()>
+  [192] setprop 611 ............................. cuePointMaster = cuePointMaster.kill()
+  [195] getprop 603 ............................. <currentMovieObj>
+  [198] pusharglist 1 ........................... <currentMovieObj>
+  [200] extcall 71 .............................. <objectp(currentMovieObj)>
+  [203] jmpifz [216] ............................ if objectp(currentMovieObj) then
+  [206] getprop 603 ............................. <currentMovieObj>
+  [209] pusharglist 1 ........................... <currentMovieObj>
+  [211] objcall 1 ............................... <currentMovieObj.kill()>
+  [213] setprop 603 ............................. currentMovieObj = currentMovieObj.kill()
+  [216] pushzero ................................ <0>
+  [217] pusharglistnoret 1 ...................... <0>
+  [219] extcall 21 .............................. return 0
+  [221] ret
+end
+
+on prepareMovie me
+  [  0] pushint8 1 .............................. <1>
+  [  3] setprop 96 .............................. isRunning = 1
+  [  6] getmovieprop 621 ........................ <the movieName>
+  [  9] pusharglist 1 ........................... <the movieName>
+  [ 11] extcall 37 .............................. <fileStripName(the movieName)>
+  [ 14] setprop 620 ............................. currentMovie = fileStripName(the movieName)
+  [ 17] getprop 603 ............................. <currentMovieObj>
+  [ 20] pusharglistnoret 1 ...................... <currentMovieObj>
+  [ 22] objcall 597 ............................. currentMovieObj.prepareMovie()
+  [ 25] ret
+end
+
+on startMovie me
+  [  0] getprop 603 ............................. <currentMovieObj>
+  [  3] pusharglistnoret 1 ...................... <currentMovieObj>
+  [  5] objcall 598 ............................. currentMovieObj.startMovie()
+  [  8] ret
+end
+
+on stopMovie me
+  [  0] pushzero ................................ <0>
+  [  1] setprop 96 .............................. isRunning = 0
+  [  4] getprop 603 ............................. <currentMovieObj>
+  [  7] pusharglistnoret 1 ...................... <currentMovieObj>
+  [  9] objcall 599 ............................. currentMovieObj.stopMovie()
+  [ 12] ret
+end
+
+on startCheckingSpeed me
+  [  0] pushint8 2 .............................. <2>
+  [  3] setprop 622 ............................. checkTicksAfterNFrames = 2
+  [  6] pusharglist 0 ........................... <>
+  [  8] thebuiltin 262 .......................... <the ticks>
+  [ 11] setprop 623 ............................. startTicks = the ticks
+  [ 14] ret
+end
+
+on loop me
+  [  0] getprop 24 .............................. <frameTimer>
+  [  2] pusharglistnoret 1 ...................... <frameTimer>
+  [  4] extcall 5 ............................... timeTick(frameTimer)
+  [  6] getprop 622 ............................. <checkTicksAfterNFrames>
+  [  9] jmpifz [ 56] ............................ if checkTicksAfterNFrames then
+  [ 12] getprop 622 ............................. <checkTicksAfterNFrames>
+  [ 15] pushint8 1 .............................. <1>
+  [ 18] sub ..................................... <checkTicksAfterNFrames - 1>
+  [ 19] setprop 622 ............................. checkTicksAfterNFrames = checkTicksAfterNFrames - 1
+  [ 22] getprop 622 ............................. <checkTicksAfterNFrames>
+  [ 25] pushzero ................................ <0>
+  [ 26] eq ...................................... <checkTicksAfterNFrames = 0>
+  [ 27] jmpifz [ 56] ............................ if checkTicksAfterNFrames = 0 then
+  [ 30] pusharglist 0 ........................... <>
+  [ 32] thebuiltin 262 .......................... <the ticks>
+  [ 35] getprop 623 ............................. <startTicks>
+  [ 38] sub ..................................... <the ticks - startTicks>
+  [ 39] setlocal 0 .............................. tmpTicks = the ticks - startTicks
+  [ 41] getlocal 0 .............................. <tmpTicks>
+  [ 43] pushint8 300 ............................ <300>
+  [ 46] gt ...................................... <tmpTicks > 300>
+  [ 47] jmpifz [ 56] ............................ if tmpTicks > 300 then
+  [ 50] pushint8 2 .............................. <2>
+  [ 53] setprop 615 ............................. speedCategory = 2
+  [ 56] ret
+end
+
+on idle me
+  [  0] getprop 256 ............................. <idleTimer>
+  [  3] pusharglistnoret 1 ...................... <idleTimer>
+  [  5] extcall 5 ............................... timeTick(idleTimer)
+  [  7] ret
+end
+
+on findXtras me
+  [  0] pusharglist 0 ........................... <[:]>
+  [  2] pushproplist ............................ <[:]>
+  [  3] setprop 625 ............................. xtrasList = [:]
+  [  6] pushint8 1 .............................. <1>
+  [  9] setlocal 0
+  [ 11] getlocal 0
+  [ 13] pushint8 5 .............................. <5>
+  [ 16] get 8 ................................... <the number of xtras>
+  [ 18] lteq
+  [ 19] jmpifz [ 59] ............................ repeat with n = 1 to the number of xtras
+  [ 22] getprop 625 ............................. <xtrasList>
+  [ 25] getlocal 0 .............................. <n>
+  [ 27] pusharglist 1 ........................... <n>
+  [ 29] extcall 39 .............................. <xtra(n)>
+  [ 32] getobjprop 504 .......................... <xtra(n).name>
+  [ 35] pusharglist 1 ........................... <xtra(n).name>
+  [ 37] extcall 626 ............................. <symbol(xtra(n).name)>
+  [ 40] pushint8 1 .............................. <1>
+  [ 43] pusharglistnoret 3 ...................... <xtrasList, symbol(xtra(n).name), 1>
+  [ 45] extcall 307 ............................. addProp(xtrasList, symbol(xtra(n).name), 1)
+  [ 48] pushint8 1
+  [ 51] getlocal 0
+  [ 53] add
+  [ 54] setlocal 0
+  [ 56] endrepeat [ 11]
+  [ 59] ret
+end
+
+on setSoundSystem me, argType, argVolSettings
+  [  0] getparam 16 ............................. <argVolSettings>
+  [  2] pusharglist 1 ........................... <argVolSettings>
+  [  4] extcall 68 .............................. <voidp(argVolSettings)>
+  [  7] jmpifz [ 63] ............................ if voidp(argVolSettings) then
+  [ 10] pushsymb 627 ............................ <#SpeakVol>
+  [ 13] pushint8 70 ............................. <70>
+  [ 16] pushsymb 628 ............................ <#FXVol>
+  [ 19] pushint8 70 ............................. <70>
+  [ 22] pushsymb 629 ............................ <#DemoVol>
+  [ 25] pushint8 100 ............................ <100>
+  [ 28] pushsymb 630 ............................ <#PreviewMusicVol>
+  [ 31] pushint8 60 ............................. <60>
+  [ 34] pushsymb 631 ............................ <#PlaceVol>
+  [ 37] pushint8 85 ............................. <85>
+  [ 40] pushsymb 632 ............................ <#DateTickVol>
+  [ 43] pushint8 25 ............................. <25>
+  [ 46] pushsymb 633 ............................ <#CityBGVol>
+  [ 49] pushint8 35 ............................. <35>
+  [ 52] pushsymb 634 ............................ <#MissionIntroVol>
+  [ 55] pushint8 70 ............................. <70>
+  [ 58] pusharglist 16 .......................... <[#SpeakVol: 70, #FXVol: 70, #DemoVol: 100, #PreviewMusicVol: 60, #PlaceVol: 85, #DateTickVol: 25, #CityBGVol: 35, #MissionIntroVol: 70]>
+  [ 60] pushproplist ............................ <[#SpeakVol: 70, #FXVol: 70, #DemoVol: 100, #PreviewMusicVol: 60, #PlaceVol: 85, #DateTickVol: 25, #CityBGVol: 35, #MissionIntroVol: 70]>
+  [ 61] setparam 16 ............................. argVolSettings = [#SpeakVol: 70, #FXVol: 70, #DemoVol: 100, #PreviewMusicVol: 60, #PlaceVol: 85, #DateTickVol: 25, #CityBGVol: 35, #MissionIntroVol: 70]
+  [ 63] getprop 619 ............................. <soundObj>
+  [ 66] pusharglist 1 ........................... <soundObj>
+  [ 68] extcall 71 .............................. <objectp(soundObj)>
+  [ 71] jmpifz [124] ............................ if objectp(soundObj) then
+  [ 74] getprop 619 ............................. <soundObj>
+  [ 77] getobjprop 635 .......................... <soundObj.isDX>
+  [ 80] pushint8 1 .............................. <1>
+  [ 83] eq ...................................... <soundObj.isDX = 1>
+  [ 84] getparam 8 .............................. <argType>
+  [ 86] pushsymb 39 ............................. <#xtra>
+  [ 89] eq ...................................... <argType = #xtra>
+  [ 90] and ..................................... <(soundObj.isDX = 1) and (argType = #xtra)>
+  [ 91] jmpifz [ 95] ............................ if (soundObj.isDX = 1) and (argType = #xtra) then
+  [ 94] ret ..................................... exit
+  [ 95] getprop 619 ............................. <soundObj>
+  [ 98] getobjprop 635 .......................... <soundObj.isDX>
+  [101] pushzero ................................ <0>
+  [102] eq ...................................... <soundObj.isDX = 0>
+  [103] getparam 8 .............................. <argType>
+  [105] pushsymb 506 ............................ <#Director>
+  [108] eq ...................................... <argType = #Director>
+  [109] and ..................................... <(soundObj.isDX = 0) and (argType = #Director)>
+  [110] jmpifz [114] ............................ if (soundObj.isDX = 0) and (argType = #Director) then
+  [113] ret ..................................... exit
+  [114] getprop 619 ............................. <soundObj>
+  [117] pusharglist 1 ........................... <soundObj>
+  [119] objcall 1 ............................... <soundObj.kill()>
+  [121] setprop 619 ............................. soundObj = soundObj.kill()
+  [124] getparam 8 .............................. <argType>
+  [126] pushsymb 39 ............................. <#xtra>
+  [129] eq ...................................... <argType = #xtra>
+  [130] jmpifz [175] ............................ if argType = #xtra then
+  [133] getprop 625 ............................. <xtrasList>
+  [136] pushsymb 636 ............................ <#DirectSound>
+  [139] pusharglist 2 ........................... <xtrasList, #DirectSound>
+  [141] objcall 34 .............................. <xtrasList[#DirectSound]>
+  [144] pushint8 1 .............................. <1>
+  [147] eq ...................................... <xtrasList[#DirectSound] = 1>
+  [148] jmpifz [168] ............................ if xtrasList[#DirectSound] = 1 then / else
+  [151] pushcons 104 ............................ <"DXSoundHandlerScript">
+  [153] pusharglist 1 ........................... <"DXSoundHandlerScript">
+  [155] extcall 284 ............................. <script("DXSoundHandlerScript")>
+  [158] pusharglist 1 ........................... <script("DXSoundHandlerScript")>
+  [160] objcall 0 ............................... <script("DXSoundHandlerScript").new()>
+  [162] setprop 619 ............................. soundObj = script("DXSoundHandlerScript").new()
+  [165] jmp [175]
+  [168] pushcons 112 ............................ <"DSound Xtra not available!">
+  [170] pusharglistnoret 1 ...................... <"DSound Xtra not available!">
+  [172] extcall 36 .............................. pott("DSound Xtra not available!")
+  [175] getprop 619 ............................. <soundObj>
+  [178] pusharglist 1 ........................... <soundObj>
+  [180] extcall 71 .............................. <objectp(soundObj)>
+  [183] not ..................................... <not objectp(soundObj)>
+  [184] jmpifz [201] ............................ if not objectp(soundObj) then
+  [187] pushcons 120 ............................ <"DirSoundHandlerScript">
+  [189] pusharglist 1 ........................... <"DirSoundHandlerScript">
+  [191] extcall 284 ............................. <script("DirSoundHandlerScript")>
+  [194] pusharglist 1 ........................... <script("DirSoundHandlerScript")>
+  [196] objcall 0 ............................... <script("DirSoundHandlerScript").new()>
+  [198] setprop 619 ............................. soundObj = script("DirSoundHandlerScript").new()
+  [201] getprop 619 ............................. <soundObj>
+  [204] pusharglist 1 ........................... <soundObj>
+  [206] extcall 71 .............................. <objectp(soundObj)>
+  [209] jmpifz [220] ............................ if objectp(soundObj) then
+  [212] getprop 619 ............................. <soundObj>
+  [215] pusharglistnoret 1 ...................... <soundObj>
+  [217] objcall 596 ............................. soundObj.init()
+  [220] getprop 619 ............................. <soundObj>
+  [223] getparam 16 ............................. <argVolSettings>
+  [225] pusharglistnoret 2 ...................... <soundObj, argVolSettings>
+  [227] objcall 637 ............................. soundObj.setVolSettings(argVolSettings)
+  [230] ret
+end

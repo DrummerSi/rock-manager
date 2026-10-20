@@ -1,0 +1,43 @@
+on refreshMembersInCast argFolders, argCast
+  if not listp(argFolders) then
+    argFolders = ["D:\dok\import1\", "D:\dok\import2\"]
+  end if
+  if voidp(argCast) then
+    argCast = 2
+  end if
+  fxObj = xtra("FileXtra3").new()
+  repeat with folderNr = 1 to argFolders.count
+    Folder = argFolders[folderNr]
+    Files = getFilesInFolder(Folder)
+    put Folder
+    repeat with fileNr = 1 to Files.count
+      file = Files[fileNr]
+      stripped = fileStripName(file)
+      tmpMemb = member(stripped, argCast)
+      importInto = 0
+      if tmpMemb.number > 0 then
+        membDate = tmpMemb.creationDate
+        fileDate = translateFXDate(fxObj.fx_FileGetModDate(Folder & file), #lingo)
+        if (fileDate - membDate) >= 0 then
+          if (fileDate - membDate) = 0 then
+            if fileDate.seconds > membDate.seconds then
+              importInto = tmpMemb.memberNum
+            end if
+          else
+            importInto = tmpMemb.memberNum
+          end if
+          if importInto > 0 then
+            pott("New file", fileDate, membDate)
+          end if
+        end if
+      else
+        importInto = 1 + the number of castMembers of castLib argCast
+      end if
+      if importInto > 0 then
+        put "import", file, importInto
+        newMemb = newMember(#bitmap, stripped, member(importInto, argCast))
+        importFileInto(newMemb, Folder & file)
+      end if
+    end repeat
+  end repeat
+end

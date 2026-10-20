@@ -1,0 +1,59 @@
+property m_noteKeys, m_track, m_mode, m_keys, m_sequencer
+global gUseful
+
+on new me, argSequencerObj
+  m_sequencer = argSequencerObj
+  m_noteKeys = ["zsxdcvgbhnjm,l.-", "q2w3er5t6y7ui9o0p"]
+  m_mode = #Record
+  if m_mode = #Record then
+    m_track = script("TrackScript").new(m_sequencer)
+    m_sequencer.addTrack(m_track, #user)
+    m_track.setSoundSet("SoundSetVocal")
+  else
+    if m_mode = #Playalong then
+      m_track = m_sequencer.getTrack(#Playalong)
+      if voidp(m_track) then
+      end if
+    end if
+  end if
+  m_keys = script("AllKeysObject").new(me)
+  return me
+end
+
+on kill me
+  if m_mode = #Record then
+    m_sequencer.deleteTrack(m_track)
+    m_track = m_track.kill()
+  end if
+  m_keys = m_keys.kill()
+  return 0
+end
+
+on key me, argObj, argWhat, argKey
+  if argWhat = #down then
+    repeat with octave = 1 to m_noteKeys.count()
+      note = offset(argKey, m_noteKeys[octave])
+      if note then
+        realNote = ((octave - 1) * 12) + note
+        if m_mode = #Playalong then
+          index = m_track.getCloseEventIndex(m_sequencer.m_tick)
+          m_track.playEvent(m_track.getEventByIndex(index), 1)
+        else
+          if m_mode = #Record then
+            m_track.playEvent([#note: realNote])
+          end if
+        end if
+        exit
+      end if
+    end repeat
+    if m_mode = #Record then
+      if the key = "'" then
+        m_track.activateContinuousErase(1)
+      end if
+    end if
+  else
+    if argWhat = #up then
+      m_track.activateContinuousErase(0)
+    end if
+  end if
+end

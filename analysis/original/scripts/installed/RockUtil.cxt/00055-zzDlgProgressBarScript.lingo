@@ -1,0 +1,65 @@
+property ancestor, m_callBackInfo, _killed
+global gDir, gRock
+
+on new me, argOptions
+  argOptions.setaProp(#ReportTo, me)
+  argOptions.setaProp(#child, me)
+  _killed = 0
+  argOptions[#ID] = #Confirm
+  dialogInfoObj_r = gRock.m_classManager.getObjByID(#DlgConfirm, #Dialog)
+  dialogInfoObj_r.dataMemberName = "DlgConfirmData"
+  dialogInfoObj_r.icon = "icon_healthbox01"
+  argOptions[#DlgInfoObj] = dialogInfoObj_r
+  ancestor = script("DlgRockAncestorScript").new(argOptions)
+  m_callBackInfo = argOptions.getaProp(#CallBackInfo)
+  itemObj = ancestor.m_objDlg.getItem(#Info)
+  if voidp(argOptions[#InfoImage]) then
+    itemObj.setOneProp(#Pic, "Dummy")
+  else
+    if objectp(argOptions[#InfoImage]) then
+      itemObj.setOneProp(#Pic, argOptions[#InfoImage])
+    else
+      if stringp(argOptions[#InfoImage]) then
+        itemObj.setOneProp(#Pic, rFormatText([argOptions[#InfoImage]], "DefaultFormatting", [#shadow: 1]))
+      end if
+    end if
+  end if
+  ancestor.render()
+  return me
+end
+
+on kill me
+  _killed = 1
+  ancestor.kill()
+  return 0
+end
+
+on Report me, argObj, argWhat, argOptions
+  if argWhat = #Progress then
+    itemObj = ancestor.m_objDlg.getItem(#Info)
+    tmpStr = convFloatToPercent(argOptions[#Part], 0) & "%"
+    itemObj.setOneProp(#Pic, rFormatText([tmpStr], "DefaultFormatting", [#shadow: 1]))
+    ancestor.render()
+  end if
+end
+
+on mouse me, argObj, argWhat, argOption
+  if objectp(argOption) then
+    if argWhat = #click then
+      ID = argOption.getOneProp(#ID)
+      if ID = #ButtonOK then
+        if listp(m_callBackInfo) then
+          if objectp(m_callBackInfo[#object]) then
+            call(m_callBackInfo[#handler], m_callBackInfo[#object], me, ID)
+            exit
+          end if
+        end if
+        if ancestor.m_objReportTo <> me then
+          ancestor.m_objReportTo.Report(me, ancestor.m_ID, ID)
+          exit
+        end if
+      end if
+    end if
+  end if
+  ancestor.mouse(argObj, argWhat, argOption)
+end

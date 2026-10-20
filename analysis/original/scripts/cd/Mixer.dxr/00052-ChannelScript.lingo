@@ -1,0 +1,359 @@
+property isPlaying, m_mixerObj, controllerObjs, channelNum, fileName, envelopeObj, channelMusicianObj, numUsedSPs, m_loopObj_r, chNameLoc, m_track, m_modFile, m_isLoaded, m_FXDlg, m_fxObjs, m_SPInstrument, m_active, m_settings, m_changeInstrumentObj, m_renderedFile, m_orgFile, m_soundPrio
+global gUseful, gRock, gDir
+
+on new me, argMixerObj, argStartSPNum, argStartLoc, argChannelNum, argSoundPrio
+  m_mixerObj = argMixerObj
+  channelNum = argChannelNum
+  m_soundPrio = argSoundPrio
+  tmpSPNum = argStartSPNum
+  tmpLoc = duplicate(argStartLoc)
+  controllerObjs = [:]
+  sprite(tmpSPNum).member = member("background_mixer_channel01")
+  sprite(tmpSPNum).loc = tmpLoc + point(5, 200)
+  sprite(tmpSPNum).ink = 0
+  tmpLoc[2] = tmpLoc[2] + 55
+  tmpSPNum = tmpSPNum + 1
+  channelMusicianObj = script("ChannelMusicianScript").new(me, tmpSPNum, tmpLoc.duplicate())
+  tmpSPNum = tmpSPNum + 1
+  m_SPInstrument = sprite(tmpSPNum)
+  tmptmpLoc = tmpLoc + point(0, 65)
+  m_SPInstrument.loc = tmptmpLoc
+  tmpRect = rect(tmptmpLoc, tmptmpLoc) + rect(-15, -88, 15, 15)
+  m_changeInstrumentObj = script("MouseObject").new(me, tmpRect, [#ID: #Instrument, #layer: 70])
+  tmpSPNum = tmpSPNum + 1
+  tmpMinMaxObj = script("MinMaxScript").new(-100, 100)
+  tmpObj = script("PotentiometerScript").new(me, "small_ratt01_0000", 64, tmpSPNum, tmpLoc + point(48, 95), #Pan, tmpMinMaxObj)
+  controllerObjs.addProp(#Pan, tmpObj)
+  tmpSPNum = tmpSPNum + 1
+  tmpObj = script("ButtonScript").new(me, "button_mute01", tmpLoc + point(-3, 165), tmpSPNum, [#ID: #Mute, #states: [#down: 1], #SPUse: 1, #Toggle: 1, #layer: 70])
+  controllerObjs.addProp(#Mute, tmpObj)
+  tmpSPNum = tmpSPNum + 1
+  tmptmpLoc = tmpLoc + point(-10, 278)
+  tmpRect = rect(tmptmpLoc, tmptmpLoc) + rect(0, -85, 0, 0)
+  tmpObj = script("SliderScript").new(me, tmpSPNum, member("button_slider01"), tmpRect, VOID, [#layer: 70])
+  controllerObjs.addProp(#volume, tmpObj)
+  tmpObj.setCursor(#DragV)
+  numUsedSPs = tmpSPNum - argStartSPNum
+  numUsedSPs = numUsedSPs + 1
+  m_isLoaded = 0
+  m_active = 0
+  m_fxObjs = [:]
+  m_settings = [#vol: 0, #Pan: 0, #Mute: 0]
+  return me
+end
+
+on kill me
+  if objectp(envelopeObj) then
+    envelopeObj = envelopeObj.kill()
+  end if
+  if objectp(m_changeInstrumentObj) then
+    m_changeInstrumentObj = m_changeInstrumentObj.kill()
+  end if
+  if objectp(m_track) then
+    m_mixerObj.m_sequencer.deleteTrack(m_track)
+    m_track = m_track.kill()
+  end if
+  channelMusicianObj = channelMusicianObj.kill()
+  repeat with tmpObj in controllerObjs
+    tmpObj.kill()
+  end repeat
+  controllerObjs = [:]
+  return 0
+end
+
+on getNumSPs me
+  return numUsedSPs
+end
+
+on mouse me, argObj, argWhat
+  if argWhat = #down then
+    case argObj.ID of
+      #Mute:
+        if me.getSetting(#Mute) > 0 then
+          me.setSetting(#Mute, 0)
+        else
+          me.setSetting(#Mute, 1)
+        end if
+      #FX:
+        me.openSettings()
+      #Instrument:
+        me.openSettings()
+    end case
+  end if
+end
+
+on openSettings me
+  m_mixerObj.stop()
+  if channelMusicianObj.gotMusician() = 0 then
+    gDir.m_objDialogsMaster.openDialog(#MixerChooseMusician, [#ReportTo: me, #Instrument: VOID, #CurrentlyPlaying: VOID, #StudioMusicianIDs: m_mixerObj.m_studio_r.StudioMusicians])
+  else
+    obj = gDir.m_objDialogsMaster.openDialog(#MixerFX, [#channelObj: me, #FXObjs: m_fxObjs])
+    obj.init()
+  end if
+end
+
+on Report me, argObj, argWhat, argOptions
+  tmpPos = controllerObjs.getPos(argObj)
+  if tmpPos then
+    tmpID = controllerObjs.getPropAt(tmpPos)
+    case tmpID of
+      #volume:
+        argOptions = 100 - integer(100 * argOptions)
+        me.setSetting(#vol, argOptions)
+      #Frequency:
+        me.setSetting(#freq, argOptions)
+      #Pan:
+        if argWhat = #changed then
+          me.setSetting(#Pan, argOptions)
+        end if
+    end case
+  else
+    if argWhat = #ClosedFX then
+      gDir.m_waveRenderer.m_doWhatWhenDoneList = [#ReportTo: m_mixerObj, #handler: #playSoon]
+      gDir.m_waveRenderer.renderQueue()
+    else
+      if argWhat = #ChoseMusician then
+        channelMusicianObj.setMusician(argOptions[#Musician])
+        tmpLst = m_mixerObj.getLoops(argOptions[#Instrument])
+        tmpOKLoop_r = tmpLst[1]
+        tmpLst = tmpLst.duplicate()
+        repeat with obj in m_mixerObj.channelObjs
+          if objectp(obj.m_loopObj_r) then
+            tmpLst.deleteOne(obj.m_loopObj_r)
+          end if
+        end repeat
+        if tmpLst.count then
+          tmpOKLoop_r = tmpLst[1]
+        end if
+        me.prepareLoop(tmpOKLoop_r)
+        if m_settings[#vol] = 0 then
+          me.setSetting(#vol, 70, #Gfx)
+        end if
+        gDir.m_waveRenderer.m_doWhatWhenDoneList = [#ReportTo: m_mixerObj, #handler: #playSoon]
+        gDir.m_waveRenderer.renderQueue()
+      end if
+    end if
+  end if
+end
+
+on prepareLoop me, argLoopObj
+  if argLoopObj = #next then
+    argLoopObj = 1
+  end if
+  if integerp(argLoopObj) then
+    if not objectp(m_loopObj_r) then
+      exit
+    end if
+    tmpLst = m_mixerObj.getLoops(m_loopObj_r.Instrument)
+    tmpPos = tmpLst.getPos(m_loopObj_r)
+    tmpPos = tmpPos + argLoopObj
+    if tmpPos > tmpLst.count then
+      tmpPos = tmpLst.count
+    else
+      if tmpPos < 1 then
+        tmpPos = 1
+      end if
+    end if
+    argLoopObj = tmpLst[tmpPos]
+  else
+    if voidp(argLoopObj) or (argLoopObj = #Current) then
+      if objectp(m_loopObj_r) then
+        argLoopObj = m_loopObj_r
+      end if
+    end if
+  end if
+  m_loopObj_r = argLoopObj
+  if objectp(m_loopObj_r) then
+    ID = m_loopObj_r.Instrument
+    instObj = gRock.m_classManager.getObjByID(ID)
+  end if
+  if objectp(instObj) then
+    instMembName = instObj.Gfx & "02"
+  else
+    instMembName = "icon_cancel01"
+  end if
+  m_SPInstrument.member = instMembName
+  if not objectp(m_loopObj_r) then
+    exit
+  end if
+  m_orgFile = me.fixPossibleVocalFileName(m_loopObj_r)
+  if objectp(m_track) then
+    m_mixerObj.m_sequencer.deleteTrack(m_track)
+    m_track = m_track.kill()
+  end if
+  if channelMusicianObj.gotMusician() = 0 then
+    exit
+  end if
+  isPlaying = 0
+  LoopType = rgetProp(m_loopObj_r, #LoopType)
+  if LoopType = #MIDI then
+    m_track = script("TrackScript").new(m_mixerObj.m_sequencer)
+    m_mixerObj.m_sequencer.addTrack(m_track)
+  else
+    channelMusicianObj.modifyLoop(m_loopObj_r, m_orgFile)
+    m_track = script("TrackLoopScript").new(m_mixerObj.m_sequencer)
+    m_mixerObj.m_sequencer.addLoopTrack(m_track)
+  end if
+  m_isLoaded = 0
+end
+
+on fixPossibleVocalFileName me, argLoopObj
+  if argLoopObj.Instrument = #Vocals then
+    if offset("All", argLoopObj.file) then
+      return argLoopObj.file
+    end if
+    tmpMus_r = channelMusicianObj.m_musician_r
+    if objectp(tmpMus_r) then
+      if tmpMus_r.className = #RealMusician then
+        tmpSingerSuffix = tmpMus_r.getSoundFilePrefix()
+      end if
+    end if
+    if not stringp(tmpSingerSuffix) then
+      pott("Can't sing!")
+      tmpSingerSuffix = "a01"
+    end if
+    return argLoopObj.file & tmpSingerSuffix
+  end if
+  return argLoopObj.file
+end
+
+on play me
+  global gDir
+  if m_isLoaded = 1 then
+    exit
+  end if
+  if not objectp(m_loopObj_r) then
+    exit
+  end if
+  if not objectp(m_track) then
+    exit
+  end if
+  LoopType = rgetProp(m_loopObj_r, #LoopType)
+  if LoopType = #MIDI then
+    m_track.load(member("TrkSq" & m_orgFile).text.value, 2)
+  else
+    m_renderedFile = gDir.m_waveRenderer.getRendered(channelNum, m_orgFile)
+    m_renderedFile = fileExtractName(m_renderedFile)
+    m_track.setSetting(#file, m_renderedFile)
+    repeat with n = 1 to m_settings.count
+      me.setSetting(m_settings.getPropAt(n), m_settings[n])
+    end repeat
+  end if
+  m_isLoaded = 1
+end
+
+on stop me
+  isPlaying = 0
+end
+
+on atEnd me
+  return 0
+end
+
+on setSetting me, argProp, argVal, argChangeGfx
+  if not voidp(argVal) then
+    m_settings[argProp] = argVal
+  end if
+  if argProp = #vol then
+    if argChangeGfx = #Gfx then
+      tmpObj = controllerObjs[#volume]
+      tmpObj.setFactor(argVal / 100.0)
+    end if
+    if voidp(argVal) then
+      argVal = me.getSetting(#vol)
+    end if
+    argVal = argVal * m_mixerObj.m_masterVolFact
+    if objectp(m_track) then
+      m_track.setSetting(#vol, integer(argVal))
+    end if
+  else
+    if argProp = #Pan then
+      if argChangeGfx = #Gfx then
+        tmpObj = controllerObjs[#Pan]
+        tmpObj.setMinMaxRelVal(argVal)
+      end if
+      if objectp(m_track) then
+        m_track.setSetting(#Pan, argVal)
+      end if
+    else
+      if argProp = #freq then
+        if floatp(argVal) then
+          argVal = argVal * 2
+          if abs(argVal - 1.0) < 0.05 then
+            argVal = 1.0
+          end if
+        else
+        end if
+      else
+        if argProp = #Mute then
+          if objectp(m_track) then
+            m_track.setSetting(#Mute, argVal)
+          end if
+        end if
+      end if
+    end if
+  end if
+end
+
+on getSetting me, argProp
+  return m_settings[argProp]
+end
+
+on getEffects me, argLoop_r
+  if voidp(argLoop_r) then
+    argLoop_r = m_loopObj_r
+  end if
+  if not objectp(argLoop_r) then
+    exit
+  end if
+  tmp = me.calcLoopRenderTempo(argLoop_r)
+  repeat with n = 1 to m_fxObjs.count
+    ID = m_fxObjs.getPropAt(n)
+    obj = m_fxObjs[n]
+    if ilk(obj) = #instance then
+      lst = obj.getSettings()
+      if lst[#Active] then
+        tmp.setaProp(obj.m_fxName, lst)
+      end if
+      next repeat
+    end if
+    if obj[#Active] = 1 then
+      tmp.setaProp(ID, obj)
+    end if
+  end repeat
+  return tmp
+end
+
+on calcLoopRenderTempo me, argLoop_r
+  TimeSig = m_mixerObj.m_sequencer.m_beatSignature
+  timeStr = string(TimeSig[1]) & "/" & string(TimeSig[2])
+  tmpBPM = float(m_mixerObj.m_sequencer.m_bpm)
+  if not (argLoop_r.BPM > 0) then
+    argLoop_r.BPM = 120
+  end if
+  if (tmpBPM / argLoop_r.BPM) < 0.80000000000000004 then
+    tmpBPM = tmpBPM * 2
+  end if
+  return [#tempo: [#BPM: tmpBPM, #Bars: argLoop_r.numBars, #TimeSig: timeStr]]
+end
+
+on getMixDownParams me
+  if not objectp(m_loopObj_r) then
+    return 0
+  end if
+  if not stringp(m_renderedFile) then
+    return 0
+  end if
+  if m_renderedFile.length = 0 then
+    return 0
+  end if
+  if me.getSetting(#Mute) = 1 then
+    return 0
+  end if
+  tmpFullPath = gRock.m_paths.getPath(#RenderedMusic) & m_renderedFile
+  return [#file: tmpFullPath, #vol: me.getSetting(#vol) / 100.0]
+end
+
+on setMusician me, argObj
+  channelMusicianObj.setMusician(argObj)
+end

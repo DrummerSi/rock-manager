@@ -1,0 +1,43 @@
+property ancestor, child, className, belongsTo, _killed, albumID
+global gRock
+
+on new me, argChild, argBelongsTo
+  if objectp(argChild) then
+    child = argChild
+  else
+    child = me
+  end if
+  belongsTo = argBelongsTo
+  ancestor = script("ClassEventScript").new(child)
+  className = #AlbumRelease
+  albumID = #none
+  return me
+end
+
+on kill me
+  _killed = 1
+  if objectp(ancestor) then
+    ancestor = ancestor.kill()
+  end if
+  child = 0
+  belongsTo = 0
+  return 0
+end
+
+on eventChangeState me, argAction, argOption
+  if argAction = #start then
+  else
+    if argAction = #stop then
+      album_r = gRock.m_context.getFocus(#album)
+      reporters_r = gRock.m_classManager.getObjsOfClass(#Reporter)
+      repeat with reporter_r in reporters_r
+        reporter_r.AlbumWasReleased(album_r)
+      end repeat
+      groups_r = gRock.m_classManager.getObjsOfClass(#Group)
+      repeat with group_r in groups_r
+        group_r.AlbumWasReleased(album_r)
+      end repeat
+    end if
+  end if
+  ancestor.eventChangeState(argAction, argOption)
+end

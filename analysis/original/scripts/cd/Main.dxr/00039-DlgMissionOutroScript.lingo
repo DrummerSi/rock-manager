@@ -1,0 +1,237 @@
+property ancestor, m_succeeded, m_mission_r, m_sndObj
+global gDir, gRock
+
+on new me, argOptions
+  global gUseful
+  ID = argOptions[#ID]
+  argOptions.setaProp(#ReportTo, me)
+  argOptions.setaProp(#child, me)
+  m_mission_r = gRock.m_context.getFocus(#Mission)
+  m_succeeded = m_mission_r.status = #succeeded
+  pott("m_mission_r.status", m_mission_r.status, m_succeeded)
+  dialog_r = gRock.m_classManager.getObjByIDAndClass(#DlgMissionOutro, #Dialog)
+  dialog_r.dataMemberName = "DlgMissionOutroData"
+  dialog_r.name = m_mission_r.name
+  argOptions[#DlgInfoObj] = dialog_r
+  ancestor = script("DlgRockAncestorScript").new(argOptions)
+  itemObj = ancestor.m_objDlg.getItemByPath([#InfoDlg, #Head, #icon])
+  itemObj.setOneProp(#Pic, "icon_money02")
+  itemObj = ancestor.m_objDlg.getItemByPath([#InfoDlg, #Head, #Info])
+  itemObj.setOneProp(#editData, rGetStr(#szidEconomy))
+  itemObj = ancestor.m_objDlg.getItemByPath([#InfoConcerts, #Head, #icon])
+  itemObj.setOneProp(#Pic, "icon_star02")
+  itemObj = ancestor.m_objDlg.getItemByPath([#InfoConcerts, #Head, #Info])
+  itemObj.setOneProp(#editData, rGetStr(#szidConcerts))
+  itemObj = ancestor.m_objDlg.getItemByPath([#InfoReviews, #Head, #icon])
+  itemObj.setOneProp(#Pic, "icon_newspaper02")
+  itemObj = ancestor.m_objDlg.getItemByPath([#InfoReviews, #Head, #Info])
+  itemObj.setOneProp(#editData, rGetStr(#szidReviews))
+  itemObj = ancestor.m_objDlg.getItemByPath([#InfoPoints, #Head, #icon])
+  itemObj.setOneProp(#Pic, "icon_golden record02")
+  itemObj = ancestor.m_objDlg.getItemByPath([#InfoPoints, #Head, #Info])
+  itemObj.setOneProp(#editData, rGetStr(#szidPoint_P))
+  itemObj = ancestor.m_objDlg.getItem(#Pic)
+  if m_succeeded = 1 then
+    tmpPic = string(m_mission_r.ID) & "_success01"
+  else
+    tmpPic = string(m_mission_r.ID) & "_failure01"
+  end if
+  itemObj.setOneProp(#Pic, tmpPic)
+  itemObj = ancestor.m_objDlg.getItem(#Info)
+  if m_succeeded = 1 then
+    itemObj.setOneProp(#Pic, rFormatText([m_mission_r.SucceedText], "MissionOutroFormatting", [#shadow: 1]))
+  else
+    failReason = argOptions[#MissionFailedReason]
+    tmp = string(m_mission_r.ID)
+    delete ID.char[1..tmp.length - 2]
+    getTextFromEC = symbol("ECOCMis" & string(value(tmp)) & "Failed" & string(failReason))
+    pott("Reason", getTextFromEC, failReason)
+    eventCard_r = gRock.m_classManager.getObjByIDAndClass(getTextFromEC, #EventCard)
+    if objectp(eventCard_r) then
+      FailText = eventCard_r.comment
+    else
+      pott("Error finding outro", getTextFromEC)
+      if failReason = #NoMoney then
+        eventCard_r = gRock.m_classManager.getObjByIDAndClass(#ECOCOutOfMoney, #EventCard)
+        FailText = eventCard_r.comment
+      else
+        FailText = m_mission_r.FailText
+      end if
+    end if
+    itemObj.setOneProp(#Pic, rFormatText([FailText], "MissionOutroFormatting", [#shadow: 1]))
+  end if
+  me.setPlace()
+  ancestor.render()
+  if m_succeeded = 1 then
+    tmpSndPath = gRock.m_paths.getPath(#RenderedMusic) & "mixdown.wav"
+    m_sndObj = script("SoundScript").new(tmpSndPath, [#PlayDirect: 0, #vol: #DemoVol])
+    if objectp(m_sndObj) then
+      m_sndObj.setLoop(1)
+      m_sndObj.fade(#in, 1000)
+      m_sndObj.play()
+    end if
+  else
+    tmpSndPath = gRock.m_paths.getPath(#sound) & "a131" & gUseful.soundFileExt
+    m_sndObj = script("SoundScript").new(tmpSndPath, [#vol: #FXVol])
+  end if
+  return me
+end
+
+on kill me
+  if objectp(m_sndObj) then
+    m_sndObj = m_sndObj.kill()
+  end if
+  ancestor.kill()
+  m_mission_r = 0
+  return 0
+end
+
+on Report me, argObj, argWhat
+end
+
+on mouse me, argObj, argWhat, argOption
+  global gGameClocked
+  if objectp(argOption) then
+    if argWhat = #click then
+      ID = argOption.getOneProp(#ID)
+      IDStr = string(ID)
+      if ID = #ButtonOK then
+        if objectp(m_sndObj) then
+          m_sndObj = m_sndObj.kill()
+        end if
+        if m_succeeded then
+          nextID = gRock.m_player.getNextMissionID(m_mission_r)
+          if nextID = #ClockedGame then
+            gRock.m_eventCardsManager.setOKToShowOnTopOfNumDialogs(-1)
+            gDir.m_objDialogsMaster.ImNOTExitingToCity()
+            gDir.m_objDialogsMaster.closeAllDialogs()
+            gGameClocked = 1
+            goMovie("Mout")
+            exit
+          end if
+        end if
+        gRock.m_eventCardsManager.setOKToShowOnTopOfNumDialogs(-1)
+        gDir.m_objDialogsMaster.ImNOTExitingToCity()
+        gDir.m_objDialogsMaster.closeAllDialogs()
+        gDir.m_objDialogsMaster.openDialog(#MainMenu, [#NoContinue: 1])
+        gDir.m_objDialogsMaster.openDialog(#MissionChoose)
+        exit
+      end if
+    end if
+  end if
+end
+
+on setPlace me
+  dlgObj = ancestor.m_objDlg
+  totalMoney = 0
+  totalPoints = 0
+  strLst1 = [me.getStdFormat()]
+  strLst2 = [me.getStdFormat()]
+  strLst1.add(rGetStr(#szidAssets) & RETURN)
+  totalMoney = gRock.m_player.getWealth()
+  strLst2.add(rCurrency(totalMoney, 0, 1) & RETURN)
+  records_r = gRock.m_classManager.getObjsOfClass(#Record)
+  totalDebt = 0
+  repeat with record_r in records_r
+    pott(record_r.ID, record_r.getDebtToPlayer(), record_r.ID)
+    tmpDebtToRecord = -record_r.getDebtToPlayer()
+    if tmpDebtToRecord > 0 then
+      totalDebt = totalDebt + tmpDebtToRecord
+    end if
+  end repeat
+  pott("Gangsta", rgetProp(gRock.m_player, [#accounts, #Gangsta, #Loan]))
+  totalDebt = totalDebt + rgetProp(gRock.m_player, [#accounts, #Gangsta, #Loan])
+  strLst1.add(rGetStr(#szidDebts) & RETURN)
+  strLst2.add(rCurrency(totalDebt, 0, 1) & RETURN)
+  strLst1.add([#fontStyle: [#bold]])
+  strLst2.add([#fontStyle: [#bold]])
+  strLst1.add([#CharSpacing: -2])
+  strLst1.add("ÑÑÑÑÑÑÑÑÑÑÑÑÑÑÑÑÑÑÑÑÑÑÑ" & RETURN)
+  strLst1.add([#CharSpacing: -1])
+  strLst2.add(RETURN)
+  strLst1.add(rGetStr(#szidTotal))
+  totalMoney = totalMoney - totalDebt
+  points = totalMoney
+  strLst2.add(rCurrency(totalMoney, 0, 1))
+  totalPoints = totalPoints + points
+  img = me.createTable(strLst1, strLst2)
+  itemObj = ancestor.m_objDlg.getItemByPath([#InfoDlg, #dlg, #Pic])
+  itemObj.setOneProp(#ink, 36)
+  itemObj.setOneProp(#Pic, img)
+  tourConcerts_r = gRock.m_classManager.getObjsOfClass(#TourConcert)
+  if not listp(tourConcerts_r) then
+    tourConcerts_r = []
+  end if
+  concerts_r = gRock.m_classManager.getObjsOfClass(#Concert)
+  if not listp(concerts_r) then
+    concerts_r = []
+  end if
+  strLst1 = [me.getStdFormat()]
+  strLst2 = [me.getStdFormat()]
+  strLst2[1][#fontStyle] = [#bold]
+  str = string(concerts_r.count + tourConcerts_r.count) & " " & rGetStr(#szidConcerts)
+  strLst1.add(str)
+  points = 0
+  repeat with concert_r in concerts_r
+    points = points + (integer(5 * concert_r.quality) * 10000)
+  end repeat
+  repeat with tourConcert_r in tourConcerts_r
+    points = points + 0
+  end repeat
+  strLst2.add(rCurrency(points))
+  totalPoints = totalPoints + points
+  img = me.createTable(strLst1, strLst2)
+  itemObj = ancestor.m_objDlg.getItemByPath([#InfoConcerts, #dlg, #Pic])
+  itemObj.setOneProp(#ink, 36)
+  itemObj.setOneProp(#Pic, img)
+  reviews_r = gRock.m_classManager.getObjsOfClass(#ExpoReview)
+  if not listp(reviews_r) then
+    reviews_r = []
+  end if
+  strLst1 = [me.getStdFormat()]
+  strLst2 = [me.getStdFormat()]
+  strLst2[1][#fontStyle] = [#bold]
+  str = string(reviews_r.count) & " " & rGetStr(#szidReviews)
+  strLst1.add(str)
+  points = 0
+  repeat with review_r in reviews_r
+    points = points + (integer(5 * review_r.Rating) * 20000)
+  end repeat
+  strLst2.add(rCurrency(points))
+  totalPoints = totalPoints + points
+  img = me.createTable(strLst1, strLst2)
+  itemObj = ancestor.m_objDlg.getItemByPath([#InfoReviews, #dlg, #Pic])
+  itemObj.setOneProp(#ink, 36)
+  itemObj.setOneProp(#Pic, img)
+  strLst1 = [me.getStdFormat()]
+  strLst2 = [me.getStdFormat()]
+  strLst1[1][#fontStyle] = [#bold]
+  strLst2[1][#fontStyle] = [#bold]
+  strLst1.add(rGetStr(#szidTotal))
+  if m_succeeded = 1 then
+    totalPoints = roundToNearest(totalPoints, 1000)
+    strLst2.add(rCurrency(totalPoints))
+  else
+    totalPoints = 0
+    strLst2.add(rGetStr(#szidNA))
+  end if
+  img = me.createTable(strLst1, strLst2)
+  itemObj = ancestor.m_objDlg.getItemByPath([#InfoPoints, #dlg, #Pic])
+  itemObj.setOneProp(#ink, 36)
+  itemObj.setOneProp(#Pic, img)
+  gRock.m_player.MissionEnd(m_mission_r, m_succeeded, [#points: totalPoints])
+  gRock.autoSave()
+end
+
+on createTable me, argStrLst1, argStrLst2
+  formatFromList(member("RockInfoText"), [#member: [#width: 200, #color: rgb(255, 251, 240), #wordWrap: 0, #alignment: #left], #char: argStrLst1])
+  img1 = member("RockInfoText").image.duplicate()
+  formatFromList(member("RockInfoText"), [#member: [#width: 200, #color: rgb(255, 251, 240), #wordWrap: 0, #alignment: #right], #char: argStrLst2])
+  img2 = member("RockInfoText").image.duplicate()
+  img1.copyPixels(img2, img2.rect, img2.rect, [#ink: 36])
+  return img1
+end
+
+on getStdFormat me
+  return [#CharSpacing: -1, #FixedLinespace: 15, #fontStyle: [#plain]]
+end

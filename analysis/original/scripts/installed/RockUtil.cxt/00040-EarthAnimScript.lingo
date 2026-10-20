@@ -1,0 +1,47 @@
+property m_images, m_numFrames, m_image, m_regPoints
+
+on new me
+  m_numFrames = 80
+  m_images = []
+  m_regPoints = []
+  tmpFirst = member("globe01_0000").number
+  repeat with n = 1 to m_numFrames
+    tmpMemb = member(tmpFirst + n - 1)
+    m_images.add(tmpMemb.image)
+    m_regPoints.add(tmpMemb.regPoint)
+  end repeat
+  m_image = image(m_images[1].rect[3], m_images[1].rect[4], 16)
+  return me
+end
+
+on kill me
+  return 0
+end
+
+on rotate me, argAngle
+  tmpFrame = (argAngle + 1.05000000000000004) * m_numFrames / PI / 2.0
+  tmpDiff = tmpFrame - integer(tmpFrame)
+  tmpFrame = integer(tmpFrame)
+  tmpFrame = tmpFrame mod m_numFrames
+  if tmpFrame = 0 then
+    tmpFrame = m_numFrames
+  end if
+  tmpBlend = integer(abs(tmpDiff * 100))
+  if tmpDiff > 0 then
+    tmpNextFrame = tmpFrame + 1
+    if tmpNextFrame > m_numFrames then
+      tmpNextFrame = 1
+    end if
+    tmpBlend = 100 - tmpBlend
+  else
+    tmpNextFrame = tmpFrame
+    tmpFrame = tmpFrame - 1
+    if tmpFrame < 1 then
+      tmpFrame = m_numFrames
+    end if
+  end if
+  m_image.fill(m_image.rect, [#shape: #rect, #color: rgb(255, 255, 255)])
+  tmp = getRectSize(m_image.rect)
+  tmpOffRect = rect(tmp / 2, tmp / 2)
+  m_image.copyPixels(m_images[tmpFrame], m_image.rect + tmpOffRect - rect(m_regPoints[tmpFrame], m_regPoints[tmpFrame]), m_image.rect, [#blend: 100])
+end

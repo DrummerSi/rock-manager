@@ -1,0 +1,182 @@
+property m_parseAndCalcObj
+global gRock
+
+on new me
+  m_parseAndCalcObj = script("CalcParsedExpressionScript").new()
+  return me
+end
+
+on kill me
+  return 0
+end
+
+on clear me
+  m_parseAndCalcObj.clearLocalVars()
+end
+
+on preParseActionList me, argActionList
+  if stringp(argActionList) then
+    tmpOrgStr = argActionList
+    argActionList = argActionList.value
+  end if
+  if not listp(argActionList) then
+    if tmpOrgStr.length > 1 then
+      pott("Err in preparse", tmpOrgStr)
+    end if
+    return VOID
+  end if
+  return me.subPreParseActionList(argActionList)
+end
+
+on subPreParseActionList me, argActionList
+  if not listp(argActionList) then
+    return VOID
+  end if
+  repeat with n = 1 to argActionList.count
+    tmp = argActionList[n]
+    if listp(tmp) then
+      func = tmp[1]
+      Args = tmp[2]
+      Args[1] = me.rParse(Args[1])
+      repeat with m = 2 to Args.count
+        Args[m] = me.subPreParseActionList(Args[m])
+      end repeat
+      next repeat
+    end if
+    if stringp(tmp) then
+      argActionList[n] = me.rParse(tmp)
+    end if
+  end repeat
+  return argActionList
+end
+
+on maybeParseAndCalc me, argExpression, argExtraVars, argCallingObj
+  if stringp(argExpression) then
+    return me.rParseAndCalc(argExpression, argExtraVars, argCallingObj)
+  end if
+  return me.rCalc(argExpression, argExtraVars, argCallingObj)
+end
+
+on executePreParsedActionList me, argActionList, argExtraVars, argReportObj, arg_NestingDepth
+  if voidp(arg_NestingDepth) then
+    arg_NestingDepth = 0
+  end if
+  repeat with n = 1 to argActionList.count
+    tmp = argActionList[n]
+    func = tmp[1]
+    if symbolp(func) then
+      Args = tmp[2]
+      case func of
+        #if:
+          tmpWasTRUE = me.maybeParseAndCalc(Args[1], argExtraVars, argReportObj)
+          if tmpWasTRUE = 1 then
+            tmpResult = me.executePreParsedActionList(Args[2], argExtraVars, argReportObj, arg_NestingDepth + 1)
+          else
+            if Args.count > 2 then
+              tmpResult = me.executePreParsedActionList(Args[3], argExtraVars, argReportObj, arg_NestingDepth + 1)
+            end if
+          end if
+          if listp(tmpResult) then
+            if tmpResult[1] = #return then
+              if arg_NestingDepth > 0 then
+                return tmpResult
+              end if
+              if tmpResult.count = 2 then
+                return tmpResult[2]
+              end if
+              return VOID
+            end if
+          end if
+        #return:
+          tmpResult = me.maybeParseAndCalc(Args[1], VOID, argReportObj)
+          if arg_NestingDepth = 0 then
+            return tmpResult
+          end if
+          return [#return, tmpResult]
+        #otherwise:
+      end case
+      next repeat
+    end if
+    me.maybeParseAndCalc(tmp, argExtraVars, argReportObj)
+  end repeat
+end
+
+on executeActions me, argActionList, argExtraVars, argReportObj, arg_NestingDepth
+  if voidp(arg_NestingDepth) then
+    arg_NestingDepth = 0
+  end if
+  argCallingObj = argReportObj
+  if stringp(argActionList) then
+    tmp = argActionList
+    argActionList = value(argActionList)
+    if not listp(argActionList) then
+      exit
+    end if
+  end if
+  repeat with n = 1 to argActionList.count()
+    tmp = argActionList[n]
+    if listp(tmp) then
+      func = tmp[1]
+      Args = tmp[2]
+      case func of
+        #if:
+          tmpWasTRUE = me.rParseAndCalc(Args[1], argExtraVars, argCallingObj)
+          if tmpWasTRUE = 1 then
+            tmpResult = me.executeActions(Args[2], argExtraVars, argReportObj, arg_NestingDepth + 1)
+          else
+            if Args.count() > 2 then
+              tmpResult = me.executeActions(Args[3], argExtraVars, argReportObj, arg_NestingDepth + 1)
+            end if
+          end if
+          if listp(tmpResult) then
+            if tmpResult[1] = #return then
+              if arg_NestingDepth > 0 then
+                return tmpResult
+              end if
+              if tmpResult.count = 2 then
+                return tmpResult[2]
+              end if
+              return VOID
+            end if
+          end if
+        #return:
+          tmpResult = me.rParseAndCalc(Args[1], VOID, argCallingObj)
+          if arg_NestingDepth = 0 then
+            return tmpResult
+          end if
+          return [#return, tmpResult]
+        otherwise:
+          pott("Undefined func!", func)
+      end case
+      next repeat
+    end if
+    if stringp(tmp) then
+      me.rParseAndCalc(tmp, argExtraVars, argCallingObj)
+    end if
+  end repeat
+end
+
+on rParse me, argExpressionStr
+  parsed = m_parseAndCalcObj.parseExpression(argExpressionStr)
+  return parsed
+end
+
+on rParseAndCalc me, argExpressionStr, argExtraVars, argCallingObj
+  parsed = m_parseAndCalcObj.parseExpression(argExpressionStr)
+  return me.rCalc(parsed, argExtraVars, argCallingObj)
+end
+
+on rCalc me, argParsed, argExtraVars, argCallingObj
+  if voidp(argExtraVars) then
+    argExtraVars = [:]
+  end if
+  if objectp(gRock) then
+    if voidp(argExtraVars[#missionVar]) then
+      currMission = gRock.m_context.getFocus(#Mission)
+      if objectp(currMission) then
+        argExtraVars[#missionVar] = currMission.Vars
+      end if
+    end if
+  end if
+  return m_parseAndCalcObj.calc(argParsed, argExtraVars, VOID, argCallingObj)
+end

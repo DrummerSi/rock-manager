@@ -1,0 +1,425 @@
+property m_modifiers, m_modsByModifiedID, m_propsModifiedByModifiedID, m_addObjects, m_deleteObjects, m_pendingChanges, m_busyLooping, m_OKToRecalc, m_IDNrCnt, m_loadedObjs, m_tmpPausedObjs
+global gRock
+
+on new me
+  m_modifiers = [:]
+  m_modsByModifiedID = [:]
+  m_propsModifiedByModifiedID = [:]
+  m_addObjects = []
+  m_deleteObjects = []
+  m_pendingChanges = [:]
+  m_loadedObjs = []
+  gRock.m_gameTimer.addObject(me)
+  m_busyLooping = 0
+  m_OKToRecalc = 1
+  m_IDNrCnt = 1
+  return me
+end
+
+on kill me
+  gRock.m_gameTimer.deleteObject(me)
+  repeat with n = m_modifiers.count down to 1
+    m_modifiers[n].kill()
+  end repeat
+  m_loadedObjs = []
+  m_addObjects = []
+  m_deleteObjects = []
+  m_pendingChanges = [:]
+  return 0
+end
+
+on clearAll me
+  if m_busyLooping then
+    pott("Clearing while Looping in ModifiersManager!!")
+    exit
+  end if
+  m_modifiers = [:]
+  m_modsByModifiedID = [:]
+  m_propsModifiedByModifiedID = [:]
+  m_addObjects = []
+  m_deleteObjects = []
+  m_pendingChanges = [:]
+end
+
+on CreateModifier me, argID, argModifyWhichObj, argModifyPropsAndVals, argNumDays, argEnvelope
+  obj = script("ModifierScript").new(argID, argModifyWhichObj, argModifyPropsAndVals, argNumDays, argEnvelope)
+  return obj
+end
+
+on modifierChanged me, argObj, argNewValsAndProps, argOldValsAndProps
+  if m_busyLooping then
+    pott("CHANGE while busy!!")
+    m_pendingChanges.addProp(argObj, [argNewValsAndProps, argOldValsAndProps])
+    exit
+  end if
+  earlierProps = m_propsModifiedByModifiedID.getaProp(argObj.m_modifyWhichID)
+  if voidp(earlierProps) then
+    earlierProps = []
+    m_propsModifiedByModifiedID.addProp(argObj.m_modifyWhichID, earlierProps)
+  end if
+  repeat with n = 1 to argOldValsAndProps.count
+    prop = argOldValsAndProps[n]
+    Pos = earlierProps.getPos(prop)
+    Info = earlierProps[Pos + 1]
+    Info[1] = Info[1] - 1
+  end repeat
+  repeat with n = 1 to argNewValsAndProps.count
+    prop = argNewValsAndProps[n]
+    Pos = earlierProps.getPos(prop)
+    if not Pos then
+      Pos = earlierProps.count + 1
+      Info = [0, 0.0]
+      earlierProps[Pos] = prop
+      earlierProps[Pos + 1] = Info
+    else
+      Info = earlierProps[Pos + 1]
+    end if
+    Info[1] = Info[1] + 1
+  end repeat
+end
+
+on addModifier me, argObj
+  if m_deleteObjects.getPos(argObj) then
+    m_deleteObjects.deleteOne(argObj)
+    exit
+  end if
+  if argObj.m_IDNr = 0 then
+    argObj.m_IDNr = m_IDNrCnt
+    m_IDNrCnt = m_IDNrCnt + 1
+  end if
+  if m_busyLooping then
+    pott("ADD while busy!!")
+    m_addObjects.add(argObj)
+    exit
+  end if
+  m_modifiers.addProp(argObj.ID, argObj)
+  earlierMods = m_modsByModifiedID.getaProp(argObj.m_modifyWhichID)
+  if voidp(earlierMods) then
+    earlierMods = []
+    m_modsByModifiedID.addProp(argObj.m_modifyWhichID, earlierMods)
+  end if
+  earlierMods.add(argObj)
+  me.recalcModifiers()
+end
+
+on deleteModifiers me, argList
+  repeat with n = argList.count down to 1
+    me.deleteModifier(argList[n])
+  end repeat
+end
+
+on deleteModifier me, argObj
+  argObj.m_alive = 0
+  if m_busyLooping then
+    pott("DELETE while busy!!", argObj.ID)
+    if m_deleteObjects.getPos(argObj) then
+      pott("Already deleting it!")
+    else
+      m_deleteObjects.add(argObj)
+    end if
+    exit
+  end if
+  m_modifiers.deleteOne(argObj)
+  ModifiedID = argObj.getModifiedID()
+  lst = m_modsByModifiedID.getaProp(ModifiedID)
+  lst.deleteOne(argObj)
+  tmp = m_propsModifiedByModifiedID.getaProp(ModifiedID)
+  modifiedProps = argObj.getModifiedValsAndProps()
+  repeat with n = 1 to modifiedProps.count
+    prop = modifiedProps[n]
+    Pos = tmp.getPos(prop)
+    Info = tmp[Pos + 1]
+    Info[1] = Info[1] - 1
+  end repeat
+  repeat while 1
+    Pos = m_pendingChanges.findPos(argObj)
+    if not Pos then
+      exit repeat
+    end if
+    m_pendingChanges.deleteAt(Pos)
+  end repeat
+end
+
+on deleteModifiersModifyingObj me, argObj
+  lst = m_modsByModifiedID.getaProp(argObj.ID)
+  repeat with n = lst.count down to 1
+    lst[n].kill()
+  end repeat
+end
+
+on timeTick me
+  me.recalcModifiers(1)
+end
+
+on recalcModifiers me, argTimeTick, argCheckAndTrig
+  if not m_OKToRecalc then
+    exit
+  end if
+  m_busyLooping = 1
+  if voidp(argTimeTick) then
+    argTimeTick = 0
+  end if
+  if voidp(argCheckAndTrig) then
+    argCheckAndTrig = 1
+  end if
+  repeat with IDCnt = 1 to m_modsByModifiedID.count
+    modWhichID = m_modsByModifiedID.getPropAt(IDCnt)
+    modList = m_modsByModifiedID[IDCnt]
+    if modList.count = 0 then
+      next repeat
+    end if
+    modifiedObj = modList[1].getModifiedObj()
+    props = m_propsModifiedByModifiedID.getaProp(modWhichID)
+    oldProps = props.duplicate()
+    repeat with propCnt = 1 to props.count
+      propCnt = propCnt + 1
+      Info = props[propCnt]
+      Info[2] = 0.0
+    end repeat
+    repeat with modObj in modList
+      if modObj.m_alive = 0 then
+        next repeat
+      end if
+      if argTimeTick then
+        modObj.timeTick()
+      end if
+      modifiedValsAndProps = modObj.getModifiedValsAndProps()
+      repeat with n = 1 to modifiedValsAndProps.count
+        prop = modifiedValsAndProps[n]
+        val = modifiedValsAndProps.getPropAt(n)
+        Pos = props.getPos(prop)
+        Info = props[Pos + 1]
+        Info[2] = Info[2] + val
+      end repeat
+    end repeat
+    repeat with propCnt = 1 to props.count
+      prop = props[propCnt]
+      if prop.count = 0 then
+        next repeat
+      end if
+      propCnt = propCnt + 1
+      Info = props[propCnt]
+      oldInfo = oldProps[propCnt]
+      valDiff = Info[2] - oldInfo[2]
+      currVal = rgetProp(modifiedObj, prop, #instance)
+      if ilk(currVal) = #instance then
+        specialObj = currVal
+        if specialObj.className = #DynamicTriggerVar then
+          tmpOldVal = specialObj.Current
+          specialObj.Current = specialObj.Current + valDiff
+          if argCheckAndTrig = 1 then
+            specialObj.checkAndTrig(tmpOldVal, specialObj.Current)
+          end if
+        else
+          rsetProp(modifiedObj, prop, valDiff, "+=")
+        end if
+        next repeat
+      end if
+      rsetProp(modifiedObj, prop, valDiff, "+=")
+    end repeat
+  end repeat
+  m_busyLooping = 0
+  doItAgain = m_addObjects.count + m_deleteObjects.count + m_pendingChanges.count
+  m_OKToRecalc = 0
+  repeat with obj in m_addObjects
+    me.addModifier(obj)
+  end repeat
+  m_addObjects = []
+  me.deleteModifiers(m_deleteObjects)
+  m_deleteObjects = []
+  repeat with n = 1 to m_pendingChanges.count
+    lst = m_pendingChanges[n]
+    me.modifierChanged(m_pendingChanges.getPropAt(n), lst[1], lst[2])
+  end repeat
+  m_pendingChanges = [:]
+  m_OKToRecalc = 1
+  if doItAgain then
+    me.recalcModifiers()
+  end if
+end
+
+on load me, argList
+  me.clearAll()
+  m_loadedObjs = []
+  m_OKToRecalc = 0
+  if not listp(argList) then
+    exit
+  end if
+  m_IDNrCnt = argList[#cnt]
+  objsLst = argList[#objs]
+  repeat with n = 1 to objsLst.count
+    lst = objsLst[n]
+    obj = script("ModifierScript").new(lst[#ID], lst[#ModID], lst[#props], lst[#Days], lst[#Env])
+    obj.m_IDNr = objsLst.getPropAt(n)
+  end repeat
+end
+
+on initAfterLoad me
+  m_OKToRecalc = 1
+  me.recalcModifiers(0)
+end
+
+on save me
+  lst = [#cnt: m_IDNrCnt]
+  objsLst = [:]
+  lst.addProp(#objs, objsLst)
+  repeat with obj in m_modifiers
+    objsLst.addProp(obj.m_IDNr, obj.save())
+  end repeat
+  return lst
+end
+
+on disableBeforeSave me
+  m_tmpPausedObjs = []
+  repeat with obj in m_modifiers
+    if obj.m_paused = 0 then
+      obj.m_paused = 1
+      m_tmpPausedObjs.add(obj)
+    end if
+  end repeat
+  me.recalcModifiers(0, 0)
+end
+
+on enableAfterSave me
+  repeat with obj in m_tmpPausedObjs
+    obj.m_paused = 0
+  end repeat
+  m_tmpPausedObjs = []
+  me.recalcModifiers(0, 0)
+end
+
+on getModifierByIDNr me, argIDNr
+  repeat with obj in m_modifiers
+    if obj.m_IDNr = argIDNr then
+      return obj
+    end if
+  end repeat
+end
+
+on findAndDelete me, argCriteria
+  found = me.findModifiers(argCriteria)
+  repeat with obj in found
+    obj.kill()
+  end repeat
+end
+
+on findAndChangeOtherwiseCreate me, argID, argModObj, argPropsAndVals, argNumDays, argEnvelope
+  found = me.findModifiers([#ModifierID: argID, #ModifiedID: argModObj.ID])
+  if found.count = 1 then
+    found[1].setModifyInfo(argPropsAndVals)
+  else
+    if found.count > 1 then
+      pott("More than 1 modifiers found!", argID, argModObj.ID, argPropsAndVals)
+    else
+      script("ModifierScript").new(argID, argModObj, argPropsAndVals, argNumDays, argEnvelope)
+    end if
+  end if
+end
+
+on findModifiers me, argCriteria
+  if not listp(argCriteria) then
+    argCriteria = [:]
+  end if
+  if not voidp(argCriteria[#ModifiedID]) then
+    lst = m_modsByModifiedID.getaProp(argCriteria[#ModifiedID])
+    if not listp(lst) then
+      return []
+    end if
+    if lst.count = 0 then
+      return []
+    end if
+    lst = lst.duplicate()
+    if not voidp(argCriteria[#prop]) then
+      repeat with n = lst.count down to 1
+        obj = lst[n]
+        if obj.isModifyingProp(argCriteria[#prop]) = 0 then
+          lst.deleteAt(n)
+        end if
+      end repeat
+    end if
+    if not voidp(argCriteria[#ModifierID]) then
+      repeat with n = lst.count down to 1
+        obj = lst[n]
+        if obj.ID <> argCriteria[#ModifierID] then
+          lst.deleteAt(n)
+        end if
+      end repeat
+    end if
+    return lst
+  else
+    if not voidp(argCriteria[#ModifierID]) then
+      lst = []
+      repeat with obj in m_modifiers
+        if obj.ID = argCriteria[#ModifierID] then
+          lst.add(obj)
+        end if
+      end repeat
+      return lst
+    end if
+  end if
+  return []
+end
+
+on sortByModification me, argModifierObjs, argProp
+  sorted = [:]
+  sorted.sort()
+  if symbolp(argProp) then
+    argProp = [argProp]
+  end if
+  repeat with obj in argModifierObjs
+    tmp = obj.getModifiedValsAndProps()
+    Pos = tmp.getPos(argProp)
+    if Pos = 0 then
+      next repeat
+    end if
+    sorted.addProp(tmp.getPropAt(Pos), obj)
+  end repeat
+  return sorted
+end
+
+on getTotalModifyingID me, argModifyingID
+  retList = [:]
+  objs = m_modsByModifiedID.getaProp(argModifyingID)
+  if not listp(objs) then
+    return [:]
+  end if
+  repeat with obj in objs
+    valsAndProps = obj.getModifiedValsAndProps()
+    repeat with n = 1 to valsAndProps.count
+      val = valsAndProps.getPropAt(n)
+      propPath = valsAndProps[n]
+      me.setPropInList(retList, propPath, val, "+=")
+    end repeat
+  end repeat
+  return retList
+end
+
+on setPropInList me, argList, argPropPath, argVal, argMode
+  argPropPath = argPropPath.duplicate()
+  lastProp = argPropPath[argPropPath.count]
+  argPropPath.deleteAt(argPropPath.count)
+  repeat with n = 1 to argPropPath.count
+    prop = argPropPath[n]
+    tmp = argList.getaProp(prop)
+    if voidp(tmp) then
+      tmp = [:]
+      argList.setaProp(prop, tmp)
+    end if
+    argList = tmp
+  end repeat
+  orgVal = argList.getaProp(lastProp)
+  if voidp(orgVal) then
+    orgVal = 0
+  end if
+  case argMode of
+    "+=":
+      argVal = orgVal + argVal
+    "-=":
+      argVal = orgVal - argVal
+    "*=":
+      argVal = orgVal * argVal
+    "/=":
+      argVal = orgVal / argVal
+  end case
+  argList.setaProp(lastProp, argVal)
+end

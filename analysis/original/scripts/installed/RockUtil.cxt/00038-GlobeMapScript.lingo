@@ -1,0 +1,382 @@
+property m_angle, m_equatorialRotation, m_roundedEquatorialRotation, m_radius, m_pointObjs, m_renderPoints, m_linePointLists, m_mouseObj, m_rotSpeed, m_image, m_placeImage, m_fadeImage, m_earthAnim, m_onStageLoc, m_selectedPointObj, m_placesMember, m_reportObj, m_active, m_pasteWhere, m_pasteIntoImage, m_SP, m_blitOffsetLoc, m_invalidated, m_currentRotationFactors
+global gUseful
+
+on new me, argReportObj, argCenterLoc, argPlaces, argSPNum, argUseMouseObj
+  m_reportObj = argReportObj
+  m_onStageLoc = argCenterLoc
+  if voidp(m_onStageLoc) then
+    m_onStageLoc = point(100, 100)
+  end if
+  m_angle = PI * [0, 0, -19] / 180.0
+  m_equatorialRotation = 0.0
+  m_roundedEquatorialRotation = 0.0
+  m_radius = 252 / 2
+  m_earthAnim = script("EarthAnimScript").new()
+  if integerp(argSPNum) then
+    m_SP = sprite(argSPNum)
+    m_pasteWhere = member("GlobePastePic")
+    tmp = m_earthAnim.m_images[1]
+    m_pasteIntoImage = image(tmp.rect[3], tmp.rect[4], 16)
+    m_pasteIntoImage.fill(m_pasteIntoImage.rect, rgb(255, 255, 255))
+    m_pasteWhere.image = m_pasteIntoImage
+    m_SP.member = m_pasteWhere
+    m_SP.loc = m_onStageLoc + (point(m_pasteWhere.rect[3], m_pasteWhere.rect[4]) / 2)
+    m_blitOffsetLoc = point(0, 0)
+  else
+    m_pasteWhere = #stage
+    m_pasteIntoImage = (the stage).image
+    m_blitOffsetLoc = m_onStageLoc
+  end if
+  m_placesMember = member("MapPlacesField")
+  m_renderPoints = []
+  m_pointObjs = []
+  if listp(argPlaces) then
+    pnts = argPlaces.duplicate()
+  else
+    pnts = m_placesMember.text.value
+  end if
+  if voidp(pnts) then
+    pnts = []
+  end if
+  repeat with n = 1 to pnts.count
+    if n <= pnts.count then
+      longitude = pnts[n][#map][1]
+      latitude = pnts[n][#map][2]
+      ID = pnts[n][#ID]
+    else
+      ID = VOID
+      latitude = [random(180) - 90, random(60), random(60)]
+      longitude = [random(360) - 180, random(60), random(60)]
+    end if
+    obj = script("MapPlaceScript").new([longitude, latitude], m_radius, ID)
+    m_pointObjs.add(obj)
+  end repeat
+  repeat with n = 1 to m_pointObjs.count
+    m_renderPoints.add(m_pointObjs[n])
+  end repeat
+  m_linePointLists = []
+  if 0 then
+    tmpPairs = []
+    repeat with m = 1 to tmpPairs.count
+      tmpPair = tmpPairs[m]
+      if (m_pointObjs.count < tmpPair[1]) or (m_pointObjs.count < tmpPair[2]) then
+        next repeat
+      end if
+      me.addConnection(m_pointObjs[tmpPair[1]], m_pointObjs[tmpPair[2]])
+    end repeat
+  end if
+  gUseful.frameTimer.addObject(me)
+  if argUseMouseObj <> 0 then
+    m_mouseObj = script("DragMouseScript").new(me, rect(m_onStageLoc, m_onStageLoc) + rect(0, 0, m_radius * 2, m_radius * 2), [#layer: 999999])
+  end if
+  m_rotSpeed = 0
+  m_image = image(m_radius * 2, m_radius * 2, 16)
+  m_fadeImage = image(m_image.rect[3], m_image.rect[4], 16)
+  m_placeImage = member("MapPlacePic").image
+  m_active = 1
+  m_invalidated = 1
+  return me
+end
+
+on kill me
+  if objectp(m_SP) then
+    m_SP.member = member("Dummy")
+  end if
+  m_pointObjs = []
+  m_renderPoints = []
+  m_linePointLists = []
+  gUseful.frameTimer.deleteObject(me)
+  if objectp(m_mouseObj) then
+    m_mouseObj = m_mouseObj.kill()
+  end if
+  m_reportObj = 0
+  return 0
+end
+
+on activate me, argIsTRUE
+  m_active = argIsTRUE
+  if objectp(m_mouseObj) then
+    m_mouseObj.activate(m_active)
+  end if
+end
+
+on getMapLocs me
+  tmpList = []
+  repeat with n = 1 to m_renderPoints.count
+    obj = m_renderPoints[n]
+    tmpList.add([#map: obj.m_mapLoc, #ID: obj.m_ID])
+  end repeat
+  m_placesMember.text = string(tmpList)
+end
+
+on getObjByID me, argID
+  repeat with n = 1 to m_pointObjs.count
+    if m_pointObjs[n].m_ID = argID then
+      return m_pointObjs[n]
+    end if
+  end repeat
+  return VOID
+end
+
+on getIsPlaceConnected me, argObj
+  repeat with n = 1 to m_linePointLists.count
+    tmp = m_linePointLists[n]
+    if (tmp[1] = argObj) or (tmp[tmp.count] = argObj) then
+      return 1
+    end if
+  end repeat
+  return 0
+end
+
+on getDistanceToNextPlace me, argToObj
+  if m_linePointLists.count = 0 then
+    return 0
+  end if
+  tmpList = m_linePointLists[m_linePointLists.count]
+  if tmpList.count = 1 then
+    argFromObj = tmpList[1]
+  else
+    argFromObj = tmpList[tmpList.count]
+  end if
+  return me.getDistanceBetween(argFromObj, argToObj)
+end
+
+on addConnection me, argFromObj, argToObj, argAtPosInList
+  if voidp(argFromObj) then
+    if m_linePointLists.count = 0 then
+      m_linePointLists.add([argToObj])
+    else
+      tmpList = m_linePointLists[m_linePointLists.count]
+      if tmpList.count = 1 then
+        argFromObj = tmpList[1]
+        m_linePointLists.deleteAt(m_linePointLists.count)
+      else
+        argFromObj = tmpList[tmpList.count]
+      end if
+    end if
+  end if
+  if not objectp(argFromObj) then
+    exit
+  end if
+  tmpList = me.createListOfMapPointsBetweenPoints(argFromObj, argToObj)
+  repeat with obj in tmpList
+    m_pointObjs.add(obj)
+  end repeat
+  tmpList.addAt(1, argFromObj)
+  tmpList.add(argToObj)
+  if integerp(argAtPosInList) then
+    m_linePointLists.addAt(argAtPosInList, tmpList)
+  else
+    m_linePointLists.add(tmpList)
+  end if
+  m_invalidated = 1
+end
+
+on mouse me, argObj, argWhat
+  if argWhat = #stillDown then
+    m_invalidated = 1
+    if the controlDown then
+      m_rotSpeed = m_rotSpeed + (float(-argObj.deltaMove[1]) / 3000.0)
+    else
+      if the shiftDown then
+      else
+        m_equatorialRotation = m_equatorialRotation + (float(-argObj.deltaMove[1]) / 100.0)
+        m_rotSpeed = 0
+      end if
+    end if
+  else
+    if argWhat = #click then
+      if objectp(m_selectedPointObj) then
+        if objectp(m_reportObj) then
+          m_reportObj.Report(me, #SelectCity, m_selectedPointObj)
+        end if
+      end if
+      if not (the shiftDown) or (the runMode <> "Author") then
+        exit
+      end if
+      tmp = the mouseLoc
+      tmpMidLoc = m_onStageLoc + point(m_radius, m_radius)
+      tmp = tmp - tmpMidLoc
+      tmpHypo = sqrt((tmp[1] * tmp[1]) + (tmp[2] * tmp[2]))
+      if tmpHypo <= m_radius then
+        tmp3DLoc = [float(tmp[1]), float(tmp[2]), -m_radius * cos(tmpHypo / float(m_radius) * (PI / 2))]
+        obj = script("MapPlaceScript").new([0, 0], m_radius, EMPTY)
+        obj.m_org3DLoc = tmp3DLoc
+        tmpZ = float(m_radius * m_radius) - (tmp[1] * tmp[1]) - (tmp[2] * tmp[2])
+        tmpZ = sqrt(tmpZ)
+        tmp3DLoc[3] = -tmpZ
+        rotateOrder = [2, 1, 3]
+        rot = [0, -m_roundedEquatorialRotation, 0] - m_angle
+        sinCos = []
+        repeat with n = 1 to rotateOrder.count
+          sinCos.add([sin(rot[n]), cos(rot[n])])
+        end repeat
+        repeat with i = sinCos.count down to 1
+          axis = rotateOrder[i]
+          tmp3DLoc = rotate3D(tmp3DLoc, sinCos[axis], axis)
+        end repeat
+        obj.m_org3DLoc = tmp3DLoc
+        obj.reset()
+        m_pointObjs.add(obj)
+        m_renderPoints.add(obj)
+        tmpLat = calcDirection(point(0, 0), point(-obj.m_org3DLoc[1], obj.m_org3DLoc[3]), #radians)
+        if tmpLat > PI then
+          tmpLat = tmpLat - (2 * PI)
+        end if
+        tmpY = obj.m_org3DLoc[2] / float(m_radius)
+        tmpX = sqrt(1.0 - (tmpY * tmpY))
+        tmpLong = calcDirection(point(0, 0), point(tmpX, tmpY), #radians)
+        tmpLong = tmpLong - (PI / 2)
+        obj.m_mapLoc = [tmpLat, tmpLong]
+        pott(obj.m_mapLoc)
+        obj.m_org3DLoc = obj.longLatTo3D()
+      end if
+    end if
+  end if
+end
+
+on rotate me, argSteps
+  m_equatorialRotation = m_equatorialRotation + (float(argSteps) * 2.0 * PI / 80)
+  m_invalidated = 1
+end
+
+on rotate3DLocToCurrent me, arg3DLoc
+  rotateOrder = [2, 1, 3]
+  tmp = arg3DLoc.duplicate()
+  repeat with i = 1 to m_currentRotationFactors.count
+    axis = rotateOrder[i]
+    tmp = rotate3D(tmp, m_currentRotationFactors[axis], axis)
+  end repeat
+  return tmp
+end
+
+on timeTick me
+  if not m_active then
+    exit
+  end if
+  m_equatorialRotation = m_equatorialRotation + m_rotSpeed
+  if m_equatorialRotation > (PI * 2) then
+    m_equatorialRotation = m_equatorialRotation - (PI * 2)
+  else
+    if m_equatorialRotation < 0 then
+      m_equatorialRotation = (PI * 2) + m_equatorialRotation
+    end if
+  end if
+  m_roundedEquatorialRotation = integer(80.0 * m_equatorialRotation / (2 * PI)) / 80.0 * (2 * PI)
+  rotateOrder = [2, 1, 3]
+  rot = [0, m_roundedEquatorialRotation, 0] + m_angle
+  m_currentRotationFactors = []
+  repeat with n = 1 to rotateOrder.count
+    m_currentRotationFactors.add([sin(rot[n]), cos(rot[n])])
+  end repeat
+  m_image.copyPixels(m_fadeImage, m_image.rect, m_image.rect, [#ink: #copy])
+  SPNum = 2
+  tmpImageOffset = getRectSize(m_image.rect) / 2
+  repeat with n = 1 to m_pointObjs.count
+    pntObj = m_pointObjs[n]
+    pnt = pntObj.m_org3DLoc
+    pntObj.m_3DLoc = me.rotate3DLocToCurrent(pntObj.m_org3DLoc)
+  end repeat
+  tmpMouseLoc = the mouseLoc - tmpImageOffset - m_onStageLoc
+  tmpMinHypo = 12
+  didHaveSelected = objectp(m_selectedPointObj)
+  m_selectedPointObj = 0
+  tmpPlaceOff = getRectSize(m_placeImage.rect) / 2
+  tmpImgOffRect = rect(tmpImageOffset, tmpImageOffset)
+  tmpClr = rgb(0, 0, 0)
+  repeat with n = 1 to m_linePointLists.count
+    tmpList = m_linePointLists[n]
+    pnt3D1 = tmpList[1].m_3DLoc
+    pnt1 = point(pnt3D1[1], pnt3D1[2])
+    repeat with m = 2 to tmpList.count
+      pnt3D2 = tmpList[m].m_3DLoc
+      pnt2 = point(pnt3D2[1], pnt3D2[2])
+      if 1 or (pnt3D2[3] < 0) then
+        tmpBlend = 100 - ((pnt3D2[3] + m_radius) / 2)
+        if tmpBlend > 50 then
+          tmpBlend = 100
+        else
+          tmpBlend = 0
+        end if
+        if tmpBlend > 1 then
+          m_image.draw(pnt1 + tmpImageOffset, pnt2 + tmpImageOffset, [#shapeType: #line, #lineSize: 1, #color: tmpClr])
+        end if
+      end if
+      pnt3D1 = pnt3D2
+      pnt1 = pnt2
+    end repeat
+  end repeat
+  repeat with n = 1 to m_renderPoints.count
+    pntObj = m_renderPoints[n]
+    pnt = pntObj.m_3DLoc
+    tmpBlend = 100 - ((pnt[3] + m_radius) / 2)
+    if tmpBlend > 50 then
+      tmpBlend = 100
+    else
+      tmpBlend = 0
+    end if
+    if tmpBlend > 1 then
+      tmpPnt = point(pnt[1], pnt[2])
+      tmpMouseDiff = tmpPnt - tmpMouseLoc
+      tmpHypo = sqrt((tmpMouseDiff[1] * tmpMouseDiff[1]) + (tmpMouseDiff[2] * tmpMouseDiff[2]))
+      if tmpHypo < tmpMinHypo then
+        tmpMinHypo = tmpHypo
+        m_selectedPointObj = pntObj
+        m_invalidated = 1
+      end if
+      m_image.copyPixels(m_placeImage, m_placeImage.rect + rect(tmpPnt, tmpPnt) + tmpImgOffRect - rect(tmpPlaceOff, tmpPlaceOff), m_placeImage.rect, [#ink: #blend, #blend: tmpBlend, #color: pntObj.m_clr])
+    end if
+  end repeat
+  if didHaveSelected and not objectp(m_selectedPointObj) then
+    m_invalidated = 1
+  end if
+  if objectp(m_selectedPointObj) then
+    tmpPnt = point(m_selectedPointObj.m_3DLoc[1], m_selectedPointObj.m_3DLoc[2])
+    m_image.copyPixels(m_placeImage, m_placeImage.rect + rect(tmpPnt, tmpPnt) + tmpImgOffRect - rect(tmpPlaceOff, tmpPlaceOff), m_placeImage.rect, [#ink: #copy, #color: rgb(255, 130, 130)])
+  end if
+  m_earthAnim.rotate(m_roundedEquatorialRotation)
+  m_pasteIntoImage.copyPixels(m_earthAnim.m_image, m_earthAnim.m_image.rect + rect(m_blitOffsetLoc, m_blitOffsetLoc) + rect(-4, -7, -4, -7), m_earthAnim.m_image.rect, [#ink: 36])
+  m_pasteIntoImage.copyPixels(m_image, m_image.rect + rect(m_blitOffsetLoc, m_blitOffsetLoc), m_image.rect, [#ink: 36])
+  if objectp(m_pasteWhere) and ((m_rotSpeed <> 0) or m_invalidated) then
+    m_pasteWhere.image = m_pasteIntoImage
+  end if
+  m_invalidated = 0
+end
+
+on calcBetweenStuff me, argPntObj1, argPntObj2
+  rotationXY = -argPntObj1.m_mapLoc
+  argPntObj2.reset()
+  argPntObj2.rotateYthenX(rotationXY[2], rotationXY[1])
+  tmp = argPntObj2.m_3DLoc
+  rotationZ = calcDirection(point(0, 0), point(tmp[1], tmp[2]), #radians)
+  if rotationZ > PI then
+    rotationZ = rotationZ - PI
+  end if
+  rotationZ = (PI / 2) - rotationZ
+  tmpNew = rotate3D(argPntObj2.m_3DLoc, -rotationZ, 3)
+  finalAng = calcDirection(point(0, 0), point(tmpNew[1], -tmpNew[3]), #radians)
+  finalAng = finalAng - PI
+  return [#rot: [-rotationXY[2], -rotationXY[1], rotationZ], #angle: finalAng]
+end
+
+on getDistanceBetween me, argPntObj1, argPntObj2
+  tmpInfo = me.calcBetweenStuff(argPntObj1, argPntObj2)
+  return abs(tmpInfo[#angle])
+end
+
+on createListOfMapPointsBetweenPoints me, argPntObj1, argPntObj2
+  tmpInfo = me.calcBetweenStuff(argPntObj1, argPntObj2)
+  tmpNumDivisions = integer(tmpInfo[#angle] / (PI / 32))
+  tmpSign = getSign(tmpNumDivisions)
+  tmpList = []
+  repeat with n = 1 to abs(tmpNumDivisions) - 1
+    tmpAng = tmpSign * n * tmpInfo[#angle] / tmpNumDivisions
+    obj = script("MapPlaceScript").new([tmpAng, 0], m_radius, VOID, 1)
+    obj.m_3DLoc = rotate3D(obj.m_3DLoc, tmpInfo[#rot][3], 3)
+    obj.m_3DLoc = rotate3D(obj.m_3DLoc, tmpInfo[#rot][1], 1)
+    obj.m_3DLoc = rotate3D(obj.m_3DLoc, tmpInfo[#rot][2], 2)
+    obj.m_org3DLoc = obj.m_3DLoc.duplicate()
+    tmpList.add(obj)
+  end repeat
+  return tmpList
+end

@@ -1,0 +1,125 @@
+property ID, m_managerObj, m_modifyWhichObj, m_modifyWhichID, m_envelope, m_daysLeft, m_dailyChanges, m_modifyValsAndProps, m_alive, m_paused, m_IDNr
+global gRock
+
+on new me, argID, argModifyWhichObj, argModifyPropsAndVals, argNumDays, argEnvelope, argPaused
+  m_managerObj = gRock.m_modifiersManager
+  ID = argID
+  if symbolp(argModifyWhichObj) then
+    argModifyWhichObj = gRock.m_classManager.getObjByID(argModifyWhichObj)
+  end if
+  m_modifyWhichObj = argModifyWhichObj
+  m_modifyWhichID = m_modifyWhichObj.ID
+  m_daysLeft = argNumDays
+  if voidp(m_daysLeft) then
+    m_daysLeft = 1
+  end if
+  m_envelope = argEnvelope
+  if voidp(m_envelope) then
+    m_envelope = #fadeOut
+  end if
+  m_modifyValsAndProps = [:]
+  m_alive = 1
+  m_paused = argPaused = #Paused
+  m_IDNr = 0
+  if not voidp(argModifyPropsAndVals) then
+    me.setModifyInfo(argModifyPropsAndVals)
+    m_managerObj.addModifier(me)
+  end if
+  return me
+end
+
+on kill me
+  if not objectp(m_managerObj) then
+    pott("Modifier, Was already killed!", ID)
+    exit
+  end if
+  m_managerObj.deleteModifier(me)
+  m_modifyWhichObj = 0
+  m_managerObj = 0
+  return 0
+end
+
+on suspend me, argIsTRUE
+end
+
+on timeTick me
+  if m_paused then
+    exit
+  end if
+  if m_daysLeft > 0 then
+    m_daysLeft = m_daysLeft - 1
+    newModifyValsAndProps = [:]
+    repeat with n = 1 to m_modifyValsAndProps.count
+      val = m_modifyValsAndProps.getPropAt(n)
+      Change = m_dailyChanges.getPropAt(n)
+      newModifyValsAndProps.addProp(val - Change, m_modifyValsAndProps[n])
+    end repeat
+    m_modifyValsAndProps = newModifyValsAndProps
+    if m_daysLeft = 0 then
+      me.kill()
+    end if
+  end if
+end
+
+on isModifyingProp me, argProp
+  if symbolp(argProp) then
+    argProp = [argProp]
+  end if
+  return m_modifyValsAndProps.getPos(argProp)
+end
+
+on getModifiedValsAndProps me
+  if m_paused then
+    return [:]
+  end if
+  return m_modifyValsAndProps
+end
+
+on changeVal me, argVal
+  tmpNew = [:]
+  repeat with n = 1 to m_modifyValsAndProps.count
+    tmpNew.addProp(argVal, m_modifyValsAndProps[n])
+  end repeat
+  m_modifyValsAndProps = tmpNew
+end
+
+on setModifyInfo me, argList
+  if argList.count = 2 then
+    if floatp(argList[2]) or integerp(argList[2]) then
+      argList = [argList]
+    end if
+  end if
+  tmpOldModifyValsAndProps = m_modifyValsAndProps.duplicate()
+  m_modifyValsAndProps = [:]
+  m_dailyChanges = [:]
+  repeat with n = 1 to argList.count
+    lst = argList[n]
+    propPath = lst[1]
+    if symbolp(propPath) then
+      propPath = [propPath]
+    end if
+    m_modifyValsAndProps.addProp(lst[2], propPath)
+    if m_envelope = #Constant then
+      m_dailyChanges.addProp(0.0, propPath)
+      next repeat
+    end if
+    m_dailyChanges.addProp(float(lst[2]) / float(m_daysLeft), propPath)
+  end repeat
+  m_managerObj.modifierChanged(me, m_modifyValsAndProps, tmpOldModifyValsAndProps)
+end
+
+on getModifiedObj me
+  return m_modifyWhichObj
+end
+
+on getModifiedID me
+  return m_modifyWhichID
+end
+
+on save me
+  lst = []
+  repeat with n = 1 to m_modifyValsAndProps.count
+    lst.add([m_modifyValsAndProps[n], m_modifyValsAndProps.getPropAt(n)])
+  end repeat
+  return [#ID: ID, #ModID: m_modifyWhichID, #props: lst, #Days: m_daysLeft, #Env: m_envelope]
+end

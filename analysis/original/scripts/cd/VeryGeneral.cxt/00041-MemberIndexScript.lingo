@@ -1,0 +1,88 @@
+property castLists, currentCasts, currentCastNames
+
+on new me
+  currentCasts = []
+  currentCastNames = []
+  castLists = [:]
+  return me
+end
+
+on kill me
+  return 0
+end
+
+on getMemberNum me, argName, argCast
+  if voidp(argCast) then
+    repeat with n = 1 to currentCasts.count()
+      tmpIndex = currentCasts[n]
+      tmpList = castLists[tmpIndex]
+      tmp = tmpList.getPos(argName)
+      if tmp then
+        tmp = tmpList.getPropAt(tmp)
+        if n = 1 then
+          return tmp
+          next repeat
+        end if
+        if n = 2 then
+          return tmp + 131072
+          next repeat
+        end if
+        return tmp + 131072 + ((n - 2) * 65536)
+      end if
+    end repeat
+  else
+    n = currentCastNames.getPos(argCast)
+    if n = 0 then
+      return -1
+    end if
+    tmpIndex = currentCasts[n]
+    tmpList = castLists[tmpIndex]
+    tmp = tmpList.getPos(argName)
+    if tmp then
+      tmp = tmpList.getPropAt(tmp)
+      if n = 1 then
+        return tmp
+      else
+        if n = 2 then
+          return tmp + 131072
+        else
+          return tmp + 131072 + ((n - 2) * 65536)
+        end if
+      end if
+    end if
+  end if
+  return -1
+end
+
+on getMember me, argName
+  return member(me.getMemberNum(argName))
+end
+
+on indexCast me, argCast
+  tmpList = [:]
+  repeat with n = 1 to the number of castMembers of castLib argCast
+    tmpMemb = member(n, argCast)
+    tmpType = tmpMemb.type
+    if tmpType <> #empty then
+      tmpList.addProp(n, tmpMemb.name)
+    end if
+  end repeat
+  return tmpList
+end
+
+on prepareMovie me
+  currentCasts = []
+  currentCastNames = []
+  X = the milliSeconds
+  repeat with n = 1 to the number of castLibs
+    currentCastNames.add(castLib(n).name)
+    tmpName = castLib(n).fileName
+    tmpIndex = castLists.findPos(tmpName)
+    if voidp(tmpIndex) then
+      tmpList = me.indexCast(n)
+      castLists.addProp(tmpName, tmpList)
+      tmpIndex = castLists.count()
+    end if
+    currentCasts.add(tmpIndex)
+  end repeat
+end

@@ -1,0 +1,629 @@
+property m_parseAndCalcObj
+global gRock
+
+on new me
+  [  0] pushcons 0 .............................. <"CalcParsedExpressionScript">
+  [  2] pusharglist 1 ........................... <"CalcParsedExpressionScript">
+  [  4] extcall 10 .............................. <script("CalcParsedExpressionScript")>
+  [  6] pusharglist 1 ........................... <script("CalcParsedExpressionScript")>
+  [  8] objcall 11 .............................. <script("CalcParsedExpressionScript").new()>
+  [ 10] setprop 2170 ............................ m_parseAndCalcObj = script("CalcParsedExpressionScript").new()
+  [ 13] getparam 0 .............................. <me>
+  [ 15] pusharglistnoret 1 ...................... <me>
+  [ 17] extcall 69 .............................. return me
+  [ 20] ret
+end
+
+on kill me
+  [  0] pushzero ................................ <0>
+  [  1] pusharglistnoret 1 ...................... <0>
+  [  3] extcall 69 .............................. return 0
+  [  6] ret
+end
+
+on clear me
+  [  0] getprop 2170 ............................ <m_parseAndCalcObj>
+  [  3] pusharglistnoret 1 ...................... <m_parseAndCalcObj>
+  [  5] objcall 2760 ............................ m_parseAndCalcObj.clearLocalVars()
+  [  8] ret
+end
+
+on preParseActionList me, argActionList
+  [  0] getparam 8 .............................. <argActionList>
+  [  2] pusharglist 1 ........................... <argActionList>
+  [  4] extcall 13 .............................. <stringp(argActionList)>
+  [  6] jmpifz [ 20] ............................ if stringp(argActionList) then
+  [  9] getparam 8 .............................. <argActionList>
+  [ 11] setlocal 0 .............................. tmpOrgStr = argActionList
+  [ 13] getparam 8 .............................. <argActionList>
+  [ 15] getobjprop 116 .......................... <argActionList.value>
+  [ 18] setparam 8 .............................. argActionList = argActionList.value
+  [ 20] getparam 8 .............................. <argActionList>
+  [ 22] pusharglist 1 ........................... <argActionList>
+  [ 24] extcall 115 ............................. <listp(argActionList)>
+  [ 27] not ..................................... <not listp(argActionList)>
+  [ 28] jmpifz [ 62] ............................ if not listp(argActionList) then
+  [ 31] getlocal 0 .............................. <tmpOrgStr>
+  [ 33] getobjprop 135 .......................... <tmpOrgStr.length>
+  [ 36] pushint8 1 .............................. <1>
+  [ 39] gt ...................................... <tmpOrgStr.length > 1>
+  [ 40] jmpifz [ 52] ............................ if tmpOrgStr.length > 1 then
+  [ 43] pushcons 8 .............................. <"Err in preparse">
+  [ 45] getlocal 0 .............................. <tmpOrgStr>
+  [ 47] pusharglistnoret 2 ...................... <"Err in preparse", tmpOrgStr>
+  [ 49] extcall 122 ............................. pott("Err in preparse", tmpOrgStr)
+  [ 52] pusharglist 0 ........................... <>
+  [ 54] extcall 151 ............................. <VOID>
+  [ 57] pusharglistnoret 1 ...................... <VOID>
+  [ 59] extcall 69 .............................. return VOID
+  [ 62] getparam 0 .............................. <me>
+  [ 64] getparam 8 .............................. <argActionList>
+  [ 66] pusharglist 2 ........................... <me, argActionList>
+  [ 68] objcall 2823 ............................ <me.subPreParseActionList(argActionList)>
+  [ 71] pusharglistnoret 1 ...................... <me.subPreParseActionList(argActionList)>
+  [ 73] extcall 69 .............................. return me.subPreParseActionList(argActionList)
+  [ 76] ret
+end
+
+on subPreParseActionList me, argActionList
+  [  0] getparam 8 .............................. <argActionList>
+  [  2] pusharglist 1 ........................... <argActionList>
+  [  4] extcall 115 ............................. <listp(argActionList)>
+  [  7] not ..................................... <not listp(argActionList)>
+  [  8] jmpifz [ 21] ............................ if not listp(argActionList) then
+  [ 11] pusharglist 0 ........................... <>
+  [ 13] extcall 151 ............................. <VOID>
+  [ 16] pusharglistnoret 1 ...................... <VOID>
+  [ 18] extcall 69 .............................. return VOID
+  [ 21] pushint8 1 .............................. <1>
+  [ 24] setlocal 0
+  [ 26] getlocal 0
+  [ 28] getparam 8 .............................. <argActionList>
+  [ 30] getobjprop 156 .......................... <argActionList.count>
+  [ 33] lteq
+  [ 34] jmpifz [202] ............................ repeat with n = 1 to argActionList.count
+  [ 37] getparam 8 .............................. <argActionList>
+  [ 39] getlocal 0 .............................. <n>
+  [ 41] pusharglist 2 ........................... <argActionList, n>
+  [ 43] objcall 119 ............................. <argActionList[n]>
+  [ 46] setlocal 8 .............................. tmp = argActionList[n]
+  [ 48] getlocal 8 .............................. <tmp>
+  [ 50] pusharglist 1 ........................... <tmp>
+  [ 52] extcall 115 ............................. <listp(tmp)>
+  [ 55] jmpifz [164] ............................ if listp(tmp) then
+  [ 58] getlocal 8 .............................. <tmp>
+  [ 60] pushint8 1 .............................. <1>
+  [ 63] pusharglist 2 ........................... <tmp, 1>
+  [ 65] objcall 119 ............................. <tmp[1]>
+  [ 68] setlocal 16 ............................. func = tmp[1]
+  [ 70] getlocal 8 .............................. <tmp>
+  [ 72] pushint8 2 .............................. <2>
+  [ 75] pusharglist 2 ........................... <tmp, 2>
+  [ 77] objcall 119 ............................. <tmp[2]>
+  [ 80] setlocal 24 ............................. Args = tmp[2]
+  [ 82] getlocal 24 ............................. <Args>
+  [ 84] pushint8 1 .............................. <1>
+  [ 87] getparam 0 .............................. <me>
+  [ 89] getlocal 24 ............................. <Args>
+  [ 91] pushint8 1 .............................. <1>
+  [ 94] pusharglist 2 ........................... <Args, 1>
+  [ 96] objcall 119 ............................. <Args[1]>
+  [ 99] pusharglist 2 ........................... <me, Args[1]>
+  [101] objcall 1402 ............................ <me.rParse(Args[1])>
+  [104] pusharglistnoret 3 ...................... <Args, 1, me.rParse(Args[1])>
+  [106] objcall 353 ............................. Args[1] = me.rParse(Args[1])
+  [109] pushint8 2 .............................. <2>
+  [112] setlocal 32
+  [114] getlocal 32
+  [116] getlocal 24 ............................. <Args>
+  [118] getobjprop 156 .......................... <Args.count>
+  [121] lteq
+  [122] jmpifz [161] ............................ repeat with m = 2 to Args.count
+  [125] getlocal 24 ............................. <Args>
+  [127] getlocal 32 ............................. <m>
+  [129] getparam 0 .............................. <me>
+  [131] getlocal 24 ............................. <Args>
+  [133] getlocal 32 ............................. <m>
+  [135] pusharglist 2 ........................... <Args, m>
+  [137] objcall 119 ............................. <Args[m]>
+  [140] pusharglist 2 ........................... <me, Args[m]>
+  [142] objcall 2823 ............................ <me.subPreParseActionList(Args[m])>
+  [145] pusharglistnoret 3 ...................... <Args, m, me.subPreParseActionList(Args[m])>
+  [147] objcall 353 ............................. Args[m] = me.subPreParseActionList(Args[m])
+  [150] pushint8 1
+  [153] getlocal 32
+  [155] add
+  [156] setlocal 32
+  [158] endrepeat [114]
+  [161] jmp [191] ............................... next repeat
+  [164] getlocal 8 .............................. <tmp>
+  [166] pusharglist 1 ........................... <tmp>
+  [168] extcall 13 .............................. <stringp(tmp)>
+  [170] jmpifz [191] ............................ if stringp(tmp) then
+  [173] getparam 8 .............................. <argActionList>
+  [175] getlocal 0 .............................. <n>
+  [177] getparam 0 .............................. <me>
+  [179] getlocal 8 .............................. <tmp>
+  [181] pusharglist 2 ........................... <me, tmp>
+  [183] objcall 1402 ............................ <me.rParse(tmp)>
+  [186] pusharglistnoret 3 ...................... <argActionList, n, me.rParse(tmp)>
+  [188] objcall 353 ............................. argActionList[n] = me.rParse(tmp)
+  [191] pushint8 1
+  [194] getlocal 0
+  [196] add
+  [197] setlocal 0
+  [199] endrepeat [ 26]
+  [202] getparam 8 .............................. <argActionList>
+  [204] pusharglistnoret 1 ...................... <argActionList>
+  [206] extcall 69 .............................. return argActionList
+  [209] ret
+end
+
+on maybeParseAndCalc me, argExpression, argExtraVars, argCallingObj
+  [  0] getparam 8 .............................. <argExpression>
+  [  2] pusharglist 1 ........................... <argExpression>
+  [  4] extcall 13 .............................. <stringp(argExpression)>
+  [  6] jmpifz [ 27] ............................ if stringp(argExpression) then
+  [  9] getparam 0 .............................. <me>
+  [ 11] getparam 8 .............................. <argExpression>
+  [ 13] getparam 16 ............................. <argExtraVars>
+  [ 15] getparam 24 ............................. <argCallingObj>
+  [ 17] pusharglist 4 ........................... <me, argExpression, argExtraVars, argCallingObj>
+  [ 19] objcall 1938 ............................ <me.rParseAndCalc(argExpression, argExtraVars, argCallingObj)>
+  [ 22] pusharglistnoret 1 ...................... <me.rParseAndCalc(argExpression, argExtraVars, argCallingObj)>
+  [ 24] extcall 69 .............................. return me.rParseAndCalc(argExpression, argExtraVars, argCallingObj)
+  [ 27] getparam 0 .............................. <me>
+  [ 29] getparam 8 .............................. <argExpression>
+  [ 31] getparam 16 ............................. <argExtraVars>
+  [ 33] getparam 24 ............................. <argCallingObj>
+  [ 35] pusharglist 4 ........................... <me, argExpression, argExtraVars, argCallingObj>
+  [ 37] objcall 1407 ............................ <me.rCalc(argExpression, argExtraVars, argCallingObj)>
+  [ 40] pusharglistnoret 1 ...................... <me.rCalc(argExpression, argExtraVars, argCallingObj)>
+  [ 42] extcall 69 .............................. return me.rCalc(argExpression, argExtraVars, argCallingObj)
+  [ 45] ret
+end
+
+on executePreParsedActionList me, argActionList, argExtraVars, argReportObj, arg_NestingDepth
+  [  0] getparam 32 ............................. <arg_NestingDepth>
+  [  2] pusharglist 1 ........................... <arg_NestingDepth>
+  [  4] extcall 61 .............................. <voidp(arg_NestingDepth)>
+  [  7] jmpifz [ 13] ............................ if voidp(arg_NestingDepth) then
+  [ 10] pushzero ................................ <0>
+  [ 11] setparam 32 ............................. arg_NestingDepth = 0
+  [ 13] pushint8 1 .............................. <1>
+  [ 16] setlocal 0
+  [ 18] getlocal 0
+  [ 20] getparam 8 .............................. <argActionList>
+  [ 22] getobjprop 156 .......................... <argActionList.count>
+  [ 25] lteq
+  [ 26] jmpifz [384] ............................ repeat with n = 1 to argActionList.count
+  [ 29] getparam 8 .............................. <argActionList>
+  [ 31] getlocal 0 .............................. <n>
+  [ 33] pusharglist 2 ........................... <argActionList, n>
+  [ 35] objcall 119 ............................. <argActionList[n]>
+  [ 38] setlocal 8 .............................. tmp = argActionList[n]
+  [ 40] getlocal 8 .............................. <tmp>
+  [ 42] pushint8 1 .............................. <1>
+  [ 45] pusharglist 2 ........................... <tmp, 1>
+  [ 47] objcall 119 ............................. <tmp[1]>
+  [ 50] setlocal 16 ............................. func = tmp[1]
+  [ 52] getlocal 16 ............................. <func>
+  [ 54] pusharglist 1 ........................... <func>
+  [ 56] extcall 96 .............................. <symbolp(func)>
+  [ 59] jmpifz [360] ............................ if symbolp(func) then
+  [ 62] getlocal 8 .............................. <tmp>
+  [ 64] pushint8 2 .............................. <2>
+  [ 67] pusharglist 2 ........................... <tmp, 2>
+  [ 69] objcall 119 ............................. <tmp[2]>
+  [ 72] setlocal 24 ............................. Args = tmp[2]
+  [ 74] getlocal 16 ............................. <func>
+  [ 76] peek 0 .................................. case func of
+  [ 78] pushsymb 2829 ........................... <#if>
+  [ 81] eq
+  [ 82] jmpifz [277] ............................ (case) #if:
+  [ 85] getparam 0 .............................. <me>
+  [ 87] getlocal 24 ............................. <Args>
+  [ 89] pushint8 1 .............................. <1>
+  [ 92] pusharglist 2 ........................... <Args, 1>
+  [ 94] objcall 119 ............................. <Args[1]>
+  [ 97] getparam 16 ............................. <argExtraVars>
+  [ 99] getparam 24 ............................. <argReportObj>
+  [101] pusharglist 4 ........................... <me, Args[1], argExtraVars, argReportObj>
+  [103] objcall 2824 ............................ <me.maybeParseAndCalc(Args[1], argExtraVars, argReportObj)>
+  [106] setlocal 32 ............................. tmpWasTRUE = me.maybeParseAndCalc(Args[1], argExtraVars, argReportObj)
+  [108] getlocal 32 ............................. <tmpWasTRUE>
+  [110] pushint8 1 .............................. <1>
+  [113] eq ...................................... <tmpWasTRUE = 1>
+  [114] jmpifz [149] ............................ if tmpWasTRUE = 1 then / else
+  [117] getparam 0 .............................. <me>
+  [119] getlocal 24 ............................. <Args>
+  [121] pushint8 2 .............................. <2>
+  [124] pusharglist 2 ........................... <Args, 2>
+  [126] objcall 119 ............................. <Args[2]>
+  [129] getparam 16 ............................. <argExtraVars>
+  [131] getparam 24 ............................. <argReportObj>
+  [133] getparam 32 ............................. <arg_NestingDepth>
+  [135] pushint8 1 .............................. <1>
+  [138] add ..................................... <arg_NestingDepth + 1>
+  [139] pusharglist 5 ........................... <me, Args[2], argExtraVars, argReportObj, arg_NestingDepth + 1>
+  [141] objcall 1414 ............................ <me.executePreParsedActionList(Args[2], argExtraVars, argReportObj, arg_NestingDepth + 1)>
+  [144] setlocal 40 ............................. tmpResult = me.executePreParsedActionList(Args[2], argExtraVars, argReportObj, arg_NestingDepth + 1)
+  [146] jmp [190]
+  [149] getlocal 24 ............................. <Args>
+  [151] getobjprop 156 .......................... <Args.count>
+  [154] pushint8 2 .............................. <2>
+  [157] gt ...................................... <Args.count > 2>
+  [158] jmpifz [190] ............................ if Args.count > 2 then
+  [161] getparam 0 .............................. <me>
+  [163] getlocal 24 ............................. <Args>
+  [165] pushint8 3 .............................. <3>
+  [168] pusharglist 2 ........................... <Args, 3>
+  [170] objcall 119 ............................. <Args[3]>
+  [173] getparam 16 ............................. <argExtraVars>
+  [175] getparam 24 ............................. <argReportObj>
+  [177] getparam 32 ............................. <arg_NestingDepth>
+  [179] pushint8 1 .............................. <1>
+  [182] add ..................................... <arg_NestingDepth + 1>
+  [183] pusharglist 5 ........................... <me, Args[3], argExtraVars, argReportObj, arg_NestingDepth + 1>
+  [185] objcall 1414 ............................ <me.executePreParsedActionList(Args[3], argExtraVars, argReportObj, arg_NestingDepth + 1)>
+  [188] setlocal 40 ............................. tmpResult = me.executePreParsedActionList(Args[3], argExtraVars, argReportObj, arg_NestingDepth + 1)
+  [190] getlocal 40 ............................. <tmpResult>
+  [192] pusharglist 1 ........................... <tmpResult>
+  [194] extcall 115 ............................. <listp(tmpResult)>
+  [197] jmpifz [274] ............................ if listp(tmpResult) then
+  [200] getlocal 40 ............................. <tmpResult>
+  [202] pushint8 1 .............................. <1>
+  [205] pusharglist 2 ........................... <tmpResult, 1>
+  [207] objcall 119 ............................. <tmpResult[1]>
+  [210] pushsymb 69 ............................. <#return>
+  [213] eq ...................................... <tmpResult[1] = #return>
+  [214] jmpifz [274] ............................ if tmpResult[1] = #return then
+  [217] getparam 32 ............................. <arg_NestingDepth>
+  [219] pushzero ................................ <0>
+  [220] gt ...................................... <arg_NestingDepth > 0>
+  [221] jmpifz [233] ............................ if arg_NestingDepth > 0 then
+  [224] pop 1
+  [226] getlocal 40 ............................. <tmpResult>
+  [228] pusharglistnoret 1 ...................... <tmpResult>
+  [230] extcall 69 .............................. return tmpResult
+  [233] getlocal 40 ............................. <tmpResult>
+  [235] getobjprop 156 .......................... <tmpResult.count>
+  [238] pushint8 2 .............................. <2>
+  [241] eq ...................................... <tmpResult.count = 2>
+  [242] jmpifz [262] ............................ if tmpResult.count = 2 then
+  [245] pop 1
+  [247] getlocal 40 ............................. <tmpResult>
+  [249] pushint8 2 .............................. <2>
+  [252] pusharglist 2 ........................... <tmpResult, 2>
+  [254] objcall 119 ............................. <tmpResult[2]>
+  [257] pusharglistnoret 1 ...................... <tmpResult[2]>
+  [259] extcall 69 .............................. return tmpResult[2]
+  [262] pop 1
+  [264] pusharglist 0 ........................... <>
+  [266] extcall 151 ............................. <VOID>
+  [269] pusharglistnoret 1 ...................... <VOID>
+  [271] extcall 69 .............................. return VOID
+  [274] jmp [355]
+  [277] peek 0
+  [279] pushsymb 69 ............................. <#return>
+  [282] eq
+  [283] jmpifz [346] ............................ (case) #return:
+  [286] getparam 0 .............................. <me>
+  [288] getlocal 24 ............................. <Args>
+  [290] pushint8 1 .............................. <1>
+  [293] pusharglist 2 ........................... <Args, 1>
+  [295] objcall 119 ............................. <Args[1]>
+  [298] pusharglist 0 ........................... <>
+  [300] extcall 151 ............................. <VOID>
+  [303] getparam 24 ............................. <argReportObj>
+  [305] pusharglist 4 ........................... <me, Args[1], VOID, argReportObj>
+  [307] objcall 2824 ............................ <me.maybeParseAndCalc(Args[1], VOID, argReportObj)>
+  [310] setlocal 40 ............................. tmpResult = me.maybeParseAndCalc(Args[1], VOID, argReportObj)
+  [312] getparam 32 ............................. <arg_NestingDepth>
+  [314] pushzero ................................ <0>
+  [315] eq ...................................... <arg_NestingDepth = 0>
+  [316] jmpifz [328] ............................ if arg_NestingDepth = 0 then
+  [319] pop 1
+  [321] getlocal 40 ............................. <tmpResult>
+  [323] pusharglistnoret 1 ...................... <tmpResult>
+  [325] extcall 69 .............................. return tmpResult
+  [328] pop 1
+  [330] pushsymb 69 ............................. <#return>
+  [333] getlocal 40 ............................. <tmpResult>
+  [335] pusharglist 2 ........................... <[#return, tmpResult]>
+  [337] pushlist ................................ <[#return, tmpResult]>
+  [338] pusharglistnoret 1 ...................... <[#return, tmpResult]>
+  [340] extcall 69 .............................. return [#return, tmpResult]
+  [343] jmp [355]
+  [346] peek 0
+  [348] pushsymb 2830 ........................... <#otherwise>
+  [351] eq
+  [352] jmpifz [355] ............................ (case) #otherwise:
+  [355] pop 1 ................................... end case
+  [357] jmp [373] ............................... next repeat
+  [360] getparam 0 .............................. <me>
+  [362] getlocal 8 .............................. <tmp>
+  [364] getparam 16 ............................. <argExtraVars>
+  [366] getparam 24 ............................. <argReportObj>
+  [368] pusharglistnoret 4 ...................... <me, tmp, argExtraVars, argReportObj>
+  [370] objcall 2824 ............................ me.maybeParseAndCalc(tmp, argExtraVars, argReportObj)
+  [373] pushint8 1
+  [376] getlocal 0
+  [378] add
+  [379] setlocal 0
+  [381] endrepeat [ 18]
+  [384] ret
+end
+
+on executeActions me, argActionList, argExtraVars, argReportObj, arg_NestingDepth
+  [  0] getparam 32 ............................. <arg_NestingDepth>
+  [  2] pusharglist 1 ........................... <arg_NestingDepth>
+  [  4] extcall 61 .............................. <voidp(arg_NestingDepth)>
+  [  7] jmpifz [ 13] ............................ if voidp(arg_NestingDepth) then
+  [ 10] pushzero ................................ <0>
+  [ 11] setparam 32 ............................. arg_NestingDepth = 0
+  [ 13] getparam 24 ............................. <argReportObj>
+  [ 15] setlocal 0 .............................. argCallingObj = argReportObj
+  [ 17] getparam 8 .............................. <argActionList>
+  [ 19] pusharglist 1 ........................... <argActionList>
+  [ 21] extcall 13 .............................. <stringp(argActionList)>
+  [ 23] jmpifz [ 51] ............................ if stringp(argActionList) then
+  [ 26] getparam 8 .............................. <argActionList>
+  [ 28] setlocal 8 .............................. tmp = argActionList
+  [ 30] getparam 8 .............................. <argActionList>
+  [ 32] pusharglist 1 ........................... <argActionList>
+  [ 34] extcall 116 ............................. <value(argActionList)>
+  [ 37] setparam 8 .............................. argActionList = value(argActionList)
+  [ 39] getparam 8 .............................. <argActionList>
+  [ 41] pusharglist 1 ........................... <argActionList>
+  [ 43] extcall 115 ............................. <listp(argActionList)>
+  [ 46] not ..................................... <not listp(argActionList)>
+  [ 47] jmpifz [ 51] ............................ if not listp(argActionList) then
+  [ 50] ret ..................................... exit
+  [ 51] pushint8 1 .............................. <1>
+  [ 54] setlocal 16
+  [ 56] getlocal 16
+  [ 58] getparam 8 .............................. <argActionList>
+  [ 60] pusharglist 1 ........................... <argActionList>
+  [ 62] objcall 156 ............................. <argActionList.count()>
+  [ 65] lteq
+  [ 66] jmpifz [435] ............................ repeat with n = 1 to argActionList.count()
+  [ 69] getparam 8 .............................. <argActionList>
+  [ 71] getlocal 16 ............................. <n>
+  [ 73] pusharglist 2 ........................... <argActionList, n>
+  [ 75] objcall 119 ............................. <argActionList[n]>
+  [ 78] setlocal 8 .............................. tmp = argActionList[n]
+  [ 80] getlocal 8 .............................. <tmp>
+  [ 82] pusharglist 1 ........................... <tmp>
+  [ 84] extcall 115 ............................. <listp(tmp)>
+  [ 87] jmpifz [402] ............................ if listp(tmp) then
+  [ 90] getlocal 8 .............................. <tmp>
+  [ 92] pushint8 1 .............................. <1>
+  [ 95] pusharglist 2 ........................... <tmp, 1>
+  [ 97] objcall 119 ............................. <tmp[1]>
+  [100] setlocal 24 ............................. func = tmp[1]
+  [102] getlocal 8 .............................. <tmp>
+  [104] pushint8 2 .............................. <2>
+  [107] pusharglist 2 ........................... <tmp, 2>
+  [109] objcall 119 ............................. <tmp[2]>
+  [112] setlocal 32 ............................. Args = tmp[2]
+  [114] getlocal 24 ............................. <func>
+  [116] peek 0 .................................. case func of
+  [118] pushsymb 2829 ........................... <#if>
+  [121] eq
+  [122] jmpifz [319] ............................ (case) #if:
+  [125] getparam 0 .............................. <me>
+  [127] getlocal 32 ............................. <Args>
+  [129] pushint8 1 .............................. <1>
+  [132] pusharglist 2 ........................... <Args, 1>
+  [134] objcall 119 ............................. <Args[1]>
+  [137] getparam 16 ............................. <argExtraVars>
+  [139] getlocal 0 .............................. <argCallingObj>
+  [141] pusharglist 4 ........................... <me, Args[1], argExtraVars, argCallingObj>
+  [143] objcall 1938 ............................ <me.rParseAndCalc(Args[1], argExtraVars, argCallingObj)>
+  [146] setlocal 40 ............................. tmpWasTRUE = me.rParseAndCalc(Args[1], argExtraVars, argCallingObj)
+  [148] getlocal 40 ............................. <tmpWasTRUE>
+  [150] pushint8 1 .............................. <1>
+  [153] eq ...................................... <tmpWasTRUE = 1>
+  [154] jmpifz [189] ............................ if tmpWasTRUE = 1 then / else
+  [157] getparam 0 .............................. <me>
+  [159] getlocal 32 ............................. <Args>
+  [161] pushint8 2 .............................. <2>
+  [164] pusharglist 2 ........................... <Args, 2>
+  [166] objcall 119 ............................. <Args[2]>
+  [169] getparam 16 ............................. <argExtraVars>
+  [171] getparam 24 ............................. <argReportObj>
+  [173] getparam 32 ............................. <arg_NestingDepth>
+  [175] pushint8 1 .............................. <1>
+  [178] add ..................................... <arg_NestingDepth + 1>
+  [179] pusharglist 5 ........................... <me, Args[2], argExtraVars, argReportObj, arg_NestingDepth + 1>
+  [181] objcall 2825 ............................ <me.executeActions(Args[2], argExtraVars, argReportObj, arg_NestingDepth + 1)>
+  [184] setlocal 48 ............................. tmpResult = me.executeActions(Args[2], argExtraVars, argReportObj, arg_NestingDepth + 1)
+  [186] jmp [232]
+  [189] getlocal 32 ............................. <Args>
+  [191] pusharglist 1 ........................... <Args>
+  [193] objcall 156 ............................. <Args.count()>
+  [196] pushint8 2 .............................. <2>
+  [199] gt ...................................... <Args.count() > 2>
+  [200] jmpifz [232] ............................ if Args.count() > 2 then
+  [203] getparam 0 .............................. <me>
+  [205] getlocal 32 ............................. <Args>
+  [207] pushint8 3 .............................. <3>
+  [210] pusharglist 2 ........................... <Args, 3>
+  [212] objcall 119 ............................. <Args[3]>
+  [215] getparam 16 ............................. <argExtraVars>
+  [217] getparam 24 ............................. <argReportObj>
+  [219] getparam 32 ............................. <arg_NestingDepth>
+  [221] pushint8 1 .............................. <1>
+  [224] add ..................................... <arg_NestingDepth + 1>
+  [225] pusharglist 5 ........................... <me, Args[3], argExtraVars, argReportObj, arg_NestingDepth + 1>
+  [227] objcall 2825 ............................ <me.executeActions(Args[3], argExtraVars, argReportObj, arg_NestingDepth + 1)>
+  [230] setlocal 48 ............................. tmpResult = me.executeActions(Args[3], argExtraVars, argReportObj, arg_NestingDepth + 1)
+  [232] getlocal 48 ............................. <tmpResult>
+  [234] pusharglist 1 ........................... <tmpResult>
+  [236] extcall 115 ............................. <listp(tmpResult)>
+  [239] jmpifz [316] ............................ if listp(tmpResult) then
+  [242] getlocal 48 ............................. <tmpResult>
+  [244] pushint8 1 .............................. <1>
+  [247] pusharglist 2 ........................... <tmpResult, 1>
+  [249] objcall 119 ............................. <tmpResult[1]>
+  [252] pushsymb 69 ............................. <#return>
+  [255] eq ...................................... <tmpResult[1] = #return>
+  [256] jmpifz [316] ............................ if tmpResult[1] = #return then
+  [259] getparam 32 ............................. <arg_NestingDepth>
+  [261] pushzero ................................ <0>
+  [262] gt ...................................... <arg_NestingDepth > 0>
+  [263] jmpifz [275] ............................ if arg_NestingDepth > 0 then
+  [266] pop 1
+  [268] getlocal 48 ............................. <tmpResult>
+  [270] pusharglistnoret 1 ...................... <tmpResult>
+  [272] extcall 69 .............................. return tmpResult
+  [275] getlocal 48 ............................. <tmpResult>
+  [277] getobjprop 156 .......................... <tmpResult.count>
+  [280] pushint8 2 .............................. <2>
+  [283] eq ...................................... <tmpResult.count = 2>
+  [284] jmpifz [304] ............................ if tmpResult.count = 2 then
+  [287] pop 1
+  [289] getlocal 48 ............................. <tmpResult>
+  [291] pushint8 2 .............................. <2>
+  [294] pusharglist 2 ........................... <tmpResult, 2>
+  [296] objcall 119 ............................. <tmpResult[2]>
+  [299] pusharglistnoret 1 ...................... <tmpResult[2]>
+  [301] extcall 69 .............................. return tmpResult[2]
+  [304] pop 1
+  [306] pusharglist 0 ........................... <>
+  [308] extcall 151 ............................. <VOID>
+  [311] pusharglistnoret 1 ...................... <VOID>
+  [313] extcall 69 .............................. return VOID
+  [316] jmp [397]
+  [319] peek 0
+  [321] pushsymb 69 ............................. <#return>
+  [324] eq
+  [325] jmpifz [388] ............................ (case) #return:
+  [328] getparam 0 .............................. <me>
+  [330] getlocal 32 ............................. <Args>
+  [332] pushint8 1 .............................. <1>
+  [335] pusharglist 2 ........................... <Args, 1>
+  [337] objcall 119 ............................. <Args[1]>
+  [340] pusharglist 0 ........................... <>
+  [342] extcall 151 ............................. <VOID>
+  [345] getlocal 0 .............................. <argCallingObj>
+  [347] pusharglist 4 ........................... <me, Args[1], VOID, argCallingObj>
+  [349] objcall 1938 ............................ <me.rParseAndCalc(Args[1], VOID, argCallingObj)>
+  [352] setlocal 48 ............................. tmpResult = me.rParseAndCalc(Args[1], VOID, argCallingObj)
+  [354] getparam 32 ............................. <arg_NestingDepth>
+  [356] pushzero ................................ <0>
+  [357] eq ...................................... <arg_NestingDepth = 0>
+  [358] jmpifz [370] ............................ if arg_NestingDepth = 0 then
+  [361] pop 1
+  [363] getlocal 48 ............................. <tmpResult>
+  [365] pusharglistnoret 1 ...................... <tmpResult>
+  [367] extcall 69 .............................. return tmpResult
+  [370] pop 1
+  [372] pushsymb 69 ............................. <#return>
+  [375] getlocal 48 ............................. <tmpResult>
+  [377] pusharglist 2 ........................... <[#return, tmpResult]>
+  [379] pushlist ................................ <[#return, tmpResult]>
+  [380] pusharglistnoret 1 ...................... <[#return, tmpResult]>
+  [382] extcall 69 .............................. return [#return, tmpResult]
+  [385] jmp [397] ............................... (case) otherwise:
+  [388] pushcons 16 ............................. <"Undefined func!">
+  [390] getlocal 24 ............................. <func>
+  [392] pusharglistnoret 2 ...................... <"Undefined func!", func>
+  [394] extcall 122 ............................. pott("Undefined func!", func)
+  [397] pop 1 ................................... end case
+  [399] jmp [424] ............................... next repeat
+  [402] getlocal 8 .............................. <tmp>
+  [404] pusharglist 1 ........................... <tmp>
+  [406] extcall 13 .............................. <stringp(tmp)>
+  [408] jmpifz [424] ............................ if stringp(tmp) then
+  [411] getparam 0 .............................. <me>
+  [413] getlocal 8 .............................. <tmp>
+  [415] getparam 16 ............................. <argExtraVars>
+  [417] getlocal 0 .............................. <argCallingObj>
+  [419] pusharglistnoret 4 ...................... <me, tmp, argExtraVars, argCallingObj>
+  [421] objcall 1938 ............................ me.rParseAndCalc(tmp, argExtraVars, argCallingObj)
+  [424] pushint8 1
+  [427] getlocal 16
+  [429] add
+  [430] setlocal 16
+  [432] endrepeat [ 56]
+  [435] ret
+end
+
+on rParse me, argExpressionStr
+  [  0] getprop 2170 ............................ <m_parseAndCalcObj>
+  [  3] getparam 8 .............................. <argExpressionStr>
+  [  5] pusharglist 2 ........................... <m_parseAndCalcObj, argExpressionStr>
+  [  7] objcall 2171 ............................ <m_parseAndCalcObj.parseExpression(argExpressionStr)>
+  [ 10] setlocal 0 .............................. parsed = m_parseAndCalcObj.parseExpression(argExpressionStr)
+  [ 12] getlocal 0 .............................. <parsed>
+  [ 14] pusharglistnoret 1 ...................... <parsed>
+  [ 16] extcall 69 .............................. return parsed
+  [ 19] ret
+end
+
+on rParseAndCalc me, argExpressionStr, argExtraVars, argCallingObj
+  [  0] getprop 2170 ............................ <m_parseAndCalcObj>
+  [  3] getparam 8 .............................. <argExpressionStr>
+  [  5] pusharglist 2 ........................... <m_parseAndCalcObj, argExpressionStr>
+  [  7] objcall 2171 ............................ <m_parseAndCalcObj.parseExpression(argExpressionStr)>
+  [ 10] setlocal 0 .............................. parsed = m_parseAndCalcObj.parseExpression(argExpressionStr)
+  [ 12] getparam 0 .............................. <me>
+  [ 14] getlocal 0 .............................. <parsed>
+  [ 16] getparam 16 ............................. <argExtraVars>
+  [ 18] getparam 24 ............................. <argCallingObj>
+  [ 20] pusharglist 4 ........................... <me, parsed, argExtraVars, argCallingObj>
+  [ 22] objcall 1407 ............................ <me.rCalc(parsed, argExtraVars, argCallingObj)>
+  [ 25] pusharglistnoret 1 ...................... <me.rCalc(parsed, argExtraVars, argCallingObj)>
+  [ 27] extcall 69 .............................. return me.rCalc(parsed, argExtraVars, argCallingObj)
+  [ 30] ret
+end
+
+on rCalc me, argParsed, argExtraVars, argCallingObj
+  [  0] getparam 16 ............................. <argExtraVars>
+  [  2] pusharglist 1 ........................... <argExtraVars>
+  [  4] extcall 61 .............................. <voidp(argExtraVars)>
+  [  7] jmpifz [ 15] ............................ if voidp(argExtraVars) then
+  [ 10] pusharglist 0 ........................... <[:]>
+  [ 12] pushproplist ............................ <[:]>
+  [ 13] setparam 16 ............................. argExtraVars = [:]
+  [ 15] getglobal 23 ............................ <gRock>
+  [ 17] pusharglist 1 ........................... <gRock>
+  [ 19] extcall 8 ............................... <objectp(gRock)>
+  [ 21] jmpifz [ 81] ............................ if objectp(gRock) then
+  [ 24] getparam 16 ............................. <argExtraVars>
+  [ 26] pushsymb 2835 ........................... <#missionVar>
+  [ 29] pusharglist 2 ........................... <argExtraVars, #missionVar>
+  [ 31] objcall 119 ............................. <argExtraVars[#missionVar]>
+  [ 34] pusharglist 1 ........................... <argExtraVars[#missionVar]>
+  [ 36] extcall 61 .............................. <voidp(argExtraVars[#missionVar])>
+  [ 39] jmpifz [ 81] ............................ if voidp(argExtraVars[#missionVar]) then
+  [ 42] getglobal 23 ............................ <gRock>
+  [ 44] getobjprop 79 ........................... <gRock.m_context>
+  [ 47] pushsymb 133 ............................ <#Mission>
+  [ 50] pusharglist 2 ........................... <gRock.m_context, #Mission>
+  [ 52] objcall 146 ............................. <gRock.m_context.getFocus(#Mission)>
+  [ 55] setlocal 0 .............................. currMission = gRock.m_context.getFocus(#Mission)
+  [ 57] getlocal 0 .............................. <currMission>
+  [ 59] pusharglist 1 ........................... <currMission>
+  [ 61] extcall 8 ............................... <objectp(currMission)>
+  [ 63] jmpifz [ 81] ............................ if objectp(currMission) then
+  [ 66] getparam 16 ............................. <argExtraVars>
+  [ 68] pushsymb 2835 ........................... <#missionVar>
+  [ 71] getlocal 0 .............................. <currMission>
+  [ 73] getobjprop 726 .......................... <currMission.Vars>
+  [ 76] pusharglistnoret 3 ...................... <argExtraVars, #missionVar, currMission.Vars>
+  [ 78] objcall 353 ............................. argExtraVars[#missionVar] = currMission.Vars
+  [ 81] getprop 2170 ............................ <m_parseAndCalcObj>
+  [ 84] getparam 8 .............................. <argParsed>
+  [ 86] getparam 16 ............................. <argExtraVars>
+  [ 88] pusharglist 0 ........................... <>
+  [ 90] extcall 151 ............................. <VOID>
+  [ 93] getparam 24 ............................. <argCallingObj>
+  [ 95] pusharglist 5 ........................... <m_parseAndCalcObj, argParsed, argExtraVars, VOID, argCallingObj>
+  [ 97] objcall 2172 ............................ <m_parseAndCalcObj.calc(argParsed, argExtraVars, VOID, argCallingObj)>
+  [100] pusharglistnoret 1 ...................... <m_parseAndCalcObj.calc(argParsed, argExtraVars, VOID, argCallingObj)>
+  [102] extcall 69 .............................. return m_parseAndCalcObj.calc(argParsed, argExtraVars, VOID, argCallingObj)
+  [105] ret
+end

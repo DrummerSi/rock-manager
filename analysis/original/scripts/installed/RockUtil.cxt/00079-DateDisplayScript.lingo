@@ -1,0 +1,64 @@
+property m_animCnt, m_img, m_SP, m_sizeList, m_renderMember, m_maxRect, m_bgImg
+global gRock, gUseful
+
+on new me, argObjMaster
+  SPNum = argObjMaster.m_spriteList[#DateText]
+  tmpMemb = member("DateNameText")
+  sprite(SPNum).loc = point(698, 82)
+  sprite(SPNum).member = tmpMemb
+  tmpMemb.text = gRock.m_languageManager.getStr(#szidDate, [#FirstUppercase: 1])
+  m_SP = sprite(argObjMaster.m_spriteList[#DateVal])
+  m_SP.loc = point(712, 109)
+  m_sizeList = [1.10000000000000009, 1.30000000000000004, 1.5, 1.30000000000000004, 1.19999999999999996, 1.10000000000000009, 1]
+  m_maxRect = member("DateText").rect * 1.5
+  size = getRectSize(m_maxRect)
+  m_maxRect = m_maxRect - (rect(size, size) / 2)
+  m_renderMember = member("DateRendered")
+  m_renderMember.image = image(90, 30, 24, 8)
+  return me
+end
+
+on kill me
+  gUseful.frameTimer.deleteObject(me)
+  return 0
+end
+
+on render me, argStr, argNewDate
+  member("DateText").text = argStr
+  m_img = member("DateText").image
+  if argNewDate = #NewDate then
+    m_animCnt = 1
+    script("SoundScript").new(gRock.m_paths.getPath(#sound) & "Tick.wav", [#file: 1, #vol: #DateTickVol])
+    gUseful.frameTimer.addObject(me)
+  else
+    me.renderAtScale(1.0)
+  end if
+end
+
+on timeTick me
+  m_animCnt = m_animCnt + 1
+  if m_animCnt > m_sizeList.count then
+    gUseful.frameTimer.deleteObject(me)
+    exit
+  end if
+  me.renderAtScale(m_sizeList[m_animCnt])
+end
+
+on renderAtScale me, argScale
+  rct = m_img.rect
+  midPoint = getRectSize(rct) / 2
+  rct = rct - rect(midPoint, midPoint)
+  rct = rct * argScale
+  tmpOffRect = getRectSize(m_renderMember.image.rect)
+  tmpOffRect = rect(tmpOffRect, tmpOffRect) / 2
+  if 1 then
+    m_renderMember.image.fill(m_renderMember.image.rect, rgb(255, 255, 255))
+    m_renderMember.image.setAlpha(0)
+    m_renderMember.image.copyPixels(m_img, rct + tmpOffRect, m_img.rect)
+    m_SP.member = member("DateRendered")
+  else
+    tmpOffRect = tmpOffRect + rect(point(671, 45), point(671, 45))
+    (the stage).image.copyPixels(m_bgImg, tmpOffRect + m_maxRect, m_bgImg.rect)
+    (the stage).image.copyPixels(m_img, rct + tmpOffRect, m_img.rect)
+  end if
+end

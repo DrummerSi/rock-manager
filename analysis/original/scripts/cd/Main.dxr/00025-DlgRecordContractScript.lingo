@@ -1,0 +1,118 @@
+property ancestor, m_Xplace_r, m_priceModel_r, m_royaltySteps, m_currPosInSteps, m_advance, m_royalty
+global gDir, gRock
+
+on new me, argOptions
+  ID = argOptions[#ID]
+  argOptions.setaProp(#ReportTo, me)
+  argOptions.setaProp(#child, me)
+  dialog_r = gRock.m_classManager.getObjByIDAndClass(#DlgRecordContract, #Dialog)
+  argOptions[#DlgInfoObj] = dialog_r
+  ancestor = script("DlgRockAncestorScript").new(argOptions)
+  lst = gDir.m_objDialogsMaster.m_dlgObjList
+  Over = lst[lst.count]
+  m_Xplace_r = Over.m_place_r
+  me.calcOffer(argOptions[#likeAlbum])
+  me.setPlace()
+  ancestor.render()
+  human_r = gRock.m_context.getFocus(#Human)
+  tmpSndPath = getSpeechFile(human_r, [#Contract, #Happy])
+  speakAndSetFace(tmpSndPath)
+  return me
+end
+
+on kill me
+  speakAndSetFace(EMPTY)
+  ancestor.kill()
+  m_Xplace_r = 0
+  return 0
+end
+
+on Report me, argObj, argWhat, argOption
+end
+
+on mouse me, argObj, argWhat, argOption
+  if objectp(argOption) then
+    if argWhat = #click then
+      ID = argOption.getOneProp(#ID)
+      IDStr = string(ID)
+      if offset("Arrow", IDStr) then
+        obj = argOption
+        if objectp(obj) then
+          overIDs = obj.masterObj.getOverIDs()
+          cnt = overIDs.count
+          if cnt >= 2 then
+            belongingToID = overIDs[1]
+            tmp = string(belongingToID)
+            tmpDir = (2 * (ID = #ArrowUp)) - 1
+            if tmp = "Royalty" then
+              tmpNewPos = rDlgCheckUpDownArrows(VOID, m_currPosInSteps + tmpDir, m_royaltySteps.count)
+              m_currPosInSteps = tmpNewPos
+              me.changeVals()
+            else
+              if tmp = "Advance" then
+                tmpDir = -tmpDir
+                m_currPosInSteps = rDlgCheckUpDownArrows(VOID, m_currPosInSteps + tmpDir, m_royaltySteps.count)
+                me.changeVals()
+              end if
+            end if
+          end if
+        end if
+      else
+        if offset("ExtraAdvance", IDStr) then
+        else
+          if ID = #ButtonOK then
+            album_r = gRock.m_context.getFocus(#album)
+            overDlg = gDir.m_objDialogsMaster.getDialogUnder(me)
+            if objectp(overDlg) then
+              overDlg.signContract(me, m_advance, m_royalty)
+            end if
+            exit
+          end if
+          ancestor.mouse(argObj, argWhat, argOption)
+        end if
+      end if
+    end if
+  end if
+end
+
+on calcOffer me, argLikeAlbum
+  tmp = m_Xplace_r.getOffer(argLikeAlbum)
+  m_royaltySteps = tmp[#Steps]
+  if voidp(m_currPosInSteps) then
+    m_currPosInSteps = tmp[#StepPos]
+  end if
+end
+
+on changeVals me
+  m_advance = m_royaltySteps[m_currPosInSteps]
+  itemObj = ancestor.m_objDlg.getItemByPath([#Advance, #Chooser, #text])
+  itemObj.setOneProp(#editData, rCurrency(m_advance, 0, 1))
+  m_royalty = m_royaltySteps.getPropAt(m_currPosInSteps)
+  itemObj = ancestor.m_objDlg.getItemByPath([#Royalty, #Chooser, #text])
+  itemObj.setOneProp(#editData, convFloatToPercent(m_royalty, 1) & "%")
+end
+
+on setPlace me
+  dlgObj = ancestor.m_objDlg
+  chooseObj = dlgObj.getItem(#Advance)
+  chooseObj = chooseObj.dialogObj
+  itemObj = chooseObj.getItemByPath([#Head, #icon])
+  itemObj.setOneProp(#Pic, "icon_money02")
+  itemObj = chooseObj.getItemByPath([#Head, #Info])
+  itemObj.setOneProp(#editData, gRock.m_languageManager.getStr(#szidAdvancePay, [#FirstUppercase: 1]))
+  itemObj = chooseObj.getItemByPath([#Chooser, #text])
+  tmpR = itemObj.getOneProp(#inOffsetRect)
+  tmpR[3] = 90
+  itemObj.setOneProp(#inOffsetRect, tmpR)
+  chooseObj = dlgObj.getItem(#Royalty)
+  chooseObj = chooseObj.dialogObj
+  itemObj = chooseObj.getItemByPath([#Head, #icon])
+  itemObj.setOneProp(#Pic, "icon_cd02")
+  itemObj = chooseObj.getItemByPath([#Head, #Info])
+  itemObj.setOneProp(#editData, gRock.m_languageManager.getStr(#szidRoyalty, [#FirstUppercase: 1]))
+  itemObj = chooseObj.getItemByPath([#Chooser, #text])
+  tmpR = itemObj.getOneProp(#inOffsetRect)
+  tmpR[3] = 90
+  itemObj.setOneProp(#inOffsetRect, tmpR)
+  me.changeVals()
+end

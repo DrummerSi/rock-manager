@@ -1,0 +1,162 @@
+property m_freeIDs, m_orgMembers, m_freeMembers, m_objs, m_maxSounds
+global gDir
+
+on new me, argFileName
+  [  0] pushint8 8 .............................. <8>
+  [  3] setprop 984 ............................. m_maxSounds = 8
+  [  6] pusharglist 0 ........................... <[]>
+  [  8] pushlist ................................ <[]>
+  [  9] setprop 988 ............................. m_freeIDs = []
+  [ 12] pushint8 1 .............................. <1>
+  [ 15] setlocal 0
+  [ 17] getlocal 0
+  [ 19] getprop 984 ............................. <m_maxSounds>
+  [ 22] lteq
+  [ 23] jmpifz [ 46] ............................ repeat with n = 1 to m_maxSounds
+  [ 26] getprop 988 ............................. <m_freeIDs>
+  [ 29] getlocal 0 .............................. <n>
+  [ 31] pusharglistnoret 2 ...................... <m_freeIDs, n>
+  [ 33] objcall 50 .............................. m_freeIDs.add(n)
+  [ 36] pushint8 1
+  [ 39] getlocal 0
+  [ 41] add
+  [ 42] setlocal 0
+  [ 44] endrepeat [ 17]
+  [ 46] pusharglist 0 ........................... <[]>
+  [ 48] pushlist ................................ <[]>
+  [ 49] setprop 733 ............................. m_freeMembers = []
+  [ 52] pushint8 1 .............................. <1>
+  [ 55] setlocal 0
+  [ 57] getlocal 0
+  [ 59] getprop 984 ............................. <m_maxSounds>
+  [ 62] lteq
+  [ 63] jmpifz [103] ............................ repeat with n = 1 to m_maxSounds
+  [ 66] getprop 733 ............................. <m_freeMembers>
+  [ 69] pushcons 0 .............................. <"LinkedAudio">
+  [ 71] getlocal 0 .............................. <n>
+  [ 73] pushint8 2 .............................. <2>
+  [ 76] pusharglist 2 ........................... <n, 2>
+  [ 78] extcall 397 ............................. <convItoS(n, 2)>
+  [ 81] joinstr ................................. <"LinkedAudio" & convItoS(n, 2)>
+  [ 82] pusharglist 1 ........................... <"LinkedAudio" & convItoS(n, 2)>
+  [ 84] extcall 296 ............................. <member("LinkedAudio" & convItoS(n, 2))>
+  [ 87] pusharglistnoret 2 ...................... <m_freeMembers, member("LinkedAudio" & convItoS(n, 2))>
+  [ 89] objcall 50 .............................. m_freeMembers.add(member("LinkedAudio" & convItoS(n, 2)))
+  [ 92] pushint8 1
+  [ 95] getlocal 0
+  [ 97] add
+  [ 98] setlocal 0
+  [100] endrepeat [ 57]
+  [103] getprop 733 ............................. <m_freeMembers>
+  [106] pusharglist 1 ........................... <m_freeMembers>
+  [108] objcall 44 .............................. <m_freeMembers.duplicate()>
+  [111] setprop 734 ............................. m_orgMembers = m_freeMembers.duplicate()
+  [114] pusharglist 0 ........................... <[]>
+  [116] pushlist ................................ <[]>
+  [117] setprop 989 ............................. m_objs = []
+  [120] getparam 0 .............................. <me>
+  [122] pusharglistnoret 1 ...................... <me>
+  [124] extcall 21 .............................. return me
+  [126] ret
+end
+
+on kill me
+  [  0] getprop 734 ............................. <m_orgMembers>
+  [  3] peek 0
+  [  5] pusharglist 1
+  [  7] extcall 32
+  [ 10] pushint8 1
+  [ 12] peek 0
+  [ 14] peek 2
+  [ 16] lteq
+  [ 17] jmpifz [ 48] ............................ repeat with memb in m_orgMembers
+  [ 20] peek 2
+  [ 22] peek 1
+  [ 24] pusharglist 2
+  [ 26] extcall 34
+  [ 29] setlocal 0
+  [ 31] getlocal 0 .............................. <memb>
+  [ 33] getmovieprop 217 ........................ <the moviePath>
+  [ 36] pushcons 8 .............................. <"Wav.wav">
+  [ 38] joinstr ................................. <the moviePath & "Wav.wav">
+  [ 39] setobjprop 91 ........................... memb.fileName = the moviePath & "Wav.wav"
+  [ 42] pushint8 1
+  [ 44] add
+  [ 45] endrepeat [ 12]
+  [ 48] pop 3
+  [ 50] pushzero ................................ <0>
+  [ 51] pusharglistnoret 1 ...................... <0>
+  [ 53] extcall 21 .............................. return 0
+  [ 55] ret
+end
+
+on getSndId me
+  [  0] getprop 988 ............................. <m_freeIDs>
+  [  3] getobjprop 32 ........................... <m_freeIDs.count>
+  [  6] jmpifz [ 39] ............................ if m_freeIDs.count then
+  [  9] getprop 988 ............................. <m_freeIDs>
+  [ 12] pushint8 1 .............................. <1>
+  [ 15] pusharglist 2 ........................... <m_freeIDs, 1>
+  [ 17] objcall 34 .............................. <m_freeIDs[1]>
+  [ 20] setlocal 0 .............................. ID = m_freeIDs[1]
+  [ 22] getprop 988 ............................. <m_freeIDs>
+  [ 25] pushint8 1 .............................. <1>
+  [ 28] pusharglistnoret 2 ...................... <m_freeIDs, 1>
+  [ 30] objcall 100 ............................. m_freeIDs.deleteAt(1)
+  [ 33] getlocal 0 .............................. <ID>
+  [ 35] pusharglistnoret 1 ...................... <ID>
+  [ 37] extcall 21 .............................. return ID
+  [ 39] pushzero ................................ <0>
+  [ 40] pusharglistnoret 1 ...................... <0>
+  [ 42] extcall 21 .............................. return 0
+  [ 44] ret
+end
+
+on getLinkedMember me, argFileName
+  [  0] getprop 733 ............................. <m_freeMembers>
+  [  3] getobjprop 32 ........................... <m_freeMembers.count>
+  [  6] jmpifz [ 47] ............................ if m_freeMembers.count then
+  [  9] getprop 733 ............................. <m_freeMembers>
+  [ 12] pushint8 1 .............................. <1>
+  [ 15] pusharglist 2 ........................... <m_freeMembers, 1>
+  [ 17] objcall 34 .............................. <m_freeMembers[1]>
+  [ 20] setlocal 0 .............................. memb = m_freeMembers[1]
+  [ 22] getprop 733 ............................. <m_freeMembers>
+  [ 25] pushint8 1 .............................. <1>
+  [ 28] pusharglistnoret 2 ...................... <m_freeMembers, 1>
+  [ 30] objcall 100 ............................. m_freeMembers.deleteAt(1)
+  [ 33] getlocal 0 .............................. <memb>
+  [ 35] getparam 8 .............................. <argFileName>
+  [ 37] setobjprop 91 ........................... memb.fileName = argFileName
+  [ 40] getprop 733 ............................. <m_freeMembers>
+  [ 43] pusharglistnoret 1 ...................... <m_freeMembers>
+  [ 45] extcall 21 .............................. return m_freeMembers
+  [ 47] pushzero ................................ <0>
+  [ 48] pusharglistnoret 1 ...................... <0>
+  [ 50] extcall 21 .............................. return 0
+  [ 52] ret
+end
+
+on returnAll me, argObj
+  [  0] getparam 8 .............................. <argObj>
+  [  2] getobjprop 675 .......................... <argObj.sndId>
+  [  5] pushzero ................................ <0>
+  [  6] gt ...................................... <argObj.sndId > 0>
+  [  7] jmpifz [ 23] ............................ if argObj.sndId > 0 then
+  [ 10] getprop 988 ............................. <m_freeIDs>
+  [ 13] getparam 8 .............................. <argObj>
+  [ 15] getobjprop 675 .......................... <argObj.sndId>
+  [ 18] pusharglistnoret 2 ...................... <m_freeIDs, argObj.sndId>
+  [ 20] objcall 50 .............................. m_freeIDs.add(argObj.sndId)
+  [ 23] getparam 8 .............................. <argObj>
+  [ 25] getobjprop 990 .......................... <argObj.linkedMember>
+  [ 28] pusharglist 1 ........................... <argObj.linkedMember>
+  [ 30] extcall 71 .............................. <objectp(argObj.linkedMember)>
+  [ 33] jmpifz [ 49] ............................ if objectp(argObj.linkedMember) then
+  [ 36] getprop 733 ............................. <m_freeMembers>
+  [ 39] getparam 8 .............................. <argObj>
+  [ 41] getobjprop 990 .......................... <argObj.linkedMember>
+  [ 44] pusharglistnoret 2 ...................... <m_freeMembers, argObj.linkedMember>
+  [ 46] objcall 50 .............................. m_freeMembers.add(argObj.linkedMember)
+  [ 49] ret
+end

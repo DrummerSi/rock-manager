@@ -1,0 +1,108 @@
+property ancestor, child, className, belongsTo, _killed, type, AutoEventCard
+global gRock
+
+on new me, argChild, argBelongsTo
+  if objectp(argChild) then
+    child = argChild
+  else
+    child = me
+  end if
+  belongsTo = argBelongsTo
+  ancestor = script("ClassEventScript").new(child)
+  className = #Training
+  type = #none
+  AutoEventCard = 0
+  ancestor.visible = 1
+  return me
+end
+
+on kill me
+  _killed = 1
+  if objectp(ancestor) then
+    ancestor = ancestor.kill()
+  end if
+  child = 0
+  belongsTo = 0
+  return 0
+end
+
+on eventChangeState me, argAction, argOption
+  if argAction = #start then
+  else
+    if argAction = #stop then
+      me.affectMusician()
+      if AutoEventCard = 1 then
+        tmpECID = symbol("ECOCTraining" & string(type) & "Done")
+        gRock.m_eventCardsManager.tryNewShowEventCard(tmpECID, [#prio: 3, #EventCardOptions: [#HumanID: ancestor.neededIDs[1]]])
+      else
+        if symbolp(AutoEventCard) then
+          gRock.m_eventCardsManager.tryNewShowEventCard(AutoEventCard, [#prio: 3, #EventCardOptions: [#HumanID: ancestor.neededIDs[1]]])
+        end if
+      end if
+    end if
+  end if
+  return ancestor.eventChangeState(argAction, argOption)
+end
+
+on timeTick me
+end
+
+on affectMusician me
+  musID = ancestor.neededIDs[1]
+  musician_r = gRock.m_classManager.getObjByIDAndClass(musID, #RealMusician)
+  if not objectp(musician_r) then
+    exit
+  end if
+  if type = #Musicality then
+    tmpChange = me.calcRealChange(musician_r, #Musicality, 0.20000000000000001, 1)
+    rCreateModifier(#TrainMusicality, musID, [#Musicality], tmpChange, 90)
+  else
+    if type = #Physics then
+      tmpChange = me.calcRealChange(musician_r, #Health, 0.20000000000000001, 1)
+      rCreateModifier(#TrainPhysics, musID, [#Health], tmpChange, 30)
+      tmpChange = me.calcRealChange(musician_r, #Charisma, 0.10000000000000001, 1)
+      rCreateModifier(#TrainPhysics, musID, [#Charisma], tmpChange, 30)
+    else
+      if type = #Vacation then
+        musician_r.Needs.satisfy(#NeedVacation, 0.5)
+      else
+        if type = #Detox then
+          musician_r.Needs.satisfy(#NeedVacation, 0.10000000000000001)
+          tmpChange = me.calcRealChange(musician_r, #Health, 0.20000000000000001, 1)
+          rCreateModifier(#TrainDetox, musID, [#Health], tmpChange, 90)
+          tmpNeedPartyObj = rgetPropSimple(musician_r, [#Needs, #NeedObjs, #NeedParty, #DynamicTrigger])
+          if objectp(tmpNeedPartyObj) then
+            tmpNeedPartyObj.Current = 0.0
+          end if
+          tmpNeedDrugObj = rgetPropSimple(musician_r, [#Needs, #NeedObjs, #NeedDrugs, #DynamicTrigger])
+          if objectp(tmpNeedDrugObj) then
+            tmpNeedDrugObj.Current = 0.0
+            tmpNeedDrugObj.GainFact = tmpNeedDrugObj.GainFact / 2.0
+          end if
+        else
+          if type = #media then
+            tmpChange = me.calcRealChange(musician_r, #Charisma, 0.20000000000000001, 1)
+            rCreateModifier(#TrainMedia, musID, [#Charisma], tmpChange, 90)
+          end if
+        end if
+      end if
+    end if
+  end if
+end
+
+on calcRealChange me, argMusician, argPropPath, argOrgChange, argMoodAffects
+  if argMoodAffects = 1 then
+    tmpMood = rgetProp(argMusician, #Mood)
+    tmpFactor = 0.10000000000000001 * 2.0 * (tmpMood - 0.5)
+  else
+    tmpFactor = 0
+  end if
+  argOrgChange = argOrgChange * (1.0 + tmpFactor)
+  tmpVal = rgetProp(argMusician, argPropPath)
+  tmpNew = tmpVal + argOrgChange
+  if tmpNew > 1.0 then
+    tmpNew = 1.0
+  end if
+  tmpDiff = tmpNew - tmpVal
+  return tmpDiff
+end

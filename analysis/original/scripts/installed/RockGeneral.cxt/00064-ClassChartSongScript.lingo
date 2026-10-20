@@ -1,0 +1,97 @@
+property ancestor, child, className, belongsTo, _killed, BandName, LifeCounter, ChartMovementID, PossibleMovementIDs, Genre
+global gRock
+
+on new me, argChild, argBelongsTo
+  if objectp(argChild) then
+    child = argChild
+  else
+    child = me
+  end if
+  belongsTo = argBelongsTo
+  ancestor = script("ClassConcreteScript").new(child)
+  className = #ChartSong
+  BandName = EMPTY
+  LifeCounter = 0
+  ChartMovementID = #none
+  PossibleMovementIDs = []
+  Genre = EMPTY
+  return me
+end
+
+on kill me
+  _killed = 1
+  if objectp(ancestor) then
+    ancestor = ancestor.kill()
+  end if
+  child = 0
+  belongsTo = 0
+  return 0
+end
+
+on weeklyUpdate me
+  if LifeCounter = 0 then
+    exit
+  end if
+  LifeCounter = LifeCounter + 1
+  ChartMovement_r = gRock.m_classManager.getObjByIDAndClass(ChartMovementID, #ChartMovement)
+  tmpMaxLife = ChartMovement_r.getLifeTime()
+  if LifeCounter > tmpMaxLife then
+    LifeCounter = 0
+  end if
+end
+
+on init me
+end
+
+on forceIntoChart me, argChart, argLongRunner
+  if argLongRunner = 1 then
+    ChartMovementID = #ChMvm02
+  else
+    ChartMovementID = PossibleMovementIDs[random(PossibleMovementIDs.count)]
+  end if
+  ChartMovement_r = gRock.m_classManager.getObjByIDAndClass(ChartMovementID, #ChartMovement)
+  tmp = ChartMovement_r.Movement.getaProp(argChart)
+  if not listp(tmp) then
+  end if
+  LifeCounter = integer(1 + tmp[1])
+end
+
+on start me, argRandomLife
+  ChartMovementID = PossibleMovementIDs[random(PossibleMovementIDs.count)]
+  if argRandomLife = #RandomLife then
+    ChartMovement_r = gRock.m_classManager.getObjByIDAndClass(ChartMovementID, #ChartMovement)
+    LifeCounter = random(ChartMovement_r.getLifeTime())
+  else
+    LifeCounter = 1
+  end if
+end
+
+on getPosOnCharts me
+  if LifeCounter = 0 then
+    return [:]
+  end if
+  ChartMovement_r = gRock.m_classManager.getObjByIDAndClass(ChartMovementID, #ChartMovement)
+  return ChartMovement_r.getPosOnCharts(LifeCounter)
+end
+
+on getFakeNumWeeksOnChart me, argChart
+  ChartMovement_r = gRock.m_classManager.getObjByIDAndClass(ChartMovementID, #ChartMovement)
+  if objectp(ChartMovement_r) then
+    tmp = ChartMovement_r.getNumWeeksOnCharts(LifeCounter - 1)
+    if listp(tmp) then
+      return tmp[argChart]
+    end if
+  end if
+  return 0
+end
+
+on getFakeLastPosOnChart me, argChart
+  ChartMovement_r = gRock.m_classManager.getObjByIDAndClass(ChartMovementID, #ChartMovement)
+  if objectp(ChartMovement_r) then
+    tmp = ChartMovement_r.getPosOnCharts(LifeCounter - 1)
+    if listp(tmp) then
+      return tmp[argChart]
+    end if
+  end if
+  return 0
+end

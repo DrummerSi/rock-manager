@@ -1,0 +1,18 @@
+<!DOCTYPE html><html><head><style>html,body{margin:0;background:#30202c}canvas{display:block}</style></head><body><script type="module">
+import Phaser from 'phaser';
+import {createActorPortrait} from '/src/ui/actor-portrait.ts';
+import {NativeDisplay} from '/src/ui/native-display.ts';
+import evidence from '/src/generated/actor-animation.json';
+import data from '/src/generated/game-data.json';
+const actors=[];const regions=[];let count=0;const musicianRows=Math.ceil(evidence.portraits.filter(p=>p.kind==='musician').length/9),officeTop=30+musicianRows*125+20,auditWidth=1440,auditHeight=officeTop+Math.ceil(evidence.portraits.filter(p=>p.kind!=='musician').length/4)*270+20;
+class AuditScene extends Phaser.Scene {
+preload(){for(const p of evidence.portraits)this.load.image(p.atlas.textureKey,'/assets/'+data.images[p.atlas.textureKey]);}
+create(){this.renderer.pipelines.addPostPipeline('NativeDisplay',NativeDisplay);this.cameras.main.setPostPipeline('NativeDisplay');this.add.rectangle(0,0,auditWidth,auditHeight,0x502d46).setOrigin(0);
+let n=0,m=0;for(const p of evidence.portraits){let x,y;if(p.kind==='musician'){x=10+(n%9)*158;y=30+Math.floor(n/9)*125;n++;}else{x=10+(m%4)*350;y=officeTop+Math.floor(m/4)*270;m++;}
+this.add.text(x,y-20,p.id,{fontSize:12,color:'#fff'});
+const layer=this.add.container();const actor=createActorPortrait(this,layer,p.id,x,y);const prefix=p.kind==='musician'?'a'+p.id.slice(-2):p.id[0]+p.id.slice(-2);const ownKeys=Object.keys(evidence.cues).filter(k=>k.startsWith(prefix));const keys=ownKeys.length?ownKeys:Object.keys(evidence.cues).filter(k=>k.startsWith('a01')); // Test-only geometry sweep reuses original cues when this actor's own cue sheet has not been recovered.
+actors.push({actor,keys,region:{id:p.id,x,y,width:p.width,height:p.height}});regions.push(actors.at(-1).region);}
+window.__actorAudit={regions,dimensions:{width:auditWidth,height:auditHeight},advance(){count++;for(const item of actors){const k=item.keys[Math.floor(count/40)%item.keys.length];const cues=evidence.cues[k];item.actor.update(k,(count%cues.length)/12,true);}return actors.map(a=>a.actor.diagnostics);},setMood(mood){for(const item of actors){item.actor.setMood(mood);item.actor.update('',0,false);}return actors.map(a=>a.actor.diagnostics);},ready:true};}
+}
+new Phaser.Game({type:Phaser.WEBGL,width:auditWidth,height:auditHeight,backgroundColor:'#502d46',render:{antialias:false,roundPixels:true},scene:AuditScene});
+</script></body></html>

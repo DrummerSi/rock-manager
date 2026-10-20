@@ -1,0 +1,29 @@
+property m_checkCDObj
+
+on start me
+  global gSystem
+  if objectp(gSystem) then
+    tmpLanguage = gSystem.m_prefs.getaProp(#Language)
+    tmpCDPath = gSystem.m_CDPath
+  else
+    tmpLanguage = "Swedish"
+    tmpCDPath = "E:\"
+  end if
+  go("CheckCD")
+  if voidp(tmpLanguage) then
+    go("Leave")
+    exit
+  end if
+  checkCD = script("CheckForCorrectCDScript").new(tmpCDPath, "RockCD.INF", [[#settings, #Language], tmpLanguage], [#object: me, #handler: #Report])
+  m_checkCDObj = checkCD
+  checkCD.startChecking()
+end
+
+on Report me, argWhat
+  if argWhat = #Ok then
+    if objectp(m_checkCDObj) then
+      m_checkCDObj = m_checkCDObj.kill()
+    end if
+    go("Leave")
+  end if
+end

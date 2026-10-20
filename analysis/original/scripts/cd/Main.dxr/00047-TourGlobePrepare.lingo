@@ -1,0 +1,76 @@
+global gRock
+
+on prepareTourGlobe argReportMouseToObj, argSPNum, argLoc, argCreateNewIfTourHasBeenOkayed, argUseMouse
+  tourCities_r = gRock.m_classManager.getObjsOfClass(#TourCity)
+  tmpCoords = []
+  repeat with tourCity_r in tourCities_r
+    if tourCity_r.Available = 1 then
+      tmpCoords.add([#ID: tourCity_r.ID, #map: tourCity_r.Coordinates])
+    end if
+  end repeat
+  sprite(argSPNum).ink = 36
+  globeObj = script("GlobeMapScript").new(argReportMouseToObj, argLoc + point(0, 7), tmpCoords, argSPNum, argUseMouse <> #NoMouse)
+  tourCities_r = []
+  bandTour_r = gRock.m_context.getFocus(#BandTour)
+  tmpGotDefinedTour = objectp(bandTour_r)
+  if tmpGotDefinedTour then
+    tmpGotDefinedTour = (bandTour_r.Cities.count > 0) or (bandTour_r.StageDesign.count > 0)
+    if not tmpGotDefinedTour then
+      gRock.m_classManager.removeObj(bandTour_r, #kill)
+    end if
+  end if
+  tmpGotDefinedAndOkayedTour = tmpGotDefinedTour
+  if tmpGotDefinedAndOkayedTour then
+    tmpGotDefinedAndOkayedTour = bandTour_r.visible = 1
+  end if
+  tmpCreateNewTour = not tmpGotDefinedTour
+  if (argCreateNewIfTourHasBeenOkayed = #CreateNewIfOkayed) and (tmpGotDefinedAndOkayedTour = 1) then
+    tmpCreateNewTour = 1
+  end if
+  startCityID = symbol(rGetStr(#szidTourStartCity))
+  if not symbolp(startCityID) then
+    startCityID = #TCTokyo
+  end if
+  mapObj = globeObj.getObjByID(startCityID)
+  mapObj.m_clr = rgb(0, 0, 0)
+  if tmpCreateNewTour then
+    bandTour_r = createEmptyTour()
+    mapObj = globeObj.getObjByID(startCityID)
+    if objectp(mapObj) then
+      globeObj.addConnection(VOID, mapObj)
+    end if
+  else
+    lastMapObj = VOID
+    tmpCityIDs = bandTour_r.Cities
+    tmpCityIDs.addAt(1, startCityID)
+    mapObj = globeObj.getObjByID(startCityID)
+    globeObj.addConnection(VOID, mapObj)
+    repeat with n = 2 to tmpCityIDs.count
+      ID = tmpCityIDs[n]
+      tourCity_r = gRock.m_classManager.getObjByIDAndClass(ID, #TourCity)
+      mapObj = globeObj.getObjByID(ID)
+      globeObj.addConnection(VOID, mapObj)
+      tourCities_r.add(tourCity_r)
+      lastMapObj = mapObj
+    end repeat
+    tmpCityIDs.deleteAt(1)
+  end if
+  mapObj = globeObj.getObjByID(startCityID)
+  globeObj.m_equatorialRotation = globeObj.m_equatorialRotation + mapObj.m_mapLoc[2]
+  globeObj.m_invalidated = 1
+  globeObj.timeTick()
+  return [#BandTour: bandTour_r, #Globe: globeObj, #startCityID: startCityID, #TourCities: tourCities_r]
+end
+
+on createEmptyTour
+  bandTour_r = gRock.m_classManager.createObj(#BandTour)
+  newID = gRock.m_classManager.genUniqueID(bandTour_r)
+  if voidp(newID) then
+  end if
+  rsetProp(bandTour_r, #ID, newID)
+  lst = rgetProp(bandTour_r, #neededIDs)
+  lst.add(#Band)
+  lst.add(#NotOnTour)
+  bandTour_r.visible = 0
+  return bandTour_r
+end

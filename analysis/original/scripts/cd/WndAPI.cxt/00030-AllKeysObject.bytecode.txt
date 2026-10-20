@@ -1,0 +1,79 @@
+property reportObject, tellMovie, Active, reportType, keyCode
+global gUseful
+
+on new me, argReportObject, argReportType, argOptions
+  [  0] getparam 8 .............................. <argReportObject>
+  [  2] setprop 756 ............................. reportObject = argReportObject
+  [  5] getparam 16 ............................. <argReportType>
+  [  7] setprop 770 ............................. reportType = argReportType
+  [ 10] getprop 770 ............................. <reportType>
+  [ 13] pusharglist 1 ........................... <reportType>
+  [ 15] extcall 222 ............................. <symbolp(reportType)>
+  [ 18] not ..................................... <not symbolp(reportType)>
+  [ 19] jmpifz [ 28] ............................ if not symbolp(reportType) then
+  [ 22] pushsymb 389 ............................ <#key>
+  [ 25] setprop 770 ............................. reportType = #key
+  [ 28] pushint8 1 .............................. <1>
+  [ 31] inv ..................................... <-1>
+  [ 32] setprop 740 ............................. keyCode = -1
+  [ 35] getparam 24 ............................. <argOptions>
+  [ 37] setlocal 0 .............................. options = argOptions
+  [ 39] getglobal 93 ............................ <gUseful>
+  [ 42] getobjprop 761 .......................... <gUseful.keyObjects>
+  [ 45] getparam 0 .............................. <me>
+  [ 47] pusharglistnoret 2 ...................... <gUseful.keyObjects, me>
+  [ 49] objcall 95 .............................. gUseful.keyObjects.addObject(me)
+  [ 52] pushint8 1 .............................. <1>
+  [ 55] setprop 731 ............................. Active = 1
+  [ 58] getparam 0 .............................. <me>
+  [ 60] pusharglistnoret 1 ...................... <me>
+  [ 62] extcall 96 .............................. return me
+  [ 65] ret
+end
+
+on kill me
+  [  0] pushzero ................................ <0>
+  [  1] setprop 731 ............................. Active = 0
+  [  4] getglobal 93 ............................ <gUseful>
+  [  7] getobjprop 761 .......................... <gUseful.keyObjects>
+  [ 10] getparam 0 .............................. <me>
+  [ 12] pusharglistnoret 2 ...................... <gUseful.keyObjects, me>
+  [ 14] objcall 108 ............................. gUseful.keyObjects.deleteObject(me)
+  [ 17] pushzero ................................ <0>
+  [ 18] pusharglistnoret 1 ...................... <0>
+  [ 20] extcall 96 .............................. return 0
+  [ 23] ret
+end
+
+on key me, argState, argPollCode
+  [  0] getprop 731 ............................. <Active>
+  [  3] not ..................................... <not Active>
+  [  4] jmpifz [  8] ............................ if not Active then
+  [  7] ret ..................................... exit
+  [  8] getprop 770 ............................. <reportType>
+  [ 11] pushsymb 739 ............................ <#Poll>
+  [ 14] eq ...................................... <reportType = #Poll>
+  [ 15] jmpifz [ 25] ............................ if reportType = #Poll then / else
+  [ 18] getparam 16 ............................. <argPollCode>
+  [ 20] setlocal 0 .............................. tmp = argPollCode
+  [ 22] jmp [ 46]
+  [ 25] getglobal 93 ............................ <gUseful>
+  [ 28] getobjprop 761 .......................... <gUseful.keyObjects>
+  [ 31] pushsymb 739 ............................ <#Poll>
+  [ 34] getprop 770 ............................. <reportType>
+  [ 37] getparam 16 ............................. <argPollCode>
+  [ 39] pusharglist 4 ........................... <gUseful.keyObjects, #Poll, reportType, argPollCode>
+  [ 41] objcall 717 ............................. <gUseful.keyObjects.convert(#Poll, reportType, argPollCode)>
+  [ 44] setlocal 0 .............................. tmp = gUseful.keyObjects.convert(#Poll, reportType, argPollCode)
+  [ 46] getprop 756 ............................. <reportObject>
+  [ 49] getparam 0 .............................. <me>
+  [ 51] getparam 8 .............................. <argState>
+  [ 53] getlocal 0 .............................. <tmp>
+  [ 55] pusharglistnoret 4 ...................... <reportObject, me, argState, tmp>
+  [ 57] objcall 389 ............................. reportObject.key(me, argState, tmp)
+  [ 60] ret
+end
+
+on getOption me, argProp
+  [  0] ret
+end

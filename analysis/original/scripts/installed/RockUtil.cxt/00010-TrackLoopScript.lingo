@@ -1,0 +1,118 @@
+property m_sndObj, m_waveInfo, m_vol, m_muted, m_sequencer, m_unloadWhileMuted
+
+on new me, argSequencer
+  m_sequencer = argSequencer
+  m_vol = 0
+  m_muted = 0
+  m_unloadWhileMuted = 0
+  return me
+end
+
+on kill me
+  if objectp(m_sndObj) then
+    m_sndObj = m_sndObj.kill()
+  end if
+  return 0
+end
+
+on play me
+  if objectp(m_sndObj) then
+    if m_unloadWhileMuted then
+      if m_muted <> 1 then
+        m_sndObj.play()
+      end if
+    else
+      m_sndObj.play()
+    end if
+  else
+    pott("No sound object!")
+  end if
+end
+
+on stop me
+  if objectp(m_sndObj) then
+    m_sndObj.stop()
+  end if
+end
+
+on setSetting me, argProp, argVal
+  if argProp = #file then
+    if objectp(m_sndObj) then
+      m_sndObj = m_sndObj.kill()
+    end if
+    m_sndObj = script("SoundScript").new(m_sequencer.m_soundPath & argVal, [#PlayDirect: 0, #ReportTo: me])
+    if not objectp(m_sndObj) then
+      pott("Err snd not fnd")
+      exit
+    end if
+    tmpFullFile = m_sndObj.fullFileName
+    m_waveInfo = getWaveFileInfo(tmpFullFile)
+    m_waveInfo[#file] = argVal
+    m_sndObj.setLoop(1)
+    if m_muted then
+      m_sndObj.setVol(0)
+    else
+      m_sndObj.setVol(m_vol)
+    end if
+  else
+    if argProp = #vol then
+      m_vol = argVal
+      if not objectp(m_sndObj) then
+        exit
+      end if
+      if not m_muted then
+        m_sndObj.setVol(m_vol)
+      end if
+    else
+      if argProp = #Pan then
+        if not objectp(m_sndObj) then
+          exit
+        end if
+        m_sndObj.setPan(argVal)
+      else
+        if argProp = #Mute then
+          if not objectp(m_sndObj) then
+            exit
+          end if
+          m_muted = argVal
+          if m_muted > 0 then
+            if m_unloadWhileMuted then
+              m_sndObj.unload()
+            else
+              m_sndObj.setVol(0)
+            end if
+          else
+            if m_unloadWhileMuted then
+              m_sndObj.preload()
+              tmpSecs = m_sequencer.getElapsedTime(#Secs)
+              tmpSample = tmpSecs * 44100
+              pott(tmpSecs, tmpSample)
+              m_sndObj.setPosition(tmpSample)
+              m_sndObj.play()
+            else
+              m_sndObj.setVol(m_vol)
+            end if
+          end if
+        end if
+      end if
+    end if
+  end if
+end
+
+on Report me, argObj, argWhat
+  if (argObj = m_sndObj) and objectp(m_sndObj) then
+    if argWhat = #Unloaded then
+      pott("Was unloaded!", m_waveInfo[#file])
+    end if
+  end if
+end
+
+on getSetting me, argProp
+  if argProp = #Mute then
+    return m_muted
+  end if
+end
+
+on getLength me
+  return m_waveInfo[#duration]
+end

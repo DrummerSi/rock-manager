@@ -1,0 +1,350 @@
+property m_OKToShow, m_waitingCards, m_cardsInfo, m_dateSortedCards, m_IDcnt, m_OKToShowOnTopOfNumDialogs, m_allowSpecial
+global gUseful, gDir, gRock
+
+on new me
+  m_OKToShow = 1
+  m_OKToShowOnTopOfNumDialogs = 0
+  gUseful.frameTimer.addObject(me)
+  gRock.m_msgManager.addObject(me)
+  gRock.m_gameTimer.addObject(me)
+  me.cleanUp()
+  return me
+end
+
+on kill me
+  gUseful.frameTimer.deleteObject(me)
+  gRock.m_msgManager.deleteObject(me)
+  gRock.m_gameTimer.deleteObject(me)
+  return 0
+end
+
+on cleanUp me
+  m_allowSpecial = [:]
+  m_waitingCards = [:]
+  m_waitingCards.sort()
+  m_cardsInfo = [:]
+  m_dateSortedCards = [:]
+  m_dateSortedCards.sort()
+  m_IDcnt = 0
+end
+
+on reinit me
+  gRock.m_msgManager.deleteObject(me)
+  gRock.m_msgManager.addObject(me)
+end
+
+on load me, argList
+  m_IDcnt = argList[#IDCnt]
+end
+
+on save me
+  return [#IDCnt: m_IDcnt]
+end
+
+on allowEventCardsWithProp me, argProp, argOnTopOfNumDialogs, argIsTRUE
+  if argIsTRUE then
+    m_allowSpecial.setaProp(argProp, argOnTopOfNumDialogs)
+  else
+    m_allowSpecial.deleteProp(argProp)
+  end if
+end
+
+on setOKToShowOnTopOfNumDialogs me, argNum
+  m_OKToShowOnTopOfNumDialogs = argNum
+  numOpenDialogs = gDir.m_objDialogsMaster.getNumOpen()
+  if numOpenDialogs <= m_OKToShowOnTopOfNumDialogs then
+    m_OKToShow = 1
+  end if
+end
+
+on tryNewShowEventCard me, argECObjOrID, argOptions
+  if voidp(argOptions) then
+    argOptions = [:]
+  end if
+  if voidp(argOptions[#prio]) then
+    argOptions[#prio] = 5
+  end if
+  if voidp(argOptions[#WaitNumDays]) then
+    argOptions[#WaitNumDays] = 0
+  end if
+  if objectp(argECObjOrID) then
+    ECID = argECObjOrID.ID
+  else
+    ECID = argECObjOrID
+  end if
+  ecard_r = gRock.m_classManager.getObjByIDAndClass(ECID, #EventCard)
+  if not objectp(ecard_r) and voidp(argOptions[#DlgScript]) then
+    alert("Err find EC" & string(argECObjOrID))
+    ECID = #ECContractNoDemo
+    ecard_r = gRock.m_classManager.getObjByIDAndClass(ECID, #EventCard)
+  end if
+  if voidp(argOptions[#DlgScript]) then
+    argOptions[#DlgScript] = ecard_r.className
+  end if
+  argOptions[#EventCard] = ECID
+  if (argOptions[#prio] = 0) and (argOptions[#WaitNumDays] = 0) then
+    me.openDialog(argOptions)
+  else
+    m_IDcnt = m_IDcnt + 1
+    m_cardsInfo.addProp(m_IDcnt, argOptions)
+    if argOptions[#WaitNumDays] = 0 then
+      m_waitingCards.addProp(argOptions[#prio], m_IDcnt)
+    else
+      m_dateSortedCards.addProp(gRock.m_date.getDateInt() + argOptions[#WaitNumDays], m_IDcnt)
+    end if
+  end if
+end
+
+on zztryShowEventCard me, argAnyTypeOfObj, argPrio, argCardInfo, argWaitNumDays
+  if voidp(argPrio) then
+    argPrio = getPropFromObjOrAncestor(argAnyTypeOfObj, #prio)
+  end if
+  if voidp(argPrio) then
+    argPrio = 5
+  end if
+  if symbolp(argCardInfo) then
+    card_r = gRock.m_classManager.getObjByID(argCardInfo)
+    if voidp(card_r) then
+      pott("Err find EC", argCardInfo)
+      exit
+    end if
+    argCardInfo = [card_r.className, [#EventCard: card_r]]
+  end if
+  tmpWaitNumDays = argWaitNumDays
+  if voidp(tmpWaitNumDays) then
+    tmpWaitNumDays = 0
+  end if
+  Info = [#DlgScript: argCardInfo[1], #prio: argPrio, #CallObject: argAnyTypeOfObj]
+  tmpSendData = [:]
+  if argCardInfo.count > 1 then
+    tmpSendData = argCardInfo[2]
+  end if
+  Info.addProp(#DlgSendData, tmpSendData)
+  if (argPrio = 0) and (tmpWaitNumDays = 0) then
+    me.openDialog(Info)
+  else
+    m_IDcnt = m_IDcnt + 1
+    m_cardsInfo.addProp(m_IDcnt, Info)
+    if tmpWaitNumDays = 0 then
+      m_waitingCards.addProp(argPrio, m_IDcnt)
+    else
+      m_dateSortedCards.addProp(gRock.m_date.getDateInt() + tmpWaitNumDays, m_IDcnt)
+    end if
+  end if
+end
+
+on deleteEventCard me, argItsIDCounter
+  m_waitingCards.deleteOne(argItsIDCounter)
+  m_cardsInfo.deleteProp(argItsIDCounter)
+  m_dateSortedCards.deleteProp(argItsIDCounter)
+end
+
+on msg me, argWhat, argOptions, argOption2
+  global gDir
+  if argWhat = #ExitDialog then
+    numOpenDialogs = gDir.m_objDialogsMaster.getNumOpen()
+    if numOpenDialogs <= m_OKToShowOnTopOfNumDialogs then
+      m_OKToShow = 1
+    end if
+  else
+    if (argWhat = #EnterDialog) or (argWhat = #EnterPlace) or (argWhat = #EnterMixer) then
+      numOpenDialogs = gDir.m_objDialogsMaster.getNumOpen()
+      if numOpenDialogs > m_OKToShowOnTopOfNumDialogs then
+        m_OKToShow = 0
+      end if
+    end if
+  end if
+  exit
+  if argWhat = #ExitToCity then
+    m_OKToShow = 1
+  else
+    if (argWhat = #EnterDialog) or (argWhat = #EnterPlace) or (argWhat = #EnterMixer) then
+      m_OKToShow = 0
+    end if
+  end if
+end
+
+on openDialog me, argInfo
+  if listp(argInfo[#DlgSendData]) then
+    eventCardID = argInfo[#DlgSendData][#EventCard]
+    if objectp(eventCardID) then
+      eventCardID = eventCardID.ID
+    end if
+    sendData = argInfo[#DlgSendData]
+  else
+    if symbolp(argInfo[#EventCard]) then
+      eventCardID = argInfo[#EventCard]
+      sendData = argInfo
+    else
+      sendData = argInfo
+    end if
+  end if
+  if symbolp(eventCardID) then
+    game_r = gRock.m_context.getFocus(#Game)
+    if game_r.getIsDiscarded(eventCardID) then
+      exit
+    end if
+  end if
+  obj = gDir.m_objDialogsMaster.openDialog(argInfo[#DlgScript], sendData)
+  if symbolp(eventCardID) then
+    gRock.m_msgManager.msg(#EventCardSpecial, [#ID: eventCardID, #Dialog: obj])
+  end if
+end
+
+on timeTick me, argTimerObj
+  if argTimerObj = gUseful.frameTimer then
+    tmpAllowSpecialOnly = 0
+    if m_OKToShow = 0 then
+      if m_allowSpecial.count then
+        tmpAllowSpecialOnly = 1
+        numOpenDialogs = gDir.m_objDialogsMaster.getNumOpen()
+      else
+        exit
+      end if
+    end if
+    cnt = m_waitingCards.count
+    repeat with n = m_waitingCards.count down to 1
+      ItsIDCounter = m_waitingCards[n]
+      Info = m_cardsInfo.getaProp(ItsIDCounter)
+      displayOK = 1
+      if tmpAllowSpecialOnly then
+        displayOK = 0
+        repeat with tmpAllowCnt = 1 to m_allowSpecial.count
+          tmpMaxNumOpenDialogs = m_allowSpecial[tmpAllowCnt]
+          if numOpenDialogs > tmpMaxNumOpenDialogs then
+            next repeat
+          end if
+          tmpAllowThisProp = m_allowSpecial.getPropAt(tmpAllowCnt)
+          if not voidp(Info.getaProp(tmpAllowThisProp)) then
+            displayOK = 1
+            exit repeat
+          end if
+        end repeat
+      end if
+      if displayOK then
+        tmp = me.checkGotNeededToShow(Info)
+        if tmp <> 1 then
+          displayOK = 0
+        end if
+      end if
+      if displayOK then
+        me.openDialog(Info)
+        me.deleteEventCard(ItsIDCounter)
+        m_OKToShow = 0
+        exit repeat
+      end if
+    end repeat
+  else
+    tmpDate = gRock.m_date.getDateInt()
+    m_dateSortedCards.addProp(tmpDate, -1)
+    tmpPos = m_dateSortedCards.getPos(-1)
+    m_dateSortedCards.deleteAt(tmpPos)
+    if tmpPos > m_dateSortedCards.count then
+      exit
+    end if
+    m_dateSortedCards.addProp(tmpDate + 1, -1)
+    tmpEndPos = m_dateSortedCards.getPos(-1)
+    m_dateSortedCards.deleteAt(tmpEndPos)
+    repeat with n = tmpPos to tmpEndPos - 1
+      ItsIDCounter = m_dateSortedCards[tmpPos]
+      Info = m_cardsInfo.getaProp(ItsIDCounter)
+      m_waitingCards.addProp(Info[#prio], ItsIDCounter)
+      m_dateSortedCards.deleteAt(tmpPos)
+    end repeat
+  end if
+end
+
+on postponeDates me, argNumDays, argMakeCardsThatComeBeforeTodayComeToday
+  tmpNew = [:]
+  tmpNew.sort()
+  tmpTodayDate = gRock.m_date.getDateInt()
+  repeat with n = 1 to m_dateSortedCards.count
+    tmpDate = m_dateSortedCards.getPropAt(n) + argNumDays
+    if argMakeCardsThatComeBeforeTodayComeToday = 1 then
+      if tmpDate < tmpTodayDate then
+        tmpDate = tmpTodayDate
+      end if
+      tmpNew.addProp(tmpDate, m_dateSortedCards[n])
+      next repeat
+    end if
+    tmpNew.addProp(tmpDate, m_dateSortedCards[n])
+  end repeat
+  m_dateSortedCards = tmpNew
+end
+
+on getWaiting me, argCareAboutOKToShow, argGetFirstCard
+  lst = [:]
+  tmpAllowSpecialOnly = 0
+  if argCareAboutOKToShow = 1 then
+    if m_OKToShow = 0 then
+      if m_allowSpecial.count then
+        tmpAllowSpecialOnly = 1
+        numOpenDialogs = gDir.m_objDialogsMaster.getNumOpen()
+      else
+        if argGetFirstCard = 1 then
+          return VOID
+        end if
+        return lst
+      end if
+    end if
+  end if
+  cnt = m_waitingCards.count
+  repeat with n = m_waitingCards.count down to 1
+    ItsIDCounter = m_waitingCards[n]
+    Info = m_cardsInfo.getaProp(ItsIDCounter)
+    displayOK = 1
+    if tmpAllowSpecialOnly then
+      displayOK = 0
+      repeat with tmpAllowCnt = 1 to m_allowSpecial.count
+        tmpMaxNumOpenDialogs = m_allowSpecial[tmpAllowCnt]
+        if numOpenDialogs > tmpMaxNumOpenDialogs then
+          next repeat
+        end if
+        tmpAllowThisProp = m_allowSpecial.getPropAt(tmpAllowCnt)
+        if not voidp(Info.getaProp(tmpAllowThisProp)) then
+          displayOK = 1
+          exit repeat
+        end if
+      end repeat
+    end if
+    if displayOK then
+      tmp = me.checkGotNeededToShow(Info)
+      if tmp <> 1 then
+        displayOK = 0
+      end if
+    end if
+    if displayOK then
+      if argGetFirstCard = 1 then
+        return Info
+      end if
+      lst.addProp(ItsIDCounter, Info)
+    end if
+  end repeat
+  if argGetFirstCard = 1 then
+    return VOID
+  end if
+  return lst
+end
+
+on checkGotNeededToShow me, argInfo
+  needed = argInfo[#NeededToShow]
+  if voidp(needed) then
+    return 1
+  end if
+  if stringp(needed) then
+    return rex(needed)
+  end if
+  if symbol(needed) then
+    needed = [needed]
+  end if
+  if listp(needed) then
+    repeat with oneNeed in needed
+      if symbolp(oneNeed) then
+        obj = gRock.m_classManager.getObjByID(oneNeed)
+        next repeat
+      end if
+      if listp(oneNeed) then
+      end if
+    end repeat
+  end if
+end

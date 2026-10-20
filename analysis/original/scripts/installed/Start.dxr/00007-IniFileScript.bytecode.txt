@@ -1,0 +1,204 @@
+on iniStrToPropList argStr, argIgnoreComments
+  [  0] pusharglist 0 ........................... <[:]>
+  [  2] pushproplist ............................ <[:]>
+  [  3] setlocal 0 .............................. wholeLst = [:]
+  [  5] getparam 0 .............................. <argStr>
+  [  7] pushint8 4 .............................. <4>
+  [ 10] get 1 ................................... <the number of lines in argStr>
+  [ 12] setlocal 8 .............................. numLines = the number of lines in argStr
+  [ 14] pushint8 1 .............................. <1>
+  [ 17] setlocal 16
+  [ 19] getlocal 16
+  [ 21] getlocal 8 .............................. <numLines>
+  [ 23] lteq
+  [ 24] jmpifz [283] ............................ repeat with lineNr = 1 to numLines
+  [ 27] getparam 0 .............................. <argStr>
+  [ 29] pushsymb 85 ............................. <#line>
+  [ 32] getlocal 16 ............................. <lineNr>
+  [ 34] pusharglist 3 ........................... <argStr, #line, lineNr>
+  [ 36] objcall 138 ............................. <argStr.line[lineNr]>
+  [ 39] setlocal 24 ............................. tmpLine = argStr.line[lineNr]
+  [ 41] getlocal 24 ............................. <tmpLine>
+  [ 43] pushsymb 248 ............................ <#char>
+  [ 46] pushint8 1 .............................. <1>
+  [ 49] pusharglist 3 ........................... <tmpLine, #char, 1>
+  [ 51] objcall 138 ............................. <tmpLine.char[1]>
+  [ 54] pushint8 10 ............................. <10>
+  [ 57] pusharglist 1 ........................... <10>
+  [ 59] extcall 219 ............................. <numToChar(10)>
+  [ 62] eq ...................................... <tmpLine.char[1] = numToChar(10)>
+  [ 63] jmpifz [ 87] ............................ if tmpLine.char[1] = numToChar(10) then
+  [ 66] pushint8 3 .............................. <3>
+  [ 69] pushchunkvarref 5 ....................... <wholeLst>
+  [ 71] pushsymb 248 ............................ <#char>
+  [ 74] pushint8 1 .............................. <1>
+  [ 77] pusharglist 3 ........................... <wholeLst, #char, 1>
+  [ 79] objcall 410 ............................. <wholeLst.char[1]>
+  [ 82] pusharglistnoret 1 ...................... <wholeLst.char[1]>
+  [ 84] objcall 73 .............................. delete wholeLst.char[1]
+  [ 87] getlocal 24 ............................. <tmpLine>
+  [ 89] getobjprop 247 .......................... <tmpLine.length>
+  [ 92] pushzero ................................ <0>
+  [ 93] eq ...................................... <tmpLine.length = 0>
+  [ 94] jmpifz [100] ............................ if tmpLine.length = 0 then
+  [ 97] jmp [272] ............................... next repeat
+  [100] getparam 8 .............................. <argIgnoreComments>
+  [102] pushint8 1 .............................. <1>
+  [105] eq ...................................... <argIgnoreComments = 1>
+  [106] jmpifz [131] ............................ if argIgnoreComments = 1 then
+  [109] getlocal 24 ............................. <tmpLine>
+  [111] pushsymb 248 ............................ <#char>
+  [114] pushint8 1 .............................. <1>
+  [117] pusharglist 3 ........................... <tmpLine, #char, 1>
+  [119] objcall 138 ............................. <tmpLine.char[1]>
+  [122] pushcons 0 .............................. <";">
+  [124] eq ...................................... <tmpLine.char[1] = ";">
+  [125] jmpifz [131] ............................ if tmpLine.char[1] = ";" then
+  [128] jmp [272] ............................... next repeat
+  [131] getlocal 24 ............................. <tmpLine>
+  [133] pushsymb 248 ............................ <#char>
+  [136] pushint8 1 .............................. <1>
+  [139] pusharglist 3 ........................... <tmpLine, #char, 1>
+  [141] objcall 138 ............................. <tmpLine.char[1]>
+  [144] pushcons 8 .............................. <"[">
+  [146] eq ...................................... <tmpLine.char[1] = "[">
+  [147] jmpifz [197] ............................ if tmpLine.char[1] = "[" then
+  [150] getlocal 24 ............................. <tmpLine>
+  [152] pushsymb 248 ............................ <#char>
+  [155] pushint8 2 .............................. <2>
+  [158] getlocal 24 ............................. <tmpLine>
+  [160] getobjprop 247 .......................... <tmpLine.length>
+  [163] pushint8 1 .............................. <1>
+  [166] sub ..................................... <tmpLine.length - 1>
+  [167] pusharglist 4 ........................... <tmpLine, #char, 2, tmpLine.length - 1>
+  [169] objcall 138 ............................. <tmpLine.char[2..tmpLine.length - 1]>
+  [172] setlocal 32 ............................. category = tmpLine.char[2..tmpLine.length - 1]
+  [174] pusharglist 0 ........................... <[:]>
+  [176] pushproplist ............................ <[:]>
+  [177] setlocal 40 ............................. lst = [:]
+  [179] getlocal 0 .............................. <wholeLst>
+  [181] getlocal 32 ............................. <category>
+  [183] pusharglist 1 ........................... <category>
+  [185] extcall 15 .............................. <symbol(category)>
+  [187] getlocal 40 ............................. <lst>
+  [189] pusharglistnoret 3 ...................... <wholeLst, symbol(category), lst>
+  [191] objcall 411 ............................. wholeLst.addProp(symbol(category), lst)
+  [194] jmp [272] ............................... next repeat
+  [197] pushcons 16 ............................. <"=">
+  [199] getlocal 24 ............................. <tmpLine>
+  [201] pusharglist 2 ........................... <"=", tmpLine>
+  [203] extcall 55 .............................. <offset("=", tmpLine)>
+  [206] setlocal 48 ............................. tmpOff = offset("=", tmpLine)
+  [208] getlocal 48 ............................. <tmpOff>
+  [210] not ..................................... <not tmpOff>
+  [211] jmpifz [217] ............................ if not tmpOff then
+  [214] jmp [272] ............................... next repeat
+  [217] getlocal 24 ............................. <tmpLine>
+  [219] pushsymb 248 ............................ <#char>
+  [222] pushint8 1 .............................. <1>
+  [225] getlocal 48 ............................. <tmpOff>
+  [227] pushint8 1 .............................. <1>
+  [230] sub ..................................... <tmpOff - 1>
+  [231] pusharglist 4 ........................... <tmpLine, #char, 1, tmpOff - 1>
+  [233] objcall 138 ............................. <tmpLine.char[1..tmpOff - 1]>
+  [236] setlocal 56 ............................. prop = tmpLine.char[1..tmpOff - 1]
+  [238] getlocal 40 ............................. <lst>
+  [240] getlocal 56 ............................. <prop>
+  [242] pusharglist 1 ........................... <prop>
+  [244] extcall 15 .............................. <symbol(prop)>
+  [246] getlocal 24 ............................. <tmpLine>
+  [248] pushsymb 248 ............................ <#char>
+  [251] getlocal 48 ............................. <tmpOff>
+  [253] pushint8 1 .............................. <1>
+  [256] add ..................................... <tmpOff + 1>
+  [257] getlocal 24 ............................. <tmpLine>
+  [259] getobjprop 247 .......................... <tmpLine.length>
+  [262] pusharglist 4 ........................... <tmpLine, #char, tmpOff + 1, tmpLine.length>
+  [264] objcall 138 ............................. <tmpLine.char[tmpOff + 1..tmpLine.length]>
+  [267] pusharglistnoret 3 ...................... <lst, symbol(prop), tmpLine.char[tmpOff + 1..tmpLine.length]>
+  [269] objcall 411 ............................. lst.addProp(symbol(prop), tmpLine.char[tmpOff + 1..tmpLine.length])
+  [272] pushint8 1
+  [275] getlocal 16
+  [277] add
+  [278] setlocal 16
+  [280] endrepeat [ 19]
+  [283] getlocal 0 .............................. <wholeLst>
+  [285] pusharglistnoret 1 ...................... <wholeLst>
+  [287] extcall 2 ............................... return wholeLst
+  [289] ret
+end
+
+on propListToIniStr argPropList
+  [  0] pushcons 24 ............................. <EMPTY>
+  [  2] setlocal 0 .............................. str = EMPTY
+  [  4] pushint8 1 .............................. <1>
+  [  7] setlocal 8
+  [  9] getlocal 8
+  [ 11] getparam 0 .............................. <argPropList>
+  [ 13] getobjprop 62 ........................... <argPropList.count>
+  [ 16] lteq
+  [ 17] jmpifz [141] ............................ repeat with propNr = 1 to argPropList.count
+  [ 20] getparam 0 .............................. <argPropList>
+  [ 22] getlocal 8 .............................. <propNr>
+  [ 24] pusharglist 2 ........................... <argPropList, propNr>
+  [ 26] objcall 420 ............................. <argPropList.getPropAt(propNr)>
+  [ 29] setlocal 16 ............................. prop = argPropList.getPropAt(propNr)
+  [ 31] getlocal 0 .............................. <str>
+  [ 33] pushcons 32 ............................. <"[">
+  [ 35] joinstr ................................. <str & "[">
+  [ 36] getlocal 16 ............................. <prop>
+  [ 38] pusharglist 1 ........................... <prop>
+  [ 40] extcall 93 .............................. <string(prop)>
+  [ 43] joinstr ................................. <str & "[" & string(prop)>
+  [ 44] pushcons 40 ............................. <"]">
+  [ 46] joinstr ................................. <str & "[" & string(prop) & "]">
+  [ 47] pushcons 48 ............................. <RETURN>
+  [ 49] joinstr ................................. <str & "[" & string(prop) & "]" & RETURN>
+  [ 50] setlocal 0 .............................. str = str & "[" & string(prop) & "]" & RETURN
+  [ 52] getparam 0 .............................. <argPropList>
+  [ 54] getlocal 8 .............................. <propNr>
+  [ 56] pusharglist 2 ........................... <argPropList, propNr>
+  [ 58] objcall 63 .............................. <argPropList[propNr]>
+  [ 61] setlocal 24 ............................. lst = argPropList[propNr]
+  [ 63] pushint8 1 .............................. <1>
+  [ 66] setlocal 32
+  [ 68] getlocal 32
+  [ 70] getlocal 24 ............................. <lst>
+  [ 72] getobjprop 62 ........................... <lst.count>
+  [ 75] lteq
+  [ 76] jmpifz [130] ............................ repeat with n = 1 to lst.count
+  [ 79] getlocal 0 .............................. <str>
+  [ 81] getlocal 24 ............................. <lst>
+  [ 83] getlocal 32 ............................. <n>
+  [ 85] pusharglist 2 ........................... <lst, n>
+  [ 87] objcall 420 ............................. <lst.getPropAt(n)>
+  [ 90] pusharglist 1 ........................... <lst.getPropAt(n)>
+  [ 92] extcall 93 .............................. <string(lst.getPropAt(n))>
+  [ 95] joinstr ................................. <str & string(lst.getPropAt(n))>
+  [ 96] pushcons 56 ............................. <"=">
+  [ 98] joinstr ................................. <str & string(lst.getPropAt(n)) & "=">
+  [ 99] getlocal 24 ............................. <lst>
+  [101] getlocal 32 ............................. <n>
+  [103] pusharglist 2 ........................... <lst, n>
+  [105] objcall 63 .............................. <lst[n]>
+  [108] pusharglist 1 ........................... <lst[n]>
+  [110] extcall 93 .............................. <string(lst[n])>
+  [113] joinstr ................................. <str & string(lst.getPropAt(n)) & "=" & string(lst[n])>
+  [114] pushcons 64 ............................. <RETURN>
+  [116] joinstr ................................. <str & string(lst.getPropAt(n)) & "=" & string(lst[n]) & RETURN>
+  [117] setlocal 0 .............................. str = str & string(lst.getPropAt(n)) & "=" & string(lst[n]) & RETURN
+  [119] pushint8 1
+  [122] getlocal 32
+  [124] add
+  [125] setlocal 32
+  [127] endrepeat [ 68]
+  [130] pushint8 1
+  [133] getlocal 8
+  [135] add
+  [136] setlocal 8
+  [138] endrepeat [  9]
+  [141] getlocal 0 .............................. <str>
+  [143] pusharglistnoret 1 ...................... <str>
+  [145] extcall 2 ............................... return str
+  [147] ret
+end

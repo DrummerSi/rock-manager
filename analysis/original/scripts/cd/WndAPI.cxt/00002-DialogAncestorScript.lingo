@@ -1,0 +1,509 @@
+property masterObj, rel, ID, inOffsetRect, autoList, autoSize, calcRect, onStageRect, leftToCalc, blit, SPid, layerNum, child, orgArgList, ch, lastCalcRect, scriptInstanceList, ScriptNames, usingMouse, temporaryArgs, mouseObj, ink, FgColor, FgColorStr, bgColor, BgColorStr, removeAlpha, topLeftMeansWhat, scrollLocOffset, srcCopyRect, zoomFacts, storeThisForMe, ImUpAndRunningAlready, regPoint, blend, quad
+
+on new me, argMasterObj, argChild, argList
+  ImUpAndRunningAlready = 0
+  type = #ancestor
+  orgArgList = argList
+  child = argChild
+  if not objectp(child) then
+    child = me
+  end if
+  masterObj = argMasterObj
+  if listp(argList[#rect]) then
+    argList[#inOffsetRect] = argList[#rect]
+  end if
+  ID = argList[#ID]
+  scriptInstanceList = []
+  calcRect = rect(10000, 10000, -10000, -10000)
+  lastCalcRect = rect(0, 0, 0, 0)
+  autoSize = point(0, 0)
+  onStageRect = rect(0, 0, 0, 0)
+  SPid = 0
+  temporaryArgs = argList
+  topLeftMeansWhat = [0, 0]
+  scrollLocOffset = point(0, 0)
+  srcCopyRect = rect(0, 0, 0, 0)
+  blit = 1
+  zoomFacts = [#Auto, #Auto]
+  usingMouse = 1
+  blend = 100
+  bgColor = rgb(255, 255, 255)
+  regPoint = point(0, 0)
+  return me
+end
+
+on init me
+  tmp = me.getMyProps()
+  repeat with n = 1 to tmp.count()
+    tmpProp = tmp.getPropAt(n)
+    tmpVal = temporaryArgs.getaProp(tmpProp)
+    if not voidp(tmpVal) then
+      me.setaProp(tmpProp, tmpVal)
+    end if
+  end repeat
+  if masterObj.editing then
+    mouseObj = new(script("DragMouseScript"), me, rect(0, 0, 0, 0), [#layer: 0, #ID: ID])
+  else
+    if usingMouse and not objectp(mouseObj) then
+      mouseObj = new(script("DragMouseScript"), child, rect(0, 0, 0, 0), [#layer: 0, #ID: ID])
+    end if
+  end if
+  if not voidp(temporaryArgs[#storeThisForMe]) then
+    storeThisForMe = temporaryArgs[#storeThisForMe]
+  end if
+end
+
+on finalInitsBeforeCalc me
+  ImUpAndRunningAlready = 1
+  me.setOneProp(#rel, rel)
+  me.setOneProp(#ScriptNames, ScriptNames)
+  me.setOneProp(#inOffsetRect, inOffsetRect)
+  me.setOneProp(#FgColorStr, FgColorStr)
+end
+
+on kill me
+  repeat with tmpObj in scriptInstanceList
+    if tmpObj.handler(#Died) then
+      call(#Died, tmpObj, child)
+    end if
+  end repeat
+  scriptInstanceList = []
+  if objectp(mouseObj) then
+    mouseObj = mouseObj.kill()
+  end if
+  if SPid then
+    tmpSPNum = masterObj.spriteObj.getSprite(SPid)
+    if tmpSPNum then
+      sprite(tmpSPNum).member = member("Dummy")
+    end if
+    SPid = masterObj.spriteObj.returnSprite(SPid)
+  end if
+  masterObj = 0
+  child = 0
+  return 0
+end
+
+on assertFormat me, argFormat, argVal
+  tmpF = ilk(argVal)
+  if tmpF = argFormat then
+    exit
+  end if
+  case argFormat of
+    #string:
+      tmp = argVal
+    #integer:
+      tmp = integer(value(argVal))
+    #number:
+      tmp = value(argVal)
+    #list:
+    #propList:
+    #boolean:
+    #rect:
+    #point:
+    #symbol:
+      tmp = symbol(argVal)
+  end case
+end
+
+on getMyProps me
+  tmpList = [#ID: [#comment: "ID", #format: #symbol, #default: ID], #type: [#comment: "Type", #format: #string, #default: child.type, #EditVisibility: #Dimmed], #inOffsetRect: [#comment: "Offset rect", #format: #rect, #default: inOffsetRect], #rel: [#comment: "Relative to", #format: #list, #default: rel], #topLeftMeansWhat: [#comment: "TopLeft means what", #format: #list, #default: topLeftMeansWhat], #zoomFacts: [#comment: "Zoom facts", #format: #list, #default: zoomFacts], #ch: [#comment: "Channel", #format: #integer, #default: ch], #blit: [#comment: "Blit", #format: #boolean, #default: blit, #EditVisibility: #Dimmed], #usingMouse: [#comment: "Catch mouse events", #format: #boolean, #default: usingMouse], #ink: [#comment: "Ink", #format: #integer, #default: ink], #blend: [#comment: "Blend", #format: #integer, #default: blend], #FgColorStr: [#comment: "Foreground color", #format: #string, #default: FgColorStr], #BgColorStr: [#comment: "Backgound color", #format: #string, #default: BgColorStr], #removeAlpha: [#comment: "Remove alpha", #format: #boolean, #default: removeAlpha], #quad: [#comment: "Quad", #format: #list, #default: quad], #ScriptNames: [#comment: "Behaviors", #format: #string, #default: ScriptNames]]
+  return tmpList
+end
+
+on convPropsForSave me, argList
+  repeat with n = argList.count() down to 1
+    tmp = argList[n][#default]
+    if voidp(tmp) then
+      argList.deleteAt(n)
+      next repeat
+    end if
+    argList.setProp(argList.getPropAt(n), tmp)
+  end repeat
+  return argList
+end
+
+on copyProps me
+  tmpLst = child.getProps()
+  tmpNewLst = [:]
+  repeat with n = 1 to tmpLst.count()
+    tmp = tmpLst[n]
+    tmpNewLst.addProp(tmpLst.getPropAt(n), tmp[#default])
+  end repeat
+  return tmpNewLst
+end
+
+on getProps me
+  return me.getMyProps()
+end
+
+on getEditProps me
+  tmp = me.getMyProps()
+  tmpBHs = tmp[#ScriptNames]
+  tmp.deleteProp(#ScriptNames)
+  return [#BH: [#ScriptNames: tmpBHs], #item: tmp]
+end
+
+on getOneProp me, argProp
+  tmpList = me.getMyProps()
+  return me.getaProp(argProp)
+end
+
+on setOneProp me, argProp, argVal
+  if ImUpAndRunningAlready = 0 then
+    temporaryArgs.setaProp(argProp, argVal)
+    me.setaProp(argProp, argVal)
+    exit
+  end if
+  tmpList = me.getMyProps()
+  if voidp(tmpList.getaProp(argProp)) then
+    if not voidp(argProp) then
+      me.setaProp(argProp, argVal)
+      put "Setting unknown prop!", argProp
+    end if
+  else
+    if argProp = #ID then
+      if masterObj.changeID(child, argVal) = 0 then
+        exit
+      end if
+    else
+      if argProp = #rel then
+        if voidp(argVal) then
+          argVal = [0, 0, #Auto, #Auto]
+        end if
+        repeat with n = argVal.count() + 1 to 4
+          argVal.add(0)
+        end repeat
+        autoList = []
+        repeat with n = 1 to argVal.count()
+          if argVal[n] = #Auto then
+            autoList.add(me.getOther(n))
+          end if
+        end repeat
+        masterObj.changed(#rel, me)
+      else
+        if argProp = #inOffsetRect then
+          if voidp(argVal) then
+            argVal = [0, 0, 0, 0]
+          end if
+          masterObj.changed(#Rects)
+        else
+          if argProp = #topLeftMeansWhat then
+            if voidp(argVal) then
+              argVal = [0, 0]
+            end if
+          else
+            if argProp = #zoomFacts then
+              if voidp(argVal) then
+                argVal = [#Auto, #Auto]
+              end if
+            else
+              if argProp = #ch then
+                masterObj.changed(#ch)
+                if blit and listp(calcRect) then
+                  masterObj.invalidateRect(calcRect)
+                end if
+              else
+                if argProp = #blit then
+                  if voidp(argVal) then
+                    argVal = 1
+                  end if
+                else
+                  if argProp = #usingMouse then
+                    if voidp(argVal) then
+                      argVal = 1
+                    end if
+                  else
+                    if argProp = #ink then
+                      if voidp(argVal) then
+                        argVal = 0
+                      end if
+                      masterObj.invalidateRect(calcRect)
+                    else
+                      if argProp = #blend then
+                        if voidp(argVal) then
+                          argVal = 100
+                        end if
+                        masterObj.invalidateRect(calcRect)
+                      else
+                        if argProp = #FgColorStr then
+                          if stringp(argVal) then
+                            if argVal.char[1] = "#" then
+                              FgColor = rgb(argVal.char[2..7])
+                            else
+                              FgColor = value(argVal)
+                            end if
+                            masterObj.invalidateRect(calcRect)
+                          end if
+                        else
+                          if argProp = #BgColorStr then
+                            if stringp(argVal) then
+                              if argVal.char[1] = "#" then
+                                bgColor = rgb(argVal.char[2..7])
+                              else
+                                bgColor = value(argVal)
+                              end if
+                              masterObj.invalidateRect(calcRect)
+                            end if
+                          else
+                            if argProp = #ScriptNames then
+                              if not masterObj.editing then
+                                if voidp(argVal) then
+                                  exit
+                                end if
+                                if argVal.length = 0 then
+                                  exit
+                                end if
+                                repeat with tmpObj in scriptInstanceList
+                                  tmpObj.kill()
+                                end repeat
+                                scriptInstanceList = []
+                                tmpObj = script(argVal).new(child)
+                                scriptInstanceList.add(tmpObj)
+                              end if
+                            else
+                              if argProp = #usingMouse then
+                                mouseObj.activate(argVal)
+                              else
+                              end if
+                            end if
+                          end if
+                        end if
+                      end if
+                    end if
+                  end if
+                end if
+              end if
+            end if
+          end if
+        end if
+      end if
+    end if
+    me.setaProp(argProp, argVal)
+  end if
+end
+
+on activate me, argIsTRUE
+  if objectp(mouseObj) then
+    mouseObj.activate(argIsTRUE)
+  end if
+end
+
+on paint me, argDstRect
+end
+
+on calcPaintRects me, argDstRect, argSrcRect
+  if not blit then
+    return 0
+  end if
+  tmpDstRect = calcRect + rect(masterObj.scrollLocOffset, masterObj.scrollLocOffset)
+  if intersectRects(tmpDstRect, argDstRect) = 0 then
+    return 0
+  end if
+  tmpPartDstRect = tmpDstRect.intersect(argDstRect)
+  tmpPartSrcRect = map(tmpPartDstRect, tmpDstRect, argSrcRect)
+  return [tmpPartDstRect + rect(masterObj.blitLocOffset, masterObj.blitLocOffset), tmpPartSrcRect]
+end
+
+on paintThis me, argDstRect, argSrcImg
+  tmp = me.calcPaintRects(argDstRect, srcCopyRect)
+  if listp(tmp) then
+    if removeAlpha = 1 then
+      if argSrcImg.useAlpha = 1 then
+      end if
+    end if
+    if listp(quad) then
+      if quad.count then
+        tmpQuad = []
+        tmpOff = point(tmp[1][1], tmp[1][2])
+        repeat with n = 1 to quad.count
+          tmpQuad.add(quad[n] + tmpOff)
+        end repeat
+        masterObj.myImagePtr[1].copyPixels(argSrcImg, tmpQuad, tmp[2], [#ink: ink, #color: FgColor, #bgColor: bgColor, #blend: blend])
+        exit
+      end if
+    end if
+    masterObj.myImagePtr[1].copyPixels(argSrcImg, tmp[1], tmp[2], [#ink: ink, #color: FgColor, #bgColor: bgColor, #blend: blend])
+    __debug(#WndOpt, "Paint", ID)
+  end if
+end
+
+on setLayer me, argLayerNum, argLayerPtr
+  layerNum = argLayerNum
+  if objectp(mouseObj) then
+    mouseObj.setLayer(argLayerPtr[1])
+  end if
+  argLayerPtr[1] = argLayerPtr[1] + 1
+end
+
+on reserveSprite me
+  if not SPid then
+    SPid = masterObj.spriteObj.reserveSprite(layerNum)
+  end if
+end
+
+on getSprite me
+  if not SPid then
+    me.reserveSprite()
+  end if
+  if SPid then
+    return masterObj.spriteObj.getSprite(SPid)
+  end if
+  return 0
+end
+
+on returnSprite me
+  if SPid then
+    SPid = masterObj.spriteObj.returnSprite(SPid)
+  end if
+end
+
+on setAutoSize me, argSize
+  autoSize = argSize
+end
+
+on getOther me, argWhich
+  if argWhich > 2 then
+    tmpOther = argWhich - 2
+  else
+    tmpOther = argWhich + 2
+  end if
+  return tmpOther
+end
+
+on initCalcRect me
+  SPid = 0
+  leftToCalc = [1, 2, 3, 4]
+  lastCalcRect = calcRect.duplicate()
+  calcRect = rect(10000, 10000, -10000, -10000)
+end
+
+on calcAxisLoc me, argWhich
+  if leftToCalc.getPos(argWhich) = 0 then
+    exit
+  end if
+  calcRect[argWhich] = inOffsetRect[argWhich]
+  tmpAxis = 2 - (argWhich mod 2)
+  tmpRel = rel[argWhich]
+  if tmpRel = #Auto then
+    me.calcAxisLoc(me.getOther(argWhich))
+    exit
+  else
+    if listp(tmpRel) then
+      tmpOff = masterObj.getItemAxisLoc(tmpRel, argWhich)
+      calcRect[argWhich] = calcRect[argWhich] + tmpOff
+    end if
+  end if
+  if argWhich < 3 then
+    if topLeftMeansWhat[tmpAxis] <> 0 then
+      if topLeftMeansWhat[tmpAxis] = #Mid then
+        calcRect[argWhich] = calcRect[argWhich] - (autoSize[argWhich] / 2)
+      else
+        if topLeftMeansWhat[tmpAxis] = #Reg then
+          calcRect[argWhich] = calcRect[argWhich] - regPoint[argWhich]
+        end if
+      end if
+    end if
+  end if
+  if autoList.getPos(argWhich) then
+    tmpOther = me.getOther(argWhich)
+    tmp = autoSize[tmpAxis]
+    tmp = tmp * -getSign(argWhich - 2.5)
+    calcRect[tmpOther] = calcRect[argWhich] + tmp + inOffsetRect[tmpOther]
+    leftToCalc.deleteOne(tmpOther)
+  end if
+  leftToCalc.deleteOne(argWhich)
+end
+
+on calcRectDone me
+  srcCopyRect = rect(-scrollLocOffset, -scrollLocOffset)
+  repeat with n = 1 to 2
+    if zoomFacts[n] = #Auto then
+      srcCopyRect[2 + n] = srcCopyRect[n] + autoSize[n]
+      next repeat
+    end if
+    srcCopyRect[2 + n] = srcCopyRect[n] + (zoomFacts[n] * (calcRect[2 + n] - calcRect[n]))
+  end repeat
+end
+
+on getNumSprites me
+  return 0
+end
+
+on getOnStageRect me
+  r = calcRect
+  obj = masterObj
+  repeat while 1
+    r = rect(obj.scrollLocOffset, obj.scrollLocOffset) + rect(obj.blitLocOffset, obj.blitLocOffset) + r
+    if objectp(obj.wndParent) and (obj.wndParent <> obj) then
+      obj = obj.wndParent
+      next repeat
+    end if
+    r = rect(obj.myLoc, obj.myLoc) + r
+    exit repeat
+  end repeat
+  return r
+end
+
+on render me, argOffsetRect
+  onStageRect = calcRect.duplicate() + argOffsetRect
+  repeat with tmpObj in scriptInstanceList
+    if tmpObj.handler(#render) then
+      tmpObj.render()
+    end if
+  end repeat
+  if objectp(mouseObj) then
+    if objectp(masterObj.dlgItemParent) then
+      mouseObj.myRect = onStageRect.intersect(masterObj.dlgItemParent.onStageRect)
+    else
+      mouseObj.myRect = onStageRect
+    end if
+  end if
+end
+
+on move me, argLoc
+end
+
+on moveNonRels me, argDeltaRect
+  repeat with n = 1 to inOffsetRect.count()
+    if integerp(rel[n]) then
+      inOffsetRect[n] = inOffsetRect[n] + argDeltaRect[n]
+    end if
+  end repeat
+end
+
+on mouse me, argObj, argWhat
+  global gDir
+  if masterObj.editing then
+    if argWhat = #click then
+      gDir.dialogEditorObj.editItemProps(child)
+    else
+      if argWhat = #stillDown then
+        tmpMove = argObj.deltaMove
+        if (tmpMove[1] = 0) and (tmpMove[2] = 0) then
+          exit
+        end if
+        repeat with n = 1 to rel.count()
+          if rel[n] <> #Auto then
+            inOffsetRect[n] = inOffsetRect[n] + tmpMove[2 - (n mod 2)]
+          end if
+        end repeat
+        masterObj.changed(#Rects)
+      end if
+    end if
+  else
+    repeat with tmpObj in scriptInstanceList
+      if tmpObj.handler(#mouse) then
+        tmpObj.mouse(argObj, argWhat, child)
+      end if
+    end repeat
+  end if
+end
+
+on send me, argHandlerName, arg1, arg2, arg3, arg4, arg5
+  repeat with n = 1 to scriptInstanceList.count
+    tmpObj = scriptInstanceList[n]
+    if tmpObj.handler(argHandlerName) then
+      call(argHandlerName, tmpObj, arg1, arg2, arg3, arg4, arg5)
+    end if
+  end repeat
+end

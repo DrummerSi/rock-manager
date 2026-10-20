@@ -1,0 +1,85 @@
+global gRock
+
+on checkWithinToleranceVals argMyVal, argMyToleranceVal, argItsVal, argReturnAs
+  diff = argMyVal - argItsVal
+  if argMyToleranceVal >= 2 then
+    tmpLike = 1.0
+  else
+    if argMyToleranceVal = 0 then
+      tmpLike = #ignore
+    else
+      tmpAng = 1.0 / argMyToleranceVal
+      tmpLike = 1.0 - (tmpAng * abs(diff))
+    end if
+  end if
+  if argReturnAs = #ExtraInfo then
+    if diff > 0 then
+      return [#Like: tmpLike, #why: #Lo]
+    else
+      return [#Like: tmpLike, #why: #Hi]
+    end if
+  end if
+  return tmpLike
+end
+
+on checkWithinTolerance argMyObj, argMyToleranceObj, argItsObj, argReturnAs
+  if not objectp(argMyObj) then
+    return checkWithinToleranceVals(argMyObj, argMyToleranceObj, argItsObj, argReturnAs)
+  end if
+  diffObj = rCreateDiffObj(argMyObj, argItsObj)
+  tmpLikeSorted = [:]
+  tmpLikeSorted.sort()
+  allVars = gRock.m_classManager.m_classesVars[diffObj.className]
+  totLike = 0
+  weightedLike = [:]
+  repeat with n = 1 to allVars.count()
+    prop = allVars.getPropAt(n)
+    tolerance = argMyToleranceObj.getaProp(prop)
+    weight = 1.0
+    why = #Ok
+    if tolerance >= 2 then
+      tmpLike = 1.0
+    else
+      if tolerance = 0 then
+        tmpLike = 0.0
+        weight = 0.0
+      else
+        tmpAng = 1.0 / tolerance
+        diff = diffObj.getaProp(prop)
+        if diff > 0 then
+          why = #Lo
+        else
+          why = #Hi
+        end if
+        tmpLike = 1.0 - (tmpAng * abs(diff))
+      end if
+    end if
+    if weight <> 0 then
+      tmpLikeSorted.addProp(tmpLike, [prop, why])
+      weightedLike.addProp(weight, tmpLike)
+      totLike = totLike + tmpLike
+    end if
+  end repeat
+  likeIt = calcAverage(weightedLike)
+  if argReturnAs = #ExtraInfo then
+    return [#Like: likeIt, #LikeSorted: tmpLikeSorted, #diff: diffObj]
+  end if
+  return likeIt
+end
+
+on CPtestTolerance
+  obj1 = gRock.m_classManager.createObj(#StyleMix)
+  obj1Tolerance = gRock.m_classManager.createObj(#StyleMix)
+  obj2 = gRock.m_classManager.createObj(#StyleMix)
+  allVars = gRock.m_classManager.m_classesVars[obj1.className]
+  repeat with n = 1 to allVars.count()
+    obj1Tolerance.setaProp(allVars.getPropAt(n), 2)
+  end repeat
+  obj1.Pop = 0.5
+  obj1Tolerance.Pop = 0.25
+  obj2.Pop = 0.59999999999999998
+  obj1.rock = 0.5
+  obj1Tolerance.rock = 0.25
+  obj2.rock = 0.5
+  checkWithinTolerance(obj1, obj1Tolerance, obj2)
+end

@@ -1,0 +1,446 @@
+property ancestor, child, className, belongsTo, _killed, InterviewSkill, accumBribes, accumAds, ConcertTickets, PressKits, Mood, DaysToNextPlaylist, RotationExpoID, AddedExpoProbability, AvoidExpo, BribeSensitivity, MinHype, MediaActivities
+global gRock
+
+on new me, argChild, argBelongsTo
+  if objectp(argChild) then
+    child = argChild
+  else
+    child = me
+  end if
+  belongsTo = argBelongsTo
+  ancestor = script("ClassHumanScript").new(child)
+  className = #Reporter
+  InterviewSkill = 0.0
+  accumBribes = 0.0
+  accumAds = 0.0
+  ConcertTickets = []
+  PressKits = [:]
+  Mood = 0.0
+  DaysToNextPlaylist = 0
+  RotationExpoID = #none
+  AddedExpoProbability = 0.0
+  AvoidExpo = 0.0
+  BribeSensitivity = 0.0
+  MinHype = 0.0
+  MediaActivities = [:]
+  return me
+end
+
+on kill me
+  _killed = 1
+  MediaActivities = [:]
+  gRock.m_gameTimer.deleteObject(me)
+  if objectp(ancestor) then
+    ancestor = ancestor.kill()
+  end if
+  child = 0
+  belongsTo = 0
+  return 0
+end
+
+on init me
+  gRock.m_gameTimer.addObject(me)
+  MediaActivities = [:]
+  MediaActivities.sort()
+  objs = gRock.m_classManager.getObjsOfClass(#MediaActivity)
+  repeat with obj in objs
+    if obj.MediaID = ancestor.BelongsToPlace then
+      MediaActivities.addProp(obj.LikeThreshold, obj)
+    end if
+  end repeat
+end
+
+on timeTick me
+  media_r = gRock.m_classManager.getObjByIDAndClass(ancestor.BelongsToPlace, #media)
+  if media_r.Available = 0 then
+    exit
+  end if
+  me.calcLikesBand()
+  accumBribes = accumBribes - 0.01
+  if accumBribes < 0 then
+    accumBribes = 0.0
+  end if
+  accumAds = accumAds - 0.01
+  if accumAds < 0 then
+    accumAds = 0.0
+  end if
+  AvoidExpo = AvoidExpo - 0.01
+  if AvoidExpo < 0 then
+    AvoidExpo = 0.0
+  end if
+  me.checkWillDoSomethingOnBand()
+  if DaysToNextPlaylist > 0 then
+    DaysToNextPlaylist = DaysToNextPlaylist - 1
+    if DaysToNextPlaylist <= 0 then
+      expo_r = gRock.m_classManager.getObjByIDAndClass(RotationExpoID, #AudienceExposure)
+      if objectp(expo_r) and (RotationExpoID <> #none) then
+        gRock.m_classManager.removeObj(expo_r, #kill)
+      end if
+      expo_r = 0
+      album_r = gRock.m_context.getFocus(#album)
+      if not objectp(album_r) then
+        DaysToNextPlaylist = 0
+        exit
+      end if
+      tmpExpoQuality = 1.0
+      if media_r.MediaType = #TV then
+        tmpRotation = me.getLikesBand()
+        tmpRotation = tmpRotation + convValToRange(album_r.getTotalHype(), [MinHype, 0.5], [0.0, 1.0])
+        videoConcept_r = gRock.m_classManager.getObjByIDAndClass(album_r.video, #VideoConcept)
+        if not objectp(videoConcept_r) then
+          pott("VideoConcept missing!", album_r.video)
+        end if
+        tmpRotation = calcAverage([1.0: tmpRotation, 0.20000000000000001: videoConcept_r.quality])
+        tmpExpoQuality = tmpExpoQuality + (0.29999999999999999 * videoConcept_r.quality)
+        if tmpRotation >= 0.0 then
+          expo_r = gRock.m_classManager.createObj(#ExpoRotation)
+          expo_r.RotationOfClass = #video
+        end if
+      else
+        if media_r.MediaType = #Radio then
+          tmpRotation = me.getLikesBand()
+          tmpRotation = tmpRotation + convValToRange(album_r.getTotalHype(), [MinHype, 0.5], [0.0, 1.0])
+          if tmpRotation >= 0.0 then
+            expo_r = gRock.m_classManager.createObj(#ExpoRotation)
+            expo_r.RotationOfClass = #album
+          end if
+        end if
+      end if
+      if objectp(expo_r) then
+        RotationExpoID = gRock.m_classManager.genUniqueID(expo_r)
+        expo_r.ID = RotationExpoID
+        expo_r.setDates(gRock.m_date.getDateInt(), 7)
+        expo_r.Intensity = 0.20000000000000001 * tmpRotation
+        expo_r.quality = tmpExpoQuality
+        expo_r.MediaID = ancestor.BelongsToPlace
+      else
+        RotationExpoID = #none
+      end if
+      DaysToNextPlaylist = 7
+    end if
+  end if
+end
+
+on getAlbumRotation me, argAlbumID
+  if RotationExpoID <> #none then
+    expo_r = gRock.m_classManager.getObjByIDAndClass(RotationExpoID, #AudienceExposure)
+    if objectp(expo_r) then
+      return expo_r.Intensity / 0.20000000000000001
+    end if
+  end if
+  return 0
+end
+
+on calcLikesBand me
+  tmpAlbumLike = ancestor.Attitudes.getAttitude([#album, #Likes])
+  if listp(tmpAlbumLike) then
+    tmpAlbumLike = 0
+  end if
+  tmpLikes = calcAverage([1.0: tmpAlbumLike, 1.0: Mood])
+  album_r = gRock.m_context.getFocus(#album)
+  if objectp(album_r) then
+    tmpLikes = tmpLikes + (0.29999999999999999 * (album_r.Freshness - 1.0))
+  end if
+  ancestor.Attitudes.changeAttitude([#Band, #CalcedLikes], tmpLikes, "=")
+  return tmpLikes
+end
+
+on getLikesBand me
+  return me.calcLikesBand()
+end
+
+on getLikesAlbum me
+  return ancestor.Attitudes.getAttitude([#album, #Likes])
+end
+
+on checkWillDoSomethingOnBand me
+  band_r = gRock.m_context.getFocus(#Band)
+  if band_r.getIsInTown() = 0 then
+    exit
+  end if
+  media_r = gRock.m_classManager.getObjByIDAndClass(ancestor.BelongsToPlace, #media)
+  tmpLikesBand = me.getLikesBand()
+  album_r = gRock.m_context.getFocus(#album)
+  if not objectp(album_r) then
+    exit
+  end if
+  if me.gotPressKit(#album) = 0 then
+    exit
+  end if
+  if AvoidExpo > 0 then
+    exit
+  end if
+  if media_r.MediaType = #Paper then
+    if album_r.ReviewsMediaIDs.getPos(ancestor.BelongsToPlace) = 0 then
+      if gRock.m_date.getDateInt() < (album_r.ReleaseDate + 15) then
+        tmpPercentChance = AddedExpoProbability + tmpLikesBand
+        tmpPercentChance = 100 * (tmpPercentChance / 15.0)
+        if random(100) <= tmpPercentChance then
+          me.reviewAlbum()
+        end if
+      end if
+    end if
+  end if
+  today = gRock.m_date.getDateInt()
+  tmpDayInWeek = 1 + (today mod 7)
+  tmp = [#Media01: 3, #Media02: 1, #Media03: 5, #Media04: 7]
+  if tmp.getaProp(ancestor.BelongsToPlace) = tmpDayInWeek then
+    me.checkWillDoMediaActivity(tmpLikesBand)
+  end if
+end
+
+on checkWillDoMediaActivity me, argLikesBand
+  if MediaActivities.count = 0 then
+    exit
+  end if
+  if 0 then
+    MediaActivities.addProp(argLikesBand, -1)
+    tmpPos = MediaActivities.getPos(-1)
+    MediaActivities.deleteAt(tmpPos)
+    tmpPos = tmpPos - 1
+    if tmpPos < 1 then
+      exit
+    end if
+  else
+    tmpPos = random(MediaActivities.count)
+  end if
+  album_r = gRock.m_context.getFocus(#album)
+  if not objectp(album_r) then
+    exit
+  end if
+  if album_r.getTotalHype() < MinHype then
+    exit
+  end if
+  tmpNum = 1
+  tmpThreshold = MediaActivities.getPropAt(tmpPos)
+  repeat with n = tmpPos + 1 to MediaActivities.count
+    if tmpThreshold = MediaActivities.getPropAt(n) then
+      tmpNum = n - tmpPos + 1
+      next repeat
+    end if
+    exit repeat
+  end repeat
+  tmpPos = tmpPos + random(tmpNum) - 1
+  media_r = gRock.m_classManager.getObjByIDAndClass(ancestor.BelongsToPlace, #media)
+  MediaActivity_r = MediaActivities[tmpPos]
+  if random(100) <= MediaActivity_r.Chance then
+    ECID = symbol("ECOC" & string(media_r.ID) & "Rq" & string(MediaActivity_r.type))
+    tmpOptions = [#EventCardOptions: [#HumanID: ancestor.ID, #ReporterID: ancestor.ID, #MediaID: media_r.ID, #request: MediaActivity_r.type, #MediaActivityID: MediaActivity_r.ID, #DontCloseOnOK: 1]]
+    tmpOptions.addProp(#eventCardProps, makePropListOfList([[#ButtonOK, #ExecuteThis], ["getObjByID(ÛCDlg.m_eventCardOptions.ReporterID).prepareBookMediaActivity(ÛCDlg.m_eventCardOptions)"]]))
+    gRock.m_eventCardsManager.tryNewShowEventCard(ECID, tmpOptions)
+  end if
+end
+
+on givePressKit me, argWhat, argObj
+  if voidp(argWhat) then
+    argWhat = #album
+  end if
+  if voidp(argObj) then
+    argObj = gRock.m_context.getFocus(#album)
+  end if
+  if voidp(argObj) then
+    pott("No album to give")
+    exit
+  end if
+  pott("Got press kit", argWhat, argObj)
+  if argWhat = #album then
+    album_r = argObj
+    tmpInfo = rDefLikesAlbum(me, album_r, [#music: 1, #image: 1, #type: 1, #quality: 1], #ExtraInfo)
+    ancestor.Attitudes.changeAttitude([#album, #Likes], tmpInfo[#Like], "=")
+    ancestor.Attitudes.changeAttitude([album_r.ID, #Likes], tmpInfo[#Like], "=")
+    DaysToNextPlaylist = 1
+  else
+    if argWhat = #video then
+      DaysToNextPlaylist = 1
+    end if
+  end if
+  tmp = PressKits.getaProp(argWhat)
+  if voidp(tmp) then
+    tmp = []
+    PressKits.addProp(argWhat, tmp)
+  end if
+  if objectp(argObj) then
+    tmp.add(argObj.ID)
+  else
+    tmp.add(#X)
+  end if
+end
+
+on gotPressKit me, argWhat, argObj
+  if voidp(argObj) then
+    argObj = gRock.m_context.getFocus(#album)
+  end if
+  if voidp(argObj) then
+    return 0
+  end if
+  tmp = PressKits.getaProp(argWhat)
+  if not listp(tmp) then
+    return 0
+  end if
+  return tmp.count > 0
+end
+
+on removePressKit me, argWhat, argObj
+  if not me.gotPressKit(argWhat, argObj) then
+    exit
+  end if
+  if voidp(argObj) then
+    argObj = gRock.m_context.getFocus(#album)
+  end if
+  tmp = PressKits.getaProp(argWhat)
+  emptyList(tmp)
+end
+
+on removeAlbum me, argAlbum_r
+  if objectp(argAlbum_r) then
+    me.removePressKit(argAlbum_r.ID)
+  end if
+  me.removePressKit(#album)
+  me.removePressKit(#video)
+  DaysToNextPlaylist = 0
+end
+
+on giveConcertTickets me, argConcertID
+  if voidp(argConcertID) then
+    argConcertID = gRock.m_eventsManager.findFirstEventAfterDate(gRock.m_date.getDateInt())
+  end if
+  if objectp(argConcertID) then
+    argConcertID = argConcertID.ID
+  end if
+  if not symbolp(argConcertID) then
+    pott("No concert booked!")
+    exit
+  end if
+  ConcertTickets.add(argConcertID)
+end
+
+on gotTicketsForConcert me, argConcertID
+  return ConcertTickets.getPos(argConcertID) > 0
+end
+
+on reviewAlbum me
+  tmpLikesBand = me.getLikesBand()
+  tmpReviewLikes = calcAverage([1.0: tmpLikesBand])
+  tmpReviewLikes = tmpReviewLikes + makeRandomBetween(-0.10000000000000001, 0.10000000000000001)
+  if tmpReviewLikes < 0 then
+    tmpReviewLikes = 0
+  end if
+  tmpReviewLikes = rex("ÛCRealMusicianVocals.musicality")
+  if tmpReviewLikes >= 0 then
+    tmpReviewLikes = tmpReviewLikes + makeRandomBetween(-0.20000000000000001, 0.20000000000000001)
+  else
+    tmpReviewLikes = makeRandomBetween(0.0, 1.0)
+  end if
+  Rating = integer(convValToRange(tmpReviewLikes, [0.0, 1.0], [0, 5], VOID, #limit))
+  album_r = gRock.m_context.getFocus(#album)
+  album_r.ReviewsMediaIDs.add(ancestor.BelongsToPlace)
+  ECID = symbol("ECOC" & string(ancestor.BelongsToPlace) & "Review" & string(Rating))
+  gRock.m_eventCardsManager.tryNewShowEventCard(ECID, [#EventCardOptions: [#ReviewInfo: [#albumID: album_r.ID]]])
+  expo_r = gRock.m_classManager.createObj(#ExpoReview)
+  expo_r.ID = gRock.m_classManager.genUniqueID(expo_r)
+  expo_r.ReviewOfClass = #album
+  expo_r.ReviewOfID = album_r.ID
+  expo_r.Rating = tmpReviewLikes
+  expo_r.quality = tmpReviewLikes
+  expo_r.Intensity = 0.29999999999999999
+  expo_r.setDates(gRock.m_date.getDateInt(), 2)
+  expo_r.MediaID = ancestor.BelongsToPlace
+end
+
+on checkWillReviewConcert me, argConcert_r
+end
+
+on zzAcceptMediaActivityRequest me, argRequest
+  ECID = "ECOC" & string(ancestor.BelongsToPlace) & "Fb" & string(argRequest)
+  ECID = symbol(ECID & "Good")
+  gRock.m_eventCardsManager.tryNewShowEventCard(ECID)
+end
+
+on prepareBookMediaActivity me, argEventCardOptions
+  AvoidExpo = 99
+  obj = gRock.m_classManager.createObj(#ExpoMediaActivity)
+  obj.ID = gRock.m_classManager.genUniqueID(obj)
+  obj.StartDate = -2
+  media_r = gRock.m_classManager.getObjByIDAndClass(ancestor.BelongsToPlace, #media)
+  obj.MediaID = argEventCardOptions.MediaID
+  obj.type = argEventCardOptions.MediaActivityID
+  dlgProps = [#name: rGetStr(#szidAgendaName), #icon: "icon_microphone01"]
+  props = [#text: rGetStr(#szidAgendaBookMediaEvent), #Pic: "image_" & string(media_r.ID) & "_small01"]
+  rBookDialog(obj, props, dlgProps)
+end
+
+on checkMediaActivity me, argExpoMediaActivity_r
+  band_r = gRock.m_context.getFocus(#Band)
+  musicians_r = band_r.getMusicianObjs()
+  totWeighted = [:]
+  repeat with mus_r in musicians_r
+    tmp = calcAverage([1.0: rgetProp(mus_r, #Charisma), 1.0: rgetProp(mus_r, #Mood), 1.0: rgetProp(mus_r, #Health)])
+    totWeighted.addProp(mus_r.BandInfluence, tmp)
+  end repeat
+  tmpQuality = calcAverage(totWeighted)
+  tmpQuality = tmpQuality + makeRandomBetween(-0.14999999999999999, 0.14999999999999999)
+  MediaActivityID = argExpoMediaActivity_r.type
+  MediaActivity_r = gRock.m_classManager.getObjByIDAndClass(MediaActivityID, #MediaActivity)
+  ECID = "ECOC" & string(ancestor.BelongsToPlace) & "Fb" & MediaActivity_r.type
+  if tmpQuality >= MediaActivity_r.Threshold then
+    tmpResult = MediaActivity_r.ResultGood
+    ECID = ECID & "Good"
+  else
+    tmpResult = MediaActivity_r.ResultBad
+    ECID = ECID & "Bad"
+  end if
+  argExpoMediaActivity_r.quality = tmpResult.quality
+  argExpoMediaActivity_r.Intensity = MediaActivity_r.Viewers
+  argExpoMediaActivity_r.eventCardID = symbol(ECID)
+  if tmpResult.Attitude <> 0 then
+    rCreateModifier(#MediaActivity, ancestor.ID, [#Mood], tmpResult.Attitude, 15)
+  end if
+  AvoidExpo = tmpResult.PassiveNumDays * 0.01
+end
+
+on giveBribe me, argVal
+  if voidp(argVal) then
+    argVal = 0
+  end if
+  funcFact = 0.40000000000000002
+  tmp = funcNeverReach1(accumBribes, funcFact, #Inv)
+  newAccumBribes = funcNeverReach1(tmp + argVal, funcFact)
+  diff = newAccumBribes - accumBribes
+  reaction = 0
+  if diff > (0.59999999999999998 * (1.0 - BribeSensitivity)) then
+    moodChange = -0.20000000000000001
+    reaction = #BribeHi
+    rCreateModifier(reaction, ancestor.ID, [#Mood], moodChange, 10)
+  else
+    if (diff < 0.10000000000000001) and (BribeSensitivity >= 0.59999999999999998) then
+      moodChange = -0.10000000000000001
+      reaction = #BribeLo
+      rCreateModifier(reaction, ancestor.ID, [#Mood], moodChange, 10)
+    else
+      moodChange = 0.5 * diff
+      rCreateModifier(#Bribe, ancestor.ID, [#Mood], moodChange, 10)
+      accumBribes = newAccumBribes
+    end if
+  end if
+  Mood = Mood + (0.10000000000000001 * moodChange)
+  return reaction
+end
+
+on buyAd me, argVal
+  funcFact = 0.40000000000000002
+  tmp = funcNeverReach1(accumAds, funcFact, #Inv)
+  newAccumAds = funcNeverReach1(tmp + argVal, funcFact)
+  diff = newAccumAds - accumAds
+  accumAds = newAccumAds
+  moodChange = 0.25 * diff
+  rCreateModifier(#Ad, ancestor.ID, [#Mood], moodChange, 10)
+  Mood = Mood + (0.10000000000000001 * moodChange)
+end
+
+on AlbumWasReleased me, argAlbum_r
+end
+
+on calcFaceSettings me
+  tmpMood = comesBeforeValInList(Mood, [0.20000000000000001: #Angry, 0.34999999999999998: #Annoyed, 0.65000000000000002: #normal, 0.80000000000000004: #Satisfied, 0.90000000000000002: #Happy, 9.0: #Happy])
+  return [#Mood: tmpMood]
+end

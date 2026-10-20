@@ -1,0 +1,765 @@
+property m_lineNr, m_numLines, m_str, m_objsByClass, m_classesVars, m_classMasterObj, m_firstDataItemNr, m_tuneTotalTimeScanning, m_tuneTotalTimeSettingProps
+
+on new me, argFilesToRead, argClassesVars, argClassMasterObj, argExceptionList
+  [  0] getparam 24 ............................. <argClassMasterObj>
+  [  2] setprop 459 ............................. m_classMasterObj = argClassMasterObj
+  [  5] getparam 16 ............................. <argClassesVars>
+  [  7] setprop 276 ............................. m_classesVars = argClassesVars
+  [ 10] pusharglist 0 ........................... <[:]>
+  [ 12] pushproplist ............................ <[:]>
+  [ 13] setprop 292 ............................. m_objsByClass = [:]
+  [ 16] pushzero ................................ <0>
+  [ 17] setprop 460 ............................. m_tuneTotalTimeScanning = 0
+  [ 20] pushzero ................................ <0>
+  [ 21] setprop 461 ............................. m_tuneTotalTimeSettingProps = 0
+  [ 24] pushint8 9 .............................. <9>
+  [ 27] pusharglist 1 ........................... <9>
+  [ 29] extcall 375 ............................. <numToChar(9)>
+  [ 32] setmovieprop 376 ........................ the itemDelimiter = numToChar(9)
+  [ 35] getparam 8 .............................. <argFilesToRead>
+  [ 37] peek 0
+  [ 39] pusharglist 1
+  [ 41] extcall 156
+  [ 44] pushint8 1
+  [ 46] peek 0
+  [ 48] peek 2
+  [ 50] lteq
+  [ 51] jmpifz [ 84] ............................ repeat with fileName in argFilesToRead
+  [ 54] peek 2
+  [ 56] peek 1
+  [ 58] pusharglist 2
+  [ 60] extcall 119
+  [ 63] setlocal 0
+  [ 65] getparam 0 .............................. <me>
+  [ 67] getlocal 0 .............................. <fileName>
+  [ 69] getparam 32 ............................. <argExceptionList>
+  [ 71] pusharglist 3 ........................... <me, fileName, argExceptionList>
+  [ 73] objcall 457 ............................. <me.initObjsFromFile(fileName, argExceptionList)>
+  [ 76] setlocal 8 .............................. tmpObjs = me.initObjsFromFile(fileName, argExceptionList)
+  [ 78] pushint8 1
+  [ 80] add
+  [ 81] endrepeat [ 46]
+  [ 84] pop 3
+  [ 86] pushcons 0 .............................. <"Scanning">
+  [ 88] getprop 460 ............................. <m_tuneTotalTimeScanning>
+  [ 91] pushcons 8 .............................. <"Setting props">
+  [ 93] getprop 461 ............................. <m_tuneTotalTimeSettingProps>
+  [ 96] pusharglistnoret 4 ...................... <"Scanning", m_tuneTotalTimeScanning, "Setting props", m_tuneTotalTimeSettingProps>
+  [ 98] extcall 122 ............................. pott("Scanning", m_tuneTotalTimeScanning, "Setting props", m_tuneTotalTimeSettingProps)
+  [101] getparam 0 .............................. <me>
+  [103] pusharglistnoret 1 ...................... <me>
+  [105] extcall 69 .............................. return me
+  [108] ret
+end
+
+on kill me
+  [  0] pushzero ................................ <0>
+  [  1] pusharglistnoret 1 ...................... <0>
+  [  3] extcall 69 .............................. return 0
+  [  6] ret
+end
+
+on initObjsFromFile me, argFileName, argExceptionList
+  [  0] getparam 16 ............................. <argExceptionList>
+  [  2] pusharglist 1 ........................... <argExceptionList>
+  [  4] extcall 61 .............................. <voidp(argExceptionList)>
+  [  7] jmpifz [ 15] ............................ if voidp(argExceptionList) then
+  [ 10] pusharglist 0 ........................... <[:]>
+  [ 12] pushproplist ............................ <[:]>
+  [ 13] setparam 16 ............................. argExceptionList = [:]
+  [ 15] getparam 8 .............................. <argFileName>
+  [ 17] pusharglist 1 ........................... <argFileName>
+  [ 19] extcall 137 ............................. <readFile(argFileName)>
+  [ 22] setprop 372 ............................. m_str = readFile(argFileName)
+  [ 25] getprop 372 ............................. <m_str>
+  [ 28] pusharglist 1 ........................... <m_str>
+  [ 30] extcall 13 .............................. <stringp(m_str)>
+  [ 32] not ..................................... <not stringp(m_str)>
+  [ 33] jmpifz [ 46] ............................ if not stringp(m_str) then
+  [ 36] pushcons 16 ............................. <"Not read">
+  [ 38] getparam 8 .............................. <argFileName>
+  [ 40] pusharglistnoret 2 ...................... <"Not read", argFileName>
+  [ 42] extcall 122 ............................. pott("Not read", argFileName)
+  [ 45] ret ..................................... exit
+  [ 46] pushint8 1 .............................. <1>
+  [ 49] setprop 387 ............................. m_lineNr = 1
+  [ 52] getprop 372 ............................. <m_str>
+  [ 55] pushint8 4 .............................. <4>
+  [ 58] get 1 ................................... <the number of lines in m_str>
+  [ 60] setprop 388 ............................. m_numLines = the number of lines in m_str
+  [ 63] getmovieprop 281 ........................ <the milliSeconds>
+  [ 66] setlocal 0 .............................. X = the milliSeconds
+  [ 68] getprop 372 ............................. <m_str>
+  [ 71] pusharglist 1 ........................... <m_str>
+  [ 73] extcall 2546 ............................ <tabDataStringToPropList(m_str)>
+  [ 76] setlocal 8 .............................. lst = tabDataStringToPropList(m_str)
+  [ 78] getprop 460 ............................. <m_tuneTotalTimeScanning>
+  [ 81] getmovieprop 281 ........................ <the milliSeconds>
+  [ 84] add ..................................... <m_tuneTotalTimeScanning + the milliSeconds>
+  [ 85] getlocal 0 .............................. <X>
+  [ 87] sub ..................................... <m_tuneTotalTimeScanning + the milliSeconds - X>
+  [ 88] setprop 460 ............................. m_tuneTotalTimeScanning = m_tuneTotalTimeScanning + the milliSeconds - X
+  [ 91] getmovieprop 281 ........................ <the milliSeconds>
+  [ 94] setlocal 0 .............................. X = the milliSeconds
+  [ 96] getparam 16 ............................. <argExceptionList>
+  [ 98] pushsymb 147 ............................ <#class>
+  [101] pusharglist 2 ........................... <argExceptionList, #class>
+  [103] objcall 119 ............................. <argExceptionList[#class]>
+  [106] setlocal 16 ............................. tmpExceptClassList = argExceptionList[#class]
+  [108] getlocal 16 ............................. <tmpExceptClassList>
+  [110] pusharglist 1 ........................... <tmpExceptClassList>
+  [112] extcall 61 .............................. <voidp(tmpExceptClassList)>
+  [115] jmpifz [123] ............................ if voidp(tmpExceptClassList) then
+  [118] pusharglist 0 ........................... <[]>
+  [120] pushlist ................................ <[]>
+  [121] setlocal 16 ............................. tmpExceptClassList = []
+  [123] pusharglist 0 ........................... <[:]>
+  [125] pushproplist ............................ <[:]>
+  [126] setlocal 24 ............................. allClassesObjs = [:]
+  [128] pushint8 1 .............................. <1>
+  [131] setlocal 32
+  [133] getlocal 32
+  [135] getlocal 8 .............................. <lst>
+  [137] pusharglist 1 ........................... <lst>
+  [139] objcall 156 ............................. <lst.count()>
+  [142] lteq
+  [143] jmpifz [394] ............................ repeat with n = 1 to lst.count()
+  [146] getlocal 8 .............................. <lst>
+  [148] getlocal 32 ............................. <n>
+  [150] pusharglist 2 ........................... <lst, n>
+  [152] objcall 295 ............................. <lst.getPropAt(n)>
+  [155] pusharglist 1 ........................... <lst.getPropAt(n)>
+  [157] extcall 267 ............................. <symbol(lst.getPropAt(n))>
+  [160] setlocal 40 ............................. className = symbol(lst.getPropAt(n))
+  [162] getlocal 16 ............................. <tmpExceptClassList>
+  [164] getlocal 40 ............................. <className>
+  [166] pusharglist 2 ........................... <tmpExceptClassList, className>
+  [168] objcall 337 ............................. <tmpExceptClassList.getPos(className)>
+  [171] jmpifz [177] ............................ if tmpExceptClassList.getPos(className) then
+  [174] jmp [383] ............................... next repeat
+  [177] getprop 292 ............................. <m_objsByClass>
+  [180] getlocal 40 ............................. <className>
+  [182] pusharglist 2 ........................... <m_objsByClass, className>
+  [184] objcall 183 ............................. <m_objsByClass.getaProp(className)>
+  [187] setlocal 48 ............................. thisClassInstances = m_objsByClass.getaProp(className)
+  [189] getlocal 48 ............................. <thisClassInstances>
+  [191] pusharglist 1 ........................... <thisClassInstances>
+  [193] extcall 61 .............................. <voidp(thisClassInstances)>
+  [196] jmpifz [216] ............................ if voidp(thisClassInstances) then
+  [199] pusharglist 0 ........................... <[]>
+  [201] pushlist ................................ <[]>
+  [202] setlocal 48 ............................. thisClassInstances = []
+  [204] getprop 292 ............................. <m_objsByClass>
+  [207] getlocal 40 ............................. <className>
+  [209] getlocal 48 ............................. <thisClassInstances>
+  [211] pusharglistnoret 3 ...................... <m_objsByClass, className, thisClassInstances>
+  [213] objcall 296 ............................. m_objsByClass.setaProp(className, thisClassInstances)
+  [216] pushcons 24 ............................. <"Class">
+  [218] getlocal 8 .............................. <lst>
+  [220] getlocal 32 ............................. <n>
+  [222] pusharglist 2 ........................... <lst, n>
+  [224] objcall 295 ............................. <lst.getPropAt(n)>
+  [227] joinstr ................................. <"Class" & lst.getPropAt(n)>
+  [228] pushcons 32 ............................. <"Script">
+  [230] joinstr ................................. <"Class" & lst.getPropAt(n) & "Script">
+  [231] setlocal 56 ............................. scriptName = "Class" & lst.getPropAt(n) & "Script"
+  [233] getlocal 56 ............................. <scriptName>
+  [235] pusharglist 1 ........................... <scriptName>
+  [237] extcall 56 .............................. <member(scriptName)>
+  [240] getobjprop 410 .......................... <member(scriptName).number>
+  [243] pushint8 1 .............................. <1>
+  [246] lt ...................................... <member(scriptName).number < 1>
+  [247] jmpifz [265] ............................ if member(scriptName).number < 1 then / else
+  [250] getlocal 56 ............................. <scriptName>
+  [252] pushcons 40 ............................. <" was not found!">
+  [254] joinstr ................................. <scriptName & " was not found!">
+  [255] getparam 8 .............................. <argFileName>
+  [257] pusharglistnoret 2 ...................... <scriptName & " was not found!", argFileName>
+  [259] extcall 122 ............................. pott(scriptName & " was not found!", argFileName)
+  [262] jmp [372]
+  [265] getlocal 8 .............................. <lst>
+  [267] getlocal 32 ............................. <n>
+  [269] pusharglist 2 ........................... <lst, n>
+  [271] objcall 119 ............................. <lst[n]>
+  [274] setlocal 64 ............................. subLst = lst[n]
+  [276] getlocal 64 ............................. <subLst>
+  [278] pushint8 1 .............................. <1>
+  [281] pusharglist 2 ........................... <subLst, 1>
+  [283] objcall 119 ............................. <subLst[1]>
+  [286] setlocal 72 ............................. tmp = subLst[1]
+  [288] getlocal 72 ............................. <tmp>
+  [290] pusharglist 1 ........................... <tmp>
+  [292] objcall 156 ............................. <tmp.count()>
+  [295] setlocal 80 ............................. tmpNumInstances = tmp.count()
+  [297] pusharglist 0 ........................... <[]>
+  [299] pushlist ................................ <[]>
+  [300] setlocal 88 ............................. objs = []
+  [302] pushint8 1 .............................. <1>
+  [305] setlocal 96
+  [307] getlocal 96
+  [309] getlocal 80 ............................. <tmpNumInstances>
+  [311] lteq
+  [312] jmpifz [356] ............................ repeat with tmpInstanceNr = 1 to tmpNumInstances
+  [315] getlocal 56 ............................. <scriptName>
+  [317] pusharglist 1 ........................... <scriptName>
+  [319] extcall 10 .............................. <script(scriptName)>
+  [321] pusharglist 1 ........................... <script(scriptName)>
+  [323] objcall 11 .............................. <script(scriptName).new()>
+  [325] setlocal 104 ............................ obj = script(scriptName).new()
+  [327] getlocal 88 ............................. <objs>
+  [329] getlocal 104 ............................ <obj>
+  [331] pusharglistnoret 2 ...................... <objs, obj>
+  [333] objcall 229 ............................. objs.add(obj)
+  [336] getlocal 48 ............................. <thisClassInstances>
+  [338] getlocal 104 ............................ <obj>
+  [340] pusharglistnoret 2 ...................... <thisClassInstances, obj>
+  [342] objcall 229 ............................. thisClassInstances.add(obj)
+  [345] pushint8 1
+  [348] getlocal 96
+  [350] add
+  [351] setlocal 96
+  [353] endrepeat [307]
+  [356] getparam 0 .............................. <me>
+  [358] getlocal 88 ............................. <objs>
+  [360] getlocal 64 ............................. <subLst>
+  [362] getlocal 40 ............................. <className>
+  [364] pusharglist 0 ........................... <[]>
+  [366] pushlist ................................ <[]>
+  [367] pusharglistnoret 5 ...................... <me, objs, subLst, className, []>
+  [369] objcall 458 ............................. me.recurseInit(objs, subLst, className, [])
+  [372] getlocal 24 ............................. <allClassesObjs>
+  [374] getlocal 40 ............................. <className>
+  [376] getlocal 88 ............................. <objs>
+  [378] pusharglistnoret 3 ...................... <allClassesObjs, className, objs>
+  [380] objcall 309 ............................. allClassesObjs.addProp(className, objs)
+  [383] pushint8 1
+  [386] getlocal 32
+  [388] add
+  [389] setlocal 32
+  [391] endrepeat [133]
+  [394] getprop 461 ............................. <m_tuneTotalTimeSettingProps>
+  [397] getmovieprop 281 ........................ <the milliSeconds>
+  [400] add ..................................... <m_tuneTotalTimeSettingProps + the milliSeconds>
+  [401] getlocal 0 .............................. <X>
+  [403] sub ..................................... <m_tuneTotalTimeSettingProps + the milliSeconds - X>
+  [404] setprop 461 ............................. m_tuneTotalTimeSettingProps = m_tuneTotalTimeSettingProps + the milliSeconds - X
+  [407] getlocal 24 ............................. <allClassesObjs>
+  [409] pusharglistnoret 1 ...................... <allClassesObjs>
+  [411] extcall 69 .............................. return allClassesObjs
+  [414] ret
+end
+
+on recurseInit me, argObjs, argValList, argClassName, argOverClasses, argAdditionalBaseClasses, argBelongsToClass
+  [  0] pushint8 1 .............................. <1>
+  [  3] setlocal 0
+  [  5] getlocal 0
+  [  7] getparam 16 ............................. <argValList>
+  [  9] pusharglist 1 ........................... <argValList>
+  [ 11] objcall 156 ............................. <argValList.count()>
+  [ 14] lteq
+  [ 15] jmpifz [553] ............................ repeat with n = 1 to argValList.count()
+  [ 18] getparam 16 ............................. <argValList>
+  [ 20] getlocal 0 .............................. <n>
+  [ 22] pusharglist 2 ........................... <argValList, n>
+  [ 24] objcall 295 ............................. <argValList.getPropAt(n)>
+  [ 27] pusharglist 1 ........................... <argValList.getPropAt(n)>
+  [ 29] extcall 267 ............................. <symbol(argValList.getPropAt(n))>
+  [ 32] setlocal 8 .............................. propName = symbol(argValList.getPropAt(n))
+  [ 34] getlocal 8 .............................. <propName>
+  [ 36] pusharglist 1 ........................... <propName>
+  [ 38] extcall 61 .............................. <voidp(propName)>
+  [ 41] jmpifz [ 67] ............................ if voidp(propName) then
+  [ 44] pushcons 48 ............................. <"er. Not good">
+  [ 46] getparam 16 ............................. <argValList>
+  [ 48] getlocal 0 .............................. <n>
+  [ 50] pusharglist 2 ........................... <argValList, n>
+  [ 52] objcall 295 ............................. <argValList.getPropAt(n)>
+  [ 55] getparam 16 ............................. <argValList>
+  [ 57] getlocal 0 .............................. <n>
+  [ 59] pusharglistnoret 4 ...................... <"er. Not good", argValList.getPropAt(n), argValList, n>
+  [ 61] extcall 122 ............................. pott("er. Not good", argValList.getPropAt(n), argValList, n)
+  [ 64] jmp [542] ............................... next repeat
+  [ 67] getparam 16 ............................. <argValList>
+  [ 69] getlocal 0 .............................. <n>
+  [ 71] pusharglist 2 ........................... <argValList, n>
+  [ 73] objcall 119 ............................. <argValList[n]>
+  [ 76] setlocal 16 ............................. valList = argValList[n]
+  [ 78] getprop 459 ............................. <m_classMasterObj>
+  [ 81] getparam 24 ............................. <argClassName>
+  [ 83] getlocal 8 .............................. <propName>
+  [ 85] pusharglist 3 ........................... <m_classMasterObj, argClassName, propName>
+  [ 87] objcall 251 ............................. <m_classMasterObj.getVarInfo(argClassName, propName)>
+  [ 90] setlocal 24 ............................. varInfo = m_classMasterObj.getVarInfo(argClassName, propName)
+  [ 92] getlocal 24 ............................. <varInfo>
+  [ 94] pusharglist 1 ........................... <varInfo>
+  [ 96] extcall 61 .............................. <voidp(varInfo)>
+  [ 99] jmpifz [139] ............................ if voidp(varInfo) then
+  [102] getlocal 8 .............................. <propName>
+  [104] pushcons 56 ............................. <"does not exist in">
+  [106] getparam 24 ............................. <argClassName>
+  [108] pusharglistnoret 3 ...................... <propName, "does not exist in", argClassName>
+  [110] extcall 122 ............................. pott(propName, "does not exist in", argClassName)
+  [113] getparam 8 .............................. <argObjs>
+  [115] getobjprop 156 .......................... <argObjs.count>
+  [118] jmpifz [136] ............................ if argObjs.count then
+  [121] getparam 8 .............................. <argObjs>
+  [123] pushint8 1 .............................. <1>
+  [126] pusharglist 2 ........................... <argObjs, 1>
+  [128] objcall 119 ............................. <argObjs[1]>
+  [131] pusharglistnoret 1 ...................... <argObjs[1]>
+  [133] extcall 122 ............................. pott(argObjs[1])
+  [136] jmp [542] ............................... next repeat
+  [139] getlocal 24 ............................. <varInfo>
+  [141] pushint8 1 .............................. <1>
+  [144] pusharglist 2 ........................... <varInfo, 1>
+  [146] objcall 119 ............................. <varInfo[1]>
+  [149] setlocal 32 ............................. varType = varInfo[1]
+  [151] getprop 459 ............................. <m_classMasterObj>
+  [154] getlocal 32 ............................. <varType>
+  [156] pusharglist 2 ........................... <m_classMasterObj, varType>
+  [158] objcall 242 ............................. <m_classMasterObj.isStdType(varType)>
+  [161] jmpifz [472] ............................ if m_classMasterObj.isStdType(varType) then
+  [164] getlocal 24 ............................. <varInfo>
+  [166] pushint8 3 .............................. <3>
+  [169] pusharglist 2 ........................... <varInfo, 3>
+  [171] objcall 119 ............................. <varInfo[3]>
+  [174] pusharglist 1 ........................... <varInfo[3]>
+  [176] objcall 287 ............................. <varInfo[3].duplicate()>
+  [179] setlocal 40 ............................. tmpBaseClasses = varInfo[3].duplicate()
+  [181] getparam 48 ............................. <argBelongsToClass>
+  [183] pusharglist 1 ........................... <argBelongsToClass>
+  [185] extcall 96 .............................. <symbolp(argBelongsToClass)>
+  [188] jmpifz [198] ............................ if symbolp(argBelongsToClass) then / else
+  [191] getparam 48 ............................. <argBelongsToClass>
+  [193] setlocal 48 ............................. tmpWhichBaseClass = argBelongsToClass
+  [195] jmp [210]
+  [198] getlocal 24 ............................. <varInfo>
+  [200] pushint8 2 .............................. <2>
+  [203] pusharglist 2 ........................... <varInfo, 2>
+  [205] objcall 119 ............................. <varInfo[2]>
+  [208] setlocal 48 ............................. tmpWhichBaseClass = varInfo[2]
+  [210] getparam 40 ............................. <argAdditionalBaseClasses>
+  [212] pusharglist 1 ........................... <argAdditionalBaseClasses>
+  [214] extcall 115 ............................. <listp(argAdditionalBaseClasses)>
+  [217] jmpifz [263] ............................ if listp(argAdditionalBaseClasses) then
+  [220] getparam 48 ............................. <argBelongsToClass>
+  [222] pusharglist 1 ........................... <argBelongsToClass>
+  [224] extcall 61 .............................. <voidp(argBelongsToClass)>
+  [227] jmpifz [254] ............................ if voidp(argBelongsToClass) then
+  [230] getparam 40 ............................. <argAdditionalBaseClasses>
+  [232] getobjprop 156 .......................... <argAdditionalBaseClasses.count>
+  [235] jmpifz [254] ............................ if argAdditionalBaseClasses.count then
+  [238] getparam 40 ............................. <argAdditionalBaseClasses>
+  [240] getparam 40 ............................. <argAdditionalBaseClasses>
+  [242] pusharglist 1 ........................... <argAdditionalBaseClasses>
+  [244] objcall 156 ............................. <argAdditionalBaseClasses.count()>
+  [247] pusharglist 2 ........................... <argAdditionalBaseClasses, argAdditionalBaseClasses.count()>
+  [249] objcall 119 ............................. <argAdditionalBaseClasses[argAdditionalBaseClasses.count()]>
+  [252] setlocal 48 ............................. tmpWhichBaseClass = argAdditionalBaseClasses[argAdditionalBaseClasses.count()]
+  [254] getlocal 40 ............................. <tmpBaseClasses>
+  [256] getparam 40 ............................. <argAdditionalBaseClasses>
+  [258] pusharglistnoret 2 ...................... <tmpBaseClasses, argAdditionalBaseClasses>
+  [260] extcall 288 ............................. mergeLists(tmpBaseClasses, argAdditionalBaseClasses)
+  [263] getlocal 40 ............................. <tmpBaseClasses>
+  [265] getlocal 48 ............................. <tmpWhichBaseClass>
+  [267] pusharglist 2 ........................... <tmpBaseClasses, tmpWhichBaseClass>
+  [269] objcall 337 ............................. <tmpBaseClasses.getPos(tmpWhichBaseClass)>
+  [272] setlocal 56 ............................. tmpWhichNum = tmpBaseClasses.getPos(tmpWhichBaseClass)
+  [274] getlocal 56 ............................. <tmpWhichNum>
+  [276] pushint8 1 .............................. <1>
+  [279] lt ...................................... <tmpWhichNum < 1>
+  [280] jmpifz [288] ............................ if tmpWhichNum < 1 then
+  [283] pushint8 1 .............................. <1>
+  [286] setlocal 56 ............................. tmpWhichNum = 1
+  [288] pushint8 1 .............................. <1>
+  [291] setlocal 64
+  [293] getlocal 64
+  [295] getparam 8 .............................. <argObjs>
+  [297] getobjprop 156 .......................... <argObjs.count>
+  [300] lteq
+  [301] jmpifz [469] ............................ repeat with m = 1 to argObjs.count
+  [304] getparam 8 .............................. <argObjs>
+  [306] getlocal 64 ............................. <m>
+  [308] pusharglist 2 ........................... <argObjs, m>
+  [310] objcall 119 ............................. <argObjs[m]>
+  [313] setlocal 72 ............................. tmpObj = argObjs[m]
+  [315] getlocal 40 ............................. <tmpBaseClasses>
+  [317] pusharglist 1 ........................... <tmpBaseClasses>
+  [319] objcall 156 ............................. <tmpBaseClasses.count()>
+  [322] setlocal 80
+  [324] getlocal 80
+  [326] getlocal 56 ............................. <tmpWhichNum>
+  [328] gteq
+  [329] jmpifz [349] ............................ repeat with i = tmpBaseClasses.count() down to tmpWhichNum
+  [332] getlocal 72 ............................. <tmpObj>
+  [334] getobjprop 347 .......................... <tmpObj.ancestor>
+  [337] setlocal 72 ............................. tmpObj = tmpObj.ancestor
+  [339] pushint8 -1
+  [342] getlocal 80
+  [344] add
+  [345] setlocal 80
+  [347] endrepeat [324]
+  [349] getlocal 64 ............................. <m>
+  [351] getlocal 16 ............................. <valList>
+  [353] getobjprop 156 .......................... <valList.count>
+  [356] gt ...................................... <m > valList.count>
+  [357] jmpifz [367] ............................ if m > valList.count then / else
+  [360] pushcons 64 ............................. <EMPTY>
+  [362] setlocal 88 ............................. val = EMPTY
+  [364] jmp [378]
+  [367] getlocal 16 ............................. <valList>
+  [369] getlocal 64 ............................. <m>
+  [371] pusharglist 2 ........................... <valList, m>
+  [373] objcall 119 ............................. <valList[m]>
+  [376] setlocal 88 ............................. val = valList[m]
+  [378] pushint8 1 .............................. <1>
+  [381] setlocal 80
+  [383] getlocal 80
+  [385] getparam 32 ............................. <argOverClasses>
+  [387] pusharglist 1 ........................... <argOverClasses>
+  [389] objcall 156 ............................. <argOverClasses.count()>
+  [392] lteq
+  [393] jmpifz [425] ............................ repeat with i = 1 to argOverClasses.count()
+  [396] getlocal 72 ............................. <tmpObj>
+  [398] getparam 32 ............................. <argOverClasses>
+  [400] getlocal 80 ............................. <i>
+  [402] pusharglist 2 ........................... <argOverClasses, i>
+  [404] objcall 119 ............................. <argOverClasses[i]>
+  [407] pusharglist 2 ........................... <tmpObj, argOverClasses[i]>
+  [409] objcall 183 ............................. <tmpObj.getaProp(argOverClasses[i])>
+  [412] setlocal 72 ............................. tmpObj = tmpObj.getaProp(argOverClasses[i])
+  [414] pushint8 1
+  [417] getlocal 80
+  [419] add
+  [420] setlocal 80
+  [422] endrepeat [383]
+  [425] getlocal 88 ............................. <val>
+  [427] getlocal 32 ............................. <varType>
+  [429] pusharglist 2 ........................... <val, varType>
+  [431] extcall 477 ............................. <convStrToType(val, varType)>
+  [434] setlocal 88 ............................. val = convStrToType(val, varType)
+  [436] getlocal 88 ............................. <val>
+  [438] pusharglist 1 ........................... <val>
+  [440] extcall 61 .............................. <voidp(val)>
+  [443] not ..................................... <not voidp(val)>
+  [444] jmpifz [458] ............................ if not voidp(val) then
+  [447] getlocal 72 ............................. <tmpObj>
+  [449] getlocal 8 .............................. <propName>
+  [451] getlocal 88 ............................. <val>
+  [453] pusharglistnoret 3 ...................... <tmpObj, propName, val>
+  [455] objcall 296 ............................. tmpObj.setaProp(propName, val)
+  [458] pushint8 1
+  [461] getlocal 64
+  [463] add
+  [464] setlocal 64
+  [466] endrepeat [293]
+  [469] jmp [542] ............................... next repeat
+  [472] getlocal 16 ............................. <valList>
+  [474] pusharglist 1 ........................... <valList>
+  [476] extcall 365 ............................. <ilk(valList)>
+  [479] pushsymb 266 ............................ <#propList>
+  [482] eq ...................................... <ilk(valList) = #propList>
+  [483] jmpifz [542] ............................ if ilk(valList) = #propList then
+  [486] getparam 32 ............................. <argOverClasses>
+  [488] pusharglist 1 ........................... <argOverClasses>
+  [490] objcall 287 ............................. <argOverClasses.duplicate()>
+  [493] setlocal 96 ............................. tmp = argOverClasses.duplicate()
+  [495] getlocal 96 ............................. <tmp>
+  [497] getlocal 8 .............................. <propName>
+  [499] pusharglistnoret 2 ...................... <tmp, propName>
+  [501] objcall 229 ............................. tmp.add(propName)
+  [504] getparam 0 .............................. <me>
+  [506] getparam 8 .............................. <argObjs>
+  [508] getlocal 16 ............................. <valList>
+  [510] getlocal 32 ............................. <varType>
+  [512] getlocal 96 ............................. <tmp>
+  [514] getlocal 24 ............................. <varInfo>
+  [516] pushint8 3 .............................. <3>
+  [519] pusharglist 2 ........................... <varInfo, 3>
+  [521] objcall 119 ............................. <varInfo[3]>
+  [524] getlocal 24 ............................. <varInfo>
+  [526] pushint8 2 .............................. <2>
+  [529] pusharglist 2 ........................... <varInfo, 2>
+  [531] objcall 119 ............................. <varInfo[2]>
+  [534] pusharglistnoret 7 ...................... <me, argObjs, valList, varType, tmp, varInfo[3], varInfo[2]>
+  [536] objcall 458 ............................. me.recurseInit(argObjs, valList, varType, tmp, varInfo[3], varInfo[2])
+  [539] jmp [542] ............................... next repeat
+  [542] pushint8 1
+  [545] getlocal 0
+  [547] add
+  [548] setlocal 0
+  [550] endrepeat [  5]
+  [553] ret
+end
+
+on scan me, argList, argDepth
+  [  0] pushzero ................................ <0>
+  [  1] setlocal 0 .............................. tmpVarOnHold = 0
+  [  3] pusharglist 0 ........................... <[]>
+  [  5] pushlist ................................ <[]>
+  [  6] setlocal 8 .............................. m_cols = []
+  [  8] getprop 387 ............................. <m_lineNr>
+  [ 11] getprop 388 ............................. <m_numLines>
+  [ 14] lteq .................................... <m_lineNr <= m_numLines>
+  [ 15] jmpifz [340] ............................ repeat while m_lineNr <= m_numLines
+  [ 18] getprop 372 ............................. <m_str>
+  [ 21] pushsymb 395 ............................ <#line>
+  [ 24] getprop 387 ............................. <m_lineNr>
+  [ 27] pusharglist 3 ........................... <m_str, #line, m_lineNr>
+  [ 29] objcall 113 ............................. <m_str.line[m_lineNr]>
+  [ 32] setlocal 16 ............................. currLine = m_str.line[m_lineNr]
+  [ 34] getlocal 16 ............................. <currLine>
+  [ 36] pushsymb 396 ............................ <#word>
+  [ 39] pushint8 1 .............................. <1>
+  [ 42] pusharglist 3 ........................... <currLine, #word, 1>
+  [ 44] objcall 113 ............................. <currLine.word[1]>
+  [ 47] setlocal 24 ............................. word1 = currLine.word[1]
+  [ 49] getlocal 24 ............................. <word1>
+  [ 51] getobjprop 135 .......................... <word1.length>
+  [ 54] pushzero ................................ <0>
+  [ 55] gt ...................................... <word1.length > 0>
+  [ 56] jmpifz [327] ............................ if word1.length > 0 then
+  [ 59] getlocal 24 ............................. <word1>
+  [ 61] pushsymb 138 ............................ <#char>
+  [ 64] pushint8 1 .............................. <1>
+  [ 67] pushint8 2 .............................. <2>
+  [ 70] pusharglist 4 ........................... <word1, #char, 1, 2>
+  [ 72] objcall 113 ............................. <word1.char[1..2]>
+  [ 75] pushcons 72 ............................. <"##">
+  [ 77] nteq .................................... <word1.char[1..2] <> "##">
+  [ 78] getlocal 24 ............................. <word1>
+  [ 80] pushsymb 138 ............................ <#char>
+  [ 83] pushint8 1 .............................. <1>
+  [ 86] pushint8 2 .............................. <2>
+  [ 89] pusharglist 4 ........................... <word1, #char, 1, 2>
+  [ 91] objcall 113 ............................. <word1.char[1..2]>
+  [ 94] pushcons 80 ............................. <"**">
+  [ 96] nteq .................................... <word1.char[1..2] <> "**">
+  [ 97] and ..................................... <(word1.char[1..2] <> "##") and (word1.char[1..2] <> "**")>
+  [ 98] getlocal 24 ............................. <word1>
+  [100] pushsymb 138 ............................ <#char>
+  [103] pushint8 1 .............................. <1>
+  [106] pushint8 2 .............................. <2>
+  [109] pusharglist 4 ........................... <word1, #char, 1, 2>
+  [111] objcall 113 ............................. <word1.char[1..2]>
+  [114] pushcons 88 ............................. <"--">
+  [116] nteq .................................... <word1.char[1..2] <> "--">
+  [117] and ..................................... <(word1.char[1..2] <> "##") and (word1.char[1..2] <> "**") and (word1.char[1..2] <> "--")>
+  [118] jmpifz [327] ............................ if (word1.char[1..2] <> "##") and (word1.char[1..2] <> "**") and (word1.char[1..2] <> "--") then
+  [121] getlocal 24 ............................. <word1>
+  [123] setlocal 32 ............................. tmpVar = word1
+  [125] getlocal 16 ............................. <currLine>
+  [127] pushint8 2 .............................. <2>
+  [130] get 1 ................................... <the number of words in currLine>
+  [132] setlocal 40 ............................. tmpNumWords = the number of words in currLine
+  [134] getlocal 24 ............................. <word1>
+  [136] getlocal 16 ............................. <currLine>
+  [138] pusharglist 2 ........................... <word1, currLine>
+  [140] extcall 384 ............................. <offset(word1, currLine)>
+  [143] setlocal 48 ............................. tmpOffset = offset(word1, currLine)
+  [145] getlocal 16 ............................. <currLine>
+  [147] pushsymb 138 ............................ <#char>
+  [150] pushint8 1 .............................. <1>
+  [153] getlocal 48 ............................. <tmpOffset>
+  [155] pusharglist 4 ........................... <currLine, #char, 1, tmpOffset>
+  [157] objcall 113 ............................. <currLine.char[1..tmpOffset]>
+  [160] pushint8 3 .............................. <3>
+  [163] get 1 ................................... <the number of items in currLine.char[1..tmpOffset]>
+  [165] setlocal 56 ............................. tmpDepth = the number of items in currLine.char[1..tmpOffset]
+  [167] getlocal 56 ............................. <tmpDepth>
+  [169] getparam 16 ............................. <argDepth>
+  [171] gt ...................................... <tmpDepth > argDepth>
+  [172] jmpifz [205] ............................ if tmpDepth > argDepth then / else
+  [175] pusharglist 0 ........................... <[:]>
+  [177] pushproplist ............................ <[:]>
+  [178] setlocal 64 ............................. sublist = [:]
+  [180] getparam 0 .............................. <me>
+  [182] getlocal 64 ............................. <sublist>
+  [184] getlocal 56 ............................. <tmpDepth>
+  [186] pusharglistnoret 3 ...................... <me, sublist, tmpDepth>
+  [188] objcall 370 ............................. me.scan(sublist, tmpDepth)
+  [191] getparam 8 .............................. <argList>
+  [193] getlocal 0 .............................. <tmpVarOnHold>
+  [195] getlocal 64 ............................. <sublist>
+  [197] pusharglistnoret 3 ...................... <argList, tmpVarOnHold, sublist>
+  [199] objcall 309 ............................. argList.addProp(tmpVarOnHold, sublist)
+  [202] jmp [327]
+  [205] getlocal 56 ............................. <tmpDepth>
+  [207] getparam 16 ............................. <argDepth>
+  [209] lt ...................................... <tmpDepth < argDepth>
+  [210] jmpifz [233] ............................ if tmpDepth < argDepth then / else
+  [213] getprop 387 ............................. <m_lineNr>
+  [216] pushint8 1 .............................. <1>
+  [219] sub ..................................... <m_lineNr - 1>
+  [220] setprop 387 ............................. m_lineNr = m_lineNr - 1
+  [223] getparam 8 .............................. <argList>
+  [225] pusharglistnoret 1 ...................... <argList>
+  [227] extcall 69 .............................. return argList
+  [230] jmp [327]
+  [233] getlocal 40 ............................. <tmpNumWords>
+  [235] pushint8 1 .............................. <1>
+  [238] eq ...................................... <tmpNumWords = 1>
+  [239] jmpifz [249] ............................ if tmpNumWords = 1 then / else
+  [242] getlocal 32 ............................. <tmpVar>
+  [244] setlocal 0 .............................. tmpVarOnHold = tmpVar
+  [246] jmp [327]
+  [249] getlocal 32 ............................. <tmpVar>
+  [251] pushcons 96 ............................. <"ID">
+  [253] eq ...................................... <tmpVar = "ID">
+  [254] jmpifz [306] ............................ if tmpVar = "ID" then
+  [257] getlocal 16 ............................. <currLine>
+  [259] pushsymb 396 ............................ <#word>
+  [262] pushint8 2 .............................. <2>
+  [265] pusharglist 3 ........................... <currLine, #word, 2>
+  [267] objcall 113 ............................. <currLine.word[2]>
+  [270] setlocal 72 ............................. firstEntry = currLine.word[2]
+  [272] getlocal 72 ............................. <firstEntry>
+  [274] getlocal 16 ............................. <currLine>
+  [276] pusharglist 2 ........................... <firstEntry, currLine>
+  [278] extcall 384 ............................. <offset(firstEntry, currLine)>
+  [281] setlocal 80 ............................. off = offset(firstEntry, currLine)
+  [283] getlocal 16 ............................. <currLine>
+  [285] pushsymb 138 ............................ <#char>
+  [288] pushint8 1 .............................. <1>
+  [291] getlocal 80 ............................. <off>
+  [293] pusharglist 4 ........................... <currLine, #char, 1, off>
+  [295] objcall 113 ............................. <currLine.char[1..off]>
+  [298] pushint8 3 .............................. <3>
+  [301] get 1 ................................... <the number of items in currLine.char[1..off]>
+  [303] setprop 493 ............................. m_firstDataItemNr = the number of items in currLine.char[1..off]
+  [306] getparam 8 .............................. <argList>
+  [308] getlocal 32 ............................. <tmpVar>
+  [310] getparam 0 .............................. <me>
+  [312] getlocal 16 ............................. <currLine>
+  [314] getprop 493 ............................. <m_firstDataItemNr>
+  [317] pusharglist 3 ........................... <me, currLine, m_firstDataItemNr>
+  [319] objcall 3368 ............................ <me.readLine(currLine, m_firstDataItemNr)>
+  [322] pusharglistnoret 3 ...................... <argList, tmpVar, me.readLine(currLine, m_firstDataItemNr)>
+  [324] objcall 309 ............................. argList.addProp(tmpVar, me.readLine(currLine, m_firstDataItemNr))
+  [327] getprop 387 ............................. <m_lineNr>
+  [330] pushint8 1 .............................. <1>
+  [333] add ..................................... <m_lineNr + 1>
+  [334] setprop 387 ............................. m_lineNr = m_lineNr + 1
+  [337] endrepeat [  8]
+  [340] getparam 8 .............................. <argList>
+  [342] pusharglistnoret 1 ...................... <argList>
+  [344] extcall 69 .............................. return argList
+  [347] ret
+end
+
+on readLine me, argLineStr, argStartReadFromItemNr
+  [  0] pusharglist 0 ........................... <[]>
+  [  2] pushlist ................................ <[]>
+  [  3] setlocal 0 .............................. valList = []
+  [  5] pushint8 1 .............................. <1>
+  [  8] setlocal 8 .............................. valNr = 1
+  [ 10] getparam 16 ............................. <argStartReadFromItemNr>
+  [ 12] pusharglist 1 ........................... <argStartReadFromItemNr>
+  [ 14] extcall 1044 ............................ <integerp(argStartReadFromItemNr)>
+  [ 17] jmpifz [ 27] ............................ if integerp(argStartReadFromItemNr) then / else
+  [ 20] getparam 16 ............................. <argStartReadFromItemNr>
+  [ 22] setlocal 16 ............................. itemNr = argStartReadFromItemNr
+  [ 24] jmp [ 99]
+  [ 27] pushzero ................................ <0>
+  [ 28] pushzero ................................ <0>
+  [ 29] pushint8 2 .............................. <2>
+  [ 32] pushzero ................................ <0>
+  [ 33] pushzero ................................ <0>
+  [ 34] pushzero ................................ <0>
+  [ 35] pushzero ................................ <0>
+  [ 36] pushzero ................................ <0>
+  [ 37] getparam 8 .............................. <argLineStr>
+  [ 39] getchunk ................................ <word 2 of argLineStr>
+  [ 40] setlocal 24 ............................. tmpWord = word 2 of argLineStr
+  [ 42] pushcons 104 ............................ <EMPTY>
+  [ 44] pushint8 1 .............................. <1>
+  [ 47] pushchunkvarref 4 ....................... <me>
+  [ 49] pushsymb 396 ............................ <#word>
+  [ 52] pushint8 1 .............................. <1>
+  [ 55] pusharglist 3 ........................... <me, #word, 1>
+  [ 57] objcall 416 ............................. <me.word[1]>
+  [ 60] swap
+  [ 61] pusharglistnoret 2 ...................... <me.word[1], EMPTY>
+  [ 63] objcall 421 ............................. put EMPTY into me.word[1]
+  [ 66] getlocal 24 ............................. <tmpWord>
+  [ 68] getparam 8 .............................. <argLineStr>
+  [ 70] pusharglist 2 ........................... <tmpWord, argLineStr>
+  [ 72] extcall 384 ............................. <offset(tmpWord, argLineStr)>
+  [ 75] setlocal 32 ............................. tmpOff = offset(tmpWord, argLineStr)
+  [ 77] getparam 8 .............................. <argLineStr>
+  [ 79] pushsymb 138 ............................ <#char>
+  [ 82] pushint8 1 .............................. <1>
+  [ 85] getlocal 32 ............................. <tmpOff>
+  [ 87] pusharglist 4 ........................... <argLineStr, #char, 1, tmpOff>
+  [ 89] objcall 113 ............................. <argLineStr.char[1..tmpOff]>
+  [ 92] pushint8 3 .............................. <3>
+  [ 95] get 1 ................................... <the number of items in argLineStr.char[1..tmpOff]>
+  [ 97] setlocal 16 ............................. itemNr = the number of items in argLineStr.char[1..tmpOff]
+  [ 99] getparam 8 .............................. <argLineStr>
+  [101] pushint8 3 .............................. <3>
+  [104] get 1 ................................... <the number of items in argLineStr>
+  [106] setlocal 40 ............................. numItems = the number of items in argLineStr
+  [108] getlocal 16 ............................. <itemNr>
+  [110] getlocal 40 ............................. <numItems>
+  [112] lteq .................................... <itemNr <= numItems>
+  [113] jmpifz [186] ............................ repeat while itemNr <= numItems
+  [116] getparam 8 .............................. <argLineStr>
+  [118] pushsymb 397 ............................ <#item>
+  [121] getlocal 16 ............................. <itemNr>
+  [123] pusharglist 3 ........................... <argLineStr, #item, itemNr>
+  [125] objcall 113 ............................. <argLineStr.item[itemNr]>
+  [128] setlocal 48 ............................. currItem = argLineStr.item[itemNr]
+  [130] getlocal 48 ............................. <currItem>
+  [132] pushsymb 138 ............................ <#char>
+  [135] pushint8 1 .............................. <1>
+  [138] pusharglist 3 ........................... <currItem, #char, 1>
+  [140] objcall 113 ............................. <currItem.char[1]>
+  [143] pushcons 112 ............................ <QUOTE>
+  [145] eq ...................................... <currItem.char[1] = QUOTE>
+  [146] jmpifz [158] ............................ if currItem.char[1] = QUOTE then
+  [149] getlocal 48 ............................. <currItem>
+  [151] pusharglist 1 ........................... <currItem>
+  [153] extcall 1904 ............................ <removeExcelQuotes(currItem)>
+  [156] setlocal 48 ............................. currItem = removeExcelQuotes(currItem)
+  [158] getlocal 0 .............................. <valList>
+  [160] getlocal 48 ............................. <currItem>
+  [162] pusharglistnoret 2 ...................... <valList, currItem>
+  [164] objcall 229 ............................. valList.add(currItem)
+  [167] getlocal 8 .............................. <valNr>
+  [169] pushint8 1 .............................. <1>
+  [172] add ..................................... <valNr + 1>
+  [173] setlocal 8 .............................. valNr = valNr + 1
+  [175] getlocal 16 ............................. <itemNr>
+  [177] pushint8 1 .............................. <1>
+  [180] add ..................................... <itemNr + 1>
+  [181] setlocal 16 ............................. itemNr = itemNr + 1
+  [183] endrepeat [108]
+  [186] getlocal 0 .............................. <valList>
+  [188] getobjprop 156 .......................... <valList.count>
+  [191] setlocal 56
+  [193] getlocal 56
+  [195] pushint8 1 .............................. <1>
+  [198] gteq
+  [199] jmpifz [240] ............................ repeat with n = valList.count down to 1
+  [202] getlocal 0 .............................. <valList>
+  [204] getlocal 56 ............................. <n>
+  [206] pusharglist 2 ........................... <valList, n>
+  [208] objcall 119 ............................. <valList[n]>
+  [211] pushcons 120 ............................ <EMPTY>
+  [213] nteq .................................... <valList[n] <> EMPTY>
+  [214] jmpifz [220] ............................ if valList[n] <> EMPTY then
+  [217] jmp [240] ............................... exit repeat
+  [220] getlocal 0 .............................. <valList>
+  [222] getlocal 56 ............................. <n>
+  [224] pusharglistnoret 2 ...................... <valList, n>
+  [226] objcall 221 ............................. valList.deleteAt(n)
+  [229] pushint8 -1
+  [232] getlocal 56
+  [234] add
+  [235] setlocal 56
+  [237] endrepeat [193]
+  [240] getlocal 0 .............................. <valList>
+  [242] pusharglistnoret 1 ...................... <valList>
+  [244] extcall 69 .............................. return valList
+  [247] ret
+end

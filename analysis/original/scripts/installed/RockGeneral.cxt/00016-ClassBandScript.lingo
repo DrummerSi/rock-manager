@@ -1,0 +1,310 @@
+property ancestor, child, className, belongsTo, _killed, members, ImageStyle, MusicStyle, StyleMix, SongType, RecordedAlbumIDs, Merchandise, LiveReputation, Active, memberObjs, createdObjs
+global gRock
+
+on new me, argChild, argBelongsTo
+  if objectp(argChild) then
+    child = argChild
+  else
+    child = me
+  end if
+  belongsTo = argBelongsTo
+  ancestor = script("ClassConcreteScript").new(child)
+  className = #Band
+  members = []
+  ImageStyle = script("ClassStyleMixScript").new(VOID, me)
+  MusicStyle = script("ClassStyleMixScript").new(VOID, me)
+  StyleMix = script("ClassStyleMixScript").new(VOID, me)
+  SongType = 0.0
+  RecordedAlbumIDs = []
+  Merchandise = []
+  LiveReputation = 0.0
+  Active = 0
+  memberObjs = []
+  createdObjs = []
+  return me
+end
+
+on kill me
+  _killed = 1
+  me.Remove()
+  if objectp(ImageStyle) then
+    ImageStyle = ImageStyle.kill()
+  end if
+  if objectp(MusicStyle) then
+    MusicStyle = MusicStyle.kill()
+  end if
+  if objectp(StyleMix) then
+    StyleMix = StyleMix.kill()
+  end if
+  gRock.m_gameTimer.deleteObject(me)
+  if objectp(ancestor) then
+    ancestor = ancestor.kill()
+  end if
+  child = 0
+  belongsTo = 0
+  memberObjs = []
+  return 0
+end
+
+on Remove me
+  audienceGroups_r = gRock.m_classManager.getObjsOfClass(#Group)
+  repeat with n = 1 to audienceGroups_r.count
+    grp_r = audienceGroups_r[n]
+    grp_r.Attitudes.removeAttitude(ancestor.ID)
+  end repeat
+  repeat with obj in createdObjs
+    gRock.m_classManager.removeObj(obj, #kill)
+  end repeat
+  createdObjs = []
+end
+
+on recordedAlbum me, argAlbum_r
+  RecordedAlbumIDs.add(argAlbum_r.ID)
+  tmp = me.getMusicianObjs()
+  repeat with tmpMusician in tmp
+    tmpLike = checkWithinTolerance(tmpMusician.MusicStyle, tmpMusician.MusicStyleTolerance, argAlbum_r.MusicStyle)
+    if tmpLike < 0.5 then
+      tmpMoodAffect = 0.5 - tmpLike
+      if tmpMoodAffect > 1 then
+        tmpMoodAffect = 1.0
+      end if
+      tmpMoodAffect = 0.05 * tmpMoodAffect
+      tmpExistingMods = rFindModifiers(#AlbumMusic, tmpMusician.ID, #Mood)
+      repeat with modifier in tmpExistingMods
+        modifier.kill()
+      end repeat
+      rCreateModifier(#AlbumMusic, tmpMusician.ID, #Mood, -tmpMoodAffect, 0, #Constant)
+    end if
+  end repeat
+end
+
+on calcStyleMix me
+  tmp = gRock.m_classManager.getPropsInClass(#StyleMix)
+  props = []
+  repeat with n = 1 to tmp.count
+    prop = tmp.getPropAt(n)
+    props.add(prop)
+    MusicStyle.setaProp(prop, 0.0)
+  end repeat
+  if members.count() = 0 then
+    exit
+  end if
+  repeat with memberObj in memberObjs
+    memberObj.calcInfluence()
+  end repeat
+  tmpWeightList = [:]
+  repeat with tmpMusician in memberObjs
+    tmpWeightList.addProp(tmpMusician.BandInfluence, tmpMusician.MusicStyle)
+  end repeat
+  rCalcObjsAverage(MusicStyle, tmpWeightList)
+  repeat with memberObj in memberObjs
+    memberObj.calcStyleDifference()
+  end repeat
+  sortedStyles = [:]
+  sortedStyles.sort()
+  repeat with prop in props
+    sortedStyles.addProp(MusicStyle.getaProp(prop), prop)
+  end repeat
+end
+
+on activate me, argIsTRUE
+  if voidp(argIsTRUE) then
+    argIsTRUE = 1
+  end if
+  Active = argIsTRUE
+  if Active then
+    repeat with mus_r in memberObjs
+      gRock.m_context.setFocus(symbol("RealMusician" & string(mus_r.NowPlaying)), mus_r)
+    end repeat
+    audienceGroups_r = gRock.m_classManager.getObjsOfClass(#Group)
+    repeat with n = 1 to audienceGroups_r.count
+      grp_r = audienceGroups_r[n]
+      if grp_r.Attitudes.hasAttitude(ancestor.ID) = 0 then
+        grpBandAttitudes = [#Hype: 0.0]
+        grp_r.Attitudes.setAttitude(ancestor.ID, grpBandAttitudes)
+      end if
+    end repeat
+    gRock.m_gameTimer.addObject(me)
+  else
+    gRock.m_gameTimer.deleteObject(me)
+  end if
+end
+
+on timeTick me
+  if (gRock.m_date.getDateInt() mod 7) = 0 then
+    gRock.m_msgManager.msg(#PayDay)
+    repeat with memberObj in memberObjs
+      memberObj.Pay()
+    end repeat
+  end if
+end
+
+on updateModifiers me
+  tmpOnlyWhich = gRock.m_tempVars[#BandCalcModsOnly]
+  if not voidp(tmpOnlyWhich) then
+    gRock.m_tempVars.deleteProp(#BandCalcModsOnly)
+  end if
+  if voidp(tmpOnlyWhich) or (tmpOnlyWhich = #Relations) then
+    repeat with mus_r in memberObjs
+      mus_r.bandMembersChanged()
+    end repeat
+  end if
+  if voidp(tmpOnlyWhich) or (tmpOnlyWhich = #SmallBand) then
+    repeat with tmpID in members
+      repeat with tmpOtherID in members
+        if tmpOtherID = tmpID then
+          next repeat
+        end if
+        earlierMods = gRock.m_modifiersManager.findModifiers([#ModifierID: #SmallBand, #ModifiedID: tmpID, #prop: [#Attitudes, #Attitudes, tmpOtherID]])
+        repeat with obj in earlierMods
+          obj.kill()
+        end repeat
+        earlierMods = gRock.m_modifiersManager.findModifiers([#ModifierID: #Lonely, #ModifiedID: tmpID])
+        repeat with obj in earlierMods
+          obj.kill()
+        end repeat
+      end repeat
+    end repeat
+    if members.count = 1 then
+      rCreateModifier(#Lonely, memberObjs[1].ID, [#Mood], -0.16, 0, #Constant)
+      exit
+    end if
+    if (members.count < 2) or (members.count > 3) then
+      exit
+    end if
+    if members.count = 2 then
+      tmpChange = -0.10000000000000001
+    else
+      if members.count = 3 then
+        tmpChange = -0.05
+      end if
+    end if
+    repeat with tmpObj in memberObjs
+      repeat with tmpOtherID in members
+        if tmpOtherID = tmpObj.ID then
+          next repeat
+        end if
+        if tmpObj.Attitudes.hasAttitude(tmpOtherID) = 0 then
+          tmpObj.Attitudes.changeAttitude(tmpOtherID, 0.0, "=")
+        end if
+        rCreateModifier(#SmallBand, tmpObj.ID, [#Attitudes, #Attitudes, tmpOtherID], tmpChange, 0, #Constant)
+      end repeat
+    end repeat
+  end if
+end
+
+on addMusician me, argIDorObj
+  if symbolp(argIDorObj) then
+    tmpID = argIDorObj
+    tmpObj = gRock.m_classManager.getObjByIDAndClass(tmpID, #RealMusician)
+  else
+    if objectp(argIDorObj) then
+      tmpID = argIDorObj.ID
+      tmpObj = argIDorObj
+    end if
+  end if
+  if symbolp(tmpID) and objectp(tmpObj) then
+    members.add(tmpID)
+    memberObjs.add(tmpObj)
+  end if
+  me.updateModifiers()
+  me.calcStyleMix()
+end
+
+on deleteMusician me, argIDorObj
+  if symbolp(argIDorObj) then
+    tmpID = argIDorObj
+    tmpObj = gRock.m_classManager.getObjByIDAndClass(tmpID, #RealMusician)
+  else
+    if objectp(argIDorObj) then
+      tmpID = argIDorObj.ID
+      tmpObj = argIDorObj
+    end if
+  end if
+  if symbolp(tmpID) and objectp(tmpObj) then
+    members.deleteOne(tmpID)
+    memberObjs.deleteOne(tmpObj)
+  end if
+  me.updateModifiers()
+  me.calcStyleMix()
+end
+
+on getCanPerform me
+  tmp = me.getWhoAreOccupied([#BandTour])
+  if tmp.count = members.count then
+    return #Away
+  end if
+  tmpGotVocalist = 0
+  repeat with tmpObj in memberObjs
+    if tmpObj.NowPlaying = #Vocals then
+      tmpGotVocalist = 1
+    end if
+  end repeat
+  if not tmpGotVocalist then
+    return #Vocals
+  end if
+  return 1
+end
+
+on getIsInTown me
+  tmp = me.getWhoAreOccupied()
+  if tmp.count = members.count then
+    return 0
+  end if
+  return 1
+end
+
+on getWhoAreOccupied me, argDontCareList
+  tmpAway = []
+  repeat with mus_r in memberObjs
+    if mus_r.getIsOccupied(argDontCareList) then
+      tmpAway.add(mus_r)
+    end if
+  end repeat
+  return tmpAway
+end
+
+on getMusicianObjs me
+  return memberObjs
+end
+
+on getMusicianPlaying me, argInstrumentID
+  repeat with mus_r in memberObjs
+    if mus_r.NowPlaying = argInstrumentID then
+      return mus_r
+    end if
+  end repeat
+  return 0
+end
+
+on load me
+  repeat with n = 1 to members.count
+    memberObjs.add(gRock.m_classManager.getObjByIDAndClass(members[n], #RealMusician))
+  end repeat
+end
+
+on getTotalHype me
+  tmpTotHype = 0.0
+  groups = gRock.m_classManager.getObjsOfClass(#Group)
+  if groups.count = 0 then
+    return 0
+  end if
+  tmpTotSize = 0
+  repeat with group_r in groups
+    tmpTotSize = tmpTotSize + group_r.size
+    tmpTotHype = tmpTotHype + (group_r.size * group_r.Attitudes.getAttitude([ancestor.ID, #Hype]))
+  end repeat
+  return tmpTotHype / float(tmpTotSize)
+end
+
+on getLivePerformance me
+  musicians_r = me.getMusicianObjs()
+  tmpPerformanceWeighted = [:]
+  repeat with musician_r in musicians_r
+    tmpPerf = calcAverage([0.5: rgetProp(musician_r, #Musicality), 0.40000000000000002: rgetProp(musician_r, #Charisma), 0.59999999999999998: rgetProp(musician_r, #Mood)])
+    tmpPerformanceWeighted.addProp(musician_r.BandInfluence, tmpPerf)
+  end repeat
+  tmpPerf = calcAverage(tmpPerformanceWeighted)
+  tmpPerf = convValToRange(tmpPerf, [0.20000000000000001, 0.75], [0.0, 1.0], VOID, #limit)
+  return tmpPerf
+end

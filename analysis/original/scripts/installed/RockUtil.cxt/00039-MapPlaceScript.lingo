@@ -1,0 +1,52 @@
+property m_mapLoc, m_org3DLoc, m_3DLoc, m_gfx, m_clr, m_name, m_radius, m_ID
+
+on new me, argLongLat, argRadius, argID, argLongLatIsRadiansAlready
+  if not listp(argLongLat[1]) then
+    m_mapLoc = argLongLat
+    longR = m_mapLoc[1]
+    latR = m_mapLoc[2]
+  else
+    longR = DMStoRadians(argLongLat[1])
+    latR = DMStoRadians(argLongLat[2])
+    m_mapLoc = [longR, latR]
+  end if
+  m_radius = argRadius
+  m_org3DLoc = me.longLatTo3D(m_mapLoc)
+  m_clr = rgb(170, 0, 0)
+  m_ID = argID
+  me.reset()
+  return me
+end
+
+on kill me
+  return 0
+end
+
+on reset me
+  m_3DLoc = m_org3DLoc.duplicate()
+end
+
+on locToRadians me
+end
+
+on longLatTo3D me, argMapLoc
+  if voidp(argMapLoc) then
+    argMapLoc = m_mapLoc
+  end if
+  longR = argMapLoc[1]
+  latR = argMapLoc[2]
+  sinCos = [[sin(latR), cos(latR)], [sin(longR), cos(longR)]]
+  tmp3DLoc = [0, 0, -1] * m_radius
+  tmp3DLoc = rotate3D(tmp3DLoc, sinCos[1], 1)
+  tmp3DLoc = rotate3D(tmp3DLoc, sinCos[2], 2)
+  return tmp3DLoc
+end
+
+on render me, arg3DLoc, argSPNum
+end
+
+on rotateYthenX me, argX, argY
+  sinCos = [[sin(argX), cos(argX)], [sin(argY), cos(argY)]]
+  m_3DLoc = rotate3D(m_3DLoc, sinCos[2], 2)
+  m_3DLoc = rotate3D(m_3DLoc, sinCos[1], 1)
+end

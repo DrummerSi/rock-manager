@@ -1,0 +1,1488 @@
+property m_filePath, m_allStrings, m_language, m_contextWords, m_contextSpecifiers, m_allContexts, m_classManager
+
+on new me, argFilePath, argLanguage
+  [  0] getparam 8 .............................. <argFilePath>
+  [  2] setprop 1898 ............................ m_filePath = argFilePath
+  [  5] getparam 16 ............................. <argLanguage>
+  [  7] setprop 1899 ............................ m_language = argLanguage
+  [ 10] pusharglist 0 ........................... <[:]>
+  [ 12] pushproplist ............................ <[:]>
+  [ 13] setprop 1900 ............................ m_allStrings = [:]
+  [ 16] getparam 0 .............................. <me>
+  [ 18] getprop 1899 ............................ <m_language>
+  [ 21] pusharglistnoret 2 ...................... <me, m_language>
+  [ 23] objcall 1890 ............................ me.setLanguage(m_language)
+  [ 26] getparam 0 .............................. <me>
+  [ 28] getprop 1898 ............................ <m_filePath>
+  [ 31] pusharglistnoret 2 ...................... <me, m_filePath>
+  [ 33] objcall 1894 ............................ me.readContextWords(m_filePath)
+  [ 36] getparam 0 .............................. <me>
+  [ 38] pusharglistnoret 1 ...................... <me>
+  [ 40] extcall 69 .............................. return me
+  [ 43] ret
+end
+
+on kill me
+  [  0] pushzero ................................ <0>
+  [  1] pusharglistnoret 1 ...................... <0>
+  [  3] extcall 69 .............................. return 0
+  [  6] ret
+end
+
+on setClassManager me, argClassManager
+  [  0] getparam 8 .............................. <argClassManager>
+  [  2] setprop 82 .............................. m_classManager = argClassManager
+  [  5] ret
+end
+
+on setLanguage me, argLanguage
+  [  0] getparam 8 .............................. <argLanguage>
+  [  2] setprop 1899 ............................ m_language = argLanguage
+  [  5] getparam 0 .............................. <me>
+  [  7] getprop 1898 ............................ <m_filePath>
+  [ 10] getprop 1899 ............................ <m_language>
+  [ 13] pusharglistnoret 3 ...................... <me, m_filePath, m_language>
+  [ 15] objcall 1891 ............................ me.readLanguage(m_filePath, m_language)
+  [ 18] ret
+end
+
+on readLanguage me, argPath, argLanguage
+  [  0] getparam 8 .............................. <argPath>
+  [  2] pushcons 0 .............................. <"Translation.txt">
+  [  4] joinstr ................................. <argPath & "Translation.txt">
+  [  5] pusharglist 1 ........................... <argPath & "Translation.txt">
+  [  7] extcall 137 ............................. <readFile(argPath & "Translation.txt")>
+  [ 10] setlocal 0 .............................. str = readFile(argPath & "Translation.txt")
+  [ 12] pushint8 9 .............................. <9>
+  [ 15] pusharglist 1 ........................... <9>
+  [ 17] extcall 375 ............................. <numToChar(9)>
+  [ 20] setmovieprop 376 ........................ the itemDelimiter = numToChar(9)
+  [ 23] pusharglist 0 ........................... <[:]>
+  [ 25] pushproplist ............................ <[:]>
+  [ 26] setprop 1900 ............................ m_allStrings = [:]
+  [ 29] getlocal 0 .............................. <str>
+  [ 31] pushsymb 395 ............................ <#line>
+  [ 34] pushint8 1 .............................. <1>
+  [ 37] pusharglist 3 ........................... <str, #line, 1>
+  [ 39] objcall 113 ............................. <str.line[1]>
+  [ 42] setlocal 8 .............................. catStr = str.line[1]
+  [ 44] getparam 16 ............................. <argLanguage>
+  [ 46] getlocal 8 .............................. <catStr>
+  [ 48] pusharglist 2 ........................... <argLanguage, catStr>
+  [ 50] extcall 384 ............................. <offset(argLanguage, catStr)>
+  [ 53] setlocal 16 ............................. tmpOff = offset(argLanguage, catStr)
+  [ 55] getlocal 16 ............................. <tmpOff>
+  [ 57] not ..................................... <not tmpOff>
+  [ 58] jmpifz [ 62] ............................ if not tmpOff then
+  [ 61] ret ..................................... exit
+  [ 62] getlocal 8 .............................. <catStr>
+  [ 64] pushsymb 138 ............................ <#char>
+  [ 67] pushint8 1 .............................. <1>
+  [ 70] getlocal 16 ............................. <tmpOff>
+  [ 72] pusharglist 4 ........................... <catStr, #char, 1, tmpOff>
+  [ 74] objcall 113 ............................. <catStr.char[1..tmpOff]>
+  [ 77] pushint8 3 .............................. <3>
+  [ 80] get 1 ................................... <the number of items in catStr.char[1..tmpOff]>
+  [ 82] setlocal 24 ............................. langCol = the number of items in catStr.char[1..tmpOff]
+  [ 84] pushint8 2 .............................. <2>
+  [ 87] setlocal 32
+  [ 89] getlocal 32
+  [ 91] getlocal 0 .............................. <str>
+  [ 93] pushint8 4 .............................. <4>
+  [ 96] get 1 ................................... <the number of lines in str>
+  [ 98] lteq
+  [ 99] jmpifz [190] ............................ repeat with lineNr = 2 to the number of lines in str
+  [102] getlocal 0 .............................. <str>
+  [104] pushsymb 395 ............................ <#line>
+  [107] getlocal 32 ............................. <lineNr>
+  [109] pusharglist 3 ........................... <str, #line, lineNr>
+  [111] objcall 113 ............................. <str.line[lineNr]>
+  [114] setlocal 40 ............................. lineStr = str.line[lineNr]
+  [116] getlocal 40 ............................. <lineStr>
+  [118] pushsymb 397 ............................ <#item>
+  [121] pushint8 1 .............................. <1>
+  [124] pusharglist 3 ........................... <lineStr, #item, 1>
+  [126] objcall 113 ............................. <lineStr.item[1]>
+  [129] setlocal 48 ............................. ID = lineStr.item[1]
+  [131] getlocal 48 ............................. <ID>
+  [133] getobjprop 135 .......................... <ID.length>
+  [136] pushint8 1 .............................. <1>
+  [139] gt ...................................... <ID.length > 1>
+  [140] jmpifz [179] ............................ if ID.length > 1 then
+  [143] getlocal 40 ............................. <lineStr>
+  [145] pushsymb 397 ............................ <#item>
+  [148] getlocal 24 ............................. <langCol>
+  [150] pusharglist 3 ........................... <lineStr, #item, langCol>
+  [152] objcall 113 ............................. <lineStr.item[langCol]>
+  [155] pusharglist 1 ........................... <lineStr.item[langCol]>
+  [157] extcall 1904 ............................ <removeExcelQuotes(lineStr.item[langCol])>
+  [160] setlocal 56 ............................. tmpThisItem = removeExcelQuotes(lineStr.item[langCol])
+  [162] getprop 1900 ............................ <m_allStrings>
+  [165] getlocal 48 ............................. <ID>
+  [167] pusharglist 1 ........................... <ID>
+  [169] extcall 267 ............................. <symbol(ID)>
+  [172] getlocal 56 ............................. <tmpThisItem>
+  [174] pusharglistnoret 3 ...................... <m_allStrings, symbol(ID), tmpThisItem>
+  [176] objcall 309 ............................. m_allStrings.addProp(symbol(ID), tmpThisItem)
+  [179] pushint8 1
+  [182] getlocal 32
+  [184] add
+  [185] setlocal 32
+  [187] endrepeat [ 89]
+  [190] pushzero ................................ <0>
+  [191] setlocal 0 .............................. str = 0
+  [193] ret
+end
+
+on getStr me, argID, argOptions
+  [  0] getprop 1900 ............................ <m_allStrings>
+  [  3] getparam 8 .............................. <argID>
+  [  5] pusharglist 2 ........................... <m_allStrings, argID>
+  [  7] objcall 119 ............................. <m_allStrings[argID]>
+  [ 10] setlocal 0 .............................. str = m_allStrings[argID]
+  [ 12] getlocal 0 .............................. <str>
+  [ 14] pusharglist 1 ........................... <str>
+  [ 16] extcall 61 .............................. <voidp(str)>
+  [ 19] jmpifz [ 29] ............................ if voidp(str) then
+  [ 22] pushcons 8 .............................. <EMPTY>
+  [ 24] pusharglistnoret 1 ...................... <EMPTY>
+  [ 26] extcall 69 .............................. return EMPTY
+  [ 29] getparam 16 ............................. <argOptions>
+  [ 31] pusharglist 1 ........................... <argOptions>
+  [ 33] extcall 115 ............................. <listp(argOptions)>
+  [ 36] jmpifz [129] ............................ if listp(argOptions) then
+  [ 39] getparam 16 ............................. <argOptions>
+  [ 41] pushsymb 1811 ........................... <#FirstUppercase>
+  [ 44] pusharglist 2 ........................... <argOptions, #FirstUppercase>
+  [ 46] objcall 119 ............................. <argOptions[#FirstUppercase]>
+  [ 49] pushzero ................................ <0>
+  [ 50] gt ...................................... <argOptions[#FirstUppercase] > 0>
+  [ 51] jmpifz [129] ............................ if argOptions[#FirstUppercase] > 0 then
+  [ 54] pushint8 1 .............................. <1>
+  [ 57] jmpifz [112] ............................ repeat while 1
+  [ 60] pushcons 16 ............................. <"\\n">
+  [ 62] getlocal 0 .............................. <str>
+  [ 64] pusharglist 2 ........................... <"\\n", str>
+  [ 66] extcall 384 ............................. <offset("\\n", str)>
+  [ 69] setlocal 8 .............................. tmpOff = offset("\\n", str)
+  [ 71] getlocal 8 .............................. <tmpOff>
+  [ 73] jmpifz [106] ............................ if tmpOff then
+  [ 76] pushcons 24 ............................. <RETURN>
+  [ 78] pushzero ................................ <0>
+  [ 79] pushchunkvarref 5 ....................... <str>
+  [ 81] pushsymb 138 ............................ <#char>
+  [ 84] getlocal 8 .............................. <tmpOff>
+  [ 86] getlocal 8 .............................. <tmpOff>
+  [ 88] pushint8 1 .............................. <1>
+  [ 91] add ..................................... <tmpOff + 1>
+  [ 92] pusharglist 4 ........................... <str, #char, tmpOff, tmpOff + 1>
+  [ 94] objcall 416 ............................. <str.char[tmpOff..tmpOff + 1]>
+  [ 97] swap
+  [ 98] pusharglistnoret 2 ...................... <str.char[tmpOff..tmpOff + 1], RETURN>
+  [100] objcall 421 ............................. put RETURN into str.char[tmpOff..tmpOff + 1]
+  [103] jmp [109] ............................... next repeat
+  [106] jmp [112] ............................... exit repeat
+  [109] endrepeat [ 54]
+  [112] getparam 0 .............................. <me>
+  [114] getlocal 0 .............................. <str>
+  [116] pushsymb 1814 ........................... <#first>
+  [119] pusharglist 3 ........................... <me, str, #first>
+  [121] objcall 1815 ............................ <me.makeUppercase(str, #first)>
+  [124] pusharglistnoret 1 ...................... <me.makeUppercase(str, #first)>
+  [126] extcall 69 .............................. return me.makeUppercase(str, #first)
+  [129] getlocal 0 .............................. <str>
+  [131] pusharglistnoret 1 ...................... <str>
+  [133] extcall 69 .............................. return str
+  [136] ret
+end
+
+on makeUppercase me, argStr, argWhat
+  [  0] pushcons 32 ............................. <"LettersScript">
+  [  2] pusharglist 1 ........................... <"LettersScript">
+  [  4] extcall 10 .............................. <script("LettersScript")>
+  [  6] pusharglist 1 ........................... <script("LettersScript")>
+  [  8] objcall 11 .............................. <script("LettersScript").new()>
+  [ 10] setlocal 0 .............................. X = script("LettersScript").new()
+  [ 12] getparam 16 ............................. <argWhat>
+  [ 14] pusharglist 1 ........................... <argWhat>
+  [ 16] extcall 61 .............................. <voidp(argWhat)>
+  [ 19] getparam 16 ............................. <argWhat>
+  [ 21] pushsymb 1814 ........................... <#first>
+  [ 24] eq ...................................... <argWhat = #first>
+  [ 25] or ...................................... <voidp(argWhat) or (argWhat = #first)>
+  [ 26] jmpifz [ 40] ............................ if voidp(argWhat) or (argWhat = #first) then
+  [ 29] pushint8 1 .............................. <1>
+  [ 32] pushint8 1 .............................. <1>
+  [ 35] pusharglist 2 ........................... <[1, 1]>
+  [ 37] pushlist ................................ <[1, 1]>
+  [ 38] setparam 16 ............................. argWhat = [1, 1]
+  [ 40] getparam 16 ............................. <argWhat>
+  [ 42] pushsymb 396 ............................ <#word>
+  [ 45] eq ...................................... <argWhat = #word>
+  [ 46] jmpifz [ 62] ............................ if argWhat = #word then
+  [ 49] pushint8 1 .............................. <1>
+  [ 52] getparam 8 .............................. <argStr>
+  [ 54] getobjprop 135 .......................... <argStr.length>
+  [ 57] pusharglist 2 ........................... <[1, argStr.length]>
+  [ 59] pushlist ................................ <[1, argStr.length]>
+  [ 60] setparam 16 ............................. argWhat = [1, argStr.length]
+  [ 62] getparam 16 ............................. <argWhat>
+  [ 64] pushint8 1 .............................. <1>
+  [ 67] pusharglist 2 ........................... <argWhat, 1>
+  [ 69] objcall 119 ............................. <argWhat[1]>
+  [ 72] setlocal 8
+  [ 74] getlocal 8
+  [ 76] getparam 16 ............................. <argWhat>
+  [ 78] pushint8 2 .............................. <2>
+  [ 81] pusharglist 2 ........................... <argWhat, 2>
+  [ 83] objcall 119 ............................. <argWhat[2]>
+  [ 86] lteq
+  [ 87] jmpifz [151] ............................ repeat with n = argWhat[1] to argWhat[2]
+  [ 90] getlocal 0 .............................. <X>
+  [ 92] getparam 8 .............................. <argStr>
+  [ 94] pushsymb 138 ............................ <#char>
+  [ 97] getlocal 8 .............................. <n>
+  [ 99] pusharglist 3 ........................... <argStr, #char, n>
+  [101] objcall 113 ............................. <argStr.char[n]>
+  [104] pusharglist 1 ........................... <argStr.char[n]>
+  [106] extcall 949 ............................. <charToNum(argStr.char[n])>
+  [109] pusharglist 2 ........................... <X, charToNum(argStr.char[n])>
+  [111] objcall 1910 ............................ <X.getUpperCase(charToNum(argStr.char[n]))>
+  [114] pusharglist 1 ........................... <X.getUpperCase(charToNum(argStr.char[n]))>
+  [116] extcall 375 ............................. <numToChar(X.getUpperCase(charToNum(argStr.char[n])))>
+  [119] pushint8 1 .............................. <1>
+  [122] pushchunkvarref 4 ....................... <me>
+  [124] pushsymb 138 ............................ <#char>
+  [127] getlocal 8 .............................. <n>
+  [129] pusharglist 3 ........................... <me, #char, n>
+  [131] objcall 416 ............................. <me.char[n]>
+  [134] swap
+  [135] pusharglistnoret 2 ...................... <me.char[n], numToChar(X.getUpperCase(charToNum(argStr.char[n])))>
+  [137] objcall 421 ............................. put numToChar(X.getUpperCase(charToNum(argStr.char[n]))) into me.char[n]
+  [140] pushint8 1
+  [143] getlocal 8
+  [145] add
+  [146] setlocal 8
+  [148] endrepeat [ 74]
+  [151] getparam 8 .............................. <argStr>
+  [153] pusharglistnoret 1 ...................... <argStr>
+  [155] extcall 69 .............................. return argStr
+  [158] ret
+end
+
+on readMultiReplaceStrings me, argPath, argLanguage
+  [  0] getparam 8 .............................. <argPath>
+  [  2] pusharglist 1 ........................... <argPath>
+  [  4] extcall 61 .............................. <voidp(argPath)>
+  [  7] jmpifz [ 15] ............................ if voidp(argPath) then
+  [ 10] getprop 1898 ............................ <m_filePath>
+  [ 13] setparam 8 .............................. argPath = m_filePath
+  [ 15] getparam 0 .............................. <me>
+  [ 17] getparam 8 .............................. <argPath>
+  [ 19] pushcons 40 ............................. <"TranslationBig.txt">
+  [ 21] joinstr ................................. <argPath & "TranslationBig.txt">
+  [ 22] getparam 16 ............................. <argLanguage>
+  [ 24] pusharglistnoret 3 ...................... <me, argPath & "TranslationBig.txt", argLanguage>
+  [ 26] objcall 1893 ............................ me.readInstanceReplaceStrings(argPath & "TranslationBig.txt", argLanguage)
+  [ 29] ret
+end
+
+on readInstanceReplaceStrings me, argFilePath, argLanguage
+  [  0] getparam 8 .............................. <argFilePath>
+  [  2] pusharglist 1 ........................... <argFilePath>
+  [  4] extcall 61 .............................. <voidp(argFilePath)>
+  [  7] jmpifz [ 18] ............................ if voidp(argFilePath) then
+  [ 10] getprop 1898 ............................ <m_filePath>
+  [ 13] pushcons 48 ............................. <"TranslationBig.txt">
+  [ 15] joinstr ................................. <m_filePath & "TranslationBig.txt">
+  [ 16] setparam 8 .............................. argFilePath = m_filePath & "TranslationBig.txt"
+  [ 18] getparam 8 .............................. <argFilePath>
+  [ 20] pusharglist 1 ........................... <argFilePath>
+  [ 22] extcall 137 ............................. <readFile(argFilePath)>
+  [ 25] setlocal 0 .............................. tmpStr = readFile(argFilePath)
+  [ 27] getlocal 0 .............................. <tmpStr>
+  [ 29] pusharglist 1 ........................... <tmpStr>
+  [ 31] extcall 13 .............................. <stringp(tmpStr)>
+  [ 33] not ..................................... <not stringp(tmpStr)>
+  [ 34] jmpifz [ 38] ............................ if not stringp(tmpStr) then
+  [ 37] ret ..................................... exit
+  [ 38] getparam 16 ............................. <argLanguage>
+  [ 40] pusharglist 1 ........................... <argLanguage>
+  [ 42] extcall 61 .............................. <voidp(argLanguage)>
+  [ 45] jmpifz [ 53] ............................ if voidp(argLanguage) then
+  [ 48] getprop 1899 ............................ <m_language>
+  [ 51] setparam 16 ............................. argLanguage = m_language
+  [ 53] getlocal 0 .............................. <tmpStr>
+  [ 55] pushsymb 395 ............................ <#line>
+  [ 58] pushint8 1 .............................. <1>
+  [ 61] pusharglist 3 ........................... <tmpStr, #line, 1>
+  [ 63] objcall 113 ............................. <tmpStr.line[1]>
+  [ 66] setlocal 8 .............................. catStr = tmpStr.line[1]
+  [ 68] getparam 16 ............................. <argLanguage>
+  [ 70] getlocal 8 .............................. <catStr>
+  [ 72] pusharglist 2 ........................... <argLanguage, catStr>
+  [ 74] extcall 384 ............................. <offset(argLanguage, catStr)>
+  [ 77] setlocal 16 ............................. tmpOff = offset(argLanguage, catStr)
+  [ 79] getlocal 16 ............................. <tmpOff>
+  [ 81] not ..................................... <not tmpOff>
+  [ 82] jmpifz [ 95] ............................ if not tmpOff then
+  [ 85] getparam 16 ............................. <argLanguage>
+  [ 87] pushcons 56 ............................. <"Not found!!">
+  [ 89] pusharglistnoret 2 ...................... <argLanguage, "Not found!!">
+  [ 91] extcall 122 ............................. pott(argLanguage, "Not found!!")
+  [ 94] ret ..................................... exit
+  [ 95] getlocal 8 .............................. <catStr>
+  [ 97] pushsymb 138 ............................ <#char>
+  [100] pushint8 1 .............................. <1>
+  [103] getlocal 16 ............................. <tmpOff>
+  [105] pusharglist 4 ........................... <catStr, #char, 1, tmpOff>
+  [107] objcall 113 ............................. <catStr.char[1..tmpOff]>
+  [110] pushint8 3 .............................. <3>
+  [113] get 1 ................................... <the number of items in catStr.char[1..tmpOff]>
+  [115] setlocal 24 ............................. langCol = the number of items in catStr.char[1..tmpOff]
+  [117] pusharglist 0 ........................... <>
+  [119] extcall 151 ............................. <VOID>
+  [122] setlocal 32 ............................. currClass = VOID
+  [124] pushzero ................................ <0>
+  [125] setlocal 40 ............................. nextLineIsPropOrder = 0
+  [127] pusharglist 0 ........................... <[:]>
+  [129] pushproplist ............................ <[:]>
+  [130] setlocal 48 ............................. propOrder = [:]
+  [132] pushint8 9 .............................. <9>
+  [135] pusharglist 1 ........................... <9>
+  [137] extcall 375 ............................. <numToChar(9)>
+  [140] setmovieprop 376 ........................ the itemDelimiter = numToChar(9)
+  [143] pushint8 2 .............................. <2>
+  [146] setlocal 56
+  [148] getlocal 56
+  [150] getlocal 0 .............................. <tmpStr>
+  [152] pushint8 4 .............................. <4>
+  [155] get 1 ................................... <the number of lines in tmpStr>
+  [157] lteq
+  [158] jmpifz [517] ............................ repeat with tmpLineNr = 2 to the number of lines in tmpStr
+  [161] pushzero ................................ <0>
+  [162] pushzero ................................ <0>
+  [163] pushzero ................................ <0>
+  [164] pushzero ................................ <0>
+  [165] pushzero ................................ <0>
+  [166] pushzero ................................ <0>
+  [167] getlocal 56 ............................. <tmpLineNr>
+  [169] pushzero ................................ <0>
+  [170] getlocal 0 .............................. <tmpStr>
+  [172] getchunk ................................ <line tmpLineNr of tmpStr>
+  [173] setlocal 64 ............................. tmpLine = line tmpLineNr of tmpStr
+  [175] getlocal 56 ............................. <tmpLineNr>
+  [177] pushint8 100 ............................ <100>
+  [180] mod ..................................... <tmpLineNr mod 100>
+  [181] pushzero ................................ <0>
+  [182] eq ...................................... <(tmpLineNr mod 100) = 0>
+  [183] jmpifz [201] ............................ if (tmpLineNr mod 100) = 0 then
+  [186] pushcons 64 ............................. <"Line ">
+  [188] getlocal 56 ............................. <tmpLineNr>
+  [190] pusharglist 1 ........................... <tmpLineNr>
+  [192] extcall 114 ............................. <string(tmpLineNr)>
+  [195] joinstr ................................. <"Line " & string(tmpLineNr)>
+  [196] pusharglistnoret 1 ...................... <"Line " & string(tmpLineNr)>
+  [198] extcall 122 ............................. pott("Line " & string(tmpLineNr))
+  [201] getlocal 64 ............................. <tmpLine>
+  [203] pushsymb 397 ............................ <#item>
+  [206] pushint8 1 .............................. <1>
+  [209] pusharglist 3 ........................... <tmpLine, #item, 1>
+  [211] objcall 113 ............................. <tmpLine.item[1]>
+  [214] getobjprop 135 .......................... <tmpLine.item[1].length>
+  [217] pushint8 2 .............................. <2>
+  [220] gt ...................................... <tmpLine.item[1].length > 2>
+  [221] jmpifz [252] ............................ if tmpLine.item[1].length > 2 then
+  [224] getlocal 64 ............................. <tmpLine>
+  [226] pushsymb 397 ............................ <#item>
+  [229] pushint8 1 .............................. <1>
+  [232] pusharglist 3 ........................... <tmpLine, #item, 1>
+  [234] objcall 113 ............................. <tmpLine.item[1]>
+  [237] pusharglist 1 ........................... <tmpLine.item[1]>
+  [239] extcall 267 ............................. <symbol(tmpLine.item[1])>
+  [242] setlocal 32 ............................. currClass = symbol(tmpLine.item[1])
+  [244] pushint8 1 .............................. <1>
+  [247] setlocal 40 ............................. nextLineIsPropOrder = 1
+  [249] jmp [506] ............................... next repeat
+  [252] getlocal 40 ............................. <nextLineIsPropOrder>
+  [254] jmpifz [310] ............................ if nextLineIsPropOrder then
+  [257] getlocal 64 ............................. <tmpLine>
+  [259] pushsymb 397 ............................ <#item>
+  [262] pushint8 2 .............................. <2>
+  [265] pusharglist 3 ........................... <tmpLine, #item, 2>
+  [267] objcall 113 ............................. <tmpLine.item[2]>
+  [270] pusharglist 1 ........................... <tmpLine.item[2]>
+  [272] extcall 116 ............................. <value(tmpLine.item[2])>
+  [275] setlocal 48 ............................. propOrder = value(tmpLine.item[2])
+  [277] getlocal 48 ............................. <propOrder>
+  [279] pusharglist 1 ........................... <propOrder>
+  [281] extcall 61 .............................. <voidp(propOrder)>
+  [284] jmpifz [295] ............................ if voidp(propOrder) then / else
+  [287] pusharglist 0 ........................... <[:]>
+  [289] pushproplist ............................ <[:]>
+  [290] setlocal 48 ............................. propOrder = [:]
+  [292] jmp [307]
+  [295] getlocal 48 ............................. <propOrder>
+  [297] pusharglist 1 ........................... <propOrder>
+  [299] extcall 1911 ............................ <flattenPropListStructure(propOrder)>
+  [302] setlocal 48 ............................. propOrder = flattenPropListStructure(propOrder)
+  [304] pushzero ................................ <0>
+  [305] setlocal 40 ............................. nextLineIsPropOrder = 0
+  [307] jmp [506] ............................... next repeat
+  [310] getlocal 64 ............................. <tmpLine>
+  [312] pushsymb 397 ............................ <#item>
+  [315] pushint8 2 .............................. <2>
+  [318] pusharglist 3 ........................... <tmpLine, #item, 2>
+  [320] objcall 113 ............................. <tmpLine.item[2]>
+  [323] getobjprop 135 .......................... <tmpLine.item[2].length>
+  [326] pushint8 2 .............................. <2>
+  [329] gt ...................................... <tmpLine.item[2].length > 2>
+  [330] jmpifz [372] ............................ if tmpLine.item[2].length > 2 then
+  [333] getlocal 64 ............................. <tmpLine>
+  [335] pushsymb 397 ............................ <#item>
+  [338] pushint8 2 .............................. <2>
+  [341] pusharglist 3 ........................... <tmpLine, #item, 2>
+  [343] objcall 113 ............................. <tmpLine.item[2]>
+  [346] pusharglist 1 ........................... <tmpLine.item[2]>
+  [348] extcall 267 ............................. <symbol(tmpLine.item[2])>
+  [351] setlocal 72 ............................. currID = symbol(tmpLine.item[2])
+  [353] getprop 82 .............................. <m_classManager>
+  [356] getlocal 72 ............................. <currID>
+  [358] getlocal 32 ............................. <currClass>
+  [360] pusharglist 3 ........................... <m_classManager, currID, currClass>
+  [362] objcall 149 ............................. <m_classManager.getObjByIDAndClass(currID, currClass)>
+  [365] setlocal 80 ............................. currObj_r = m_classManager.getObjByIDAndClass(currID, currClass)
+  [367] pushint8 1 .............................. <1>
+  [370] setlocal 88 ............................. propCnt = 1
+  [372] getlocal 80 ............................. <currObj_r>
+  [374] pusharglist 1 ........................... <currObj_r>
+  [376] extcall 8 ............................... <objectp(currObj_r)>
+  [378] getlocal 88 ............................. <propCnt>
+  [380] getlocal 48 ............................. <propOrder>
+  [382] pusharglist 1 ........................... <propOrder>
+  [384] objcall 156 ............................. <propOrder.count()>
+  [387] lteq .................................... <propCnt <= propOrder.count()>
+  [388] and ..................................... <objectp(currObj_r) and (propCnt <= propOrder.count())>
+  [389] jmpifz [506] ............................ if objectp(currObj_r) and (propCnt <= propOrder.count()) then
+  [392] getlocal 64 ............................. <tmpLine>
+  [394] pushsymb 397 ............................ <#item>
+  [397] getlocal 24 ............................. <langCol>
+  [399] pusharglist 3 ........................... <tmpLine, #item, langCol>
+  [401] objcall 113 ............................. <tmpLine.item[langCol]>
+  [404] setlocal 96 ............................. tmpThisItem = tmpLine.item[langCol]
+  [406] getlocal 96 ............................. <tmpThisItem>
+  [408] getobjprop 135 .......................... <tmpThisItem.length>
+  [411] pushzero ................................ <0>
+  [412] gt ...................................... <tmpThisItem.length > 0>
+  [413] getlocal 96 ............................. <tmpThisItem>
+  [415] pushcons 72 ............................. <" ">
+  [417] nteq .................................... <tmpThisItem <> " ">
+  [418] and ..................................... <(tmpThisItem.length > 0) and (tmpThisItem <> " ")>
+  [419] jmpifz [498] ............................ if (tmpThisItem.length > 0) and (tmpThisItem <> " ") then
+  [422] getlocal 96 ............................. <tmpThisItem>
+  [424] pushsymb 138 ............................ <#char>
+  [427] pushint8 1 .............................. <1>
+  [430] pusharglist 3 ........................... <tmpThisItem, #char, 1>
+  [432] objcall 113 ............................. <tmpThisItem.char[1]>
+  [435] pushcons 80 ............................. <QUOTE>
+  [437] eq ...................................... <tmpThisItem.char[1] = QUOTE>
+  [438] jmpifz [450] ............................ if tmpThisItem.char[1] = QUOTE then
+  [441] getlocal 96 ............................. <tmpThisItem>
+  [443] pusharglist 1 ........................... <tmpThisItem>
+  [445] extcall 1904 ............................ <removeExcelQuotes(tmpThisItem)>
+  [448] setlocal 96 ............................. tmpThisItem = removeExcelQuotes(tmpThisItem)
+  [450] getlocal 80 ............................. <currObj_r>
+  [452] getlocal 48 ............................. <propOrder>
+  [454] getlocal 88 ............................. <propCnt>
+  [456] pusharglist 2 ........................... <propOrder, propCnt>
+  [458] objcall 119 ............................. <propOrder[propCnt]>
+  [461] getlocal 96 ............................. <tmpThisItem>
+  [463] pusharglistnoret 3 ...................... <currObj_r, propOrder[propCnt], tmpThisItem>
+  [465] extcall 223 ............................. rsetProp(currObj_r, propOrder[propCnt], tmpThisItem)
+  [468] getlocal 56 ............................. <tmpLineNr>
+  [470] pushint8 5 .............................. <5>
+  [473] lteq .................................... <tmpLineNr <= 5>
+  [474] jmpifz [498] ............................ if tmpLineNr <= 5 then
+  [477] getlocal 80 ............................. <currObj_r>
+  [479] getlocal 48 ............................. <propOrder>
+  [481] getlocal 88 ............................. <propCnt>
+  [483] pusharglist 2 ........................... <propOrder, propCnt>
+  [485] objcall 119 ............................. <propOrder[propCnt]>
+  [488] pusharglist 2 ........................... <currObj_r, propOrder[propCnt]>
+  [490] extcall 162 ............................. <rgetProp(currObj_r, propOrder[propCnt])>
+  [493] pusharglistnoret 1 ...................... <rgetProp(currObj_r, propOrder[propCnt])>
+  [495] extcall 122 ............................. pott(rgetProp(currObj_r, propOrder[propCnt]))
+  [498] getlocal 88 ............................. <propCnt>
+  [500] pushint8 1 .............................. <1>
+  [503] add ..................................... <propCnt + 1>
+  [504] setlocal 88 ............................. propCnt = propCnt + 1
+  [506] pushint8 1
+  [509] getlocal 56
+  [511] add
+  [512] setlocal 56
+  [514] endrepeat [148]
+  [517] ret
+end
+
+on readContextWords me, argPath
+  [  0] pushint8 9 .............................. <9>
+  [  3] pusharglist 1 ........................... <9>
+  [  5] extcall 375 ............................. <numToChar(9)>
+  [  8] setmovieprop 376 ........................ the itemDelimiter = numToChar(9)
+  [ 11] pusharglist 0 ........................... <[:]>
+  [ 13] pushproplist ............................ <[:]>
+  [ 14] setprop 1919 ............................ m_allContexts = [:]
+  [ 17] pusharglist 0 ........................... <[:]>
+  [ 19] pushproplist ............................ <[:]>
+  [ 20] setprop 1920 ............................ m_contextWords = [:]
+  [ 23] getparam 8 .............................. <argPath>
+  [ 25] pushcons 88 ............................. <"Language.txt">
+  [ 27] joinstr ................................. <argPath & "Language.txt">
+  [ 28] pusharglist 1 ........................... <argPath & "Language.txt">
+  [ 30] extcall 137 ............................. <readFile(argPath & "Language.txt")>
+  [ 33] setlocal 0 .............................. tmpStr = readFile(argPath & "Language.txt")
+  [ 35] getlocal 0 .............................. <tmpStr>
+  [ 37] pushint8 4 .............................. <4>
+  [ 40] get 1 ................................... <the number of lines in tmpStr>
+  [ 42] setlocal 8 .............................. tmpNumLines = the number of lines in tmpStr
+  [ 44] pushint8 1 .............................. <1>
+  [ 47] setlocal 16 ............................. lastLineWasEmpty = 1
+  [ 49] pushint8 1 .............................. <1>
+  [ 52] setlocal 24
+  [ 54] getlocal 24
+  [ 56] getlocal 8 .............................. <tmpNumLines>
+  [ 58] lteq
+  [ 59] jmpifz [333] ............................ repeat with tmpLineNr = 1 to tmpNumLines
+  [ 62] getlocal 0 .............................. <tmpStr>
+  [ 64] pushsymb 395 ............................ <#line>
+  [ 67] getlocal 24 ............................. <tmpLineNr>
+  [ 69] pusharglist 3 ........................... <tmpStr, #line, tmpLineNr>
+  [ 71] objcall 113 ............................. <tmpStr.line[tmpLineNr]>
+  [ 74] setlocal 32 ............................. tmpLine = tmpStr.line[tmpLineNr]
+  [ 76] getlocal 32 ............................. <tmpLine>
+  [ 78] getobjprop 135 .......................... <tmpLine.length>
+  [ 81] pushint8 1 .............................. <1>
+  [ 84] gt ...................................... <tmpLine.length > 1>
+  [ 85] jmpifz [317] ............................ if tmpLine.length > 1 then
+  [ 88] getlocal 16 ............................. <lastLineWasEmpty>
+  [ 90] jmpifz [230] ............................ if lastLineWasEmpty then / else
+  [ 93] pushzero ................................ <0>
+  [ 94] setlocal 16 ............................. lastLineWasEmpty = 0
+  [ 96] getlocal 32 ............................. <tmpLine>
+  [ 98] pushsymb 396 ............................ <#word>
+  [101] pushint8 1 .............................. <1>
+  [104] pusharglist 3 ........................... <tmpLine, #word, 1>
+  [106] objcall 113 ............................. <tmpLine.word[1]>
+  [109] pusharglist 1 ........................... <tmpLine.word[1]>
+  [111] extcall 267 ............................. <symbol(tmpLine.word[1])>
+  [114] setlocal 40 ............................. mainCat = symbol(tmpLine.word[1])
+  [116] pusharglist 0 ........................... <[]>
+  [118] pushlist ................................ <[]>
+  [119] setlocal 48 ............................. contextSpecifiers = []
+  [121] pusharglist 0 ........................... <[:]>
+  [123] pushproplist ............................ <[:]>
+  [124] setlocal 56 ............................. contextWords = [:]
+  [126] pushsymb 1921 ........................... <#Specifiers>
+  [129] getlocal 48 ............................. <contextSpecifiers>
+  [131] pushsymb 1922 ........................... <#words>
+  [134] getlocal 56 ............................. <contextWords>
+  [136] pusharglist 4 ........................... <[#Specifiers: contextSpecifiers, #words: contextWords]>
+  [138] pushproplist ............................ <[#Specifiers: contextSpecifiers, #words: contextWords]>
+  [139] setlocal 64 ............................. thisCatLists = [#Specifiers: contextSpecifiers, #words: contextWords]
+  [141] getprop 1919 ............................ <m_allContexts>
+  [144] getlocal 40 ............................. <mainCat>
+  [146] getlocal 64 ............................. <thisCatLists>
+  [148] pusharglistnoret 3 ...................... <m_allContexts, mainCat, thisCatLists>
+  [150] objcall 309 ............................. m_allContexts.addProp(mainCat, thisCatLists)
+  [153] pushint8 3 .............................. <3>
+  [156] setlocal 72
+  [158] getlocal 72
+  [160] getlocal 32 ............................. <tmpLine>
+  [162] pushint8 3 .............................. <3>
+  [165] get 1 ................................... <the number of items in tmpLine>
+  [167] lteq
+  [168] jmpifz [227] ............................ repeat with tmpItemNr = 3 to the number of items in tmpLine
+  [171] getlocal 32 ............................. <tmpLine>
+  [173] pushsymb 397 ............................ <#item>
+  [176] getlocal 72 ............................. <tmpItemNr>
+  [178] pusharglist 3 ........................... <tmpLine, #item, tmpItemNr>
+  [180] objcall 113 ............................. <tmpLine.item[tmpItemNr]>
+  [183] pusharglist 1 ........................... <tmpLine.item[tmpItemNr]>
+  [185] extcall 116 ............................. <value(tmpLine.item[tmpItemNr])>
+  [188] setlocal 80 ............................. tmp = value(tmpLine.item[tmpItemNr])
+  [190] getlocal 80 ............................. <tmp>
+  [192] pusharglist 1 ........................... <tmp>
+  [194] extcall 115 ............................. <listp(tmp)>
+  [197] jmpifz [216] ............................ if listp(tmp) then
+  [200] getlocal 80 ............................. <tmp>
+  [202] pusharglistnoret 1 ...................... <tmp>
+  [204] objcall 609 ............................. tmp.sort()
+  [207] getlocal 48 ............................. <contextSpecifiers>
+  [209] getlocal 80 ............................. <tmp>
+  [211] pusharglistnoret 2 ...................... <contextSpecifiers, tmp>
+  [213] objcall 229 ............................. contextSpecifiers.add(tmp)
+  [216] pushint8 1
+  [219] getlocal 72
+  [221] add
+  [222] setlocal 72
+  [224] endrepeat [158]
+  [227] jmp [314]
+  [230] getlocal 32 ............................. <tmpLine>
+  [232] pushsymb 397 ............................ <#item>
+  [235] pushint8 1 .............................. <1>
+  [238] pusharglist 3 ........................... <tmpLine, #item, 1>
+  [240] objcall 113 ............................. <tmpLine.item[1]>
+  [243] setlocal 88 ............................. wordID = tmpLine.item[1]
+  [245] pusharglist 0 ........................... <[]>
+  [247] pushlist ................................ <[]>
+  [248] setlocal 96 ............................. tmpInfo = []
+  [250] getlocal 56 ............................. <contextWords>
+  [252] getlocal 88 ............................. <wordID>
+  [254] pusharglist 1 ........................... <wordID>
+  [256] extcall 267 ............................. <symbol(wordID)>
+  [259] getlocal 96 ............................. <tmpInfo>
+  [261] pusharglistnoret 3 ...................... <contextWords, symbol(wordID), tmpInfo>
+  [263] objcall 309 ............................. contextWords.addProp(symbol(wordID), tmpInfo)
+  [266] pushint8 3 .............................. <3>
+  [269] setlocal 72
+  [271] getlocal 72
+  [273] getlocal 32 ............................. <tmpLine>
+  [275] pushint8 3 .............................. <3>
+  [278] get 1 ................................... <the number of items in tmpLine>
+  [280] lteq
+  [281] jmpifz [314] ............................ repeat with tmpItemNr = 3 to the number of items in tmpLine
+  [284] getlocal 96 ............................. <tmpInfo>
+  [286] getlocal 32 ............................. <tmpLine>
+  [288] pushsymb 397 ............................ <#item>
+  [291] getlocal 72 ............................. <tmpItemNr>
+  [293] pusharglist 3 ........................... <tmpLine, #item, tmpItemNr>
+  [295] objcall 113 ............................. <tmpLine.item[tmpItemNr]>
+  [298] pusharglistnoret 2 ...................... <tmpInfo, tmpLine.item[tmpItemNr]>
+  [300] objcall 229 ............................. tmpInfo.add(tmpLine.item[tmpItemNr])
+  [303] pushint8 1
+  [306] getlocal 72
+  [308] add
+  [309] setlocal 72
+  [311] endrepeat [271]
+  [314] jmp [322] ............................... next repeat
+  [317] pushint8 1 .............................. <1>
+  [320] setlocal 16 ............................. lastLineWasEmpty = 1
+  [322] pushint8 1
+  [325] getlocal 24
+  [327] add
+  [328] setlocal 24
+  [330] endrepeat [ 54]
+  [333] getparam 0 .............................. <me>
+  [335] pushsymb 1923 ........................... <#S1>
+  [338] pushsymb 1065 ........................... <#Gender>
+  [341] pushsymb 1924 ........................... <#Male>
+  [344] pushsymb 1925 ........................... <#Genitive>
+  [347] pushint8 1 .............................. <1>
+  [350] pusharglist 4 ........................... <[#Gender: #Male, #Genitive: 1]>
+  [352] pushproplist ............................ <[#Gender: #Male, #Genitive: 1]>
+  [353] pusharglistnoret 3 ...................... <me, #S1, [#Gender: #Male, #Genitive: 1]>
+  [355] objcall 1895 ............................ me.getContextWord(#S1, [#Gender: #Male, #Genitive: 1])
+  [358] ret
+end
+
+on getContextWord me, argID, argSpecifiers, argType, argOptions
+  [  0] getparam 24 ............................. <argType>
+  [  2] pusharglist 1 ........................... <argType>
+  [  4] extcall 61 .............................. <voidp(argType)>
+  [  7] jmpifz [ 15] ............................ if voidp(argType) then
+  [ 10] pushsymb 1934 ........................... <#Pron>
+  [ 13] setparam 24 ............................. argType = #Pron
+  [ 15] getparam 16 ............................. <argSpecifiers>
+  [ 17] pusharglist 1 ........................... <argSpecifiers>
+  [ 19] extcall 115 ............................. <listp(argSpecifiers)>
+  [ 22] not ..................................... <not listp(argSpecifiers)>
+  [ 23] jmpifz [ 33] ............................ if not listp(argSpecifiers) then
+  [ 26] pushcons 96 ............................. <"ERR_SPECIFIERS">
+  [ 28] pusharglistnoret 1 ...................... <"ERR_SPECIFIERS">
+  [ 30] extcall 69 .............................. return "ERR_SPECIFIERS"
+  [ 33] getparam 16 ............................. <argSpecifiers>
+  [ 35] pusharglistnoret 1 ...................... <argSpecifiers>
+  [ 37] objcall 609 ............................. argSpecifiers.sort()
+  [ 40] pushzero ................................ <0>
+  [ 41] setlocal 0 .............................. tmpPos = 0
+  [ 43] getprop 1919 ............................ <m_allContexts>
+  [ 46] getparam 24 ............................. <argType>
+  [ 48] pusharglist 2 ........................... <m_allContexts, argType>
+  [ 50] objcall 119 ............................. <m_allContexts[argType]>
+  [ 53] setlocal 8 .............................. Context = m_allContexts[argType]
+  [ 55] getlocal 8 .............................. <Context>
+  [ 57] pusharglist 1 ........................... <Context>
+  [ 59] extcall 61 .............................. <voidp(Context)>
+  [ 62] jmpifz [ 72] ............................ if voidp(Context) then
+  [ 65] pushcons 104 ............................ <"ERR_TYPE">
+  [ 67] pusharglistnoret 1 ...................... <"ERR_TYPE">
+  [ 69] extcall 69 .............................. return "ERR_TYPE"
+  [ 72] getlocal 8 .............................. <Context>
+  [ 74] pushsymb 1921 ........................... <#Specifiers>
+  [ 77] pusharglist 2 ........................... <Context, #Specifiers>
+  [ 79] objcall 119 ............................. <Context[#Specifiers]>
+  [ 82] setlocal 16 ............................. contextSpecifiers = Context[#Specifiers]
+  [ 84] pushint8 1 .............................. <1>
+  [ 87] setlocal 24
+  [ 89] getlocal 24
+  [ 91] getlocal 16 ............................. <contextSpecifiers>
+  [ 93] pusharglist 1 ........................... <contextSpecifiers>
+  [ 95] objcall 156 ............................. <contextSpecifiers.count()>
+  [ 98] lteq
+  [ 99] jmpifz [231] ............................ repeat with n = 1 to contextSpecifiers.count()
+  [102] getlocal 16 ............................. <contextSpecifiers>
+  [104] getlocal 24 ............................. <n>
+  [106] pusharglist 2 ........................... <contextSpecifiers, n>
+  [108] objcall 119 ............................. <contextSpecifiers[n]>
+  [111] setlocal 32 ............................. tmpSpec = contextSpecifiers[n]
+  [113] getlocal 32 ............................. <tmpSpec>
+  [115] pusharglist 1 ........................... <tmpSpec>
+  [117] objcall 156 ............................. <tmpSpec.count()>
+  [120] getparam 16 ............................. <argSpecifiers>
+  [122] pusharglist 1 ........................... <argSpecifiers>
+  [124] objcall 156 ............................. <argSpecifiers.count()>
+  [127] eq ...................................... <tmpSpec.count() = argSpecifiers.count()>
+  [128] jmpifz [220] ............................ if tmpSpec.count() = argSpecifiers.count() then
+  [131] getlocal 24 ............................. <n>
+  [133] setlocal 0 .............................. tmpPos = n
+  [135] pushint8 1 .............................. <1>
+  [138] setlocal 40
+  [140] getlocal 40
+  [142] getlocal 32 ............................. <tmpSpec>
+  [144] pusharglist 1 ........................... <tmpSpec>
+  [146] objcall 156 ............................. <tmpSpec.count()>
+  [149] lteq
+  [150] jmpifz [212] ............................ repeat with m = 1 to tmpSpec.count()
+  [153] getlocal 32 ............................. <tmpSpec>
+  [155] getlocal 40 ............................. <m>
+  [157] pusharglist 2 ........................... <tmpSpec, m>
+  [159] objcall 295 ............................. <tmpSpec.getPropAt(m)>
+  [162] getparam 16 ............................. <argSpecifiers>
+  [164] getlocal 40 ............................. <m>
+  [166] pusharglist 2 ........................... <argSpecifiers, m>
+  [168] objcall 295 ............................. <argSpecifiers.getPropAt(m)>
+  [171] nteq .................................... <tmpSpec.getPropAt(m) <> argSpecifiers.getPropAt(m)>
+  [172] getlocal 32 ............................. <tmpSpec>
+  [174] getlocal 40 ............................. <m>
+  [176] pusharglist 2 ........................... <tmpSpec, m>
+  [178] objcall 119 ............................. <tmpSpec[m]>
+  [181] getparam 16 ............................. <argSpecifiers>
+  [183] getlocal 40 ............................. <m>
+  [185] pusharglist 2 ........................... <argSpecifiers, m>
+  [187] objcall 119 ............................. <argSpecifiers[m]>
+  [190] nteq .................................... <tmpSpec[m] <> argSpecifiers[m]>
+  [191] or ...................................... <(tmpSpec.getPropAt(m) <> argSpecifiers.getPropAt(m)) or (tmpSpec[m] <> argSpecifiers[m])>
+  [192] jmpifz [201] ............................ if (tmpSpec.getPropAt(m) <> argSpecifiers.getPropAt(m)) or (tmpSpec[m] <> argSpecifiers[m]) then
+  [195] pushzero ................................ <0>
+  [196] setlocal 0 .............................. tmpPos = 0
+  [198] jmp [212] ............................... exit repeat
+  [201] pushint8 1
+  [204] getlocal 40
+  [206] add
+  [207] setlocal 40
+  [209] endrepeat [140]
+  [212] getlocal 0 .............................. <tmpPos>
+  [214] jmpifz [220] ............................ if tmpPos then
+  [217] jmp [231] ............................... exit repeat
+  [220] pushint8 1
+  [223] getlocal 24
+  [225] add
+  [226] setlocal 24
+  [228] endrepeat [ 89]
+  [231] getlocal 0 .............................. <tmpPos>
+  [233] not ..................................... <not tmpPos>
+  [234] jmpifz [244] ............................ if not tmpPos then
+  [237] pushcons 112 ............................ <"ERR_CONTEXT">
+  [239] pusharglistnoret 1 ...................... <"ERR_CONTEXT">
+  [241] extcall 69 .............................. return "ERR_CONTEXT"
+  [244] getlocal 8 .............................. <Context>
+  [246] pushsymb 1922 ........................... <#words>
+  [249] pusharglist 2 ........................... <Context, #words>
+  [251] objcall 119 ............................. <Context[#words]>
+  [254] setlocal 48 ............................. words = Context[#words]
+  [256] getlocal 48 ............................. <words>
+  [258] getparam 8 .............................. <argID>
+  [260] pusharglist 2 ........................... <words, argID>
+  [262] objcall 183 ............................. <words.getaProp(argID)>
+  [265] setlocal 56 ............................. tmp = words.getaProp(argID)
+  [267] getlocal 56 ............................. <tmp>
+  [269] pusharglist 1 ........................... <tmp>
+  [271] extcall 115 ............................. <listp(tmp)>
+  [274] not ..................................... <not listp(tmp)>
+  [275] jmpifz [285] ............................ if not listp(tmp) then
+  [278] pushcons 120 ............................ <"ERR_WORD">
+  [280] pusharglistnoret 1 ...................... <"ERR_WORD">
+  [282] extcall 69 .............................. return "ERR_WORD"
+  [285] getlocal 56 ............................. <tmp>
+  [287] getlocal 0 .............................. <tmpPos>
+  [289] pusharglist 2 ........................... <tmp, tmpPos>
+  [291] objcall 119 ............................. <tmp[tmpPos]>
+  [294] setlocal 64 ............................. str = tmp[tmpPos]
+  [296] getparam 32 ............................. <argOptions>
+  [298] pusharglist 1 ........................... <argOptions>
+  [300] extcall 115 ............................. <listp(argOptions)>
+  [303] jmpifz [338] ............................ if listp(argOptions) then
+  [306] getparam 32 ............................. <argOptions>
+  [308] pushsymb 1811 ........................... <#FirstUppercase>
+  [311] pusharglist 2 ........................... <argOptions, #FirstUppercase>
+  [313] objcall 119 ............................. <argOptions[#FirstUppercase]>
+  [316] pushzero ................................ <0>
+  [317] gt ...................................... <argOptions[#FirstUppercase] > 0>
+  [318] jmpifz [338] ............................ if argOptions[#FirstUppercase] > 0 then
+  [321] getparam 0 .............................. <me>
+  [323] getlocal 64 ............................. <str>
+  [325] pushsymb 1814 ........................... <#first>
+  [328] pusharglist 3 ........................... <me, str, #first>
+  [330] objcall 1815 ............................ <me.makeUppercase(str, #first)>
+  [333] pusharglistnoret 1 ...................... <me.makeUppercase(str, #first)>
+  [335] extcall 69 .............................. return me.makeUppercase(str, #first)
+  [338] getlocal 64 ............................. <str>
+  [340] pusharglistnoret 1 ...................... <str>
+  [342] extcall 69 .............................. return str
+  [345] ret
+end
+
+on test me
+  [  0] getglobal 23 ............................ <gRock>
+  [  2] getobjprop 79 ........................... <gRock.m_context>
+  [  5] pushsymb 636 ............................ <#RealMusician>
+  [  8] pusharglist 2 ........................... <gRock.m_context, #RealMusician>
+  [ 10] objcall 146 ............................. <gRock.m_context.getFocus(#RealMusician)>
+  [ 13] setlocal 0 .............................. mus = gRock.m_context.getFocus(#RealMusician)
+  [ 15] getlocal 0 .............................. <mus>
+  [ 17] pusharglist 1 ........................... <mus>
+  [ 19] extcall 8 ............................... <objectp(mus)>
+  [ 21] not ..................................... <not objectp(mus)>
+  [ 22] jmpifz [ 58] ............................ if not objectp(mus) then
+  [ 25] getglobal 23 ............................ <gRock>
+  [ 27] getobjprop 82 ........................... <gRock.m_classManager>
+  [ 30] pushsymb 1937 ........................... <#RMCJerka>
+  [ 33] pushsymb 636 ............................ <#RealMusician>
+  [ 36] pusharglist 3 ........................... <gRock.m_classManager, #RMCJerka, #RealMusician>
+  [ 38] objcall 149 ............................. <gRock.m_classManager.getObjByIDAndClass(#RMCJerka, #RealMusician)>
+  [ 41] setlocal 0 .............................. mus = gRock.m_classManager.getObjByIDAndClass(#RMCJerka, #RealMusician)
+  [ 43] getglobal 23 ............................ <gRock>
+  [ 45] getobjprop 79 ........................... <gRock.m_context>
+  [ 48] pushsymb 636 ............................ <#RealMusician>
+  [ 51] getlocal 0 .............................. <mus>
+  [ 53] pusharglistnoret 3 ...................... <gRock.m_context, #RealMusician, mus>
+  [ 55] objcall 163 ............................. gRock.m_context.setFocus(#RealMusician, mus)
+  [ 58] pushcons 128 ............................ <"<\u00DBCHuman.name> {Pron;S3;[#Genitive:1]}">
+  [ 60] setlocal 8 .............................. argStr = "<\u00DBCHuman.name> {Pron;S3;[#Genitive:1]}"
+  [ 62] getparam 0 .............................. <me>
+  [ 64] getlocal 8 .............................. <argStr>
+  [ 66] pusharglistnoret 2 ...................... <me, argStr>
+  [ 68] objcall 1812 ............................ me.dereference(argStr)
+  [ 71] ret
+end
+
+on dereference me, argStr
+  [  0] pushint8 1 .............................. <1>
+  [  3] jmpifz [141] ............................ repeat while 1
+  [  6] pushcons 136 ............................ <"<">
+  [  8] getparam 8 .............................. <argStr>
+  [ 10] pusharglist 2 ........................... <"<", argStr>
+  [ 12] extcall 384 ............................. <offset("<", argStr)>
+  [ 15] setlocal 0 .............................. tmpStart = offset("<", argStr)
+  [ 17] getlocal 0 .............................. <tmpStart>
+  [ 19] not ..................................... <not tmpStart>
+  [ 20] jmpifz [ 26] ............................ if not tmpStart then
+  [ 23] jmp [141] ............................... exit repeat
+  [ 26] pushcons 144 ............................ <">">
+  [ 28] getparam 8 .............................. <argStr>
+  [ 30] pusharglist 2 ........................... <">", argStr>
+  [ 32] extcall 384 ............................. <offset(">", argStr)>
+  [ 35] setlocal 8 .............................. tmpEnd = offset(">", argStr)
+  [ 37] getlocal 8 .............................. <tmpEnd>
+  [ 39] not ..................................... <not tmpEnd>
+  [ 40] jmpifz [ 46] ............................ if not tmpEnd then
+  [ 43] jmp [141] ............................... exit repeat
+  [ 46] getparam 8 .............................. <argStr>
+  [ 48] pushsymb 138 ............................ <#char>
+  [ 51] getlocal 0 .............................. <tmpStart>
+  [ 53] pushint8 1 .............................. <1>
+  [ 56] add ..................................... <tmpStart + 1>
+  [ 57] getlocal 8 .............................. <tmpEnd>
+  [ 59] pushint8 1 .............................. <1>
+  [ 62] sub ..................................... <tmpEnd - 1>
+  [ 63] pusharglist 4 ........................... <argStr, #char, tmpStart + 1, tmpEnd - 1>
+  [ 65] objcall 113 ............................. <argStr.char[tmpStart + 1..tmpEnd - 1]>
+  [ 68] setlocal 16 ............................. expressionStr = argStr.char[tmpStart + 1..tmpEnd - 1]
+  [ 70] getlocal 16 ............................. <expressionStr>
+  [ 72] pusharglist 1 ........................... <expressionStr>
+  [ 74] extcall 1938 ............................ <rParseAndCalc(expressionStr)>
+  [ 77] setlocal 24 ............................. tmp = rParseAndCalc(expressionStr)
+  [ 79] getlocal 24 ............................. <tmp>
+  [ 81] pusharglist 1 ........................... <tmp>
+  [ 83] extcall 96 .............................. <symbolp(tmp)>
+  [ 86] jmpifz [104] ............................ if symbolp(tmp) then / else
+  [ 89] pushcons 152 ............................ <"#">
+  [ 91] getlocal 24 ............................. <tmp>
+  [ 93] pusharglist 1 ........................... <tmp>
+  [ 95] extcall 114 ............................. <string(tmp)>
+  [ 98] joinstr ................................. <"#" & string(tmp)>
+  [ 99] setlocal 24 ............................. tmp = "#" & string(tmp)
+  [101] jmp [113]
+  [104] getlocal 24 ............................. <tmp>
+  [106] pusharglist 1 ........................... <tmp>
+  [108] extcall 114 ............................. <string(tmp)>
+  [111] setlocal 24 ............................. tmp = string(tmp)
+  [113] getlocal 24 ............................. <tmp>
+  [115] pushint8 1 .............................. <1>
+  [118] pushchunkvarref 4 ....................... <me>
+  [120] pushsymb 138 ............................ <#char>
+  [123] getlocal 0 .............................. <tmpStart>
+  [125] getlocal 8 .............................. <tmpEnd>
+  [127] pusharglist 4 ........................... <me, #char, tmpStart, tmpEnd>
+  [129] objcall 416 ............................. <me.char[tmpStart..tmpEnd]>
+  [132] swap
+  [133] pusharglistnoret 2 ...................... <me.char[tmpStart..tmpEnd], tmp>
+  [135] objcall 421 ............................. put tmp into me.char[tmpStart..tmpEnd]
+  [138] endrepeat [  0]
+  [141] pushcons 160 ............................ <";">
+  [143] setmovieprop 376 ........................ the itemDelimiter = ";"
+  [146] pushint8 1 .............................. <1>
+  [149] jmpifz [669] ............................ repeat while 1
+  [152] pushcons 168 ............................ <"{">
+  [154] getparam 8 .............................. <argStr>
+  [156] pusharglist 2 ........................... <"{", argStr>
+  [158] extcall 384 ............................. <offset("{", argStr)>
+  [161] setlocal 0 .............................. tmpStart = offset("{", argStr)
+  [163] getlocal 0 .............................. <tmpStart>
+  [165] not ..................................... <not tmpStart>
+  [166] jmpifz [172] ............................ if not tmpStart then
+  [169] jmp [669] ............................... exit repeat
+  [172] pushcons 176 ............................ <"}">
+  [174] getparam 8 .............................. <argStr>
+  [176] pusharglist 2 ........................... <"}", argStr>
+  [178] extcall 384 ............................. <offset("}", argStr)>
+  [181] setlocal 8 .............................. tmpEnd = offset("}", argStr)
+  [183] getlocal 8 .............................. <tmpEnd>
+  [185] not ..................................... <not tmpEnd>
+  [186] jmpifz [192] ............................ if not tmpEnd then
+  [189] jmp [669] ............................... exit repeat
+  [192] getparam 8 .............................. <argStr>
+  [194] pushsymb 138 ............................ <#char>
+  [197] getlocal 0 .............................. <tmpStart>
+  [199] pushint8 1 .............................. <1>
+  [202] add ..................................... <tmpStart + 1>
+  [203] getlocal 8 .............................. <tmpEnd>
+  [205] pushint8 1 .............................. <1>
+  [208] sub ..................................... <tmpEnd - 1>
+  [209] pusharglist 4 ........................... <argStr, #char, tmpStart + 1, tmpEnd - 1>
+  [211] objcall 113 ............................. <argStr.char[tmpStart + 1..tmpEnd - 1]>
+  [214] setlocal 32 ............................. tmpExpr = argStr.char[tmpStart + 1..tmpEnd - 1]
+  [216] getlocal 32 ............................. <tmpExpr>
+  [218] pushsymb 397 ............................ <#item>
+  [221] pushint8 1 .............................. <1>
+  [224] pusharglist 3 ........................... <tmpExpr, #item, 1>
+  [226] objcall 113 ............................. <tmpExpr.item[1]>
+  [229] setlocal 40 ............................. tmpCommand = tmpExpr.item[1]
+  [231] getlocal 40 ............................. <tmpCommand>
+  [233] pushcons 184 ............................ <"Pron">
+  [235] eq ...................................... <tmpCommand = "Pron">
+  [236] jmpifz [455] ............................ if tmpCommand = "Pron" then
+  [239] getlocal 32 ............................. <tmpExpr>
+  [241] pushint8 3 .............................. <3>
+  [244] get 1 ................................... <the number of items in tmpExpr>
+  [246] pushint8 2 .............................. <2>
+  [249] eq ...................................... <the number of items in tmpExpr = 2>
+  [250] jmpifz [267] ............................ if the number of items in tmpExpr = 2 then
+  [253] pushcons 192 ............................ <"[:]">
+  [255] setlocal 48 ............................. tmpContextItem = "[:]"
+  [257] getlocal 32 ............................. <tmpExpr>
+  [259] pushcons 200 ............................ <";">
+  [261] joinstr ................................. <tmpExpr & ";">
+  [262] getlocal 48 ............................. <tmpContextItem>
+  [264] joinstr ................................. <tmpExpr & ";" & tmpContextItem>
+  [265] setlocal 32 ............................. tmpExpr = tmpExpr & ";" & tmpContextItem
+  [267] getlocal 32 ............................. <tmpExpr>
+  [269] pushsymb 397 ............................ <#item>
+  [272] pushint8 3 .............................. <3>
+  [275] pusharglist 3 ........................... <tmpExpr, #item, 3>
+  [277] objcall 113 ............................. <tmpExpr.item[3]>
+  [280] setlocal 48 ............................. tmpContextItem = tmpExpr.item[3]
+  [282] getlocal 48 ............................. <tmpContextItem>
+  [284] pusharglist 1 ........................... <tmpContextItem>
+  [286] extcall 116 ............................. <value(tmpContextItem)>
+  [289] setlocal 56 ............................. tmpContext = value(tmpContextItem)
+  [291] getlocal 56 ............................. <tmpContext>
+  [293] pusharglist 1 ........................... <tmpContext>
+  [295] extcall 115 ............................. <listp(tmpContext)>
+  [298] not ..................................... <not listp(tmpContext)>
+  [299] jmpifz [322] ............................ if not listp(tmpContext) then
+  [302] pushcons 208 ............................ <"Language error! ">
+  [304] getparam 8 .............................. <argStr>
+  [306] pusharglist 1 ........................... <argStr>
+  [308] extcall 114 ............................. <string(argStr)>
+  [311] joinstr ................................. <"Language error! " & string(argStr)>
+  [312] pusharglistnoret 1 ...................... <"Language error! " & string(argStr)>
+  [314] extcall 118 ............................. alert("Language error! " & string(argStr))
+  [317] pusharglist 0 ........................... <[:]>
+  [319] pushproplist ............................ <[:]>
+  [320] setlocal 56 ............................. tmpContext = [:]
+  [322] getglobal 23 ............................ <gRock>
+  [324] getobjprop 79 ........................... <gRock.m_context>
+  [327] pushsymb 1064 ........................... <#Human>
+  [330] pusharglist 2 ........................... <gRock.m_context, #Human>
+  [332] objcall 146 ............................. <gRock.m_context.getFocus(#Human)>
+  [335] setlocal 64 ............................. human_r = gRock.m_context.getFocus(#Human)
+  [337] getlocal 64 ............................. <human_r>
+  [339] pusharglist 1 ........................... <human_r>
+  [341] extcall 8 ............................... <objectp(human_r)>
+  [343] not ..................................... <not objectp(human_r)>
+  [344] jmpifz [361] ............................ if not objectp(human_r) then
+  [347] pushcons 216 ............................ <"Lang: No human">
+  [349] pusharglistnoret 1 ...................... <"Lang: No human">
+  [351] extcall 122 ............................. pott("Lang: No human")
+  [354] getparam 8 .............................. <argStr>
+  [356] pusharglistnoret 1 ...................... <argStr>
+  [358] extcall 69 .............................. return argStr
+  [361] getlocal 56 ............................. <tmpContext>
+  [363] pushsymb 1065 ........................... <#Gender>
+  [366] getlocal 64 ............................. <human_r>
+  [368] getobjprop 1065 ......................... <human_r.Gender>
+  [371] pusharglistnoret 3 ...................... <tmpContext, #Gender, human_r.Gender>
+  [373] objcall 309 ............................. tmpContext.addProp(#Gender, human_r.Gender)
+  [376] getlocal 56 ............................. <tmpContext>
+  [378] pusharglist 1 ........................... <tmpContext>
+  [380] extcall 114 ............................. <string(tmpContext)>
+  [383] setlocal 48 ............................. tmpContextItem = string(tmpContext)
+  [385] getlocal 48 ............................. <tmpContextItem>
+  [387] pushint8 4 .............................. <4>
+  [390] pushchunkvarref 5 ....................... <tmpStart>
+  [392] pushsymb 397 ............................ <#item>
+  [395] pushint8 3 .............................. <3>
+  [398] pusharglist 3 ........................... <tmpStart, #item, 3>
+  [400] objcall 416 ............................. <tmpStart.item[3]>
+  [403] swap
+  [404] pusharglistnoret 2 ...................... <tmpStart.item[3], tmpContextItem>
+  [406] objcall 421 ............................. put tmpContextItem into tmpStart.item[3]
+  [409] getlocal 40 ............................. <tmpCommand>
+  [411] pushsymb 138 ............................ <#char>
+  [414] pushint8 1 .............................. <1>
+  [417] pusharglist 3 ........................... <tmpCommand, #char, 1>
+  [419] objcall 113 ............................. <tmpCommand.char[1]>
+  [422] pusharglist 1 ........................... <tmpCommand.char[1]>
+  [424] extcall 949 ............................. <charToNum(tmpCommand.char[1])>
+  [427] pushint8 97 ............................. <97>
+  [430] lt ...................................... <charToNum(tmpCommand.char[1]) < 97>
+  [431] jmpifz [441] ............................ if charToNum(tmpCommand.char[1]) < 97 then / else
+  [434] pushcons 224 ............................ <"X">
+  [436] setlocal 40 ............................. tmpCommand = "X"
+  [438] jmp [445]
+  [441] pushcons 232 ............................ <"x">
+  [443] setlocal 40 ............................. tmpCommand = "x"
+  [445] getlocal 40 ............................. <tmpCommand>
+  [447] pushcons 240 ............................ <";">
+  [449] joinstr ................................. <tmpCommand & ";">
+  [450] getlocal 32 ............................. <tmpExpr>
+  [452] joinstr ................................. <tmpCommand & ";" & tmpExpr>
+  [453] setlocal 32 ............................. tmpExpr = tmpCommand & ";" & tmpExpr
+  [455] getlocal 40 ............................. <tmpCommand>
+  [457] pushcons 248 ............................ <"x">
+  [459] eq ...................................... <tmpCommand = "x">
+  [460] jmpifz [652] ............................ if tmpCommand = "x" then
+  [463] getlocal 32 ............................. <tmpExpr>
+  [465] pushsymb 397 ............................ <#item>
+  [468] pushint8 2 .............................. <2>
+  [471] pusharglist 3 ........................... <tmpExpr, #item, 2>
+  [473] objcall 113 ............................. <tmpExpr.item[2]>
+  [476] pusharglist 1 ........................... <tmpExpr.item[2]>
+  [478] extcall 267 ............................. <symbol(tmpExpr.item[2])>
+  [481] setlocal 72 ............................. tmpWordClass = symbol(tmpExpr.item[2])
+  [483] getlocal 32 ............................. <tmpExpr>
+  [485] pushsymb 397 ............................ <#item>
+  [488] pushint8 3 .............................. <3>
+  [491] pusharglist 3 ........................... <tmpExpr, #item, 3>
+  [493] objcall 113 ............................. <tmpExpr.item[3]>
+  [496] setlocal 80 ............................. tmpWordID = tmpExpr.item[3]
+  [498] getlocal 80 ............................. <tmpWordID>
+  [500] pushsymb 138 ............................ <#char>
+  [503] pushint8 1 .............................. <1>
+  [506] pusharglist 3 ........................... <tmpWordID, #char, 1>
+  [508] objcall 113 ............................. <tmpWordID.char[1]>
+  [511] pushcons 256 ............................ <"#">
+  [514] eq ...................................... <tmpWordID.char[1] = "#">
+  [515] jmpifz [539] ............................ if tmpWordID.char[1] = "#" then
+  [518] pushint8 10 ............................. <10>
+  [521] pushchunkvarref 5 ....................... <tmpEnd>
+  [523] pushsymb 138 ............................ <#char>
+  [526] pushint8 1 .............................. <1>
+  [529] pusharglist 3 ........................... <tmpEnd, #char, 1>
+  [531] objcall 416 ............................. <tmpEnd.char[1]>
+  [534] pusharglistnoret 1 ...................... <tmpEnd.char[1]>
+  [536] objcall 417 ............................. delete tmpEnd.char[1]
+  [539] getlocal 32 ............................. <tmpExpr>
+  [541] pushsymb 397 ............................ <#item>
+  [544] pushint8 4 .............................. <4>
+  [547] pusharglist 3 ........................... <tmpExpr, #item, 4>
+  [549] objcall 113 ............................. <tmpExpr.item[4]>
+  [552] setlocal 56 ............................. tmpContext = tmpExpr.item[4]
+  [554] getglobal 23 ............................ <gRock>
+  [556] getobjprop 83 ........................... <gRock.m_languageManager>
+  [559] getlocal 80 ............................. <tmpWordID>
+  [561] pusharglist 1 ........................... <tmpWordID>
+  [563] extcall 267 ............................. <symbol(tmpWordID)>
+  [566] getlocal 56 ............................. <tmpContext>
+  [568] pusharglist 1 ........................... <tmpContext>
+  [570] extcall 116 ............................. <value(tmpContext)>
+  [573] getlocal 72 ............................. <tmpWordClass>
+  [575] pusharglist 4 ........................... <gRock.m_languageManager, symbol(tmpWordID), value(tmpContext), tmpWordClass>
+  [577] objcall 1895 ............................ <gRock.m_languageManager.getContextWord(symbol(tmpWordID), value(tmpContext), tmpWordClass)>
+  [580] setlocal 88 ............................. tmpWord = gRock.m_languageManager.getContextWord(symbol(tmpWordID), value(tmpContext), tmpWordClass)
+  [582] getlocal 32 ............................. <tmpExpr>
+  [584] pushsymb 138 ............................ <#char>
+  [587] pushint8 1 .............................. <1>
+  [590] pusharglist 3 ........................... <tmpExpr, #char, 1>
+  [592] objcall 113 ............................. <tmpExpr.char[1]>
+  [595] pusharglist 1 ........................... <tmpExpr.char[1]>
+  [597] extcall 949 ............................. <charToNum(tmpExpr.char[1])>
+  [600] pushint8 97 ............................. <97>
+  [603] lt ...................................... <charToNum(tmpExpr.char[1]) < 97>
+  [604] jmpifz [624] ............................ if charToNum(tmpExpr.char[1]) < 97 then
+  [607] getglobal 23 ............................ <gRock>
+  [609] getobjprop 83 ........................... <gRock.m_languageManager>
+  [612] getlocal 88 ............................. <tmpWord>
+  [614] pushsymb 1814 ........................... <#first>
+  [617] pusharglist 3 ........................... <gRock.m_languageManager, tmpWord, #first>
+  [619] objcall 1815 ............................ <gRock.m_languageManager.makeUppercase(tmpWord, #first)>
+  [622] setlocal 88 ............................. tmpWord = gRock.m_languageManager.makeUppercase(tmpWord, #first)
+  [624] getlocal 88 ............................. <tmpWord>
+  [626] pushint8 1 .............................. <1>
+  [629] pushchunkvarref 4 ....................... <me>
+  [631] pushsymb 138 ............................ <#char>
+  [634] getlocal 0 .............................. <tmpStart>
+  [636] getlocal 8 .............................. <tmpEnd>
+  [638] pusharglist 4 ........................... <me, #char, tmpStart, tmpEnd>
+  [640] objcall 416 ............................. <me.char[tmpStart..tmpEnd]>
+  [643] swap
+  [644] pusharglistnoret 2 ...................... <me.char[tmpStart..tmpEnd], tmpWord>
+  [646] objcall 421 ............................. put tmpWord into me.char[tmpStart..tmpEnd]
+  [649] jmp [666] ............................... next repeat
+  [652] pushcons 264 ............................ <"No command between {}: ">
+  [655] getparam 8 .............................. <argStr>
+  [657] joinstr ................................. <"No command between {}: " & argStr>
+  [658] pusharglistnoret 1 ...................... <"No command between {}: " & argStr>
+  [660] extcall 118 ............................. alert("No command between {}: " & argStr)
+  [663] jmp [669] ............................... exit repeat
+  [666] endrepeat [146]
+  [669] getparam 8 .............................. <argStr>
+  [671] pusharglist 1 ........................... <argStr>
+  [673] extcall 1939 ............................ <replaceEscapeChars(argStr)>
+  [676] pusharglistnoret 1 ...................... <replaceEscapeChars(argStr)>
+  [678] extcall 69 .............................. return replaceEscapeChars(argStr)
+  [681] ret
+end
+
+on zzdereference me, argStr
+  [  0] pushint8 1 .............................. <1>
+  [  3] jmpifz [708] ............................ repeat while 1
+  [  6] pushcons 272 ............................ <"<">
+  [  9] getparam 8 .............................. <argStr>
+  [ 11] pusharglist 2 ........................... <"<", argStr>
+  [ 13] extcall 384 ............................. <offset("<", argStr)>
+  [ 16] setlocal 0 .............................. tmpExprStart = offset("<", argStr)
+  [ 18] getlocal 0 .............................. <tmpExprStart>
+  [ 20] not ..................................... <not tmpExprStart>
+  [ 21] jmpifz [ 27] ............................ if not tmpExprStart then
+  [ 24] jmp [708] ............................... exit repeat
+  [ 27] pushzero ................................ <0>
+  [ 28] setlocal 8 .............................. tmpExprEnd = 0
+  [ 30] getlocal 0 .............................. <tmpExprStart>
+  [ 32] pushint8 1 .............................. <1>
+  [ 35] add ..................................... <tmpExprStart + 1>
+  [ 36] setlocal 16
+  [ 38] getlocal 16
+  [ 40] getparam 8 .............................. <argStr>
+  [ 42] getobjprop 135 .......................... <argStr.length>
+  [ 45] lteq
+  [ 46] jmpifz [ 90] ............................ repeat with n = tmpExprStart + 1 to argStr.length
+  [ 49] getparam 8 .............................. <argStr>
+  [ 51] pushsymb 138 ............................ <#char>
+  [ 54] getlocal 16 ............................. <n>
+  [ 56] pusharglist 3 ........................... <argStr, #char, n>
+  [ 58] objcall 113 ............................. <argStr.char[n]>
+  [ 61] pushcons 280 ............................ <">">
+  [ 64] eq ...................................... <argStr.char[n] = ">">
+  [ 65] jmpifz [ 79] ............................ if argStr.char[n] = ">" then
+  [ 68] getlocal 16 ............................. <n>
+  [ 70] pushint8 1 .............................. <1>
+  [ 73] sub ..................................... <n - 1>
+  [ 74] setlocal 8 .............................. tmpExprEnd = n - 1
+  [ 76] jmp [ 90] ............................... exit repeat
+  [ 79] pushint8 1
+  [ 82] getlocal 16
+  [ 84] add
+  [ 85] setlocal 16
+  [ 87] endrepeat [ 38]
+  [ 90] getlocal 8 .............................. <tmpExprEnd>
+  [ 92] pushzero ................................ <0>
+  [ 93] eq ...................................... <tmpExprEnd = 0>
+  [ 94] jmpifz [106] ............................ if tmpExprEnd = 0 then
+  [ 97] pushcons 288 ............................ <"No end of expression >">
+  [100] pusharglistnoret 1 ...................... <"No end of expression >">
+  [102] extcall 122 ............................. pott("No end of expression >")
+  [105] ret ..................................... exit
+  [106] getlocal 8 .............................. <tmpExprEnd>
+  [108] jmpifz [705] ............................ if tmpExprEnd then
+  [111] getparam 8 .............................. <argStr>
+  [113] pushsymb 138 ............................ <#char>
+  [116] getlocal 0 .............................. <tmpExprStart>
+  [118] pushint8 1 .............................. <1>
+  [121] add ..................................... <tmpExprStart + 1>
+  [122] getlocal 8 .............................. <tmpExprEnd>
+  [124] pusharglist 4 ........................... <argStr, #char, tmpExprStart + 1, tmpExprEnd>
+  [126] objcall 113 ............................. <argStr.char[tmpExprStart + 1..tmpExprEnd]>
+  [129] setlocal 24 ............................. tmpExpr = argStr.char[tmpExprStart + 1..tmpExprEnd]
+  [131] pushint8 1 .............................. <1>
+  [134] jmpifz [415] ............................ repeat while 1
+  [137] pushcons 296 ............................ <"\u00DB">
+  [140] getlocal 24 ............................. <tmpExpr>
+  [142] pusharglist 2 ........................... <"\u00DB", tmpExpr>
+  [144] extcall 384 ............................. <offset("\u00DB", tmpExpr)>
+  [147] setlocal 32 ............................. tmpSpecialStart = offset("\u00DB", tmpExpr)
+  [149] getlocal 32 ............................. <tmpSpecialStart>
+  [151] not ..................................... <not tmpSpecialStart>
+  [152] jmpifz [158] ............................ if not tmpSpecialStart then
+  [155] jmp [415] ............................... exit repeat
+  [158] getlocal 24 ............................. <tmpExpr>
+  [160] getobjprop 135 .......................... <tmpExpr.length>
+  [163] setlocal 40 ............................. tmpLen = tmpExpr.length
+  [165] getlocal 32 ............................. <tmpSpecialStart>
+  [167] setlocal 16
+  [169] getlocal 16
+  [171] getlocal 40 ............................. <tmpLen>
+  [173] lteq
+  [174] jmpifz [412] ............................ repeat with n = tmpSpecialStart to tmpLen
+  [177] getlocal 24 ............................. <tmpExpr>
+  [179] pushsymb 138 ............................ <#char>
+  [182] getlocal 16 ............................. <n>
+  [184] pusharglist 3 ........................... <tmpExpr, #char, n>
+  [186] objcall 113 ............................. <tmpExpr.char[n]>
+  [189] pushcons 304 ............................ <",">
+  [192] eq ...................................... <tmpExpr.char[n] = ",">
+  [193] getlocal 24 ............................. <tmpExpr>
+  [195] pushsymb 138 ............................ <#char>
+  [198] getlocal 16 ............................. <n>
+  [200] pusharglist 3 ........................... <tmpExpr, #char, n>
+  [202] objcall 113 ............................. <tmpExpr.char[n]>
+  [205] pushcons 312 ............................ <";">
+  [208] eq ...................................... <tmpExpr.char[n] = ";">
+  [209] or ...................................... <(tmpExpr.char[n] = ",") or (tmpExpr.char[n] = ";")>
+  [210] getlocal 16 ............................. <n>
+  [212] getlocal 40 ............................. <tmpLen>
+  [214] eq ...................................... <n = tmpLen>
+  [215] or ...................................... <(tmpExpr.char[n] = ",") or (tmpExpr.char[n] = ";") or (n = tmpLen)>
+  [216] jmpifz [401] ............................ if (tmpExpr.char[n] = ",") or (tmpExpr.char[n] = ";") or (n = tmpLen) then
+  [219] getlocal 16 ............................. <n>
+  [221] getlocal 40 ............................. <tmpLen>
+  [223] eq ...................................... <n = tmpLen>
+  [224] jmpifz [246] ............................ if n = tmpLen then / else
+  [227] getlocal 24 ............................. <tmpExpr>
+  [229] pushsymb 138 ............................ <#char>
+  [232] getlocal 32 ............................. <tmpSpecialStart>
+  [234] getlocal 16 ............................. <n>
+  [236] pusharglist 4 ........................... <tmpExpr, #char, tmpSpecialStart, n>
+  [238] objcall 113 ............................. <tmpExpr.char[tmpSpecialStart..n]>
+  [241] setlocal 48 ............................. tmpSpecialStr = tmpExpr.char[tmpSpecialStart..n]
+  [243] jmp [266]
+  [246] getlocal 24 ............................. <tmpExpr>
+  [248] pushsymb 138 ............................ <#char>
+  [251] getlocal 32 ............................. <tmpSpecialStart>
+  [253] getlocal 16 ............................. <n>
+  [255] pushint8 1 .............................. <1>
+  [258] sub ..................................... <n - 1>
+  [259] pusharglist 4 ........................... <tmpExpr, #char, tmpSpecialStart, n - 1>
+  [261] objcall 113 ............................. <tmpExpr.char[tmpSpecialStart..n - 1]>
+  [264] setlocal 48 ............................. tmpSpecialStr = tmpExpr.char[tmpSpecialStart..n - 1]
+  [266] getglobal 23 ............................ <gRock>
+  [268] getobjprop 75 ........................... <gRock.m_executor>
+  [271] getlocal 48 ............................. <tmpSpecialStr>
+  [273] pusharglist 2 ........................... <gRock.m_executor, tmpSpecialStr>
+  [275] objcall 1938 ............................ <gRock.m_executor.rParseAndCalc(tmpSpecialStr)>
+  [278] setlocal 56 ............................. tmpReplacement = gRock.m_executor.rParseAndCalc(tmpSpecialStr)
+  [280] getlocal 56 ............................. <tmpReplacement>
+  [282] pusharglist 1 ........................... <tmpReplacement>
+  [284] extcall 96 .............................. <symbolp(tmpReplacement)>
+  [287] jmpifz [306] ............................ if symbolp(tmpReplacement) then / else
+  [290] pushcons 320 ............................ <"#">
+  [293] getlocal 56 ............................. <tmpReplacement>
+  [295] pusharglist 1 ........................... <tmpReplacement>
+  [297] extcall 114 ............................. <string(tmpReplacement)>
+  [300] joinstr ................................. <"#" & string(tmpReplacement)>
+  [301] setlocal 64 ............................. tmpReplacementStr = "#" & string(tmpReplacement)
+  [303] jmp [326]
+  [306] getlocal 56 ............................. <tmpReplacement>
+  [308] pusharglist 1 ........................... <tmpReplacement>
+  [310] extcall 61 .............................. <voidp(tmpReplacement)>
+  [313] not ..................................... <not voidp(tmpReplacement)>
+  [314] jmpifz [326] ............................ if not voidp(tmpReplacement) then
+  [317] getlocal 56 ............................. <tmpReplacement>
+  [319] pusharglist 1 ........................... <tmpReplacement>
+  [321] extcall 114 ............................. <string(tmpReplacement)>
+  [324] setlocal 64 ............................. tmpReplacementStr = string(tmpReplacement)
+  [326] getlocal 56 ............................. <tmpReplacement>
+  [328] pusharglist 1 ........................... <tmpReplacement>
+  [330] extcall 61 .............................. <voidp(tmpReplacement)>
+  [333] jmpifz [369] ............................ if voidp(tmpReplacement) then / else
+  [336] pushcons 328 ............................ <"ERRX">
+  [339] pushint8 3 .............................. <3>
+  [342] pushchunkvarref 5 ....................... <tmpExprStart>
+  [344] pushsymb 138 ............................ <#char>
+  [347] getlocal 32 ............................. <tmpSpecialStart>
+  [349] getlocal 16 ............................. <n>
+  [351] pushint8 1 .............................. <1>
+  [354] sub ..................................... <n - 1>
+  [355] pusharglist 4 ........................... <tmpExprStart, #char, tmpSpecialStart, n - 1>
+  [357] objcall 416 ............................. <tmpExprStart.char[tmpSpecialStart..n - 1]>
+  [360] swap
+  [361] pusharglistnoret 2 ...................... <tmpExprStart.char[tmpSpecialStart..n - 1], "ERRX">
+  [363] objcall 421 ............................. put "ERRX" into tmpExprStart.char[tmpSpecialStart..n - 1]
+  [366] jmp [398]
+  [369] getlocal 64 ............................. <tmpReplacementStr>
+  [371] pushint8 3 .............................. <3>
+  [374] pushchunkvarref 5 ....................... <tmpExprStart>
+  [376] pushsymb 138 ............................ <#char>
+  [379] getlocal 32 ............................. <tmpSpecialStart>
+  [381] getlocal 16 ............................. <n>
+  [383] pushint8 1 .............................. <1>
+  [386] sub ..................................... <n - 1>
+  [387] pusharglist 4 ........................... <tmpExprStart, #char, tmpSpecialStart, n - 1>
+  [389] objcall 416 ............................. <tmpExprStart.char[tmpSpecialStart..n - 1]>
+  [392] swap
+  [393] pusharglistnoret 2 ...................... <tmpExprStart.char[tmpSpecialStart..n - 1], tmpReplacementStr>
+  [395] objcall 421 ............................. put tmpReplacementStr into tmpExprStart.char[tmpSpecialStart..n - 1]
+  [398] jmp [412] ............................... exit repeat
+  [401] pushint8 1
+  [404] getlocal 16
+  [406] add
+  [407] setlocal 16
+  [409] endrepeat [169]
+  [412] endrepeat [131]
+  [415] getlocal 24 ............................. <tmpExpr>
+  [417] pushsymb 138 ............................ <#char>
+  [420] pushint8 1 .............................. <1>
+  [423] pusharglist 3 ........................... <tmpExpr, #char, 1>
+  [425] objcall 113 ............................. <tmpExpr.char[1]>
+  [428] pushcons 336 ............................ <"x">
+  [431] eq ...................................... <tmpExpr.char[1] = "x">
+  [432] jmpifz [634] ............................ if tmpExpr.char[1] = "x" then
+  [435] pushcons 344 ............................ <";">
+  [438] setmovieprop 376 ........................ the itemDelimiter = ";"
+  [441] getlocal 24 ............................. <tmpExpr>
+  [443] pushsymb 397 ............................ <#item>
+  [446] pushint8 2 .............................. <2>
+  [449] pusharglist 3 ........................... <tmpExpr, #item, 2>
+  [451] objcall 113 ............................. <tmpExpr.item[2]>
+  [454] pusharglist 1 ........................... <tmpExpr.item[2]>
+  [456] extcall 267 ............................. <symbol(tmpExpr.item[2])>
+  [459] setlocal 72 ............................. tmpWordClass = symbol(tmpExpr.item[2])
+  [461] getlocal 24 ............................. <tmpExpr>
+  [463] pushsymb 397 ............................ <#item>
+  [466] pushint8 3 .............................. <3>
+  [469] pusharglist 3 ........................... <tmpExpr, #item, 3>
+  [471] objcall 113 ............................. <tmpExpr.item[3]>
+  [474] setlocal 80 ............................. tmpWordID = tmpExpr.item[3]
+  [476] getlocal 80 ............................. <tmpWordID>
+  [478] pushsymb 138 ............................ <#char>
+  [481] pushint8 1 .............................. <1>
+  [484] pusharglist 3 ........................... <tmpWordID, #char, 1>
+  [486] objcall 113 ............................. <tmpWordID.char[1]>
+  [489] pushcons 352 ............................ <"#">
+  [492] eq ...................................... <tmpWordID.char[1] = "#">
+  [493] jmpifz [517] ............................ if tmpWordID.char[1] = "#" then
+  [496] pushint8 10 ............................. <10>
+  [499] pushchunkvarref 5 ....................... <tmpExprEnd>
+  [501] pushsymb 138 ............................ <#char>
+  [504] pushint8 1 .............................. <1>
+  [507] pusharglist 3 ........................... <tmpExprEnd, #char, 1>
+  [509] objcall 416 ............................. <tmpExprEnd.char[1]>
+  [512] pusharglistnoret 1 ...................... <tmpExprEnd.char[1]>
+  [514] objcall 417 ............................. delete tmpExprEnd.char[1]
+  [517] getlocal 24 ............................. <tmpExpr>
+  [519] pushsymb 397 ............................ <#item>
+  [522] pushint8 4 .............................. <4>
+  [525] pusharglist 3 ........................... <tmpExpr, #item, 4>
+  [527] objcall 113 ............................. <tmpExpr.item[4]>
+  [530] setlocal 88 ............................. tmpContext = tmpExpr.item[4]
+  [532] getglobal 23 ............................ <gRock>
+  [534] getobjprop 83 ........................... <gRock.m_languageManager>
+  [537] getlocal 80 ............................. <tmpWordID>
+  [539] pusharglist 1 ........................... <tmpWordID>
+  [541] extcall 267 ............................. <symbol(tmpWordID)>
+  [544] getlocal 88 ............................. <tmpContext>
+  [546] pusharglist 1 ........................... <tmpContext>
+  [548] extcall 116 ............................. <value(tmpContext)>
+  [551] getlocal 72 ............................. <tmpWordClass>
+  [553] pusharglist 4 ........................... <gRock.m_languageManager, symbol(tmpWordID), value(tmpContext), tmpWordClass>
+  [555] objcall 1895 ............................ <gRock.m_languageManager.getContextWord(symbol(tmpWordID), value(tmpContext), tmpWordClass)>
+  [558] setlocal 96 ............................. tmpWord = gRock.m_languageManager.getContextWord(symbol(tmpWordID), value(tmpContext), tmpWordClass)
+  [560] getlocal 24 ............................. <tmpExpr>
+  [562] pushsymb 138 ............................ <#char>
+  [565] pushint8 1 .............................. <1>
+  [568] pusharglist 3 ........................... <tmpExpr, #char, 1>
+  [570] objcall 113 ............................. <tmpExpr.char[1]>
+  [573] pusharglist 1 ........................... <tmpExpr.char[1]>
+  [575] extcall 949 ............................. <charToNum(tmpExpr.char[1])>
+  [578] pushint8 97 ............................. <97>
+  [581] lt ...................................... <charToNum(tmpExpr.char[1]) < 97>
+  [582] jmpifz [602] ............................ if charToNum(tmpExpr.char[1]) < 97 then
+  [585] getglobal 23 ............................ <gRock>
+  [587] getobjprop 83 ........................... <gRock.m_languageManager>
+  [590] getlocal 96 ............................. <tmpWord>
+  [592] pushsymb 1814 ........................... <#first>
+  [595] pusharglist 3 ........................... <gRock.m_languageManager, tmpWord, #first>
+  [597] objcall 1815 ............................ <gRock.m_languageManager.makeUppercase(tmpWord, #first)>
+  [600] setlocal 96 ............................. tmpWord = gRock.m_languageManager.makeUppercase(tmpWord, #first)
+  [602] getlocal 96 ............................. <tmpWord>
+  [604] pushint8 1 .............................. <1>
+  [607] pushchunkvarref 4 ....................... <me>
+  [609] pushsymb 138 ............................ <#char>
+  [612] getlocal 0 .............................. <tmpExprStart>
+  [614] getlocal 8 .............................. <tmpExprEnd>
+  [616] pushint8 1 .............................. <1>
+  [619] add ..................................... <tmpExprEnd + 1>
+  [620] pusharglist 4 ........................... <me, #char, tmpExprStart, tmpExprEnd + 1>
+  [622] objcall 416 ............................. <me.char[tmpExprStart..tmpExprEnd + 1]>
+  [625] swap
+  [626] pusharglistnoret 2 ...................... <me.char[tmpExprStart..tmpExprEnd + 1], tmpWord>
+  [628] objcall 421 ............................. put tmpWord into me.char[tmpExprStart..tmpExprEnd + 1]
+  [631] jmp [705] ............................... next repeat
+  [634] getlocal 64 ............................. <tmpReplacementStr>
+  [636] pusharglist 1 ........................... <tmpReplacementStr>
+  [638] extcall 13 .............................. <stringp(tmpReplacementStr)>
+  [640] jmpifz [675] ............................ if stringp(tmpReplacementStr) then
+  [643] getlocal 64 ............................. <tmpReplacementStr>
+  [645] pushint8 1 .............................. <1>
+  [648] pushchunkvarref 4 ....................... <me>
+  [650] pushsymb 138 ............................ <#char>
+  [653] getlocal 0 .............................. <tmpExprStart>
+  [655] getlocal 8 .............................. <tmpExprEnd>
+  [657] pushint8 1 .............................. <1>
+  [660] add ..................................... <tmpExprEnd + 1>
+  [661] pusharglist 4 ........................... <me, #char, tmpExprStart, tmpExprEnd + 1>
+  [663] objcall 416 ............................. <me.char[tmpExprStart..tmpExprEnd + 1]>
+  [666] swap
+  [667] pusharglistnoret 2 ...................... <me.char[tmpExprStart..tmpExprEnd + 1], tmpReplacementStr>
+  [669] objcall 421 ............................. put tmpReplacementStr into me.char[tmpExprStart..tmpExprEnd + 1]
+  [672] jmp [705] ............................... next repeat
+  [675] pushcons 360 ............................ <EMPTY>
+  [678] pushint8 1 .............................. <1>
+  [681] pushchunkvarref 4 ....................... <me>
+  [683] pushsymb 138 ............................ <#char>
+  [686] getlocal 0 .............................. <tmpExprStart>
+  [688] getlocal 8 .............................. <tmpExprEnd>
+  [690] pushint8 1 .............................. <1>
+  [693] add ..................................... <tmpExprEnd + 1>
+  [694] pusharglist 4 ........................... <me, #char, tmpExprStart, tmpExprEnd + 1>
+  [696] objcall 416 ............................. <me.char[tmpExprStart..tmpExprEnd + 1]>
+  [699] swap
+  [700] pusharglistnoret 2 ...................... <me.char[tmpExprStart..tmpExprEnd + 1], EMPTY>
+  [702] objcall 421 ............................. put EMPTY into me.char[tmpExprStart..tmpExprEnd + 1]
+  [705] endrepeat [  0]
+  [708] getparam 8 .............................. <argStr>
+  [710] pusharglistnoret 1 ...................... <argStr>
+  [712] extcall 69 .............................. return argStr
+  [715] ret
+end

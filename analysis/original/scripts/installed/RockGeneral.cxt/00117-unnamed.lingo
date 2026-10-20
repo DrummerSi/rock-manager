@@ -1,0 +1,143 @@
+on readRockDataFile argFile
+  tmpExtension = fileGetExtension(argFile)
+  stripped = fileStripName(argFile)
+  path = fileExtractPath(argFile)
+  useVList = 0
+  if 1 and (tmpExtension.length > 1) then
+    if tmpExtension = "dat" then
+      useVList = 1
+    end if
+  else
+    tmp = [path & stripped & ".dat", path & stripped & ".txt"]
+    Nr = getLatestModifiedFileNr(tmp)
+    if Nr = 1 then
+      useVList = 1
+    end if
+  end if
+  if useVList = 1 then
+    vList = xtra("vList").new(path & stripped & ".dat")
+    lst = vList.read()
+    if listp(lst) then
+      return lst
+    end if
+  end if
+  str = readFile(path & stripped & ".txt")
+  if not stringp(str) then
+    pott("Err read", stripped & ".txt")
+    return VOID
+  end if
+  lst = rotatedTabDataStringToPropList(str)
+  return lst
+end
+
+on getLatestDataFiles argPath, argConvTextFiles
+  Files = getFilesInFolder(argPath)
+  Files = wildCardSearch("Data*", Files)
+  textFiles = wildCardSearch("*.txt", Files)
+  vListFiles = wildCardSearch("*.dat", Files)
+  vListFiles.sort()
+  vListFilesStr = EMPTY
+  repeat with tmpFile in vListFiles
+    vListFilesStr = vListFilesStr & fileStripName(tmpFile) & RETURN
+  end repeat
+  vListFilesToWrite = []
+  newestFiles = []
+  repeat with n = 1 to textFiles.count
+    tmpFile = textFiles[n]
+    stripped = fileStripName(tmpFile)
+    tmpOff = offset(stripped & RETURN, vListFilesStr)
+    if tmpOff then
+      delete Files.char[tmpOff..tmpOff + stripped.length]
+      tmp = [argPath & stripped & ".dat", argPath & stripped & ".txt"]
+      Nr = getLatestModifiedFileNr(tmp)
+      if Nr = 2 then
+        vListFilesToWrite.add(stripped)
+        newestFiles.add(argPath & stripped & ".txt")
+      else
+        newestFiles.add(argPath & stripped & ".dat")
+      end if
+      next repeat
+    end if
+    vListFilesToWrite.add(stripped)
+    newestFiles.add(argPath & stripped & ".txt")
+  end repeat
+  numLines = the number of lines in vListFilesStr
+  repeat with n = 1 to numLines
+    tmpLine = vListFilesStr.line[n]
+    if tmpLine.length <= 1 then
+      next repeat
+    end if
+    newestFiles.add(argPath & tmpLine & ".dat")
+  end repeat
+  if argConvTextFiles = #convert then
+    pott("Converting", vListFilesToWrite)
+    repeat with tmpFile in vListFilesToWrite
+      convDataFileToVListFile(argPath & tmpFile & ".txt")
+    end repeat
+  end if
+  return newestFiles
+end
+
+on getLatestDataFilesInFolders argPossiblePaths, argConvertedPath
+  if voidp(argPossiblePaths) then
+    argPossiblePaths = ["\\resurs\Monsterland\_Projects\Rockmanager\Data\", "D:\Dok\Rock\CopyToHD\Data\"]
+  end if
+  sortedByName = [:]
+  fxObj = xtra("FileXtra3").new()
+  repeat with pathNr = 1 to argPossiblePaths.count
+    path = argPossiblePaths[pathNr]
+    Files = getFilesInFolder(path)
+    Files = wildCardSearch("Data*", Files)
+    repeat with fileNr = 1 to Files.count
+      file = Files[fileNr]
+      stripped = fileStripName(file)
+      dateStr = translateFXDate(fxObj.fx_FileGetModDate(path & file), #string)
+      tmp = sortedByName.getaProp(stripped)
+      if voidp(tmp) then
+        tmp = [:]
+        tmp.sort()
+        sortedByName.addProp(stripped, tmp)
+      end if
+      tmp.addProp(dateStr, path & file)
+    end repeat
+  end repeat
+  convertThese = []
+  newestFiles = []
+  repeat with strippedFileNr = 1 to sortedByName.count
+    lst = sortedByName[strippedFileNr]
+    newest = lst[lst.count]
+    if offset(".txt", newest) then
+      convertThese.add(sortedByName.getPropAt(strippedFileNr))
+    end if
+    newestFiles.add(newest)
+  end repeat
+  if stringp(argConvertedPath) then
+    pott("Converting", convertThese)
+    repeat with tmpFile in convertThese
+      convDataFileToVListFile(argConvertedPath & tmpFile & ".txt")
+    end repeat
+  end if
+  return newestFiles
+end
+
+on convDataFileToVListFile argFile, argNewFile
+  str = readFile(argFile)
+  if not stringp(str) then
+    return 0
+  end if
+  if voidp(argNewFile) then
+    argNewFile = fileExtractPath(argFile) & fileStripName(argFile) & ".dat"
+  else
+    if fileStripName(argNewFile).length = 0 then
+      argNewFile = argNewFile & fileStripName(argFile) & ".dat"
+    end if
+  end if
+  lst = rotatedTabDataStringToPropList(str)
+  vList = xtra("vList").new(argNewFile)
+  tmp = vList.write(lst)
+  if tmp = 0 then
+    return 1
+  end if
+  pott("vList Err", tmp)
+  return 0
+end

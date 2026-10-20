@@ -1,0 +1,50 @@
+property ancestor, m_nameSP, m_band_r, m_memb
+global gDir, gRock
+
+on new me, argOptions
+  argOptions.setaProp(#ReportTo, me)
+  argOptions.setaProp(#child, me)
+  ancestor = script("DlgRockAncestorScript").new(argOptions)
+  m_nameSP = sprite(ancestor.getSPOverDlg())
+  m_memb = member("TestEnterField")
+  m_nameSP.member = m_memb
+  m_band_r = gRock.m_context.getFocus(#Band)
+  m_memb.text = m_band_r.name
+  ancestor.m_objDlg.recalc()
+  itemObj = ancestor.m_objDlg.getItem(#Item1)
+  r = itemObj.getOnStageRect()
+  m_nameSP.loc = point(r[1], r[2]) + point(7, 8)
+  ancestor.render()
+  return me
+end
+
+on kill me
+  m_nameSP.member = member("Dummy")
+  ancestor.kill()
+  return 0
+end
+
+on GetSPNeed me
+  return 2
+end
+
+on Report me, argObj, argWhat
+end
+
+on mouse me, argObj, argWhat, argOption
+  if objectp(argOption) then
+    if argWhat = #click then
+      ID = argOption.getOneProp(#ID)
+      IDStr = string(ID)
+      if ID = #ButtonOK then
+        rex("missionVar.changedBandName = 1")
+        m_band_r.name = m_memb.text
+        lst = gDir.m_objDialogsMaster.getDialogsUnder(me)
+        lst[lst.count].refresh()
+        me.kill()
+      else
+        ancestor.mouse(argObj, argWhat, argOption)
+      end if
+    end if
+  end if
+end

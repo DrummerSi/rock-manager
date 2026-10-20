@@ -1,0 +1,196 @@
+property firstFrame, mouseObj, SP, reportObj, ID, loc, displaying, Active, extraReports, states, SPUse, currentState, Toggle, rollObj, toggleState
+
+on new me, argReportObj, argMainMembOrRect, argLoc, argSP, argOptions
+  SP = argSP
+  reportObj = argReportObj
+  if listp(argOptions) then
+    ID = getaProp(argOptions, #ID)
+    tmpLayer = getaProp(argOptions, #layer)
+    states = getaProp(argOptions, #states)
+    SPUse = getaProp(argOptions, #SPUse)
+    Toggle = getaProp(argOptions, #Toggle)
+    tmpUseRollHelp = getaProp(argOptions, #useRollHelp)
+    extraReports = getaProp(argOptions, #Extra)
+  end if
+  if voidp(tmpLayer) then
+    tmpLayer = 499
+  end if
+  if voidp(SP) or (SP = 0) then
+    SPUse = 0
+  end if
+  if states = #down then
+    states = [#down: 1]
+  else
+    if states = #normal then
+      states = [:]
+    else
+      if states = #All then
+        states = [#down: 1, #enter: 2, #dim: 3]
+      end if
+    end if
+  end if
+  if voidp(states) then
+    states = [#down: 1, #enter: 2]
+  end if
+  if voidp(getaProp(states, #normal)) then
+    setaProp(states, #normal, 0)
+  end if
+  if voidp(SPUse) then
+    SPUse = 1
+  end if
+  if voidp(Toggle) then
+    Toggle = 0
+  end if
+  if voidp(extraReports) then
+    extraReports = []
+  end if
+  loc = argLoc
+  if objectp(tmpUseRollHelp) then
+    rollObj = new(script("RollOverScript"), tmpUseRollHelp, -1, ID, loc, [#UseOwnMouseObj: 0])
+  end if
+  tmpIlk = ilk(argMainMembOrRect)
+  if tmpIlk = #integer then
+    firstFrame = argMainMembOrRect
+  else
+    if tmpIlk = #rect then
+      tmpRect = argMainMembOrRect
+      firstFrame = 0
+    else
+      firstFrame = getMemberNum(argMainMembOrRect)
+    end if
+  end if
+  if SPUse then
+    set the loc of sprite SP to loc
+  end if
+  displaying = 1
+  Active = 1
+  currentState = #normal
+  if firstFrame then
+    tmpRect = getMemberRect(member(firstFrame))
+    tmpRect = rect(loc, loc) + tmpRect
+    me.setState(currentState)
+  end if
+  mouseObj = new(script("MouseObject"), me, tmpRect, [#layer: tmpLayer, #noPassRoll: 1, #PassButton: 0])
+  return me
+end
+
+on kill me
+  if SPUse then
+    set the member of sprite SP to member("Dummy")
+  end if
+  mouseObj = kill(mouseObj)
+  if objectp(rollObj) then
+    rollObj = kill(rollObj)
+  end if
+  reportObj = 0
+  return 0
+end
+
+on setMember me, argMainMemb
+  firstFrame = getMemberNum(argMainMemb)
+  tmpRect = getMemberRect(member(firstFrame))
+  tmpRect = rect(loc, loc) + tmpRect
+  mouseObj.myRect = tmpRect
+  if SPUse then
+    set the member of sprite SP to member(firstFrame)
+  end if
+end
+
+on setLoc me, argLoc
+  tmpDiff = argLoc - loc
+  loc = argLoc
+  tmpRect = mouseObj.myRect
+  tmpRect = tmpRect + rect(tmpDiff, tmpDiff)
+  mouseObj.myRect = tmpRect
+  if SPUse then
+    set the loc of sprite SP to loc
+  end if
+end
+
+on display me, argIsTRUE
+  displaying = argIsTRUE
+  activate(me, argIsTRUE)
+  if argIsTRUE then
+    tmp = getaProp(states, #normal)
+    set the member of sprite SP to member(firstFrame + tmp)
+    set the loc of sprite SP to loc
+  else
+    set the member of sprite SP to member("Dummy")
+  end if
+end
+
+on dim me
+  activate(me, 0)
+  tmp = getaProp(states, #dim)
+  if not voidp(tmp) then
+    set the member of sprite SP to member(firstFrame + tmp)
+    set the loc of sprite SP to loc
+  end if
+end
+
+on activate me, argIsTRUE
+  Active = argIsTRUE
+  activate(mouseObj, argIsTRUE)
+  if objectp(rollObj) then
+    activate(rollObj, argIsTRUE)
+  end if
+end
+
+on mouse me, argObj, argWhat
+  if argWhat = #enter then
+    if objectp(rollObj) then
+      rollObj.mouse(argObj, argWhat)
+    end if
+    me.setState(argWhat)
+  else
+    if argWhat = #Leave then
+      if objectp(rollObj) then
+        rollObj.mouse(argObj, argWhat)
+      end if
+      if not Toggle then
+        me.setState(#normal)
+      end if
+    else
+      if argWhat = #down then
+        if Toggle then
+          if currentState = #down then
+            me.setState(#normal)
+          else
+            me.setState(argWhat)
+          end if
+        else
+          me.setState(argWhat)
+        end if
+      else
+        if argWhat = #click then
+          if not Toggle then
+            me.setState(argWhat)
+          end if
+        end if
+      end if
+    end if
+  end if
+  reportObj.mouse(me, argWhat)
+end
+
+on setState me, argState, argForce
+  tmpFrame = firstFrame
+  if not SPUse then
+    tmpFrame = tmpFrame - 1
+    if not argForce then
+      exit
+    end if
+  end if
+  tmp = getaProp(states, argState)
+  if integerp(tmp) then
+    if tmp = -99 then
+      set the member of sprite SP to member("Dummy")
+    else
+      set the member of sprite SP to member(tmpFrame + tmp)
+    end if
+    currentState = argState
+  end if
+  if argForce then
+    set the loc of sprite SP to loc
+  end if
+end

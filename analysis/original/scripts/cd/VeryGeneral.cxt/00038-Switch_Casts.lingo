@@ -1,0 +1,256 @@
+on xxxSwitchCasts argNewCastOrder
+  if not listp(argNewCastOrder) then
+    argNewCastOrder = []
+  end if
+  if argNewCastOrder.count() = 0 then
+    argNewCastOrder = ["Internal"]
+  end if
+  if argNewCastOrder[1] <> "Internal" then
+    argNewCastOrder.addAt(1, "Internal")
+  end if
+  knownPaths = []
+  currentNames = []
+  repeat with n = 1 to the number of castLibs
+    knownPaths.add([castLib(n).name, castLib(n).fileName])
+    currentNames.add(castLib(n).name)
+  end repeat
+  tmpNotInNewOrder = []
+  tmpNewOrder = argNewCastOrder.duplicate()
+  tmpOK = 1
+  repeat with n = knownPaths.count() down to 1
+    tmpOldName = knownPaths[n][1]
+    if tmpNewOrder.getPos(tmpOldName) then
+      tmpNewOrder.deleteOne(tmpOldName)
+      next repeat
+    end if
+    tmpNotInNewOrder.addAt(1, tmpOldName)
+  end repeat
+  if tmpNotInNewOrder.count() then
+    put "Not in new order: ", tmpNotInNewOrder
+    tmpOK = 0
+  end if
+  if tmpNewOrder.count() then
+    put "Not found casts:", tmpNewOrder
+    tmpOK = 0
+  end if
+  if not tmpOK then
+    put "Error, exiting! No changes made."
+    exit
+  end if
+  put "Reading the score..."
+  scoreList = xxxCreateListFromScore()
+  repeat with n = 2 to argNewCastOrder.count()
+    tmpNewName = argNewCastOrder[n]
+    tmpPos = currentNames.getPos(tmpNewName)
+    tmpPath = knownPaths[tmpPos][2]
+    put string(n) & " was " & currentNames[n] & " is now " & tmpNewName
+    castLib(n).name = tmpNewName
+    castLib(n).fileName = tmpPath
+  end repeat
+  put "Generating the score..."
+  xxxCreateScoreFromList(scoreList)
+end
+
+on xxxCreateListFromScore
+  scoreList = [:]
+  beginRecording()
+  frameList = [:]
+  latestTempo = 0
+  repeat with frameNr = 1 to the lastFrame
+    go(frameNr)
+    spriteList = [:]
+    if the frameTempo <> latestTempo then
+      spriteList.addProp(#frameTempo, the frameTempo)
+      latestTempo = the frameTempo
+    end if
+    if the frameScript then
+      tmpScript = member(the frameScript)
+      spriteList.addProp(#frameScript, [#Nr: tmpScript.memberNum, #castNr: tmpScript.castLibNum])
+    end if
+    repeat with spriteNum = 1 to 400
+      SP = sprite(spriteNum)
+      memb = SP.member
+      if memb.number > 0 then
+        tmpCastNr = memb.castLibNum
+        if tmpCastNr > 0 then
+          Info = [#Nr: memb.memberNum, #castNr: tmpCastNr, #ink: SP.ink, #loc: SP.loc, #tweened: SP.tweened]
+          if SP.rotation <> 0 then
+            Info.addProp(#rotation, SP.rotation)
+          end if
+          if SP.skew <> 0 then
+            Info.addProp(#skew, SP.skew)
+          end if
+          if SP.flipH <> 0 then
+            Info.addProp(#flipH, SP.flipH)
+          end if
+          if SP.flipV <> 0 then
+            Info.addProp(#flipV, SP.flipV)
+          end if
+          if SP.trails <> 0 then
+            Info.addProp(#trails, SP.trails)
+          end if
+          if SP.stretch <> 0 then
+            Info.addProp(#rect, SP.rect)
+          end if
+          if SP.blend <> 100 then
+            Info.addProp(#blend, SP.blend)
+          end if
+          if SP.foreColor <> 0 then
+            Info.addProp(#foreColor, SP.foreColor)
+          end if
+          if SP.backColor <> 255 then
+            Info.addProp(#backColor, SP.backColor)
+          end if
+          if memb.type = #shape then
+            if SP.lineSize <> 0 then
+              Info.addProp(#lineSize, SP.lineSize)
+            end if
+            if SP.pattern <> 0 then
+              Info.addProp(#pattern, SP.pattern)
+            end if
+          end if
+          if SP.scriptList.count() then
+            tmpAllScriptInfo = []
+            repeat with tmpScriptInfo in SP.scriptList
+              tmpScript = tmpScriptInfo[1]
+              tmpScriptInfo.deleteAt(1)
+              tmpAllScriptInfo.add([#Nr: tmpScript.memberNum, #castNr: tmpScript.castLibNum, #props: tmpScriptInfo.duplicate()])
+            end repeat
+            Info.addProp(#scriptList, tmpAllScriptInfo)
+          end if
+          if SP.scriptNum <> 0 then
+            tmpScript = member(SP.scriptNum)
+            Info.addProp(#script, [#Nr: tmpScript.memberNum, #castNr: tmpScript.castLibNum])
+          end if
+          spriteList.addProp(spriteNum, Info)
+        end if
+      end if
+    end repeat
+    if spriteList.count() then
+      frameList.addProp(frameNr, spriteList)
+    end if
+  end repeat
+  go(1)
+  endRecording()
+  scoreList.addProp(#frames, frameList)
+  castList = []
+  repeat with n = 1 to the number of castLibs
+    castList.add([#name: castLib(n).name, #fileName: castLib(n).fileName])
+  end repeat
+  scoreList.addProp(#Casts, castList)
+  return scoreList
+end
+
+on xxxCreateScoreFromList argScoreList
+  beginRecording()
+  repeat with frameNr = 1 to the lastFrame
+    go(frameNr)
+    clearFrame()
+    updateFrame()
+  end repeat
+  castList = argScoreList[#Casts]
+  frameList = argScoreList[#frames]
+  repeat with n = 1 to frameList.count()
+    frameNr = frameList.getPropAt(n)
+    go(frameNr)
+    clearFrame()
+    put "Frame nr " & string(frameNr)
+    spriteList = frameList[n]
+    if not voidp(spriteList[#frameScript]) then
+      tmpCastInfo = castList[spriteList[#frameScript][#castNr]]
+      tmpScript = member(spriteList[#frameScript][#Nr], tmpCastInfo[#name])
+      the frameScript = tmpScript.number
+      spriteList.deleteProp(#frameScript)
+    end if
+    if not voidp(spriteList[#frameTempo]) then
+      the frameTempo = spriteList[#frameTempo]
+      spriteList.deleteProp(#frameTempo)
+    end if
+    repeat with m = 1 to spriteList.count()
+      spriteNum = spriteList.getPropAt(m)
+      SP = sprite(spriteNum)
+      Info = spriteList[m]
+      tmpCastInfo = castList[Info[#castNr]]
+      SP.member = member(Info[#Nr], tmpCastInfo[#name])
+      SP.ink = Info[#ink]
+      SP.loc = Info[#loc]
+      SP.tweened = Info[#tweened]
+      if not voidp(Info[#rotation]) then
+        SP.rotation = Info[#rotation]
+      end if
+      if not voidp(Info[#skew]) then
+        SP.skew = Info[#skew]
+      end if
+      if not voidp(Info[#flipH]) then
+        SP.flipH = Info[#flipH]
+      end if
+      if not voidp(Info[#flipV]) then
+        SP.flipV = Info[#flipV]
+      end if
+      if not voidp(Info[#trails]) then
+        SP.trails = Info[#trails]
+      end if
+      if not voidp(Info[#rect]) then
+        SP.rect = Info[#rect]
+      end if
+      if not voidp(Info[#foreColor]) then
+        SP.foreColor = Info[#foreColor]
+      end if
+      if not voidp(Info[#backColor]) then
+        SP.backColor = Info[#backColor]
+      end if
+      if not voidp(Info[#lineSize]) then
+        SP.lineSize = Info[#lineSize]
+      end if
+      if not voidp(Info[#pattern]) then
+        SP.pattern = Info[#pattern]
+      end if
+      if not voidp(Info[#scriptList]) then
+        repeat with tmpScriptInfo in Info[#scriptList]
+          tmpCastInfo = castList[tmpScriptInfo[#castNr]]
+          tmpScript = member(tmpScriptInfo[#Nr], tmpCastInfo[#name])
+          tmpScriptInfo[#props].addAt(1, tmpScript)
+        end repeat
+      end if
+      if not voidp(Info[#script]) then
+        tmpCastInfo = castList[Info[#script][#castNr]]
+        tmpScript = member(Info[#script][#Nr], tmpCastInfo[#name])
+        SP.scriptNum = tmpScript.number
+      end if
+    end repeat
+    updateFrame()
+  end repeat
+  put "Done!"
+  go(1)
+  endRecording()
+end
+
+on xxxGetSpritesOfFrame argID, argNumSprites
+  if voidp(argNumSprites) then
+    argNumSprites = 120
+  end if
+  tmpAllList = [:]
+  repeat with n = 1 to argNumSprites
+    tmpSP = sprite(n)
+    if tmpSP.memberNum then
+      tmpList = [:]
+      tmpList.addProp(#MemberName, tmpSP.member.name)
+      tmpList.addProp(#loc, tmpSP.loc)
+      tmpList.addProp(#ink, tmpSP.ink)
+      tmpList.addProp(#blend, tmpSP.blend)
+      tmpList.addProp(#rect, tmpSP.rect)
+      tmpList.addProp(#rotation, tmpSP.rotation)
+      tmpAllList.addProp(n, tmpList)
+    end if
+  end repeat
+  tmpMemb = member("SpriteInfoField")
+  tmp = value(tmpMemb.text)
+  if not listp(tmp) then
+    tmp = [:]
+  end if
+  if voidp(argID) then
+    argID = 1
+  end if
+  tmp.setaProp(argID, tmpAllList)
+  tmpMemb.text = string(tmp)
+end

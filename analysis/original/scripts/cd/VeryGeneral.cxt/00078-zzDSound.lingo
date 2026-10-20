@@ -1,0 +1,232 @@
+property channels, newSnd, ticksPerSec, mode, preLoadedList, maxSounds, nrOfPlaying, typeList, soundPath
+
+on new me, argOKLastTime
+  mode = #xtra
+  tmpDsOpenReturn = dsOpen()
+  if (tmpDsOpenReturn = 0) and voidp(argOKLastTime) then
+    return 0
+  end if
+  soundPath = the moviePath
+  tmpInfo = dsGetCaps()
+  if listp(tmpInfo) then
+    put "SndCard mem kb:", getAt(tmpInfo, 1) / 1024
+    put "Max nr of sim. sounds:", getAt(tmpInfo, 2)
+    if getAt(tmpInfo, 3) = 0 then
+      put "No DirectX driver available! Emulated = slow"
+      kill(me)
+      return 0
+    end if
+  else
+    put "dsGetCaps() returned 0!!!"
+    return 0
+  end if
+  put "Mix CPU blocking percent:", getAt(tmpInfo, 4)
+  maxSounds = getAt(tmpInfo, 2)
+  if maxSounds = 0 then
+    maxSounds = 5
+  end if
+  newSnd = 1
+  if the machineType = 256 then
+    ticksPerSec = 63
+  else
+    ticksPerSec = 60
+  end if
+  preLoadedList = [:]
+  init(me)
+  return me
+end
+
+on init me
+  channels = [#BG: [], #EFFECT: [], #OPEFFECT: []]
+  nrOfPlaying = 0
+end
+
+on kill me
+  unLoadAll(me)
+  dsClose()
+  return 0
+end
+
+on getFreeChannels me
+  return maxSounds - nrOfPlaying
+end
+
+on getNrOfChannels me
+  return maxSounds
+end
+
+on preload me, theFileName
+  tmpID = dsNewSound(soundPath & theFileName & ".wav", 0)
+  if tmpID <> 0 then
+    addProp(preLoadedList, theFileName, tmpID)
+  end if
+  return tmpID
+end
+
+on unload me, sndId
+  if not finished(me, sndId) then
+    stop(me, sndId)
+  end if
+  deleteOne(preLoadedList, sndId)
+  dsDelSound(sndId)
+  return 0
+end
+
+on unLoadAll me
+  stopAll(me)
+  repeat with n = 1 to count(preLoadedList)
+    dsDelSound(getAt(preLoadedList, n))
+  end repeat
+  preLoadedList = [:]
+end
+
+on stopAll me
+  repeat with aList in channels
+    repeat with sndId in aList
+      dsStop(sndId)
+    end repeat
+  end repeat
+  init(me)
+end
+
+on setFreq me, sndId, theFreq
+  dsSetFreq(sndId, theFreq)
+end
+
+on setVol me, sndId, theVol, theOption
+  if theOption = #dB then
+    dsSetVolume(sndId, theVol)
+  else
+    if theVol = 0 then
+      theVol = -10000
+    else
+      theVol = 1 / (theVol / 100.0)
+      theVol = integer(-100 * log(theVol) * 144 / 10)
+    end if
+    dsSetVolume(sndId, theVol)
+  end if
+end
+
+on setLoop me, sndId, YesNo
+  dsSetLoop(sndId, YesNo)
+end
+
+on finished me, sndId
+  purge(me)
+  return not dsIsPlaying(sndId)
+end
+
+on getChannel me, sndId
+  return 0
+end
+
+on fade me, sndId, inOut, theLength
+end
+
+on getPosition me, argID
+  return dsGetPosition(argID)
+end
+
+on getFreq me, argID
+  return dsGetFreq(argID)
+end
+
+on getLength me, argID
+  return dsGetSize(argID)
+end
+
+on setPan me, argID, argPan
+  if argPan = 0 then
+    argPan = 0
+  else
+    tmp = argPan
+    argPan = 100 - abs(argPan)
+    if argPan = 0 then
+      argPan = -10000
+    else
+      argPan = 1 / (argPan / 100.0)
+      argPan = integer(-100 * log(argPan) * 144 / 10)
+    end if
+    if tmp < 0 then
+      argPan = -argPan
+    end if
+  end if
+  dsSetPan(argID, integer(argPan))
+end
+
+on stop me, sndId
+  repeat with n = 1 to count(channels)
+    tmpList = getAt(channels, n)
+    if getPos(tmpList, sndId) then
+      dsStop(sndId)
+      dsSetPosition(sndId, 0)
+      deleteOne(tmpList, sndId)
+      nrOfPlaying = nrOfPlaying - 1
+      exit repeat
+    end if
+  end repeat
+end
+
+on stopBG me
+end
+
+on stopAllEffects me
+end
+
+on play me, sndId, what, theOption
+  purge(me)
+  if what = #TRANS then
+    what = #BG
+  end if
+  if nrOfPlaying >= maxSounds then
+    tmpList = getProp(channels, #OPEFFECT)
+    if count(tmpList) then
+      stop(me, getAt(tmpList, 1))
+    else
+      if (what = #BG) or (what = #EFFECT) then
+        tmpList = getProp(channels, #EFFECT)
+        if count(tmpList) then
+          stop(me, getAt(tmpList, 1))
+        end if
+      else
+        return 0
+      end if
+    end if
+  end if
+  if stringp(sndId) then
+    tmpName = sndId
+    sndId = getaProp(preLoadedList, tmpName)
+    if voidp(sndId) then
+      sndId = preload(me, tmpName)
+      if sndId = 0 then
+        return 0
+      end if
+    end if
+  end if
+  dsPlay(sndId)
+  tmpList = getProp(channels, what)
+  add(tmpList, sndId)
+  nrOfPlaying = nrOfPlaying + 1
+  return sndId
+end
+
+on purge me
+  repeat with aList in channels
+    tmpDeleteList = []
+    repeat with sndId in aList
+      if not dsIsPlaying(sndId) then
+        add(tmpDeleteList, sndId)
+        nrOfPlaying = nrOfPlaying - 1
+      end if
+    end repeat
+    repeat with tmpID in tmpDeleteList
+      deleteOne(aList, tmpID)
+    end repeat
+  end repeat
+  tmpDeleteList = []
+end
+
+on cuePassed me, theChannel, theNumber, theName
+  theChannel = value(the last char in string(theChannel))
+  sendAllSprites(#SpriteCuePassed, theChannel, theNumber, theName)
+end

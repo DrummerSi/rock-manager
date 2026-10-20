@@ -1,0 +1,90 @@
+property SP, loc, reportObj, m_musician_r, m_orgMusician_r
+
+on new me, argReportObj, argSPNum, argLoc
+  reportObj = argReportObj
+  SP = sprite(argSPNum)
+  loc = argLoc
+  m_orgMusician_r = VOID
+  return me
+end
+
+on kill me
+  reportObj = 0
+  m_musician_r = 0
+  m_orgMusician_r = 0
+  return 0
+end
+
+on Report me, argObj, argWhat
+  global gDir
+  if argWhat = #ClosedDlg then
+    if objectp(reportObj.m_loopObj_r) then
+      reportObj.prepareLoop()
+      gDir.m_waveRenderer.m_doWhatWhenDoneList = [#ReportTo: reportObj.m_mixerObj, #handler: #play]
+      gDir.m_waveRenderer.renderQueue()
+    end if
+  end if
+end
+
+on setMusician me, argObj
+  m_musician_r = argObj
+  if voidp(m_orgMusician_r) then
+    m_orgMusician_r = argObj
+  end if
+  if not objectp(m_musician_r) then
+    tmpFaceName = "portrait_actorEmpty_small"
+  else
+    if m_musician_r.className = #RealMusician then
+      tmpSettings = m_musician_r.calcFaceSettings()
+      tmpFaceName = "Portrait_" & m_musician_r.Gfx & "_small"
+    else
+      tmpFaceName = "portrait_actor00_small"
+    end if
+  end if
+  faceMember = member(tmpFaceName)
+  if faceMember.number < 1 then
+    faceMember = member("portrait_actor00_small")
+  end if
+  SP.member = faceMember
+  SP.loc = loc + point(7, 3)
+end
+
+on gotMusician me
+  return objectp(m_musician_r)
+end
+
+on modifyLoop me, argLoopObj, argFile, argOptions
+  global gDir
+  if not objectp(m_musician_r) then
+    exit
+  end if
+  if voidp(argOptions) then
+    argOptions = [:]
+  end if
+  skill = rgetProp(m_musician_r, #Musicality)
+  if 1 then
+    rndMaxErr = 0.90000000000000002 - skill
+    if rndMaxErr < 0 then
+      rndMaxErr = 0.0
+    end if
+    rndMaxErr = 0.5 * rndMaxErr * rndMaxErr
+  else
+    Difficulty = getPropFromObjOrAncestor(argLoopObj, #Difficulty)
+    howGood = skill - Difficulty
+    if howGood > 0 then
+      howGood = 0
+    end if
+    howGood = howGood + 1.0
+    howGood = howGood * howGood
+    rndMaxErr = 0.20000000000000001 * (1.0 - howGood)
+  end if
+  if rndMaxErr < 0.0001 then
+    rndMaxErr = 0.0
+  end if
+  if argOptions[#PlayPerfect] = 1 then
+    rndMaxErr = 0
+  end if
+  FX = reportObj.getEffects()
+  FX.addProp(#random, [#max: rndMaxErr, #center: 0.0])
+  gDir.m_waveRenderer.queueRendering(reportObj.channelNum, argFile, FX)
+end

@@ -1,0 +1,108 @@
+property frameTimer, mouseObjects, cuePointMaster, animationTimer, speedCategory, checkTicksAfterNFrames, startTicks, memoryLevel, keyObjects, systemKeys, angles, MIAWs, cursors, currentMovie, soundObj, idleTimer, xtrasList, currentMovieObj, debug
+
+on new me
+  findXtras(me)
+  currentMovieObj = new(script("CurrentMovieScript"))
+  debug = script("DebugToolsScript").new()
+  frameTimer = new(script("Timer"), 1, 0, #frame)
+  idleTimer = new(script("Timer"), 1, 0, #idle)
+  keyObjects = new(script("KeysManager"))
+  addObject(frameTimer, keyObjects)
+  animationTimer = new(script("Timer"), 2, frameTimer, #anim)
+  mouseObjects = new(script("MouseObjectManager"))
+  addObject(frameTimer, mouseObjects)
+  if xtrasList[#DirectSound] = 1 then
+    soundObj = new(script("DXSoundHandlerScript"))
+  else
+    soundObj = new(script("DirSoundHandlerScript"))
+  end if
+  cuePointMaster = new(script("CuePointMaster"))
+  angles = new(script("AnglesScript"), 360)
+  MIAWs = new(script("MIAWsScript"))
+  cursors = new(script("CursorScript"))
+  speedCategory = 1
+  startCheckingSpeed(me)
+  if the freeBlock > (10 * 1024 * 1024) then
+    memoryLevel = 10
+  else
+    if the freeBlock > (4 * 1024 * 1024) then
+      memoryLevel = 5
+    else
+      memoryLevel = 2
+    end if
+  end if
+  return me
+end
+
+on kill me
+  if objectp(soundObj) then
+    soundObj = kill(soundObj)
+  end if
+  if objectp(cursors) then
+    cursors = kill(cursors)
+  end if
+  if objectp(MIAWs) then
+    MIAWs = kill(MIAWs)
+  end if
+  if objectp(angles) then
+    angles = kill(angles)
+  end if
+  if objectp(systemKeys) then
+    systemKeys = kill(systemKeys)
+  end if
+  deleteObject(frameTimer, mouseObjects)
+  mouseObjects = kill(mouseObjects)
+  idleTimer = kill(idleTimer)
+  frameTimer = kill(frameTimer)
+  cuePointMaster = kill(cuePointMaster)
+  currentMovieObj = currentMovieObj.kill()
+  return 0
+end
+
+on init me
+  if objectp(soundObj) then
+    soundObj.init()
+  end if
+end
+
+on prepareMovie me
+  currentMovie = fileStripName(the movieName)
+  currentMovieObj.prepareMovie()
+end
+
+on startMovie me
+  currentMovieObj.startMovie()
+end
+
+on stopMovie me
+  currentMovieObj.stopMovie()
+end
+
+on startCheckingSpeed me
+  checkTicksAfterNFrames = 2
+  startTicks = the ticks
+end
+
+on loop me
+  timeTick(frameTimer)
+  if checkTicksAfterNFrames then
+    checkTicksAfterNFrames = checkTicksAfterNFrames - 1
+    if checkTicksAfterNFrames = 0 then
+      tmpTicks = the ticks - startTicks
+      if tmpTicks > 300 then
+        speedCategory = 2
+      end if
+    end if
+  end if
+end
+
+on idle me
+  timeTick(idleTimer)
+end
+
+on findXtras me
+  xtrasList = [:]
+  repeat with n = 1 to the number of xtras
+    addProp(xtrasList, symbol(xtra(n).name), 1)
+  end repeat
+end

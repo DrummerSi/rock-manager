@@ -1,0 +1,119 @@
+global gSystem
+
+on startMovie
+  Info = getInitInfo(the commandLine)
+  movName = Info[#startMovie]
+  if movName = EMPTY then
+    alert("StartErr")
+    quit()
+  end if
+  IdentifyCDFiles = Info[#IdentifyCDFiles]
+  if voidp(IdentifyCDFiles) then
+    IdentifyCDFiles = [[movName & ".dxr", movName & ".dir"]]
+  end if
+  gSystem = script("SystemScript").new(IdentifyCDFiles)
+  if listp(Info[#prefs]) then
+    Info[#prefs][#commandLine] = the commandLine
+    Info[#prefs][#Pwd] = #Jonas
+    gSystem.setaProp(#m_prefs, Info[#prefs])
+    if listp(Info[#searchPaths]) then
+      gSystem.m_searchPaths = Info[#searchPaths]
+      gSystem.resolveSearchPaths()
+    end if
+    if integerp(Info[#prefs][#exitLock]) then
+      set the exitLock to Info[#prefs][#exitLock]
+    end if
+  end if
+  go(1, movName)
+end
+
+on getInitInfo argIniFile
+  Info = [#startMovie: the movieName, #IdentifyCDFiles: VOID]
+  appName = the applicationName
+  repeat with n = 1 to appName.length
+    if appName.char[n] = "." then
+      appName = appName.char[1..n - 1]
+      exit repeat
+    end if
+  end repeat
+  if not stringp(argIniFile) then
+    argIniFile = EMPTY
+  end if
+  if argIniFile.length = 0 then
+    if the runMode = "Author" then
+      argIniFile = the movieName
+    else
+      argIniFile = appName
+    end if
+  end if
+  str = readFile(the moviePath & appName & ".ini")
+  if stringp(str) then
+    tmpOff = offset("MessageWindow", str)
+    if tmpOff then
+      tmpOff = offset("DickesMessageWindow", str)
+      if tmpOff = 0 then
+        alert("Msg Err")
+        quit()
+      end if
+    end if
+  end if
+  str = readFile(the moviePath & argIniFile & ".ini")
+  if not stringp(str) then
+    Info[#startMovie] = appName
+  else
+    numLines = the number of lines in str
+    tmpOff = offset("SearchPaths=", str)
+    if tmpOff then
+      tmpLineNum = the number of lines in str.char[1..tmpOff]
+      tmpLine = str.line[tmpLineNum]
+      tmpOff = offset("[", tmpLine)
+      if tmpOff then
+        tmpPaths = value(tmpLine.char[tmpOff..tmpLine.length])
+        Info[#searchPaths] = tmpPaths
+      end if
+    end if
+    findFilesOnCD = str.line[2]
+    if findFilesOnCD.char[1] = numToChar(10) then
+      delete appName.char[1]
+    end if
+    if findFilesOnCD.char[1] = ";" then
+      delete appName.char[1]
+    end if
+    Info[#IdentifyCDFiles] = value(findFilesOnCD)
+    tmpOff = offset("Prefs=", str)
+    if tmpOff then
+      tmpLineNum = the number of lines in str.char[1..tmpOff]
+      tmpLine = str.line[tmpLineNum]
+      tmpOff = offset("[", tmpLine)
+      if tmpOff then
+        tmpPrefs = value(tmpLine.char[tmpOff..tmpLine.length])
+        Info[#prefs] = tmpPrefs
+      end if
+    end if
+    str = str.line[1]
+    if str.char[1] = ";" then
+      delete Info.char[1]
+    end if
+    Info[#startMovie] = str
+  end if
+  return Info
+end
+
+on resolveSearchPaths argList
+  replaceList = ["<CD>", gSystem.m_CDPath, "<PROJECT>", gSystem.m_projectPath]
+  repeat with n = 1 to argList.count
+    str = argList[n]
+    tmpStart = offset("<", str)
+    if tmpStart then
+      tmpEnd = offset(">", str)
+      tmpReplaceThis = str.char[tmpStart..tmpEnd]
+      tmpPos = replaceList.getPos(tmpReplaceThis)
+      if tmpPos then
+        put replaceList[tmpPos + 1] into replaceList.char[tmpStart..tmpEnd]
+        argList[n] = str
+      end if
+    end if
+  end repeat
+  the searchCurrentFolder = 0
+  the searchPaths = argList
+end

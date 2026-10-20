@@ -1,0 +1,1091 @@
+property ancestor, m_place_r, m_songs_r, m_song_r, m_scroller, m_sequencer, m_waveRenderer, m_snd
+global gDir, gRock
+
+on new me, argOptions
+  [  0] getparam 8 .............................. <argOptions>
+  [  2] pushsymb 86 ............................. <#ID>
+  [  5] pusharglist 2 ........................... <argOptions, #ID>
+  [  7] objcall 51 .............................. <argOptions[#ID]>
+  [ 10] setlocal 0 .............................. ID = argOptions[#ID]
+  [ 12] getglobal 35 ............................ <gRock>
+  [ 15] getobjprop 77 ........................... <gRock.m_classManager>
+  [ 18] getlocal 0 .............................. <ID>
+  [ 20] pushsymb 783 ............................ <#player>
+  [ 23] pusharglist 3 ........................... <gRock.m_classManager, ID, #player>
+  [ 25] objcall 298 ............................. <gRock.m_classManager.getObjByID(ID, #player)>
+  [ 28] setprop 407 ............................. m_place_r = gRock.m_classManager.getObjByID(ID, #player)
+  [ 31] getparam 8 .............................. <argOptions>
+  [ 33] pushsymb 437 ............................ <#ReportTo>
+  [ 36] getparam 0 .............................. <me>
+  [ 38] pusharglistnoret 3 ...................... <argOptions, #ReportTo, me>
+  [ 40] objcall 438 ............................. argOptions.setaProp(#ReportTo, me)
+  [ 43] getparam 8 .............................. <argOptions>
+  [ 45] pushsymb 439 ............................ <#child>
+  [ 48] getparam 0 .............................. <me>
+  [ 50] pusharglistnoret 3 ...................... <argOptions, #child, me>
+  [ 52] objcall 438 ............................. argOptions.setaProp(#child, me)
+  [ 55] getglobal 35 ............................ <gRock>
+  [ 58] getobjprop 77 ........................... <gRock.m_classManager>
+  [ 61] pushsymb 1140 ........................... <#DlgPublish>
+  [ 64] pushsymb 441 ............................ <#Dialog>
+  [ 67] pusharglist 3 ........................... <gRock.m_classManager, #DlgPublish, #Dialog>
+  [ 69] objcall 403 ............................. <gRock.m_classManager.getObjByIDAndClass(#DlgPublish, #Dialog)>
+  [ 72] setlocal 8 .............................. dialog_r = gRock.m_classManager.getObjByIDAndClass(#DlgPublish, #Dialog)
+  [ 74] getparam 8 .............................. <argOptions>
+  [ 76] pushsymb 443 ............................ <#DlgInfoObj>
+  [ 79] getlocal 8 .............................. <dialog_r>
+  [ 81] pusharglistnoret 3 ...................... <argOptions, #DlgInfoObj, dialog_r>
+  [ 83] objcall 130 ............................. argOptions[#DlgInfoObj] = dialog_r
+  [ 86] pushcons 0 .............................. <"DlgRockAncestorScript">
+  [ 88] pusharglist 1 ........................... <"DlgRockAncestorScript">
+  [ 90] extcall 49 .............................. <script("DlgRockAncestorScript")>
+  [ 93] getparam 8 .............................. <argOptions>
+  [ 95] pusharglist 2 ........................... <script("DlgRockAncestorScript"), argOptions>
+  [ 97] objcall 0 ............................... <script("DlgRockAncestorScript").new(argOptions)>
+  [ 99] setprop 447 ............................. ancestor = script("DlgRockAncestorScript").new(argOptions)
+  [102] getglobal 35 ............................ <gRock>
+  [105] getobjprop 36 ........................... <gRock.m_context>
+  [108] pushsymb 273 ............................ <#Mission>
+  [111] pusharglist 2 ........................... <gRock.m_context, #Mission>
+  [113] objcall 359 ............................. <gRock.m_context.getFocus(#Mission)>
+  [116] setlocal 16 ............................. mission_r = gRock.m_context.getFocus(#Mission)
+  [118] getlocal 16 ............................. <mission_r>
+  [120] pushsymb 1141 ........................... <#AvailableSongs>
+  [123] pusharglist 2 ........................... <mission_r, #AvailableSongs>
+  [125] objcall 85 .............................. <mission_r.AvailableSongs.count>
+  [128] pushzero ................................ <0>
+  [129] eq ...................................... <mission_r.AvailableSongs.count = 0>
+  [130] jmpifz [164] ............................ if mission_r.AvailableSongs.count = 0 then / else
+  [133] getglobal 35 ............................ <gRock>
+  [136] getobjprop 77 ........................... <gRock.m_classManager>
+  [139] pushsymb 617 ............................ <#Song>
+  [142] pusharglist 2 ........................... <gRock.m_classManager, #Song>
+  [144] objcall 238 ............................. <gRock.m_classManager.getObjsOfClass(#Song)>
+  [147] setprop 996 ............................. m_songs_r = gRock.m_classManager.getObjsOfClass(#Song)
+  [150] getprop 996 ............................. <m_songs_r>
+  [153] pusharglist 1 ........................... <m_songs_r>
+  [155] objcall 308 ............................. <m_songs_r.duplicate()>
+  [158] setprop 996 ............................. m_songs_r = m_songs_r.duplicate()
+  [161] jmp [235]
+  [164] pusharglist 0 ........................... <[]>
+  [166] pushlist ................................ <[]>
+  [167] setprop 996 ............................. m_songs_r = []
+  [170] getlocal 16 ............................. <mission_r>
+  [172] getobjprop 1141 ......................... <mission_r.AvailableSongs>
+  [175] peek 0
+  [177] pusharglist 1
+  [179] extcall 85
+  [182] pushint8 1
+  [184] peek 0
+  [186] peek 2
+  [188] lteq
+  [189] jmpifz [233] ............................ repeat with SongID in mission_r.AvailableSongs
+  [192] peek 2
+  [194] peek 1
+  [196] pusharglist 2
+  [198] extcall 51
+  [201] setlocal 24
+  [203] getprop 996 ............................. <m_songs_r>
+  [206] getglobal 35 ............................ <gRock>
+  [209] getobjprop 77 ........................... <gRock.m_classManager>
+  [212] getlocal 24 ............................. <SongID>
+  [214] pushsymb 617 ............................ <#Song>
+  [217] pusharglist 3 ........................... <gRock.m_classManager, SongID, #Song>
+  [219] objcall 403 ............................. <gRock.m_classManager.getObjByIDAndClass(SongID, #Song)>
+  [222] pusharglistnoret 2 ...................... <m_songs_r, gRock.m_classManager.getObjByIDAndClass(SongID, #Song)>
+  [224] objcall 98 .............................. m_songs_r.add(gRock.m_classManager.getObjByIDAndClass(SongID, #Song))
+  [227] pushint8 1
+  [229] add
+  [230] endrepeat [184]
+  [233] pop 3
+  [235] getprop 996 ............................. <m_songs_r>
+  [238] getobjprop 85 ........................... <m_songs_r.count>
+  [241] setlocal 32
+  [243] getlocal 32
+  [245] pushint8 1 .............................. <1>
+  [248] gteq
+  [249] jmpifz [302] ............................ repeat with n = m_songs_r.count down to 1
+  [252] getprop 407 ............................. <m_place_r>
+  [255] getobjprop 1142 ......................... <m_place_r.Songs>
+  [258] getprop 996 ............................. <m_songs_r>
+  [261] getlocal 32 ............................. <n>
+  [263] pusharglist 2 ........................... <m_songs_r, n>
+  [265] objcall 51 .............................. <m_songs_r[n]>
+  [268] getobjprop 86 ........................... <m_songs_r[n].ID>
+  [271] pusharglist 2 ........................... <m_place_r.Songs, m_songs_r[n].ID>
+  [273] objcall 254 ............................. <m_place_r.Songs.getPos(m_songs_r[n].ID)>
+  [276] pushzero ................................ <0>
+  [277] eq ...................................... <m_place_r.Songs.getPos(m_songs_r[n].ID) = 0>
+  [278] jmpifz [291] ............................ if m_place_r.Songs.getPos(m_songs_r[n].ID) = 0 then
+  [281] getprop 996 ............................. <m_songs_r>
+  [284] getlocal 32 ............................. <n>
+  [286] pusharglistnoret 2 ...................... <m_songs_r, n>
+  [288] objcall 282 ............................. m_songs_r.deleteAt(n)
+  [291] pushint8 -1
+  [294] getlocal 32
+  [296] add
+  [297] setlocal 32
+  [299] endrepeat [243]
+  [302] getprop 996 ............................. <m_songs_r>
+  [305] getobjprop 85 ........................... <m_songs_r.count>
+  [308] setlocal 32
+  [310] getlocal 32
+  [312] pushint8 1 .............................. <1>
+  [315] gteq
+  [316] jmpifz [370] ............................ repeat with n = m_songs_r.count down to 1
+  [319] getglobal 35 ............................ <gRock>
+  [322] getobjprop 485 .......................... <gRock.m_player>
+  [325] getobjprop 881 .......................... <gRock.m_player.OwnedSongs>
+  [328] getprop 996 ............................. <m_songs_r>
+  [331] getlocal 32 ............................. <n>
+  [333] pusharglist 2 ........................... <m_songs_r, n>
+  [335] objcall 51 .............................. <m_songs_r[n]>
+  [338] getobjprop 86 ........................... <m_songs_r[n].ID>
+  [341] pusharglist 2 ........................... <gRock.m_player.OwnedSongs, m_songs_r[n].ID>
+  [343] objcall 254 ............................. <gRock.m_player.OwnedSongs.getPos(m_songs_r[n].ID)>
+  [346] jmpifz [359] ............................ if gRock.m_player.OwnedSongs.getPos(m_songs_r[n].ID) then
+  [349] getprop 996 ............................. <m_songs_r>
+  [352] getlocal 32 ............................. <n>
+  [354] pusharglistnoret 2 ...................... <m_songs_r, n>
+  [356] objcall 282 ............................. m_songs_r.deleteAt(n)
+  [359] pushint8 -1
+  [362] getlocal 32
+  [364] add
+  [365] setlocal 32
+  [367] endrepeat [310]
+  [370] getprop 447 ............................. <ancestor>
+  [373] getobjprop 360 .......................... <ancestor.m_objDlg>
+  [376] pushsymb 409 ............................ <#ScrollView>
+  [379] pushsymb 410 ............................ <#Head1>
+  [382] pushsymb 393 ............................ <#Info>
+  [385] pusharglist 3 ........................... <[#ScrollView, #Head1, #Info]>
+  [387] pushlist ................................ <[#ScrollView, #Head1, #Info]>
+  [388] pusharglist 2 ........................... <ancestor.m_objDlg, [#ScrollView, #Head1, #Info]>
+  [390] objcall 411 ............................. <ancestor.m_objDlg.getItemByPath([#ScrollView, #Head1, #Info])>
+  [393] setlocal 40 ............................. itemObj = ancestor.m_objDlg.getItemByPath([#ScrollView, #Head1, #Info])
+  [395] getlocal 40 ............................. <itemObj>
+  [397] pusharglist 1 ........................... <itemObj>
+  [399] extcall 63 .............................. <objectp(itemObj)>
+  [402] jmpifz [423] ............................ if objectp(itemObj) then
+  [405] getlocal 40 ............................. <itemObj>
+  [407] pushsymb 412 ............................ <#editData>
+  [410] pushsymb 1020 ........................... <#szidSongTitle>
+  [413] pusharglist 1 ........................... <#szidSongTitle>
+  [415] extcall 413 ............................. <rGetStr(#szidSongTitle)>
+  [418] pusharglistnoret 3 ...................... <itemObj, #editData, rGetStr(#szidSongTitle)>
+  [420] objcall 364 ............................. itemObj.setOneProp(#editData, rGetStr(#szidSongTitle))
+  [423] getprop 447 ............................. <ancestor>
+  [426] getobjprop 360 .......................... <ancestor.m_objDlg>
+  [429] pushsymb 409 ............................ <#ScrollView>
+  [432] pushsymb 639 ............................ <#Head2>
+  [435] pushsymb 393 ............................ <#Info>
+  [438] pusharglist 3 ........................... <[#ScrollView, #Head2, #Info]>
+  [440] pushlist ................................ <[#ScrollView, #Head2, #Info]>
+  [441] pusharglist 2 ........................... <ancestor.m_objDlg, [#ScrollView, #Head2, #Info]>
+  [443] objcall 411 ............................. <ancestor.m_objDlg.getItemByPath([#ScrollView, #Head2, #Info])>
+  [446] setlocal 40 ............................. itemObj = ancestor.m_objDlg.getItemByPath([#ScrollView, #Head2, #Info])
+  [448] getlocal 40 ............................. <itemObj>
+  [450] pusharglist 1 ........................... <itemObj>
+  [452] extcall 63 .............................. <objectp(itemObj)>
+  [455] jmpifz [476] ............................ if objectp(itemObj) then
+  [458] getlocal 40 ............................. <itemObj>
+  [460] pushsymb 412 ............................ <#editData>
+  [463] pushsymb 492 ............................ <#szidPrice>
+  [466] pusharglist 1 ........................... <#szidPrice>
+  [468] extcall 413 ............................. <rGetStr(#szidPrice)>
+  [471] pusharglistnoret 3 ...................... <itemObj, #editData, rGetStr(#szidPrice)>
+  [473] objcall 364 ............................. itemObj.setOneProp(#editData, rGetStr(#szidPrice))
+  [476] getprop 447 ............................. <ancestor>
+  [479] getobjprop 360 .......................... <ancestor.m_objDlg>
+  [482] pushsymb 409 ............................ <#ScrollView>
+  [485] pushsymb 1143 ........................... <#Head3>
+  [488] pushsymb 393 ............................ <#Info>
+  [491] pusharglist 3 ........................... <[#ScrollView, #Head3, #Info]>
+  [493] pushlist ................................ <[#ScrollView, #Head3, #Info]>
+  [494] pusharglist 2 ........................... <ancestor.m_objDlg, [#ScrollView, #Head3, #Info]>
+  [496] objcall 411 ............................. <ancestor.m_objDlg.getItemByPath([#ScrollView, #Head3, #Info])>
+  [499] setlocal 40 ............................. itemObj = ancestor.m_objDlg.getItemByPath([#ScrollView, #Head3, #Info])
+  [501] getlocal 40 ............................. <itemObj>
+  [503] pusharglist 1 ........................... <itemObj>
+  [505] extcall 63 .............................. <objectp(itemObj)>
+  [508] jmpifz [529] ............................ if objectp(itemObj) then
+  [511] getlocal 40 ............................. <itemObj>
+  [513] pushsymb 412 ............................ <#editData>
+  [516] pushsymb 594 ............................ <#szidRoyalty>
+  [519] pusharglist 1 ........................... <#szidRoyalty>
+  [521] extcall 413 ............................. <rGetStr(#szidRoyalty)>
+  [524] pusharglistnoret 3 ...................... <itemObj, #editData, rGetStr(#szidRoyalty)>
+  [526] objcall 364 ............................. itemObj.setOneProp(#editData, rGetStr(#szidRoyalty))
+  [529] pusharglist 0 ........................... <[]>
+  [531] pushlist ................................ <[]>
+  [532] setlocal 48 ............................. allScrollItems = []
+  [534] getprop 996 ............................. <m_songs_r>
+  [537] peek 0
+  [539] pusharglist 1
+  [541] extcall 85
+  [544] pushint8 1
+  [546] peek 0
+  [548] peek 2
+  [550] lteq
+  [551] jmpifz [587] ............................ repeat with song_r in m_songs_r
+  [554] peek 2
+  [556] peek 1
+  [558] pusharglist 2
+  [560] extcall 51
+  [563] setlocal 56
+  [565] getlocal 48 ............................. <allScrollItems>
+  [567] getlocal 56 ............................. <song_r>
+  [569] getlocal 56 ............................. <song_r>
+  [571] pusharglist 2 ........................... <song_r, song_r>
+  [573] extcall 419 ............................. <rDlgCreateScrollItemInfo(song_r, song_r)>
+  [576] pusharglistnoret 2 ...................... <allScrollItems, rDlgCreateScrollItemInfo(song_r, song_r)>
+  [578] objcall 98 .............................. allScrollItems.add(rDlgCreateScrollItemInfo(song_r, song_r))
+  [581] pushint8 1
+  [583] add
+  [584] endrepeat [546]
+  [587] pop 3
+  [589] getprop 447 ............................. <ancestor>
+  [592] getobjprop 360 .......................... <ancestor.m_objDlg>
+  [595] pushsymb 365 ............................ <#DontPaint>
+  [598] pusharglistnoret 2 ...................... <ancestor.m_objDlg, #DontPaint>
+  [600] objcall 366 ............................. ancestor.m_objDlg.recalc(#DontPaint)
+  [603] getprop 447 ............................. <ancestor>
+  [606] getobjprop 360 .......................... <ancestor.m_objDlg>
+  [609] pushsymb 409 ............................ <#ScrollView>
+  [612] pushsymb 671 ............................ <#Frame2>
+  [615] pusharglist 2 ........................... <[#ScrollView, #Frame2]>
+  [617] pushlist ................................ <[#ScrollView, #Frame2]>
+  [618] pusharglist 2 ........................... <ancestor.m_objDlg, [#ScrollView, #Frame2]>
+  [620] objcall 411 ............................. <ancestor.m_objDlg.getItemByPath([#ScrollView, #Frame2])>
+  [623] setlocal 40 ............................. itemObj = ancestor.m_objDlg.getItemByPath([#ScrollView, #Frame2])
+  [625] getlocal 40 ............................. <itemObj>
+  [627] pusharglist 1 ........................... <itemObj>
+  [629] objcall 369 ............................. <itemObj.getOnStageRect()>
+  [632] setlocal 64 ............................. rct = itemObj.getOnStageRect()
+  [634] getlocal 64 ............................. <rct>
+  [636] pushint8 3 .............................. <3>
+  [639] pushint8 3 .............................. <3>
+  [642] pushint8 3 .............................. <3>
+  [645] inv ..................................... <-3>
+  [646] pushint8 3 .............................. <3>
+  [649] inv ..................................... <-3>
+  [650] pusharglist 4 ........................... <3, 3, -3, -3>
+  [652] extcall 65 .............................. <rect(3, 3, -3, -3)>
+  [655] add ..................................... <rct + rect(3, 3, -3, -3)>
+  [656] setlocal 64 ............................. rct = rct + rect(3, 3, -3, -3)
+  [658] pushcons 8 .............................. <"CPScrollerScript">
+  [660] pusharglist 1 ........................... <"CPScrollerScript">
+  [662] extcall 49 .............................. <script("CPScrollerScript")>
+  [665] getparam 0 .............................. <me>
+  [667] getprop 447 ............................. <ancestor>
+  [670] pusharglist 1 ........................... <ancestor>
+  [672] objcall 504 ............................. <ancestor.getSPOverDlg()>
+  [675] getlocal 48 ............................. <allScrollItems>
+  [677] getlocal 64 ............................. <rct>
+  [679] getprop 447 ............................. <ancestor>
+  [682] getobjprop 360 .......................... <ancestor.m_objDlg>
+  [685] getobjprop 672 .......................... <ancestor.m_objDlg.highestMouseLayer>
+  [688] pusharglist 6 ........................... <script("CPScrollerScript"), me, ancestor.getSPOverDlg(), allScrollItems, rct, ancestor.m_objDlg.highestMouseLayer>
+  [690] objcall 0 ............................... <script("CPScrollerScript").new(me, ancestor.getSPOverDlg(), allScrollItems, rct, ancestor.m_objDlg.highestMouseLayer)>
+  [692] setprop 425 ............................. m_scroller = script("CPScrollerScript").new(me, ancestor.getSPOverDlg(), allScrollItems, rct, ancestor.m_objDlg.highestMouseLayer)
+  [695] getglobal 39 ............................ <gUseful>
+  [698] pushsymb 567 ............................ <#xtra>
+  [701] pusharglistnoret 2 ...................... <gUseful, #xtra>
+  [703] objcall 552 ............................. gUseful.setSoundSystem(#xtra)
+  [706] getparam 0 .............................. <me>
+  [708] pusharglistnoret 1 ...................... <me>
+  [710] objcall 768 ............................. me.setPlace()
+  [713] getprop 447 ............................. <ancestor>
+  [716] pusharglistnoret 1 ...................... <ancestor>
+  [718] objcall 457 ............................. ancestor.render()
+  [721] getparam 0 .............................. <me>
+  [723] pusharglistnoret 1 ...................... <me>
+  [725] extcall 46 .............................. return me
+  [728] ret
+end
+
+on kill me
+  [  0] getglobal 39 ............................ <gUseful>
+  [  3] pushsymb 551 ............................ <#Director>
+  [  6] pusharglistnoret 2 ...................... <gUseful, #Director>
+  [  8] objcall 552 ............................. gUseful.setSoundSystem(#Director)
+  [ 11] getprop 1167 ............................ <m_sequencer>
+  [ 14] pusharglist 1 ........................... <m_sequencer>
+  [ 16] extcall 63 .............................. <objectp(m_sequencer)>
+  [ 19] jmpifz [ 32] ............................ if objectp(m_sequencer) then
+  [ 22] getprop 1167 ............................ <m_sequencer>
+  [ 25] pusharglist 1 ........................... <m_sequencer>
+  [ 27] objcall 3 ............................... <m_sequencer.kill()>
+  [ 29] setprop 1167 ............................ m_sequencer = m_sequencer.kill()
+  [ 32] getprop 425 ............................. <m_scroller>
+  [ 35] pusharglist 1 ........................... <m_scroller>
+  [ 37] extcall 63 .............................. <objectp(m_scroller)>
+  [ 40] jmpifz [ 53] ............................ if objectp(m_scroller) then
+  [ 43] getprop 425 ............................. <m_scroller>
+  [ 46] pusharglist 1 ........................... <m_scroller>
+  [ 48] objcall 3 ............................... <m_scroller.kill()>
+  [ 50] setprop 425 ............................. m_scroller = m_scroller.kill()
+  [ 53] getprop 447 ............................. <ancestor>
+  [ 56] pusharglistnoret 1 ...................... <ancestor>
+  [ 58] objcall 3 ............................... ancestor.kill()
+  [ 60] pushzero ................................ <0>
+  [ 61] pusharglistnoret 1 ...................... <0>
+  [ 63] extcall 46 .............................. return 0
+  [ 66] ret
+end
+
+on Report me, argObj, argWhat, argOption
+  [  0] getparam 8 .............................. <argObj>
+  [  2] getprop 425 ............................. <m_scroller>
+  [  5] eq ...................................... <argObj = m_scroller>
+  [  6] jmpifz [ 41] ............................ if argObj = m_scroller then
+  [  9] getparam 16 ............................. <argWhat>
+  [ 11] pushsymb 426 ............................ <#select>
+  [ 14] eq ...................................... <argWhat = #select>
+  [ 15] jmpifz [ 41] ............................ if argWhat = #select then
+  [ 18] getparam 24 ............................. <argOption>
+  [ 20] getobjprop 158 .......................... <argOption.m_ID>
+  [ 23] setlocal 0 .............................. song_r = argOption.m_ID
+  [ 25] getparam 0 .............................. <me>
+  [ 27] getlocal 0 .............................. <song_r>
+  [ 29] pusharglistnoret 2 ...................... <me, song_r>
+  [ 31] objcall 1138 ............................ me.setSong(song_r)
+  [ 34] getparam 0 .............................. <me>
+  [ 36] pusharglistnoret 1 ...................... <me>
+  [ 38] objcall 1139 ............................ me.playSong()
+  [ 41] ret
+end
+
+on mouse me, argObj, argWhat, argOption
+  [  0] getparam 24 ............................. <argOption>
+  [  2] pusharglist 1 ........................... <argOption>
+  [  4] extcall 63 .............................. <objectp(argOption)>
+  [  7] jmpifz [176] ............................ if objectp(argOption) then
+  [ 10] getparam 16 ............................. <argWhat>
+  [ 12] pushsymb 187 ............................ <#click>
+  [ 15] eq ...................................... <argWhat = #click>
+  [ 16] jmpifz [176] ............................ if argWhat = #click then
+  [ 19] getparam 24 ............................. <argOption>
+  [ 21] pushsymb 86 ............................. <#ID>
+  [ 24] pusharglist 2 ........................... <argOption, #ID>
+  [ 26] objcall 456 ............................. <argOption.getOneProp(#ID)>
+  [ 29] setlocal 0 .............................. ID = argOption.getOneProp(#ID)
+  [ 31] getlocal 0 .............................. <ID>
+  [ 33] pusharglist 1 ........................... <ID>
+  [ 35] extcall 159 ............................. <string(ID)>
+  [ 38] setlocal 8 .............................. IDStr = string(ID)
+  [ 40] getlocal 0 .............................. <ID>
+  [ 42] pushsymb 278 ............................ <#ButtonOK>
+  [ 45] eq ...................................... <ID = #ButtonOK>
+  [ 46] jmpifz [162] ............................ if ID = #ButtonOK then / else
+  [ 49] getglobal 35 ............................ <gRock>
+  [ 52] getobjprop 77 ........................... <gRock.m_classManager>
+  [ 55] pushsymb 783 ............................ <#player>
+  [ 58] pushsymb 783 ............................ <#player>
+  [ 61] pusharglist 3 ........................... <gRock.m_classManager, #player, #player>
+  [ 63] objcall 403 ............................. <gRock.m_classManager.getObjByIDAndClass(#player, #player)>
+  [ 66] setlocal 16 ............................. player_r = gRock.m_classManager.getObjByIDAndClass(#player, #player)
+  [ 68] getlocal 16 ............................. <player_r>
+  [ 70] getprop 923 ............................. <m_song_r>
+  [ 73] getobjprop 618 .......................... <m_song_r.PriceModel>
+  [ 76] getobjprop 771 .......................... <m_song_r.PriceModel.BasePrice>
+  [ 79] pusharglist 2 ........................... <player_r, m_song_r.PriceModel.BasePrice>
+  [ 81] objcall 487 ............................. <player_r.hasThisMoney(m_song_r.PriceModel.BasePrice)>
+  [ 84] pushzero ................................ <0>
+  [ 85] eq ...................................... <player_r.hasThisMoney(m_song_r.PriceModel.BasePrice) = 0>
+  [ 86] jmpifz [ 95] ............................ if player_r.hasThisMoney(m_song_r.PriceModel.BasePrice) = 0 then
+  [ 89] pusharglistnoret 0 ...................... <>
+  [ 91] extcall 488 ............................. rWarnMoney()
+  [ 94] ret ..................................... exit
+  [ 95] getlocal 16 ............................. <player_r>
+  [ 97] getprop 923 ............................. <m_song_r>
+  [100] getobjprop 618 .......................... <m_song_r.PriceModel>
+  [103] getobjprop 771 .......................... <m_song_r.PriceModel.BasePrice>
+  [106] inv ..................................... <-m_song_r.PriceModel.BasePrice>
+  [107] pusharglistnoret 2 ...................... <player_r, -m_song_r.PriceModel.BasePrice>
+  [109] objcall 742 ............................. player_r.transactMoney(-m_song_r.PriceModel.BasePrice)
+  [112] getlocal 16 ............................. <player_r>
+  [114] getobjprop 881 .......................... <player_r.OwnedSongs>
+  [117] getprop 923 ............................. <m_song_r>
+  [120] getobjprop 86 ........................... <m_song_r.ID>
+  [123] pusharglistnoret 2 ...................... <player_r.OwnedSongs, m_song_r.ID>
+  [125] objcall 98 .............................. player_r.OwnedSongs.add(m_song_r.ID)
+  [128] getglobal 35 ............................ <gRock>
+  [131] getobjprop 36 ........................... <gRock.m_context>
+  [134] pushsymb 617 ............................ <#Song>
+  [137] getprop 923 ............................. <m_song_r>
+  [140] pusharglistnoret 3 ...................... <gRock.m_context, #Song, m_song_r>
+  [142] objcall 471 ............................. gRock.m_context.setFocus(#Song, m_song_r)
+  [145] getprop 447 ............................. <ancestor>
+  [148] getparam 8 .............................. <argObj>
+  [150] getparam 16 ............................. <argWhat>
+  [152] getparam 24 ............................. <argOption>
+  [154] pusharglistnoret 4 ...................... <ancestor, argObj, argWhat, argOption>
+  [156] objcall 71 .............................. ancestor.mouse(argObj, argWhat, argOption)
+  [159] jmp [176]
+  [162] getprop 447 ............................. <ancestor>
+  [165] getparam 8 .............................. <argObj>
+  [167] getparam 16 ............................. <argWhat>
+  [169] getparam 24 ............................. <argOption>
+  [171] pusharglistnoret 4 ...................... <ancestor, argObj, argWhat, argOption>
+  [173] objcall 71 .............................. ancestor.mouse(argObj, argWhat, argOption)
+  [176] ret
+end
+
+on setPlace me
+  [  0] getprop 447 ............................. <ancestor>
+  [  3] getobjprop 360 .......................... <ancestor.m_objDlg>
+  [  6] setlocal 0 .............................. dlgObj = ancestor.m_objDlg
+  [  8] getprop 447 ............................. <ancestor>
+  [ 11] getobjprop 360 .......................... <ancestor.m_objDlg>
+  [ 14] pushsymb 86 ............................. <#ID>
+  [ 17] pushsymb 1148 ........................... <#Meter1>
+  [ 20] pushsymb 536 ............................ <#type>
+  [ 23] pushsymb 441 ............................ <#Dialog>
+  [ 26] pushsymb 455 ............................ <#inOffsetRect>
+  [ 29] pushint8 90 ............................. <90>
+  [ 32] pushint8 10 ............................. <10>
+  [ 35] pushzero ................................ <0>
+  [ 36] pushzero ................................ <0>
+  [ 37] pusharglist 4 ........................... <90, 10, 0, 0>
+  [ 39] extcall 65 .............................. <rect(90, 10, 0, 0)>
+  [ 42] pushsymb 537 ............................ <#rel>
+  [ 45] pushsymb 818 ............................ <#Info2>
+  [ 48] pushint8 1 .............................. <1>
+  [ 51] pusharglist 2 ........................... <[#Info2, 1]>
+  [ 53] pushlist ................................ <[#Info2, 1]>
+  [ 54] pushsymb 818 ............................ <#Info2>
+  [ 57] pushint8 2 .............................. <2>
+  [ 60] pusharglist 2 ........................... <[#Info2, 2]>
+  [ 62] pushlist ................................ <[#Info2, 2]>
+  [ 63] pushsymb 538 ............................ <#Auto>
+  [ 66] pushsymb 538 ............................ <#Auto>
+  [ 69] pusharglist 4 ........................... <[[#Info2, 1], [#Info2, 2], #Auto, #Auto]>
+  [ 71] pushlist ................................ <[[#Info2, 1], [#Info2, 2], #Auto, #Auto]>
+  [ 72] pusharglist 8 ........................... <[#ID: #Meter1, #type: #Dialog, #inOffsetRect: rect(90, 10, 0, 0), #rel: [[#Info2, 1], [#Info2, 2], #Auto, #Auto]]>
+  [ 74] pushproplist ............................ <[#ID: #Meter1, #type: #Dialog, #inOffsetRect: rect(90, 10, 0, 0), #rel: [[#Info2, 1], [#Info2, 2], #Auto, #Auto]]>
+  [ 75] pusharglist 2 ........................... <ancestor.m_objDlg, [#ID: #Meter1, #type: #Dialog, #inOffsetRect: rect(90, 10, 0, 0), #rel: [[#Info2, 1], [#Info2, 2], #Auto, #Auto]]>
+  [ 77] objcall 541 ............................. <ancestor.m_objDlg.addItem([#ID: #Meter1, #type: #Dialog, #inOffsetRect: rect(90, 10, 0, 0), #rel: [[#Info2, 1], [#Info2, 2], #Auto, #Auto]])>
+  [ 80] setlocal 8 .............................. itemObj = ancestor.m_objDlg.addItem([#ID: #Meter1, #type: #Dialog, #inOffsetRect: rect(90, 10, 0, 0), #rel: [[#Info2, 1], [#Info2, 2], #Auto, #Auto]])
+  [ 82] getlocal 8 .............................. <itemObj>
+  [ 84] pusharglistnoret 1 ...................... <itemObj>
+  [ 86] extcall 1149 ............................ rNewGenerateMeter(itemObj)
+  [ 89] getprop 447 ............................. <ancestor>
+  [ 92] getobjprop 360 .......................... <ancestor.m_objDlg>
+  [ 95] pushsymb 86 ............................. <#ID>
+  [ 98] pushsymb 1150 ........................... <#Meter2>
+  [101] pushsymb 536 ............................ <#type>
+  [104] pushsymb 441 ............................ <#Dialog>
+  [107] pushsymb 455 ............................ <#inOffsetRect>
+  [110] pushint8 90 ............................. <90>
+  [113] pushint8 27 ............................. <27>
+  [116] pushzero ................................ <0>
+  [117] pushzero ................................ <0>
+  [118] pusharglist 4 ........................... <90, 27, 0, 0>
+  [120] extcall 65 .............................. <rect(90, 27, 0, 0)>
+  [123] pushsymb 537 ............................ <#rel>
+  [126] pushsymb 818 ............................ <#Info2>
+  [129] pushint8 1 .............................. <1>
+  [132] pusharglist 2 ........................... <[#Info2, 1]>
+  [134] pushlist ................................ <[#Info2, 1]>
+  [135] pushsymb 818 ............................ <#Info2>
+  [138] pushint8 2 .............................. <2>
+  [141] pusharglist 2 ........................... <[#Info2, 2]>
+  [143] pushlist ................................ <[#Info2, 2]>
+  [144] pushsymb 538 ............................ <#Auto>
+  [147] pushsymb 538 ............................ <#Auto>
+  [150] pusharglist 4 ........................... <[[#Info2, 1], [#Info2, 2], #Auto, #Auto]>
+  [152] pushlist ................................ <[[#Info2, 1], [#Info2, 2], #Auto, #Auto]>
+  [153] pusharglist 8 ........................... <[#ID: #Meter2, #type: #Dialog, #inOffsetRect: rect(90, 27, 0, 0), #rel: [[#Info2, 1], [#Info2, 2], #Auto, #Auto]]>
+  [155] pushproplist ............................ <[#ID: #Meter2, #type: #Dialog, #inOffsetRect: rect(90, 27, 0, 0), #rel: [[#Info2, 1], [#Info2, 2], #Auto, #Auto]]>
+  [156] pusharglist 2 ........................... <ancestor.m_objDlg, [#ID: #Meter2, #type: #Dialog, #inOffsetRect: rect(90, 27, 0, 0), #rel: [[#Info2, 1], [#Info2, 2], #Auto, #Auto]]>
+  [158] objcall 541 ............................. <ancestor.m_objDlg.addItem([#ID: #Meter2, #type: #Dialog, #inOffsetRect: rect(90, 27, 0, 0), #rel: [[#Info2, 1], [#Info2, 2], #Auto, #Auto]])>
+  [161] setlocal 8 .............................. itemObj = ancestor.m_objDlg.addItem([#ID: #Meter2, #type: #Dialog, #inOffsetRect: rect(90, 27, 0, 0), #rel: [[#Info2, 1], [#Info2, 2], #Auto, #Auto]])
+  [163] getlocal 8 .............................. <itemObj>
+  [165] pusharglistnoret 1 ...................... <itemObj>
+  [167] extcall 1149 ............................ rNewGenerateMeter(itemObj)
+  [170] getparam 0 .............................. <me>
+  [172] getprop 996 ............................. <m_songs_r>
+  [175] pushint8 1 .............................. <1>
+  [178] pusharglist 2 ........................... <m_songs_r, 1>
+  [180] objcall 51 .............................. <m_songs_r[1]>
+  [183] pusharglistnoret 2 ...................... <me, m_songs_r[1]>
+  [185] objcall 1138 ............................ me.setSong(m_songs_r[1])
+  [188] getglobal 35 ............................ <gRock>
+  [191] getobjprop 36 ........................... <gRock.m_context>
+  [194] pushsymb 617 ............................ <#Song>
+  [197] getprop 923 ............................. <m_song_r>
+  [200] pusharglistnoret 3 ...................... <gRock.m_context, #Song, m_song_r>
+  [202] objcall 471 ............................. gRock.m_context.setFocus(#Song, m_song_r)
+  [205] ret
+end
+
+on setSong me, argObj
+  [  0] getprop 447 ............................. <ancestor>
+  [  3] getobjprop 360 .......................... <ancestor.m_objDlg>
+  [  6] setlocal 0 .............................. dlgObj = ancestor.m_objDlg
+  [  8] getparam 8 .............................. <argObj>
+  [ 10] setprop 923 ............................. m_song_r = argObj
+  [ 13] getglobal 35 ............................ <gRock>
+  [ 16] getobjprop 36 ........................... <gRock.m_context>
+  [ 19] pushsymb 617 ............................ <#Song>
+  [ 22] getprop 923 ............................. <m_song_r>
+  [ 25] pushint8 1 .............................. <1>
+  [ 28] pusharglistnoret 4 ...................... <gRock.m_context, #Song, m_song_r, 1>
+  [ 30] objcall 471 ............................. gRock.m_context.setFocus(#Song, m_song_r, 1)
+  [ 33] getlocal 0 .............................. <dlgObj>
+  [ 35] pushsymb 393 ............................ <#Info>
+  [ 38] pusharglist 2 ........................... <dlgObj, #Info>
+  [ 40] objcall 362 ............................. <dlgObj.getItem(#Info)>
+  [ 43] setlocal 8 .............................. itemObj = dlgObj.getItem(#Info)
+  [ 45] getlocal 8 .............................. <itemObj>
+  [ 47] pushsymb 361 ............................ <#Pic>
+  [ 50] getprop 923 ............................. <m_song_r>
+  [ 53] getobjprop 172 .......................... <m_song_r.name>
+  [ 56] pushsymb 819 ............................ <#szidDescription>
+  [ 59] getprop 923 ............................. <m_song_r>
+  [ 62] getobjprop 276 .......................... <m_song_r.comment>
+  [ 65] pusharglist 3 ........................... <[m_song_r.name, #szidDescription, m_song_r.comment]>
+  [ 67] pushlist ................................ <[m_song_r.name, #szidDescription, m_song_r.comment]>
+  [ 68] pushcons 16 ............................. <"PublishFormatting">
+  [ 70] pusharglist 2 ........................... <[m_song_r.name, #szidDescription, m_song_r.comment], "PublishFormatting">
+  [ 72] extcall 382 ............................. <rFormatText([m_song_r.name, #szidDescription, m_song_r.comment], "PublishFormatting")>
+  [ 75] pusharglistnoret 3 ...................... <itemObj, #Pic, rFormatText([m_song_r.name, #szidDescription, m_song_r.comment], "PublishFormatting")>
+  [ 77] objcall 364 ............................. itemObj.setOneProp(#Pic, rFormatText([m_song_r.name, #szidDescription, m_song_r.comment], "PublishFormatting"))
+  [ 80] getprop 447 ............................. <ancestor>
+  [ 83] getobjprop 360 .......................... <ancestor.m_objDlg>
+  [ 86] pushsymb 1148 ........................... <#Meter1>
+  [ 89] pusharglist 2 ........................... <ancestor.m_objDlg, #Meter1>
+  [ 91] objcall 362 ............................. <ancestor.m_objDlg.getItem(#Meter1)>
+  [ 94] setlocal 8 .............................. itemObj = ancestor.m_objDlg.getItem(#Meter1)
+  [ 96] getlocal 8 .............................. <itemObj>
+  [ 98] pushsymb 1153 ........................... <#setMeter>
+  [101] getprop 923 ............................. <m_song_r>
+  [104] getobjprop 1118 ......................... <m_song_r.SongType>
+  [107] pusharglistnoret 3 ...................... <itemObj, #setMeter, m_song_r.SongType>
+  [109] objcall 491 ............................. itemObj.send(#setMeter, m_song_r.SongType)
+  [112] getprop 447 ............................. <ancestor>
+  [115] getobjprop 360 .......................... <ancestor.m_objDlg>
+  [118] pushsymb 1150 ........................... <#Meter2>
+  [121] pusharglist 2 ........................... <ancestor.m_objDlg, #Meter2>
+  [123] objcall 362 ............................. <ancestor.m_objDlg.getItem(#Meter2)>
+  [126] setlocal 8 .............................. itemObj = ancestor.m_objDlg.getItem(#Meter2)
+  [128] getlocal 8 .............................. <itemObj>
+  [130] pushsymb 1153 ........................... <#setMeter>
+  [133] getprop 923 ............................. <m_song_r>
+  [136] getobjprop 206 .......................... <m_song_r.quality>
+  [139] pusharglistnoret 3 ...................... <itemObj, #setMeter, m_song_r.quality>
+  [141] objcall 491 ............................. itemObj.send(#setMeter, m_song_r.quality)
+  [144] getlocal 0 .............................. <dlgObj>
+  [146] pushsymb 818 ............................ <#Info2>
+  [149] pusharglist 2 ........................... <dlgObj, #Info2>
+  [151] objcall 362 ............................. <dlgObj.getItem(#Info2)>
+  [154] setlocal 8 .............................. itemObj = dlgObj.getItem(#Info2)
+  [156] getlocal 8 .............................. <itemObj>
+  [158] pushsymb 361 ............................ <#Pic>
+  [161] pushsymb 1155 ........................... <#szidHitFactor>
+  [164] pushsymb 492 ............................ <#szidPrice>
+  [167] getprop 923 ............................. <m_song_r>
+  [170] getobjprop 618 .......................... <m_song_r.PriceModel>
+  [173] getobjprop 771 .......................... <m_song_r.PriceModel.BasePrice>
+  [176] pushzero ................................ <0>
+  [177] pushint8 1 .............................. <1>
+  [180] pusharglist 3 ........................... <m_song_r.PriceModel.BasePrice, 0, 1>
+  [182] extcall 493 ............................. <rCurrency(m_song_r.PriceModel.BasePrice, 0, 1)>
+  [185] pushsymb 832 ............................ <#szidQuality>
+  [188] pushsymb 594 ............................ <#szidRoyalty>
+  [191] getprop 923 ............................. <m_song_r>
+  [194] getobjprop 618 .......................... <m_song_r.PriceModel>
+  [197] getobjprop 596 .......................... <m_song_r.PriceModel.Royalty>
+  [200] pushint8 1 .............................. <1>
+  [203] pusharglist 2 ........................... <m_song_r.PriceModel.Royalty, 1>
+  [205] extcall 595 ............................. <convFloatToPercent(m_song_r.PriceModel.Royalty, 1)>
+  [208] pushcons 24 ............................. <"%">
+  [210] joinstr ................................. <convFloatToPercent(m_song_r.PriceModel.Royalty, 1) & "%">
+  [211] pusharglist 6 ........................... <[#szidHitFactor, #szidPrice, rCurrency(m_song_r.PriceModel.BasePrice, 0, 1), #szidQuality, #szidRoyalty, convFloatToPercent(m_song_r.PriceModel.Royalty, 1) & "%"]>
+  [213] pushlist ................................ <[#szidHitFactor, #szidPrice, rCurrency(m_song_r.PriceModel.BasePrice, 0, 1), #szidQuality, #szidRoyalty, convFloatToPercent(m_song_r.PriceModel.Royalty, 1) & "%"]>
+  [214] pushcons 32 ............................. <"Publish2Formatting">
+  [216] pusharglist 2 ........................... <[#szidHitFactor, #szidPrice, rCurrency(m_song_r.PriceModel.BasePrice, 0, 1), #szidQuality, #szidRoyalty, convFloatToPercent(m_song_r.PriceModel.Royalty, 1) & "%"], "Publish2Formatting">
+  [218] extcall 382 ............................. <rFormatText([#szidHitFactor, #szidPrice, rCurrency(m_song_r.PriceModel.BasePrice, 0, 1), #szidQuality, #szidRoyalty, convFloatToPercent(m_song_r.PriceModel.Royalty, 1) & "%"], "Publish2Formatting")>
+  [221] pusharglistnoret 3 ...................... <itemObj, #Pic, rFormatText([#szidHitFactor, #szidPrice, rCurrency(m_song_r.PriceModel.BasePrice, 0, 1), #szidQuality, #szidRoyalty, convFloatToPercent(m_song_r.PriceModel.Royalty, 1) & "%"], "Publish2Formatting")>
+  [223] objcall 364 ............................. itemObj.setOneProp(#Pic, rFormatText([#szidHitFactor, #szidPrice, rCurrency(m_song_r.PriceModel.BasePrice, 0, 1), #szidQuality, #szidRoyalty, convFloatToPercent(m_song_r.PriceModel.Royalty, 1) & "%"], "Publish2Formatting"))
+  [226] ret
+end
+
+on zzplaySong me
+  [  0] pushint8 1 .............................. <1>
+  [  3] pusharglistnoret 1 ...................... <1>
+  [  5] extcall 681 ............................. waitCursor(1)
+  [  8] getprop 1167 ............................ <m_sequencer>
+  [ 11] pusharglist 1 ........................... <m_sequencer>
+  [ 13] extcall 63 .............................. <objectp(m_sequencer)>
+  [ 16] jmpifz [ 29] ............................ if objectp(m_sequencer) then
+  [ 19] getprop 1167 ............................ <m_sequencer>
+  [ 22] pusharglist 1 ........................... <m_sequencer>
+  [ 24] objcall 3 ............................... <m_sequencer.kill()>
+  [ 26] setprop 1167 ............................ m_sequencer = m_sequencer.kill()
+  [ 29] getglobal 35 ............................ <gRock>
+  [ 32] getobjprop 77 ........................... <gRock.m_classManager>
+  [ 35] getprop 923 ............................. <m_song_r>
+  [ 38] getobjprop 1168 ......................... <m_song_r.MixerDefault>
+  [ 41] pushsymb 1169 ........................... <#MixerSettings>
+  [ 44] pusharglist 3 ........................... <gRock.m_classManager, m_song_r.MixerDefault, #MixerSettings>
+  [ 46] objcall 403 ............................. <gRock.m_classManager.getObjByIDAndClass(m_song_r.MixerDefault, #MixerSettings)>
+  [ 49] setlocal 0 .............................. mix_r = gRock.m_classManager.getObjByIDAndClass(m_song_r.MixerDefault, #MixerSettings)
+  [ 51] getlocal 0 .............................. <mix_r>
+  [ 53] pusharglist 1 ........................... <mix_r>
+  [ 55] extcall 63 .............................. <objectp(mix_r)>
+  [ 58] not ..................................... <not objectp(mix_r)>
+  [ 59] jmpifz [ 63] ............................ if not objectp(mix_r) then
+  [ 62] ret ..................................... exit
+  [ 63] getlocal 0 .............................. <mix_r>
+  [ 65] pushsymb 1170 ........................... <#channels>
+  [ 68] pusharglist 2 ........................... <mix_r, #channels>
+  [ 70] objcall 85 .............................. <mix_r.channels.count>
+  [ 73] setlocal 8 .............................. tmpNumCh = mix_r.channels.count
+  [ 75] getlocal 8 .............................. <tmpNumCh>
+  [ 77] pushint8 2 .............................. <2>
+  [ 80] gt ...................................... <tmpNumCh > 2>
+  [ 81] jmpifz [ 89] ............................ if tmpNumCh > 2 then
+  [ 84] pushint8 2 .............................. <2>
+  [ 87] setlocal 8 .............................. tmpNumCh = 2
+  [ 89] getlocal 8 .............................. <tmpNumCh>
+  [ 91] pushzero ................................ <0>
+  [ 92] eq ...................................... <tmpNumCh = 0>
+  [ 93] jmpifz [ 97] ............................ if tmpNumCh = 0 then
+  [ 96] ret ..................................... exit
+  [ 97] pushcons 40 ............................. <"PlaySequenceScript">
+  [ 99] pusharglist 1 ........................... <"PlaySequenceScript">
+  [101] extcall 49 .............................. <script("PlaySequenceScript")>
+  [104] pusharglist 1 ........................... <script("PlaySequenceScript")>
+  [106] objcall 0 ............................... <script("PlaySequenceScript").new()>
+  [108] setprop 1167 ............................ m_sequencer = script("PlaySequenceScript").new()
+  [111] getprop 1167 ............................ <m_sequencer>
+  [114] pushsymb 42 ............................. <#sound>
+  [117] getglobal 35 ............................ <gRock>
+  [120] getobjprop 41 ........................... <gRock.m_paths>
+  [123] pushsymb 41 ............................. <#m_paths>
+  [126] pushsymb 568 ............................ <#RenderedMusic>
+  [129] pusharglist 3 ........................... <gRock.m_paths, #m_paths, #RenderedMusic>
+  [131] objcall 82 .............................. <gRock.m_paths.m_paths[#RenderedMusic]>
+  [134] pusharglist 2 ........................... <[#sound: gRock.m_paths.m_paths[#RenderedMusic]]>
+  [136] pushproplist ............................ <[#sound: gRock.m_paths.m_paths[#RenderedMusic]]>
+  [137] pusharglistnoret 2 ...................... <m_sequencer, [#sound: gRock.m_paths.m_paths[#RenderedMusic]]>
+  [139] objcall 1171 ............................ m_sequencer.setPaths([#sound: gRock.m_paths.m_paths[#RenderedMusic]])
+  [142] getprop 1167 ............................ <m_sequencer>
+  [145] getprop 923 ............................. <m_song_r>
+  [148] pushsymb 1172 ........................... <#BPM>
+  [151] pusharglist 2 ........................... <m_song_r, #BPM>
+  [153] extcall 283 ............................. <rgetProp(m_song_r, #BPM)>
+  [156] setobjprop 1173 ......................... m_sequencer.m_bpm = rgetProp(m_song_r, #BPM)
+  [159] getprop 1167 ............................ <m_sequencer>
+  [162] getprop 923 ............................. <m_song_r>
+  [165] getobjprop 1174 ......................... <m_song_r.numBars>
+  [168] setobjprop 1175 ......................... m_sequencer.m_numBars = m_song_r.numBars
+  [171] getprop 1167 ............................ <m_sequencer>
+  [174] getprop 923 ............................. <m_song_r>
+  [177] getobjprop 1176 ......................... <m_song_r.TimeSignature>
+  [180] setobjprop 1177 ......................... m_sequencer.m_beatSignature = m_song_r.TimeSignature
+  [183] pushint8 1 .............................. <1>
+  [186] setlocal 16
+  [188] getlocal 16
+  [190] getlocal 8 .............................. <tmpNumCh>
+  [192] lteq
+  [193] jmpifz [479] ............................ repeat with n = 1 to tmpNumCh
+  [196] getlocal 0 .............................. <mix_r>
+  [198] getobjprop 1170 ......................... <mix_r.channels>
+  [201] getlocal 16 ............................. <n>
+  [203] pusharglist 2 ........................... <mix_r.channels, n>
+  [205] objcall 51 .............................. <mix_r.channels[n]>
+  [208] setlocal 24 ............................. chID = mix_r.channels[n]
+  [210] getglobal 35 ............................ <gRock>
+  [213] getobjprop 77 ........................... <gRock.m_classManager>
+  [216] getlocal 24 ............................. <chID>
+  [218] pushsymb 1178 ........................... <#channel>
+  [221] pusharglist 3 ........................... <gRock.m_classManager, chID, #channel>
+  [223] objcall 403 ............................. <gRock.m_classManager.getObjByIDAndClass(chID, #channel)>
+  [226] setlocal 32 ............................. ch_r = gRock.m_classManager.getObjByIDAndClass(chID, #channel)
+  [228] getlocal 32 ............................. <ch_r>
+  [230] getobjprop 1179 ......................... <ch_r.LoopID>
+  [233] setlocal 40 ............................. LoopID = ch_r.LoopID
+  [235] getglobal 35 ............................ <gRock>
+  [238] getobjprop 77 ........................... <gRock.m_classManager>
+  [241] getlocal 40 ............................. <LoopID>
+  [243] pushsymb 224 ............................ <#loop>
+  [246] pusharglist 3 ........................... <gRock.m_classManager, LoopID, #loop>
+  [248] objcall 403 ............................. <gRock.m_classManager.getObjByIDAndClass(LoopID, #loop)>
+  [251] setlocal 48 ............................. loop_r = gRock.m_classManager.getObjByIDAndClass(LoopID, #loop)
+  [253] pushcons 48 ............................. <"TrackLoopScript">
+  [255] pusharglist 1 ........................... <"TrackLoopScript">
+  [257] extcall 49 .............................. <script("TrackLoopScript")>
+  [260] getprop 1167 ............................ <m_sequencer>
+  [263] pusharglist 2 ........................... <script("TrackLoopScript"), m_sequencer>
+  [265] objcall 0 ............................... <script("TrackLoopScript").new(m_sequencer)>
+  [267] setlocal 56 ............................. trackObj = script("TrackLoopScript").new(m_sequencer)
+  [269] getlocal 48 ............................. <loop_r>
+  [271] getobjprop 863 .......................... <loop_r.file>
+  [274] setlocal 64 ............................. tmpFile = loop_r.file
+  [276] getglobal 35 ............................ <gRock>
+  [279] getobjprop 41 ........................... <gRock.m_paths>
+  [282] pushsymb 41 ............................. <#m_paths>
+  [285] pushsymb 568 ............................ <#RenderedMusic>
+  [288] pusharglist 3 ........................... <gRock.m_paths, #m_paths, #RenderedMusic>
+  [290] objcall 82 .............................. <gRock.m_paths.m_paths[#RenderedMusic]>
+  [293] getlocal 16 ............................. <n>
+  [295] pusharglist 1 ........................... <n>
+  [297] extcall 159 ............................. <string(n)>
+  [300] joinstr ................................. <gRock.m_paths.m_paths[#RenderedMusic] & string(n)>
+  [301] pushcons 56 ............................. <".wav">
+  [303] joinstr ................................. <gRock.m_paths.m_paths[#RenderedMusic] & string(n) & ".wav">
+  [304] setlocal 72 ............................. tmpOutFile = gRock.m_paths.m_paths[#RenderedMusic] & string(n) & ".wav"
+  [306] pushsymb 144 ............................ <#in>
+  [309] getglobal 35 ............................ <gRock>
+  [312] getobjprop 41 ........................... <gRock.m_paths>
+  [315] pushsymb 41 ............................. <#m_paths>
+  [318] pushsymb 1181 ........................... <#Sliced>
+  [321] pusharglist 3 ........................... <gRock.m_paths, #m_paths, #Sliced>
+  [323] objcall 82 .............................. <gRock.m_paths.m_paths[#Sliced]>
+  [326] getlocal 64 ............................. <tmpFile>
+  [328] joinstr ................................. <gRock.m_paths.m_paths[#Sliced] & tmpFile>
+  [329] pushcons 64 ............................. <"\\*.*">
+  [331] joinstr ................................. <gRock.m_paths.m_paths[#Sliced] & tmpFile & "\\*.*">
+  [332] pushsymb 1182 ........................... <#Out>
+  [335] getlocal 72 ............................. <tmpOutFile>
+  [337] pushsymb 1183 ........................... <#tempo>
+  [340] pushsymb 1184 ........................... <#Bars>
+  [343] getlocal 48 ............................. <loop_r>
+  [345] getobjprop 1174 ......................... <loop_r.numBars>
+  [348] pushsymb 1185 ........................... <#TimeSig>
+  [351] getprop 923 ............................. <m_song_r>
+  [354] pushsymb 1176 ........................... <#TimeSignature>
+  [357] pushint8 1 .............................. <1>
+  [360] pusharglist 3 ........................... <m_song_r, #TimeSignature, 1>
+  [362] objcall 82 .............................. <m_song_r.TimeSignature[1]>
+  [365] pusharglist 1 ........................... <m_song_r.TimeSignature[1]>
+  [367] extcall 159 ............................. <string(m_song_r.TimeSignature[1])>
+  [370] pushcons 72 ............................. <"/">
+  [372] joinstr ................................. <string(m_song_r.TimeSignature[1]) & "/">
+  [373] getprop 923 ............................. <m_song_r>
+  [376] pushsymb 1176 ........................... <#TimeSignature>
+  [379] pushint8 1 .............................. <1>
+  [382] pusharglist 3 ........................... <m_song_r, #TimeSignature, 1>
+  [384] objcall 82 .............................. <m_song_r.TimeSignature[1]>
+  [387] pusharglist 1 ........................... <m_song_r.TimeSignature[1]>
+  [389] extcall 159 ............................. <string(m_song_r.TimeSignature[1])>
+  [392] joinstr ................................. <string(m_song_r.TimeSignature[1]) & "/" & string(m_song_r.TimeSignature[1])>
+  [393] pushsymb 1172 ........................... <#BPM>
+  [396] getprop 1167 ............................ <m_sequencer>
+  [399] getobjprop 1173 ......................... <m_sequencer.m_bpm>
+  [402] pusharglist 6 ........................... <[#Bars: loop_r.numBars, #TimeSig: string(m_song_r.TimeSignature[1]) & "/" & string(m_song_r.TimeSignature[1]), #BPM: m_sequencer.m_bpm]>
+  [404] pushproplist ............................ <[#Bars: loop_r.numBars, #TimeSig: string(m_song_r.TimeSignature[1]) & "/" & string(m_song_r.TimeSignature[1]), #BPM: m_sequencer.m_bpm]>
+  [405] pusharglist 6 ........................... <[#in: gRock.m_paths.m_paths[#Sliced] & tmpFile & "\\*.*", #Out: tmpOutFile, #tempo: [#Bars: loop_r.numBars, #TimeSig: string(m_song_r.TimeSignature[1]) & "/" & string(m_song_r.TimeSignature[1]), #BPM: m_sequencer.m_bpm]]>
+  [407] pushproplist ............................ <[#in: gRock.m_paths.m_paths[#Sliced] & tmpFile & "\\*.*", #Out: tmpOutFile, #tempo: [#Bars: loop_r.numBars, #TimeSig: string(m_song_r.TimeSignature[1]) & "/" & string(m_song_r.TimeSignature[1]), #BPM: m_sequencer.m_bpm]]>
+  [408] pushsymb 1186 ........................... <#dll>
+  [411] pusharglist 2 ........................... <[#in: gRock.m_paths.m_paths[#Sliced] & tmpFile & "\\*.*", #Out: tmpOutFile, #tempo: [#Bars: loop_r.numBars, #TimeSig: string(m_song_r.TimeSignature[1]) & "/" & string(m_song_r.TimeSignature[1]), #BPM: m_sequencer.m_bpm]], #dll>
+  [413] extcall 1180 ............................ <mixGenFXStr([#in: gRock.m_paths.m_paths[#Sliced] & tmpFile & "\\*.*", #Out: tmpOutFile, #tempo: [#Bars: loop_r.numBars, #TimeSig: string(m_song_r.TimeSignature[1]) & "/" & string(m_song_r.TimeSignature[1]), #BPM: m_sequencer.m_bpm]], #dll)>
+  [416] setlocal 80 ............................. tmpStr = mixGenFXStr([#in: gRock.m_paths.m_paths[#Sliced] & tmpFile & "\\*.*", #Out: tmpOutFile, #tempo: [#Bars: loop_r.numBars, #TimeSig: string(m_song_r.TimeSignature[1]) & "/" & string(m_song_r.TimeSignature[1]), #BPM: m_sequencer.m_bpm]], #dll)
+  [418] getlocal 80 ............................. <tmpStr>
+  [420] pusharglistnoret 1 ...................... <tmpStr>
+  [422] extcall 1187 ............................ mixCallRockWave(tmpStr)
+  [425] getlocal 56 ............................. <trackObj>
+  [427] pushsymb 863 ............................ <#file>
+  [430] getlocal 16 ............................. <n>
+  [432] pusharglist 1 ........................... <n>
+  [434] extcall 159 ............................. <string(n)>
+  [437] pushcons 80 ............................. <".wav">
+  [439] joinstr ................................. <string(n) & ".wav">
+  [440] pusharglistnoret 3 ...................... <trackObj, #file, string(n) & ".wav">
+  [442] objcall 1188 ............................ trackObj.setSetting(#file, string(n) & ".wav")
+  [445] getlocal 56 ............................. <trackObj>
+  [447] pushsymb 141 ............................ <#vol>
+  [450] pushint8 80 ............................. <80>
+  [453] pusharglistnoret 3 ...................... <trackObj, #vol, 80>
+  [455] objcall 1188 ............................ trackObj.setSetting(#vol, 80)
+  [458] getprop 1167 ............................ <m_sequencer>
+  [461] getlocal 56 ............................. <trackObj>
+  [463] pusharglistnoret 2 ...................... <m_sequencer, trackObj>
+  [465] objcall 1189 ............................ m_sequencer.addLoopTrack(trackObj)
+  [468] pushint8 1
+  [471] getlocal 16
+  [473] add
+  [474] setlocal 16
+  [476] endrepeat [188]
+  [479] getprop 1167 ............................ <m_sequencer>
+  [482] pusharglistnoret 1 ...................... <m_sequencer>
+  [484] objcall 1190 ............................ m_sequencer.prepare()
+  [487] pushzero ................................ <0>
+  [488] pusharglistnoret 1 ...................... <0>
+  [490] extcall 681 ............................. waitCursor(0)
+  [493] getprop 1167 ............................ <m_sequencer>
+  [496] pusharglistnoret 1 ...................... <m_sequencer>
+  [498] objcall 151 ............................. m_sequencer.play()
+  [501] ret
+end
+
+on playSong me
+  [  0] pushint8 1 .............................. <1>
+  [  3] pusharglistnoret 1 ...................... <1>
+  [  5] extcall 681 ............................. waitCursor(1)
+  [  8] getprop 1167 ............................ <m_sequencer>
+  [ 11] pusharglist 1 ........................... <m_sequencer>
+  [ 13] extcall 63 .............................. <objectp(m_sequencer)>
+  [ 16] jmpifz [ 29] ............................ if objectp(m_sequencer) then
+  [ 19] getprop 1167 ............................ <m_sequencer>
+  [ 22] pusharglist 1 ........................... <m_sequencer>
+  [ 24] objcall 3 ............................... <m_sequencer.kill()>
+  [ 26] setprop 1167 ............................ m_sequencer = m_sequencer.kill()
+  [ 29] getglobal 35 ............................ <gRock>
+  [ 32] getobjprop 77 ........................... <gRock.m_classManager>
+  [ 35] getprop 923 ............................. <m_song_r>
+  [ 38] getobjprop 1168 ......................... <m_song_r.MixerDefault>
+  [ 41] pushsymb 1169 ........................... <#MixerSettings>
+  [ 44] pusharglist 3 ........................... <gRock.m_classManager, m_song_r.MixerDefault, #MixerSettings>
+  [ 46] objcall 403 ............................. <gRock.m_classManager.getObjByIDAndClass(m_song_r.MixerDefault, #MixerSettings)>
+  [ 49] setlocal 0 .............................. mix_r = gRock.m_classManager.getObjByIDAndClass(m_song_r.MixerDefault, #MixerSettings)
+  [ 51] getlocal 0 .............................. <mix_r>
+  [ 53] pusharglist 1 ........................... <mix_r>
+  [ 55] extcall 63 .............................. <objectp(mix_r)>
+  [ 58] not ..................................... <not objectp(mix_r)>
+  [ 59] jmpifz [ 63] ............................ if not objectp(mix_r) then
+  [ 62] ret ..................................... exit
+  [ 63] getlocal 0 .............................. <mix_r>
+  [ 65] pushsymb 1170 ........................... <#channels>
+  [ 68] pusharglist 2 ........................... <mix_r, #channels>
+  [ 70] objcall 85 .............................. <mix_r.channels.count>
+  [ 73] setlocal 8 .............................. tmpNumCh = mix_r.channels.count
+  [ 75] getlocal 8 .............................. <tmpNumCh>
+  [ 77] pushint8 2 .............................. <2>
+  [ 80] gt ...................................... <tmpNumCh > 2>
+  [ 81] jmpifz [ 89] ............................ if tmpNumCh > 2 then
+  [ 84] pushint8 2 .............................. <2>
+  [ 87] setlocal 8 .............................. tmpNumCh = 2
+  [ 89] getlocal 8 .............................. <tmpNumCh>
+  [ 91] pushzero ................................ <0>
+  [ 92] eq ...................................... <tmpNumCh = 0>
+  [ 93] jmpifz [ 97] ............................ if tmpNumCh = 0 then
+  [ 96] ret ..................................... exit
+  [ 97] pushcons 88 ............................. <"PlaySequenceScript">
+  [ 99] pusharglist 1 ........................... <"PlaySequenceScript">
+  [101] extcall 49 .............................. <script("PlaySequenceScript")>
+  [104] pusharglist 1 ........................... <script("PlaySequenceScript")>
+  [106] objcall 0 ............................... <script("PlaySequenceScript").new()>
+  [108] setprop 1167 ............................ m_sequencer = script("PlaySequenceScript").new()
+  [111] getprop 1167 ............................ <m_sequencer>
+  [114] pushsymb 42 ............................. <#sound>
+  [117] getglobal 35 ............................ <gRock>
+  [120] getobjprop 41 ........................... <gRock.m_paths>
+  [123] pushsymb 41 ............................. <#m_paths>
+  [126] pushsymb 568 ............................ <#RenderedMusic>
+  [129] pusharglist 3 ........................... <gRock.m_paths, #m_paths, #RenderedMusic>
+  [131] objcall 82 .............................. <gRock.m_paths.m_paths[#RenderedMusic]>
+  [134] pusharglist 2 ........................... <[#sound: gRock.m_paths.m_paths[#RenderedMusic]]>
+  [136] pushproplist ............................ <[#sound: gRock.m_paths.m_paths[#RenderedMusic]]>
+  [137] pusharglistnoret 2 ...................... <m_sequencer, [#sound: gRock.m_paths.m_paths[#RenderedMusic]]>
+  [139] objcall 1171 ............................ m_sequencer.setPaths([#sound: gRock.m_paths.m_paths[#RenderedMusic]])
+  [142] getprop 1167 ............................ <m_sequencer>
+  [145] getprop 923 ............................. <m_song_r>
+  [148] pushsymb 1172 ........................... <#BPM>
+  [151] pusharglist 2 ........................... <m_song_r, #BPM>
+  [153] extcall 283 ............................. <rgetProp(m_song_r, #BPM)>
+  [156] setobjprop 1173 ......................... m_sequencer.m_bpm = rgetProp(m_song_r, #BPM)
+  [159] getprop 1167 ............................ <m_sequencer>
+  [162] getprop 923 ............................. <m_song_r>
+  [165] getobjprop 1174 ......................... <m_song_r.numBars>
+  [168] setobjprop 1175 ......................... m_sequencer.m_numBars = m_song_r.numBars
+  [171] getprop 1167 ............................ <m_sequencer>
+  [174] getprop 923 ............................. <m_song_r>
+  [177] getobjprop 1176 ......................... <m_song_r.TimeSignature>
+  [180] setobjprop 1177 ......................... m_sequencer.m_beatSignature = m_song_r.TimeSignature
+  [183] getprop 1198 ............................ <m_waveRenderer>
+  [186] pusharglist 1 ........................... <m_waveRenderer>
+  [188] extcall 181 ............................. <voidp(m_waveRenderer)>
+  [191] jmpifz [208] ............................ if voidp(m_waveRenderer) then
+  [194] pushcons 96 ............................. <"WaveRenderScript">
+  [196] pusharglist 1 ........................... <"WaveRenderScript">
+  [198] extcall 49 .............................. <script("WaveRenderScript")>
+  [201] pusharglist 1 ........................... <script("WaveRenderScript")>
+  [203] objcall 0 ............................... <script("WaveRenderScript").new()>
+  [205] setprop 1198 ............................ m_waveRenderer = script("WaveRenderScript").new()
+  [208] pushint8 1 .............................. <1>
+  [211] setlocal 16
+  [213] getlocal 16
+  [215] getlocal 8 .............................. <tmpNumCh>
+  [217] lteq
+  [218] jmpifz [375] ............................ repeat with n = 1 to tmpNumCh
+  [221] getlocal 0 .............................. <mix_r>
+  [223] getobjprop 1170 ......................... <mix_r.channels>
+  [226] getlocal 16 ............................. <n>
+  [228] pusharglist 2 ........................... <mix_r.channels, n>
+  [230] objcall 51 .............................. <mix_r.channels[n]>
+  [233] setlocal 24 ............................. chID = mix_r.channels[n]
+  [235] getglobal 35 ............................ <gRock>
+  [238] getobjprop 77 ........................... <gRock.m_classManager>
+  [241] getlocal 24 ............................. <chID>
+  [243] pushsymb 1178 ........................... <#channel>
+  [246] pusharglist 3 ........................... <gRock.m_classManager, chID, #channel>
+  [248] objcall 403 ............................. <gRock.m_classManager.getObjByIDAndClass(chID, #channel)>
+  [251] setlocal 32 ............................. ch_r = gRock.m_classManager.getObjByIDAndClass(chID, #channel)
+  [253] getlocal 32 ............................. <ch_r>
+  [255] getobjprop 1179 ......................... <ch_r.LoopID>
+  [258] setlocal 40 ............................. LoopID = ch_r.LoopID
+  [260] getglobal 35 ............................ <gRock>
+  [263] getobjprop 77 ........................... <gRock.m_classManager>
+  [266] getlocal 40 ............................. <LoopID>
+  [268] pushsymb 224 ............................ <#loop>
+  [271] pusharglist 3 ........................... <gRock.m_classManager, LoopID, #loop>
+  [273] objcall 403 ............................. <gRock.m_classManager.getObjByIDAndClass(LoopID, #loop)>
+  [276] setlocal 48 ............................. loop_r = gRock.m_classManager.getObjByIDAndClass(LoopID, #loop)
+  [278] getprop 1198 ............................ <m_waveRenderer>
+  [281] getlocal 16 ............................. <n>
+  [283] getlocal 48 ............................. <loop_r>
+  [285] getobjprop 863 .......................... <loop_r.file>
+  [288] pushsymb 1183 ........................... <#tempo>
+  [291] pushsymb 1184 ........................... <#Bars>
+  [294] getlocal 48 ............................. <loop_r>
+  [296] getobjprop 1174 ......................... <loop_r.numBars>
+  [299] pushsymb 1185 ........................... <#TimeSig>
+  [302] getprop 923 ............................. <m_song_r>
+  [305] pushsymb 1176 ........................... <#TimeSignature>
+  [308] pushint8 1 .............................. <1>
+  [311] pusharglist 3 ........................... <m_song_r, #TimeSignature, 1>
+  [313] objcall 82 .............................. <m_song_r.TimeSignature[1]>
+  [316] pusharglist 1 ........................... <m_song_r.TimeSignature[1]>
+  [318] extcall 159 ............................. <string(m_song_r.TimeSignature[1])>
+  [321] pushcons 104 ............................ <"/">
+  [323] joinstr ................................. <string(m_song_r.TimeSignature[1]) & "/">
+  [324] getprop 923 ............................. <m_song_r>
+  [327] pushsymb 1176 ........................... <#TimeSignature>
+  [330] pushint8 1 .............................. <1>
+  [333] pusharglist 3 ........................... <m_song_r, #TimeSignature, 1>
+  [335] objcall 82 .............................. <m_song_r.TimeSignature[1]>
+  [338] pusharglist 1 ........................... <m_song_r.TimeSignature[1]>
+  [340] extcall 159 ............................. <string(m_song_r.TimeSignature[1])>
+  [343] joinstr ................................. <string(m_song_r.TimeSignature[1]) & "/" & string(m_song_r.TimeSignature[1])>
+  [344] pushsymb 1172 ........................... <#BPM>
+  [347] getprop 1167 ............................ <m_sequencer>
+  [350] getobjprop 1173 ......................... <m_sequencer.m_bpm>
+  [353] pusharglist 6 ........................... <[#Bars: loop_r.numBars, #TimeSig: string(m_song_r.TimeSignature[1]) & "/" & string(m_song_r.TimeSignature[1]), #BPM: m_sequencer.m_bpm]>
+  [355] pushproplist ............................ <[#Bars: loop_r.numBars, #TimeSig: string(m_song_r.TimeSignature[1]) & "/" & string(m_song_r.TimeSignature[1]), #BPM: m_sequencer.m_bpm]>
+  [356] pusharglist 2 ........................... <[#tempo: [#Bars: loop_r.numBars, #TimeSig: string(m_song_r.TimeSignature[1]) & "/" & string(m_song_r.TimeSignature[1]), #BPM: m_sequencer.m_bpm]]>
+  [358] pushproplist ............................ <[#tempo: [#Bars: loop_r.numBars, #TimeSig: string(m_song_r.TimeSignature[1]) & "/" & string(m_song_r.TimeSignature[1]), #BPM: m_sequencer.m_bpm]]>
+  [359] pusharglistnoret 4 ...................... <m_waveRenderer, n, loop_r.file, [#tempo: [#Bars: loop_r.numBars, #TimeSig: string(m_song_r.TimeSignature[1]) & "/" & string(m_song_r.TimeSignature[1]), #BPM: m_sequencer.m_bpm]]>
+  [361] objcall 1199 ............................ m_waveRenderer.queueRendering(n, loop_r.file, [#tempo: [#Bars: loop_r.numBars, #TimeSig: string(m_song_r.TimeSignature[1]) & "/" & string(m_song_r.TimeSignature[1]), #BPM: m_sequencer.m_bpm]])
+  [364] pushint8 1
+  [367] getlocal 16
+  [369] add
+  [370] setlocal 16
+  [372] endrepeat [213]
+  [375] getprop 1198 ............................ <m_waveRenderer>
+  [378] pushsymb 437 ............................ <#ReportTo>
+  [381] getparam 0 .............................. <me>
+  [383] pushsymb 464 ............................ <#handler>
+  [386] pushsymb 1165 ........................... <#renderDone>
+  [389] pusharglist 4 ........................... <[#ReportTo: me, #handler: #renderDone]>
+  [391] pushproplist ............................ <[#ReportTo: me, #handler: #renderDone]>
+  [392] setobjprop 1200 ......................... m_waveRenderer.m_doWhatWhenDoneList = [#ReportTo: me, #handler: #renderDone]
+  [395] getprop 1198 ............................ <m_waveRenderer>
+  [398] pusharglistnoret 1 ...................... <m_waveRenderer>
+  [400] objcall 1201 ............................ m_waveRenderer.renderQueue()
+  [403] ret
+end
+
+on renderDone me
+  [  0] getprop 1198 ............................ <m_waveRenderer>
+  [  3] pusharglist 0 ........................... <[:]>
+  [  5] pushproplist ............................ <[:]>
+  [  6] setobjprop 1200 ......................... m_waveRenderer.m_doWhatWhenDoneList = [:]
+  [  9] pushint8 1 .............................. <1>
+  [ 12] setlocal 0
+  [ 14] getlocal 0
+  [ 16] getprop 1198 ............................ <m_waveRenderer>
+  [ 19] pushsymb 1202 ........................... <#m_rendered>
+  [ 22] pusharglist 2 ........................... <m_waveRenderer, #m_rendered>
+  [ 24] objcall 85 .............................. <m_waveRenderer.m_rendered.count>
+  [ 27] lteq
+  [ 28] jmpifz [113] ............................ repeat with n = 1 to m_waveRenderer.m_rendered.count
+  [ 31] pushcons 112 ............................ <"TrackLoopScript">
+  [ 33] pusharglist 1 ........................... <"TrackLoopScript">
+  [ 35] extcall 49 .............................. <script("TrackLoopScript")>
+  [ 38] getprop 1167 ............................ <m_sequencer>
+  [ 41] pusharglist 2 ........................... <script("TrackLoopScript"), m_sequencer>
+  [ 43] objcall 0 ............................... <script("TrackLoopScript").new(m_sequencer)>
+  [ 45] setlocal 8 .............................. trackObj = script("TrackLoopScript").new(m_sequencer)
+  [ 47] getprop 1198 ............................ <m_waveRenderer>
+  [ 50] getobjprop 1202 ......................... <m_waveRenderer.m_rendered>
+  [ 53] getlocal 0 .............................. <n>
+  [ 55] pusharglist 2 ........................... <m_waveRenderer.m_rendered, n>
+  [ 57] objcall 51 .............................. <m_waveRenderer.m_rendered[n]>
+  [ 60] pusharglist 1 ........................... <m_waveRenderer.m_rendered[n]>
+  [ 62] extcall 1203 ............................ <fileExtractName(m_waveRenderer.m_rendered[n])>
+  [ 65] setlocal 16 ............................. tmpFile = fileExtractName(m_waveRenderer.m_rendered[n])
+  [ 67] getlocal 8 .............................. <trackObj>
+  [ 69] pushsymb 863 ............................ <#file>
+  [ 72] getlocal 16 ............................. <tmpFile>
+  [ 74] pusharglistnoret 3 ...................... <trackObj, #file, tmpFile>
+  [ 76] objcall 1188 ............................ trackObj.setSetting(#file, tmpFile)
+  [ 79] getlocal 8 .............................. <trackObj>
+  [ 81] pushsymb 141 ............................ <#vol>
+  [ 84] pushint8 80 ............................. <80>
+  [ 87] pusharglistnoret 3 ...................... <trackObj, #vol, 80>
+  [ 89] objcall 1188 ............................ trackObj.setSetting(#vol, 80)
+  [ 92] getprop 1167 ............................ <m_sequencer>
+  [ 95] getlocal 8 .............................. <trackObj>
+  [ 97] pusharglistnoret 2 ...................... <m_sequencer, trackObj>
+  [ 99] objcall 1189 ............................ m_sequencer.addLoopTrack(trackObj)
+  [102] pushint8 1
+  [105] getlocal 0
+  [107] add
+  [108] setlocal 0
+  [110] endrepeat [ 14]
+  [113] getprop 1167 ............................ <m_sequencer>
+  [116] pusharglistnoret 1 ...................... <m_sequencer>
+  [118] objcall 1190 ............................ m_sequencer.prepare()
+  [121] pushzero ................................ <0>
+  [122] pusharglistnoret 1 ...................... <0>
+  [124] extcall 681 ............................. waitCursor(0)
+  [127] getprop 1167 ............................ <m_sequencer>
+  [130] pusharglistnoret 1 ...................... <m_sequencer>
+  [132] objcall 151 ............................. m_sequencer.play()
+  [135] ret
+end
+
+on playSongX me
+  [  0] getprop 923 ............................. <m_song_r>
+  [  3] getobjprop 86 ........................... <m_song_r.ID>
+  [  6] pusharglist 1 ........................... <m_song_r.ID>
+  [  8] extcall 159 ............................. <string(m_song_r.ID)>
+  [ 11] setlocal 0 .............................. fileName = string(m_song_r.ID)
+  [ 13] getlocal 0 .............................. <fileName>
+  [ 15] pushsymb 245 ............................ <#char>
+  [ 18] getlocal 0 .............................. <fileName>
+  [ 20] getobjprop 244 .......................... <fileName.length>
+  [ 23] pushint8 1 .............................. <1>
+  [ 26] sub ..................................... <fileName.length - 1>
+  [ 27] getlocal 0 .............................. <fileName>
+  [ 29] getobjprop 244 .......................... <fileName.length>
+  [ 32] pusharglist 4 ........................... <fileName, #char, fileName.length - 1, fileName.length>
+  [ 34] objcall 82 .............................. <fileName.char[fileName.length - 1..fileName.length]>
+  [ 37] setlocal 0 .............................. fileName = fileName.char[fileName.length - 1..fileName.length]
+  [ 39] getlocal 0 .............................. <fileName>
+  [ 41] pushcons 120 ............................ <"pre.wav">
+  [ 43] joinstr ................................. <fileName & "pre.wav">
+  [ 44] setlocal 0 .............................. fileName = fileName & "pre.wav"
+  [ 46] getglobal 35 ............................ <gRock>
+  [ 49] getobjprop 41 ........................... <gRock.m_paths>
+  [ 52] pushsymb 41 ............................. <#m_paths>
+  [ 55] pushsymb 1162 ........................... <#music>
+  [ 58] pusharglist 3 ........................... <gRock.m_paths, #m_paths, #music>
+  [ 60] objcall 82 .............................. <gRock.m_paths.m_paths[#music]>
+  [ 63] getlocal 0 .............................. <fileName>
+  [ 65] joinstr ................................. <gRock.m_paths.m_paths[#music] & fileName>
+  [ 66] setlocal 0 .............................. fileName = gRock.m_paths.m_paths[#music] & fileName
+  [ 68] pushint8 1 .............................. <1>
+  [ 71] pusharglist 1 ........................... <1>
+  [ 73] extcall 42 .............................. <sound(1)>
+  [ 76] setprop 861 ............................. m_snd = sound(1)
+  [ 79] getprop 861 ............................. <m_snd>
+  [ 82] getlocal 0 .............................. <fileName>
+  [ 84] pusharglistnoret 2 ...................... <m_snd, fileName>
+  [ 86] objcall 1204 ............................ m_snd.playFile(fileName)
+  [ 89] ret
+end

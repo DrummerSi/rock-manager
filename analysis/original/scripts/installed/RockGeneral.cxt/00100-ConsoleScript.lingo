@@ -1,0 +1,84 @@
+property m_keyObj, m_dlg
+global gDir
+
+on new me
+  m_keyObj = script("KeyObject").new(me, "w", [#prio: 10])
+  return me
+end
+
+on kill me
+  m_keyObj = m_keyObj.kill()
+  if objectp(m_dlg) then
+    m_dlg = m_dlg.kill()
+  end if
+  return 0
+end
+
+on issueCommand me, argStr
+  argStr = trimStringFromChars(argStr, [SPACE, RETURN])
+  if argStr = "likes" then
+    a = script("LikesOrNot").new()
+    a.show(#Likes)
+  else
+    if argStr = "groups" then
+      a = script("LikesOrNot").new()
+      a.show(#groups)
+    else
+      if (argStr = "Musician") or (argStr = "Mus") then
+        a = script("LikesOrNot").new()
+        a.show(#Musician)
+      else
+        if argStr.length > 0 then
+          rExecuteActions([argStr])
+        end if
+      end if
+    end if
+  end if
+  pott("Issue command!", argStr)
+end
+
+on closeConsole me
+  m_keyObj.Active = 1
+  m_dlg = m_dlg.kill()
+end
+
+on key me, argObj, argWhat, argWhich
+  if argWhat = #down then
+    if objectp(m_dlg) then
+      me.closeConsole()
+    else
+      if not (the shiftDown) then
+        exit
+      end if
+      m_keyObj.Active = 0
+      SPNum = gDir.m_spriteList[#Console]
+      m_dlg = script("Dialog").new([#AttachImageToMember: "SaveLoadDialogAssembly", #StartSpriteNum: SPNum, #NumSprites: 2, #OKtoResize: 1, #ID: #AAA])
+      tmpList = member("DlgTextData").text.value
+      m_dlg.rawCreate(tmpList)
+      obj = m_dlg.getItem(#text)
+      obj.scriptInstanceList.add(me)
+      obj.setOneProp(#editData, " ")
+      obj = m_dlg.getItem(#close)
+      obj.scriptInstanceList.add(me)
+      m_dlg.renderAtLoc(point(100, 100))
+    end if
+  end if
+end
+
+on Report me, argObj, argWhat, argOptions
+  if argWhat = #EditField then
+    me.issueCommand(argOptions)
+  else
+    pott(argObj, argWhat, argOptions)
+  end if
+end
+
+on mouse me, argObj, argWhat, argOptions
+  if argWhat = #click then
+    if objectp(argOptions) then
+      if argOptions.ID = #close then
+        me.closeConsole()
+      end if
+    end if
+  end if
+end

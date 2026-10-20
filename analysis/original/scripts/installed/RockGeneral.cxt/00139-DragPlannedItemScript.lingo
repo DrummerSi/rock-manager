@@ -1,0 +1,105 @@
+property m_mouseObj, m_plannedItemObj, m_agenda, m_oneItemObj, m_SP, m_lastOKInfo
+
+on new me, argAgenda, argOneItemObj, argInfo, argSP
+  if voidp(argInfo) then
+    argInfo = [:]
+  end if
+  m_oneItemObj = argOneItemObj
+  m_agenda = argAgenda
+  m_mouseObj = script("MouseObject").new(me, rect(-1000, -1000, 2000, 2000), [#layer: 1000001])
+  m_mouseObj.downOn = 1
+  if objectp(m_oneItemObj.m_channelObj.m_reportToAboutItems) then
+    m_oneItemObj.m_channelObj.m_reportToAboutItems.activate(0)
+  end if
+  if voidp(argSP) then
+    argSP = 60
+  end if
+  m_SP = sprite(argSP)
+  m_SP.stretch = 0
+  m_SP.member = argInfo[#member]
+  m_SP.loc = the mouseLoc
+  m_lastOKInfo = [#StartDate: m_oneItemObj.getOneProp(#StartDate), #channel: m_oneItemObj.m_channelObj]
+  return me
+end
+
+on kill me
+  if objectp(m_oneItemObj.m_channelObj.m_reportToAboutItems) then
+    m_oneItemObj.m_channelObj.m_reportToAboutItems.activate(1)
+  end if
+  if objectp(m_mouseObj) then
+    m_mouseObj = m_mouseObj.kill()
+  end if
+  m_SP.member = member("Dummy")
+  m_plannedItemObj = 0
+  m_agenda = 0
+  m_oneItemObj = 0
+  m_lastOKInfo = 0
+  return 0
+end
+
+on mouse me, argObj, argWhat
+  global gRock
+  if argWhat = #stillDown then
+    mouseLoc = point(the mouseH, the mouseV)
+    m_SP.loc = mouseLoc
+    if mouseLoc[1] < m_agenda.m_viewRectOnStage[1] then
+      diff = mouseLoc[1] - m_agenda.m_viewRectOnStage[1]
+    else
+      if mouseLoc[1] > m_agenda.m_viewRectOnStage[3] then
+        diff = mouseLoc[1] - m_agenda.m_viewRectOnStage[3]
+      end if
+    end if
+    if integerp(diff) then
+      scrollSpeed = diff / 3.0
+      if abs(scrollSpeed) > 20 then
+        scrollSpeed = 20 * getSign(scrollSpeed)
+      end if
+      m_agenda.scroll(point(integer(scrollSpeed), 0))
+    end if
+    channel = m_agenda.isLocOverChannel(mouseLoc)
+    if not objectp(channel) then
+      exit
+    end if
+    if channel.m_type = #Planning then
+      mouseLoc = mouseLoc - point(m_agenda.m_viewRectOnStage[1], m_agenda.m_viewRectOnStage[2])
+      numDays = m_oneItemObj.getOneProp(#duration)
+      StartDate = m_agenda.locHtoDate(mouseLoc[1] - m_SP.member.regPoint[1])
+      StartDate = integer(StartDate + 0.25)
+      wantedSubChannel = channel.locVToSubChannel(mouseLoc[2])
+      if StartDate <= m_agenda.m_todayDate then
+        exit
+      end if
+      if objectp(gRock) then
+        clashingEvents = gRock.m_eventsManager.findClashingEvents(m_oneItemObj.m_event_r, StartDate)
+        if clashingEvents.count() > 0 then
+          eventObj = clashingEvents[1][#Event]
+          pott("Clash with #" & string(eventObj.ID) & "(" & string(eventObj.className) & "). Both need #" & string(clashingEvents[1][#ID]))
+          exit
+        end if
+      end if
+      freeSubChannels = channel.checkFreeDates(StartDate, numDays)
+      if freeSubChannels.count > 0 then
+        if freeSubChannels.getPos(wantedSubChannel) = 0 then
+          wantedSubChannel = freeSubChannels[1]
+        end if
+        m_lastOKInfo[#StartDate] = StartDate
+        m_lastOKInfo[#channel] = channel
+        m_lastOKInfo[#SubChannel] = wantedSubChannel
+      end if
+    else
+      if channel.m_type = #Trashcan then
+      else
+      end if
+    end if
+  else
+    if argWhat = #click then
+      channel = m_lastOKInfo[#channel]
+      if not objectp(channel) then
+        exit
+      end if
+      m_oneItemObj.setInfo(m_lastOKInfo)
+      channel.addItem(m_oneItemObj, #draw)
+      me.kill()
+    end if
+  end if
+end

@@ -1,0 +1,155 @@
+property m_SP, m_nowOverList, m_nowOverXList, m_waitUntil, m_active, m_dlgRoll
+global gRock, gUseful
+
+on new me
+  global gDir
+  m_SP = sprite(gDir.m_spriteList[#rollover])
+  m_nowOverList = []
+  m_nowOverXList = []
+  gUseful.frameTimer.addObject(me)
+  m_waitUntil = 0
+  m_active = 1
+  return me
+end
+
+on kill me
+  if objectp(m_dlgRoll) then
+    m_dlgRoll = m_dlgRoll.kill()
+  end if
+  gUseful.frameTimer.deleteObject(me)
+  me.show(0)
+  m_nowOverXList = []
+  m_nowOverList = []
+  m_active = 0
+  return 0
+end
+
+on getInfoStr me, argObj_r, argFormat_r
+  nameStr = argFormat_r.name
+  dateStr = rGetDateStr(argObj_r.StartDate)
+  if argObj_r.duration > 1 then
+    dateStr = dateStr & ", " & string(argObj_r.duration) & " " & gRock.m_languageManager.getStr(#szidDay_P)
+  end if
+  strList = [nameStr & ", " & dateStr]
+  if getSystemPref(#DebugAgendaExpo) = 1 then
+    tmpExpoClasses = [#ExpoAd, #ExpoMediaActivity, #AudienceExposure, #ExpoRotation]
+    if tmpExpoClasses.getPos(argObj_r.className) then
+      if argObj_r.className = #ExpoRotation then
+        strList[1] = string(argObj_r.StartDate) & " Rot Q:" & string(argObj_r.quality) & ", I:" & string(argObj_r.Intensity)
+        strList[2] = "Avg Q:" & string(argObj_r.getAverageIntensity()) & ", I:" & string(argObj_r.getAverageQuality())
+        strList[3] = string(argObj_r.MediaID) & ", " & string(argObj_r.RotationOfClass)
+      else
+        strList[1] = string(argObj_r.StartDate) & " Expo Q:" & string(argObj_r.quality) & ", I:" & string(argObj_r.Intensity)
+        strList[2] = "Avg Q:" & string(argObj_r.getAverageIntensity()) & ", I:" & string(argObj_r.getAverageQuality())
+        strList[3] = string(argObj_r.MediaID)
+      end if
+      return strList
+    end if
+  end if
+  if argObj_r.className = #Concert then
+    place_r = gRock.m_classManager.getObjByIDAndClass(argObj_r.Venue, #Live)
+    strList[2] = place_r.name
+  else
+    if argObj_r.className = #ExpoAd then
+      place_r = gRock.m_classManager.getObjByIDAndClass(argObj_r.MediaID, #media)
+      strList[2] = place_r.name & ", " & argObj_r.name
+    else
+      if argObj_r.className = #ExpoMediaActivity then
+        place_r = gRock.m_classManager.getObjByIDAndClass(argObj_r.MediaID, #media)
+        strList[2] = place_r.name
+      else
+        if argObj_r.className = #AlbumRelease then
+        else
+          if argObj_r.className = #VideoProduction then
+          else
+            if argObj_r.className = #BandTour then
+            else
+              if argObj_r.className = #Training then
+                if argObj_r.neededIDs.count then
+                  obj_r = gRock.m_classManager.getObjByID(argObj_r.neededIDs[1])
+                  strList[2] = obj_r.name
+                end if
+              else
+                if argObj_r.className = #AudienceExposure then
+                else
+                  if argObj_r.className = #ExpoRotation then
+                  else
+                    if argObj_r.className = #Event then
+                      pott("Unknown roll", argObj_r.className)
+                    end if
+                  end if
+                end if
+              end if
+            end if
+          end if
+        end if
+      end if
+    end if
+  end if
+  return strList
+end
+
+on activate me, argIsTRUE
+  m_active = argIsTRUE
+  if m_active = 0 then
+    me.show(0)
+    m_waitUntil = 0
+    m_nowOverXList = []
+  end if
+end
+
+on Report me, argObj, argWhat, argOptions, argPlannedItem
+  if argWhat = #enter then
+    if not m_active then
+      exit
+    end if
+    m_nowOverXList.add(argPlannedItem)
+    m_waitUntil = the milliSeconds + (0.59999999999999998 * 1000)
+  else
+    if argWhat = #Leave then
+      if not m_active then
+        exit
+      end if
+      m_nowOverXList.deleteOne(argPlannedItem)
+      if m_nowOverXList.count > 0 then
+        m_waitUntil = the milliSeconds + (0.59999999999999998 * 1000)
+      else
+        m_waitUntil = 0
+      end if
+      me.show(0)
+    end if
+  end if
+end
+
+on timeTick me
+  if (m_waitUntil > 0) and (the milliSeconds > m_waitUntil) then
+    m_waitUntil = 0
+    me.show(m_nowOverXList[m_nowOverXList.count])
+  end if
+end
+
+on show me, argObj
+  if objectp(argObj) then
+    strList = me.getInfoStr(argObj.m_event_r, argObj.m_format_r)
+    if objectp(m_dlgRoll) then
+      m_dlgRoll = m_dlgRoll.kill()
+    end if
+    m_dlgRoll = script("Dialog").new([#AttachImageToMember: #temp, #StartSpriteNum: m_SP.spriteNum, #NumSprites: 1])
+    m_dlgRoll.rawCreate(member("DlgChartRollOverData").text.value)
+    repeat with n = strList.count + 1 to 3
+      strList.add(EMPTY)
+    end repeat
+    memb = rFormatText([strList[1], strList[2], strList[3]], "AgendaRollFormatting", [#shadow: 1])
+    itemObj = m_dlgRoll.getItem(#Info)
+    itemObj.setOneProp(#Pic, memb)
+    m_SP.stretch = 0
+    m_dlgRoll.renderAtLoc(the mouseLoc + point(15, -20))
+    m_SP.ink = 0
+  else
+    if objectp(m_dlgRoll) then
+      m_dlgRoll = m_dlgRoll.kill()
+    end if
+    m_SP.member = member("Dummy")
+    m_SP.ink = 36
+  end if
+end

@@ -1,0 +1,261 @@
+property m_sequencer, m_currentSoundSet, m_events, m_nextEventPos, m_nextTime, m_selection, m_erasing, m_muted, m_vol, m_pan
+
+on new me, argSequencer
+  m_sequencer = argSequencer
+  m_events = [:]
+  m_events.sort()
+  m_nextEventPos = 1
+  m_erasing = 0
+  m_muted = 0
+  m_pan = 0
+  m_vol = 100
+  return me
+end
+
+on kill me
+  if objectp(m_currentSoundSet) then
+    m_currentSoundSet = m_currentSoundSet.kill()
+  end if
+  return 0
+end
+
+on setSetting me, argProp, argVal
+  if argProp = #vol then
+    m_vol = argVal
+  else
+    if argProp = #Mute then
+      m_muted = argVal
+    else
+      if argProp = #Pan then
+        m_pan = argVal
+      else
+      end if
+    end if
+  end if
+end
+
+on getSetting me, argProp
+  if argProp = #Mute then
+    return m_muted
+  end if
+end
+
+on getTrackLength me
+end
+
+on whenIsNextEvent me, argTime
+  m_events.addProp(argTime, -1)
+  m_nextEventPos = m_events.getPos(-1)
+  m_events.deleteAt(m_nextEventPos)
+  if m_nextEventPos > m_events.count() then
+    m_nextEventPos = -1
+    m_nextTime = -1
+  else
+    m_nextTime = m_events.getPropAt(m_nextEventPos)
+  end if
+  return m_nextTime
+end
+
+on getNextEvents me, argTime
+  eventIndexList = []
+  events = []
+  if argTime = m_nextTime then
+    tmpTime = m_events.getPropAt(m_nextEventPos)
+    repeat with n = m_nextEventPos to m_events.count()
+      if m_events.getPropAt(n) = tmpTime then
+        eventIndexList.add(n)
+        events.add(m_events[n])
+        next repeat
+      end if
+      exit repeat
+    end repeat
+  end if
+  if m_erasing then
+    repeat with index in eventIndexList
+      m_events.deleteAt(index)
+    end repeat
+  end if
+  return events
+end
+
+on getEventByIndex me, argIndex
+  return m_events[argIndex]
+end
+
+on zzgetEventsOfTime me, argTime
+  events = [:]
+  repeat with n = 1 to m_events.count()
+    if m_events.getPropAt(n) = argTime then
+      events.addProp(argTime, m_events[n])
+      next repeat
+    end if
+    exit repeat
+  end repeat
+end
+
+on getCloseEventIndex me, argTicks
+  m_events.addProp(argTicks, -1)
+  Pos = m_events.getPos(-1)
+  m_events.deleteAt(Pos)
+  if Pos > m_events.count() then
+    return Pos - 1
+  else
+    nextTime = m_events.getPropAt(Pos)
+  end if
+  if Pos = 1 then
+    return Pos
+  else
+    lastTime = m_events.getPropAt(Pos - 1)
+  end if
+  timeFact = float(argTicks - lastTime) / float(nextTime - lastTime)
+  if timeFact < 0.80000000000000004 then
+    return Pos - 1
+  end if
+  return Pos
+end
+
+on playEvent me, argEvent, argForceUnmute
+  if m_muted and not (argForceUnmute = 1) then
+    exit
+  end if
+  m_currentSoundSet.playNote(argEvent, m_vol, m_pan)
+end
+
+on load me, argList, argTickMultiplier
+  if stringp(argList) then
+    argList = member(argList).text.value
+  end if
+  if voidp(argTickMultiplier) then
+    argTickMultiplier = 1
+  end if
+  m_selection = []
+  m_events = [:]
+  m_events.sort()
+  m_muted = argList[#Mute]
+  if voidp(m_muted) then
+    m_muted = 0
+  end if
+  m_vol = argList[#vol]
+  if voidp(m_vol) then
+    m_vol = 127
+  end if
+  tmp = argList[#Special]
+  if tmp = #Voice then
+    isVoice = 1
+  end if
+  totTime = 1
+  events = argList[#events]
+  repeat with eventNr = 1 to events.count()
+    time = events.getPropAt(eventNr) * argTickMultiplier
+    totTime = totTime + time
+    data = events[eventNr]
+    if not listp(data) then
+      data = [#note: data]
+    end if
+    m_events.addProp(totTime, data)
+  end repeat
+  if isVoice then
+    tmp = argList[#SndBnk]
+    tmp = member("SoundSet" & tmp).text.value
+    tmp = tmp[#Voice]
+    tmp = autogenVoiceSoundSet(tmp[#Prefix], tmp[#Files])
+    m_events = checkForSyllables(m_sequencer, m_events, tmp[#numSyllables], tmp[#SoundSet])
+    me.setSoundSet([#keys: tmp[#SoundSet]])
+  else
+    sndBank = argList[#SndBnk]
+    me.setSoundSet(sndBank)
+  end if
+end
+
+on select me, argStartTick, argEndTick, argLowNote, argHiNote
+  m_events.addProp(argStartTick, -1)
+  startPos = m_events.getPos(-1)
+  m_events.deleteAt(startPos)
+  m_selection = []
+  repeat with n = startPos to m_events.count()
+    tick = m_events.getPropAt(n)
+    if tick <= argEndTick then
+      data = m_events[n]
+      m_selection.add(n)
+    end if
+  end repeat
+  if integerp(argLowNote) and integerp(argHiNote) then
+    repeat with n = m_selection.count() down to 1
+      data = m_events[m_selection[n]]
+      if (data[#note] < argLowNote) or (data[#note] > argHiNote) then
+        m_selection.deleteAt(n)
+      end if
+    end repeat
+  end if
+end
+
+on activateContinuousErase me, argIsTRUE
+  m_erasing = argIsTRUE
+end
+
+on transpose me, argHalfTones, argStartTime, argEndTime
+  repeat with n = 1 to m_events.count()
+    Event = m_events[n]
+    Event[#note] = Event[#note] + argHalfTones
+  end repeat
+end
+
+on quantize me, argEveryNthTick
+  if m_selection.count() = 0 then
+    repeat with n = 1 to m_events.count()
+      m_selection.add(n)
+    end repeat
+  end if
+  repeat with index in m_selection
+    Event = m_events[index]
+    time = m_events.getPropAt(index)
+    tmp = (time - 1) mod argEveryNthTick
+    tmp2 = time - tmp
+    if tmp < (argEveryNthTick - tmp) then
+      time = tmp2
+    else
+      time = tmp + argEveryNthTick
+    end if
+    m_events.deleteAt(index)
+    m_events.addProp(time, Event)
+  end repeat
+end
+
+on setSoundSet me, argWhich
+  if objectp(m_currentSoundSet) then
+    m_currentSoundSet = m_currentSoundSet.kill()
+  end if
+  m_currentSoundSet = script("SoundSetScript").new(m_sequencer.m_soundPath)
+  m_currentSoundSet.load(argWhich)
+end
+
+on addEvent me, argTime, argType, argData, argMode
+  if argTime < 1 then
+    argTime = 1
+  end if
+  if argMode = #Overwrite then
+    if listp(m_events.getaProp(argTime)) then
+      m_events.deleteProp(argTime)
+    end if
+  end if
+  m_events.addProp(argTime, argData)
+end
+
+on getLength me
+  if m_events.count() = 0 then
+    return 0
+  end if
+  lastEventTime = m_events.getPropAt(m_events.count())
+  return lastEventTime
+end
+
+on render me, argEvents, argSecsPerTick
+  str = EMPTY
+  secsEvents = [:]
+  repeat with n = 1 to argEvents.count()
+    ticks = argEvents.getPropAt(n)
+    Event = argEvents[n]
+    Secs = ticks * argSecsPerTick
+    secsEvents.addProp(Secs, Event)
+  end repeat
+end

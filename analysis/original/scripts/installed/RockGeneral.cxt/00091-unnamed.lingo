@@ -1,0 +1,371 @@
+global gRock
+
+on goMovie argMovie
+  global gUseful
+  gUseful.cursors.setCursor(#wait)
+  script("WaitForIdleScript").new(0, [#type: #goMovie, #goMovie: argMovie])
+end
+
+on waitCursor argIsTRUE
+  global gRock, gUseful
+  if objectp(gRock) then
+    gRock.m_waitCursor.waitCursor(argIsTRUE)
+    exit
+  end if
+  if argIsTRUE then
+    gUseful.cursors.setOverride(1, #wait)
+    gUseful.mouseObjects.activate(0)
+  else
+    gUseful.cursors.setOverride(0)
+    gUseful.cursors.display()
+    gUseful.mouseObjects.activate(1)
+  end if
+end
+
+on rCurrency argMoney, argUseDecimals, argUseCurrencySign
+  global gRock
+  if argUseDecimals = 1 then
+    tmp = rGetStr(#szidCurrencyDecimal)
+  else
+    tmp = EMPTY
+  end if
+  str = convValToCurrency(argMoney, rGetStr(#szidCurrencyThousands), tmp)
+  if argUseCurrencySign = 1 then
+    posStr = rGetStr(#szidCurrencyFormat)
+    if posStr = EMPTY then
+      str = rGetStr(#szidCurrencyShort) & str
+    else
+      tmpOff = offset("0", posStr)
+      put str into tmp.char[tmpOff]
+      tmpOff = offset("$", posStr)
+      put rGetStr(#szidCurrencyShort) into tmp.char[tmpOff]
+      return posStr
+    end if
+  end if
+  return str
+end
+
+on rGetStr arg
+  if symbolp(arg) then
+    return gRock.m_languageManager.getStr(arg, [#FirstUppercase: 1])
+  else
+    if stringp(arg) then
+      return gRock.m_languageManager.dereference(arg)
+    end if
+  end if
+end
+
+on rStrChangeCase argStr, argCase, argOption
+  if voidp(argCase) then
+    argCase = #Upper
+  end if
+  if voidp(argOption) then
+    argOption = #first
+  end if
+  if argOption = #first then
+    if argCase = #Upper then
+      return gRock.m_languageManager.makeUppercase(argStr, #first)
+    end if
+  else
+    if argOption = #All then
+      if argCase = #Upper then
+        return gRock.m_languageManager.makeUppercase(argStr, [1, argStr.length])
+      end if
+    end if
+  end if
+end
+
+on rGetDateStr argDaysSinceDayZero
+  global gRock
+  tmp = gRock.m_date.m_dayZeroDate
+  tmpDate = date(tmp[#year], tmp[#month], tmp[#day])
+  if ilk(argDaysSinceDayZero) = #date then
+    tmpDate = argDaysSinceDayZero
+  else
+    if integerp(argDaysSinceDayZero) then
+      tmpDate = tmpDate + argDaysSinceDayZero
+    else
+      tmpDate = gRock.m_date.m_date
+    end if
+  end if
+  tmpDate = [#year: tmpDate.year, #month: tmpDate.month, #day: tmpDate.day]
+  formatStr = gRock.m_languageManager.getStr(#szidDateFormat)
+  return gRock.m_date.getDateStr(formatStr, tmpDate)
+end
+
+on rDrawMeter argFract, argDstImage, argOffsetLoc
+  if voidp(argOffsetLoc) then
+    argOffsetLoc = point(0, 0)
+  end if
+  if voidp(argDstImage) then
+    argDstImage = member("meter01_background01").image.duplicate()
+  else
+    tmpImg = member("meter01_background01").image
+    argDstImage.copyPixels(tmpImg, tmpImg.rect + rect(argOffsetLoc, argOffsetLoc), tmpImg.rect)
+  end if
+  img2 = member("meter01_line01").image
+  tmpWidth = argFract * img2.width
+  tmpR = img2.rect
+  tmpR[3] = tmpWidth
+  argDstImage.copyPixels(img2, tmpR + rect(4, 3, 4, 3) + rect(argOffsetLoc, argOffsetLoc), tmpR)
+  return argDstImage
+end
+
+on rgetPref argPrefID
+  global gSystem
+  if objectp(gSystem) then
+    prefs = gSystem.getaProp(#m_prefs)
+    if listp(prefs) then
+      if not voidp(argPrefID) then
+        if listp(argPrefID) then
+          return rgetPropSimple(prefs, argPrefID)
+        end if
+        return prefs[argPrefID]
+      end if
+      return prefs
+    end if
+  end if
+end
+
+on rWarnMoney
+  global gDir
+  if objectp(gDir) then
+    gDir.m_objDialogsMaster.openDialog(#EventCardOKCancel, [#EventCard: #ECOCNoMoneyWarning])
+  end if
+end
+
+on rOKCheatPass
+  if (the runMode = "Author") and the controlDown and the shiftDown then
+    return 1
+  else
+    if (the runMode = "Projector") and the controlDown and the shiftDown and (the key = "<") then
+      return 1
+    end if
+  end if
+  return 0
+end
+
+on rBookDialog argEventToBook_r, argBookOptions, argDialogProps
+  global gDir
+  if voidp(argEventToBook_r) then
+    pott("No event object to book", argEventToBook_r)
+    exit
+  end if
+  if not listp(argBookOptions) then
+    argBookOptions = [:]
+  end if
+  if argEventToBook_r.duration < 1 then
+    argEventToBook_r.duration = 1
+  end if
+  if argEventToBook_r.StartDate < 0 then
+    argEventToBook_r.StartDate = gRock.m_date.getDateInt() - argEventToBook_r.StartDate
+  end if
+  argEventToBook_r.setDates(argEventToBook_r.StartDate, argEventToBook_r.duration)
+  tmpFormat = argBookOptions[#TextFormatMember]
+  if voidp(tmpFormat) then
+    tmpFormat = "LiveBookFormatting"
+  end if
+  tmpText = argBookOptions[#text]
+  if voidp(tmpText) then
+    tmpText = "TEST"
+  end if
+  if not listp(tmpText) then
+    tmpText = [tmpText]
+  end if
+  infoImg = rFormatText(tmpText, tmpFormat, [#shadow: 1])
+  argBookOptions[#InfoImage] = infoImg
+  if not voidp(argBookOptions[#Pic]) then
+    argBookOptions[#PicImage] = argBookOptions[#Pic]
+  end if
+  argBookOptions[#EventToBook] = argEventToBook_r
+  argBookOptions[#RemoveWhenCancel] = 1
+  argBookOptions[#AutoClose] = 1
+  argBookOptions[#AutoCloseUnder] = 1
+  gDir.m_objDialogsMaster.openDialog(#Book, [#dialogProps: argDialogProps, #bookOptions: argBookOptions])
+end
+
+on rEventCard argID, argArgs
+  if voidp(argID) then
+    argID = #ECMSueJoe
+  end if
+  gRock.m_eventCardsManager.tryNewShowEventCard(argID, argArgs)
+end
+
+on rFindModifiers argModifierID, argModWhichID, argVar
+  return gRock.m_modifiersManager.findModifiers([#ModifierID: argModifierID, #ModifiedID: argModWhichID, #prop: argVar])
+end
+
+on zzrFindModifiers argModifierID, argModWhichID, argVar
+  results = []
+  allEvents = gRock.m_classManager.getObjsOfClass(#Event)
+  repeat with event_r in allEvents
+    if not voidp(argModifierID) then
+      if event_r.ID <> argModifierID then
+        next repeat
+      end if
+    end if
+    if not voidp(argModWhichID) then
+      tmp = event_r.Modifies.getaProp(argModWhichID)
+      if voidp(tmp) then
+        next repeat
+      end if
+    end if
+    if not voidp(argVar) then
+      tmpFound = 0
+      repeat with n = 1 to tmp.count
+        if tmp[n][1] = argVar then
+          tmpFound = 1
+          exit repeat
+        end if
+      end repeat
+      if not tmpFound then
+        next repeat
+      end if
+    end if
+    results.add(event_r)
+  end repeat
+  return results
+end
+
+on rCreateModifier argModifierID, argModWhichID, argVar, argChangeVal, argNumDays, argEnvelope
+  tmpNotThese = []
+  if not symbolp(argModWhichID) then
+    if ilk(argModWhichID) = #instance then
+      if gRock.m_classManager.hasBaseClass(argModWhichID, #Human) then
+        argModWhichID = argModWhichID.ID
+      end if
+    else
+      if listp(argModWhichID) then
+        if argModWhichID.count = 0 then
+          argModWhichID = #BandMembers
+        else
+          tmp1 = argModWhichID[1]
+          if tmp1 = #BandMembers then
+            tmpNotThese = argModWhichID.duplicate()
+            tmpNotThese.deleteAt(1)
+            argModWhichID = tmp1
+          end if
+        end if
+      else
+        human_r = gRock.m_context.getFocus(#Human)
+        if not objectp(human_r) then
+          pott("err createModifier:", argModWhichID)
+          exit
+        end if
+        argModWhichID = human_r.ID
+      end if
+    end if
+  end if
+  if not symbolp(argModWhichID) then
+    pott("err createModifier: WHO???", argModWhichID, argModifierID)
+    exit
+  end if
+  argVarIsPropAndValList = 0
+  if argChangeVal = 0 then
+    if listp(argVar) then
+      if argVar.count > 0 then
+        if listp(argVar[1]) then
+          argVarIsPropAndValList = 1
+        else
+          if argVar.count > 1 then
+            if floatp(argVar[2]) or integerp(argVar[2]) then
+              argVarIsPropAndValList = 1
+            end if
+          end if
+        end if
+      end if
+    end if
+  end if
+  if argVarIsPropAndValList = 0 then
+    if voidp(argVar) then
+      pott("Create mod err", argVar)
+    end if
+    argVar = [argVar, argChangeVal]
+  end if
+  if argModWhichID = #BandMembers then
+    band_r = gRock.m_context.getFocus(#Band)
+    musicians_r = band_r.getMusicianObjs()
+    repeat with musician_r in musicians_r
+      if tmpNotThese.getPos(musician_r.ID) > 0 then
+        next repeat
+      end if
+      script("ModifierScript").new(argModifierID, musician_r.ID, argVar, argNumDays, argEnvelope)
+    end repeat
+    return 0
+  end if
+  if not symbol(argModifierID) then
+    argModifierID = #unknown
+    pott("Unknown modifier ID:", argModWhichID, argVar, argChangeVal, argNumDays, argEnvelope)
+  end if
+  return script("ModifierScript").new(argModifierID, argModWhichID, argVar, argNumDays, argEnvelope)
+end
+
+on rCreateCopy argSourceObj, argRegisterNewObj, argNewID
+  if argRegisterNewObj = #register then
+    obj = gRock.m_classManager.createObj(argSourceObj.className)
+  else
+    obj = gRock.m_classManager.createUnregObj(argSourceObj.className)
+  end if
+  gRock.m_classManager.copy(argSourceObj, obj)
+  if symbolp(argNewID) then
+    if argNewID = #GenUnique then
+      ID = gRock.m_classManager.genUniqueID(obj)
+      obj.ID = ID
+    else
+      obj.ID = argNewID
+    end if
+  end if
+  return obj
+end
+
+on rCreateDiffObj argObj1, argObj2
+  tmpScriptName = "Class" & string(argObj1.className) & "Script"
+  diffObj = script(tmpScriptName).new()
+  gRock.m_classManager.copy(argObj1, diffObj)
+  gRock.m_classManager.diff(diffObj, argObj2)
+  return diffObj
+end
+
+on rCalcObjsAverage argSetValsInThisObj, argWeightPropList
+  if argWeightPropList.count = 0 then
+    exit
+  end if
+  props = gRock.m_classManager.getPropsInClass(argSetValsInThisObj.className)
+  repeat with propNum = 1 to props.count
+    prop = props.getPropAt(propNum)
+    weighted = [:]
+    repeat with n = 1 to argWeightPropList.count
+      obj = argWeightPropList[n]
+      weighted.addProp(argWeightPropList.getPropAt(n), getPropFromObjOrAncestor(obj, prop))
+    end repeat
+    setPropInObjOrAncestor(argSetValsInThisObj, prop, calcAverage(weighted))
+  end repeat
+end
+
+on getContextOKFileName argContext, argStr
+  tmpDefs = [#PortraitLarge: [#normal: ["portrait_", #str], #Undef: "portrait_frame_large01", #unknown: "portrait_actor00"], #PortraitMedium: [#normal: ["portrait_", #str, "_medium"], #Undef: "portrait_frame_medium01"], #PortraitSmall: [#normal: ["portrait_", #str, "_small"], #Undef: "portrait_frame_small01"], #ListIcon: [#normal: [#str, "02"], #Undef: "icon_background02"], #AnimMusicianSmall: [#normal: [#str], #Undef: "actor01"]]
+  tmpDef = tmpDefs[argContext]
+  if not listp(tmpDef) then
+    return "Dummy"
+  end if
+  if symbolp(argStr) then
+    tmp = tmpDef.getaProp(argStr)
+    if voidp(tmp) then
+      return "Dummy"
+    end if
+    return tmp
+  end if
+  str = EMPTY
+  tmpNameDef = tmpDef[#normal]
+  repeat with tmpStr in tmpNameDef
+    if stringp(tmpStr) then
+      str = str & tmpStr
+      next repeat
+    end if
+    str = str & argStr
+  end repeat
+  if memberExists(str) then
+    return str
+  end if
+  return tmpDef[#Undef]
+end

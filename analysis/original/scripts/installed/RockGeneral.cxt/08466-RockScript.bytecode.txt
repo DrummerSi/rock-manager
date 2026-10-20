@@ -1,0 +1,1683 @@
+property m_classManager, m_dataPath, m_gameTimer, m_date, m_context, m_msgManager, m_waitOneFrame, m_eventCardsManager, m_eventsManager, m_agenda, m_languageManager, m_player, m_paths, m_textFormatter, m_executor, m_justStartedGame, m_firstTimePrepare, m_chartsManager, m_modifiersManager, m_tempVars, m_useAutoSave, m_waitCursor, m_CPSaveLoad, m_noMissionActive
+global gUseful
+
+on new me
+  [  0] pushint8 1 .............................. <1>
+  [  3] setprop 48 .............................. m_firstTimePrepare = 1
+  [  6] pushzero ................................ <0>
+  [  7] setprop 49 .............................. m_justStartedGame = 0
+  [ 10] pushcons 0 .............................. <"PathsScript">
+  [ 12] pusharglist 1 ........................... <"PathsScript">
+  [ 14] extcall 10 .............................. <script("PathsScript")>
+  [ 16] pusharglist 1 ........................... <script("PathsScript")>
+  [ 18] objcall 11 .............................. <script("PathsScript").new()>
+  [ 20] setprop 50 .............................. m_paths = script("PathsScript").new()
+  [ 23] getglobal 12 ............................ <gUseful>
+  [ 25] getobjprop 51 ........................... <gUseful.soundObj>
+  [ 28] getprop 50 .............................. <m_paths>
+  [ 31] pushsymb 52 ............................. <#sound>
+  [ 34] pusharglist 2 ........................... <m_paths, #sound>
+  [ 36] objcall 53 .............................. <m_paths.getPath(#sound)>
+  [ 39] setobjprop 54 ........................... gUseful.soundObj.soundPath = m_paths.getPath(#sound)
+  [ 42] getmovieprop 55 ......................... <the runMode>
+  [ 45] pushcons 8 .............................. <"Author">
+  [ 47] eq ...................................... <the runMode = "Author">
+  [ 48] jmpifz [111] ............................ if the runMode = "Author" then / else
+  [ 51] pushint8 1 .............................. <1>
+  [ 54] setlocal 0
+  [ 56] getlocal 0
+  [ 58] pushint8 1 .............................. <1>
+  [ 61] pushint8 2 .............................. <2>
+  [ 64] get 8 ................................... <the number of castMembers of castLib 1>
+  [ 66] lteq
+  [ 67] jmpifz [108] ............................ repeat with n = 1 to the number of castMembers of castLib 1
+  [ 70] getlocal 0 .............................. <n>
+  [ 72] pusharglist 1 ........................... <n>
+  [ 74] extcall 56 .............................. <member(n)>
+  [ 77] setlocal 8 .............................. memb = member(n)
+  [ 79] getlocal 8 .............................. <memb>
+  [ 81] getobjprop 57 ........................... <memb.name>
+  [ 84] pushcons 16 ............................. <"__TEMP">
+  [ 86] eq ...................................... <memb.name = "__TEMP">
+  [ 87] jmpifz [ 97] ............................ if memb.name = "__TEMP" then
+  [ 90] getlocal 8 .............................. <memb>
+  [ 92] pusharglistnoret 1 ...................... <memb>
+  [ 94] extcall 58 .............................. erase(memb)
+  [ 97] pushint8 1
+  [100] getlocal 0
+  [102] add
+  [103] setlocal 0
+  [105] endrepeat [ 56]
+  [108] jmp [111]
+  [111] pushcons 24 ............................. <"Rock new">
+  [113] pusharglistnoret 1 ...................... <"Rock new">
+  [115] extcall 18 .............................. polandPott("Rock new")
+  [117] getprop 50 .............................. <m_paths>
+  [120] pushsymb 21 ............................. <#data>
+  [122] pusharglist 2 ........................... <m_paths, #data>
+  [124] objcall 53 .............................. <m_paths.getPath(#data)>
+  [127] setprop 59 .............................. m_dataPath = m_paths.getPath(#data)
+  [130] pushsymb 60 ............................. <#secsPerDay>
+  [133] pusharglist 1 ........................... <#secsPerDay>
+  [135] extcall 14 .............................. <getSystemPref(#secsPerDay)>
+  [137] setlocal 16 ............................. secsPerDay = getSystemPref(#secsPerDay)
+  [139] getlocal 16 ............................. <secsPerDay>
+  [141] pusharglist 1 ........................... <secsPerDay>
+  [143] extcall 61 .............................. <voidp(secsPerDay)>
+  [146] jmpifz [171] ............................ if voidp(secsPerDay) then
+  [149] getmovieprop 55 ......................... <the runMode>
+  [152] pushcons 32 ............................. <"Author">
+  [154] eq ...................................... <the runMode = "Author">
+  [155] jmpifz [166] ............................ if the runMode = "Author" then / else
+  [158] pushint8 1 .............................. <1>
+  [161] setlocal 16 ............................. secsPerDay = 1
+  [163] jmp [171]
+  [166] pushint8 3 .............................. <3>
+  [169] setlocal 16 ............................. secsPerDay = 3
+  [171] getlocal 16 ............................. <secsPerDay>
+  [173] getmovieprop 63 ......................... <the frameTempo>
+  [176] mul ..................................... <secsPerDay * the frameTempo>
+  [177] pusharglist 1 ........................... <secsPerDay * the frameTempo>
+  [179] extcall 62 .............................. <integer(secsPerDay * the frameTempo)>
+  [182] setlocal 24 ............................. framesPerDay = integer(secsPerDay * the frameTempo)
+  [184] pushcons 40 ............................. <"RockTimer">
+  [186] pusharglist 1 ........................... <"RockTimer">
+  [188] extcall 10 .............................. <script("RockTimer")>
+  [190] getlocal 24 ............................. <framesPerDay>
+  [192] getglobal 12 ............................ <gUseful>
+  [194] getobjprop 65 ........................... <gUseful.frameTimer>
+  [197] pushsymb 66 ............................. <#Game>
+  [200] pusharglist 4 ........................... <script("RockTimer"), framesPerDay, gUseful.frameTimer, #Game>
+  [202] objcall 11 .............................. <script("RockTimer").new(framesPerDay, gUseful.frameTimer, #Game)>
+  [204] setprop 64 .............................. m_gameTimer = script("RockTimer").new(framesPerDay, gUseful.frameTimer, #Game)
+  [207] pusharglist 0 ........................... <[:]>
+  [209] pushproplist ............................ <[:]>
+  [210] setprop 67 .............................. m_tempVars = [:]
+  [213] pushcons 48 ............................. <"WaitCursorScript">
+  [215] pusharglist 1 ........................... <"WaitCursorScript">
+  [217] extcall 10 .............................. <script("WaitCursorScript")>
+  [219] pusharglist 1 ........................... <script("WaitCursorScript")>
+  [221] objcall 11 .............................. <script("WaitCursorScript").new()>
+  [223] setprop 68 .............................. m_waitCursor = script("WaitCursorScript").new()
+  [226] getparam 0 .............................. <me>
+  [228] pusharglistnoret 1 ...................... <me>
+  [230] extcall 69 .............................. return me
+  [233] ret
+end
+
+on init me
+  [  0] pushcons 56 ............................. <"Rock init start">
+  [  2] pusharglistnoret 1 ...................... <"Rock init start">
+  [  4] extcall 18 .............................. polandPott("Rock init start")
+  [  6] pushint8 1 .............................. <1>
+  [  9] pusharglistnoret 1 ...................... <1>
+  [ 11] extcall 74 .............................. waitCursor(1)
+  [ 14] pushcons 64 ............................. <"ExecuteListsScript">
+  [ 16] pusharglist 1 ........................... <"ExecuteListsScript">
+  [ 18] extcall 10 .............................. <script("ExecuteListsScript")>
+  [ 20] pusharglist 1 ........................... <script("ExecuteListsScript")>
+  [ 22] objcall 11 .............................. <script("ExecuteListsScript").new()>
+  [ 24] setprop 75 .............................. m_executor = script("ExecuteListsScript").new()
+  [ 27] pushcons 72 ............................. <"TextFormatterScript">
+  [ 29] pusharglist 1 ........................... <"TextFormatterScript">
+  [ 31] extcall 10 .............................. <script("TextFormatterScript")>
+  [ 33] pusharglist 1 ........................... <script("TextFormatterScript")>
+  [ 35] objcall 11 .............................. <script("TextFormatterScript").new()>
+  [ 37] setprop 33 .............................. m_textFormatter = script("TextFormatterScript").new()
+  [ 40] pushcons 80 ............................. <"RockDateScript">
+  [ 42] pusharglist 1 ........................... <"RockDateScript">
+  [ 44] extcall 10 .............................. <script("RockDateScript")>
+  [ 46] pusharglist 1 ........................... <script("RockDateScript")>
+  [ 48] objcall 11 .............................. <script("RockDateScript").new()>
+  [ 50] setprop 76 .............................. m_date = script("RockDateScript").new()
+  [ 53] pushcons 88 ............................. <"RockSystemMessagesScript">
+  [ 55] pusharglist 1 ........................... <"RockSystemMessagesScript">
+  [ 57] extcall 10 .............................. <script("RockSystemMessagesScript")>
+  [ 59] pusharglist 1 ........................... <script("RockSystemMessagesScript")>
+  [ 61] objcall 11 .............................. <script("RockSystemMessagesScript").new()>
+  [ 63] setprop 77 .............................. m_msgManager = script("RockSystemMessagesScript").new()
+  [ 66] pushcons 96 ............................. <"TellMeNextTickScript">
+  [ 68] pusharglist 1 ........................... <"TellMeNextTickScript">
+  [ 70] extcall 10 .............................. <script("TellMeNextTickScript")>
+  [ 72] pusharglist 1 ........................... <script("TellMeNextTickScript")>
+  [ 74] objcall 11 .............................. <script("TellMeNextTickScript").new()>
+  [ 76] setprop 78 .............................. m_waitOneFrame = script("TellMeNextTickScript").new()
+  [ 79] pushcons 104 ............................ <"ContextScript">
+  [ 81] pusharglist 1 ........................... <"ContextScript">
+  [ 83] extcall 10 .............................. <script("ContextScript")>
+  [ 85] pusharglist 1 ........................... <script("ContextScript")>
+  [ 87] objcall 11 .............................. <script("ContextScript").new()>
+  [ 89] setprop 79 .............................. m_context = script("ContextScript").new()
+  [ 92] pushcons 112 ............................ <"EventCardsManagerScript">
+  [ 94] pusharglist 1 ........................... <"EventCardsManagerScript">
+  [ 96] extcall 10 .............................. <script("EventCardsManagerScript")>
+  [ 98] pusharglist 1 ........................... <script("EventCardsManagerScript")>
+  [100] objcall 11 .............................. <script("EventCardsManagerScript").new()>
+  [102] setprop 80 .............................. m_eventCardsManager = script("EventCardsManagerScript").new()
+  [105] pushcons 120 ............................ <"EventsManagerScript">
+  [107] pusharglist 1 ........................... <"EventsManagerScript">
+  [109] extcall 10 .............................. <script("EventsManagerScript")>
+  [111] pusharglist 1 ........................... <script("EventsManagerScript")>
+  [113] objcall 11 .............................. <script("EventsManagerScript").new()>
+  [115] setprop 81 .............................. m_eventsManager = script("EventsManagerScript").new()
+  [118] pushcons 128 ............................ <"ClassManagerScript">
+  [120] pusharglist 1 ........................... <"ClassManagerScript">
+  [122] extcall 10 .............................. <script("ClassManagerScript")>
+  [124] getprop 59 .............................. <m_dataPath>
+  [127] pusharglist 2 ........................... <script("ClassManagerScript"), m_dataPath>
+  [129] objcall 11 .............................. <script("ClassManagerScript").new(m_dataPath)>
+  [131] setprop 82 .............................. m_classManager = script("ClassManagerScript").new(m_dataPath)
+  [134] pusharglist 0 ........................... <>
+  [136] extcall 3692 ............................ <getPathToLanguageAndTranslation()>
+  [139] setlocal 0 .............................. tmpPath = getPathToLanguageAndTranslation()
+  [141] pushcons 136 ............................ <"LanguageScript">
+  [143] pusharglist 1 ........................... <"LanguageScript">
+  [145] extcall 10 .............................. <script("LanguageScript")>
+  [147] getlocal 0 .............................. <tmpPath>
+  [149] pushcons 144 ............................ <"English">
+  [151] pusharglist 3 ........................... <script("LanguageScript"), tmpPath, "English">
+  [153] objcall 11 .............................. <script("LanguageScript").new(tmpPath, "English")>
+  [155] setprop 83 .............................. m_languageManager = script("LanguageScript").new(tmpPath, "English")
+  [158] getprop 83 .............................. <m_languageManager>
+  [161] getprop 82 .............................. <m_classManager>
+  [164] pusharglistnoret 2 ...................... <m_languageManager, m_classManager>
+  [166] objcall 84 .............................. m_languageManager.setClassManager(m_classManager)
+  [169] getprop 76 .............................. <m_date>
+  [172] pushsymb 85 ............................. <#Months>
+  [175] pushsymb 86 ............................. <#short>
+  [178] pusharglist 2 ........................... <[#Months, #short]>
+  [180] pushlist ................................ <[#Months, #short]>
+  [181] pushsymb 88 ............................. <#szidMonthNamesShort>
+  [184] pusharglist 1 ........................... <#szidMonthNamesShort>
+  [186] extcall 87 .............................. <rGetStr(#szidMonthNamesShort)>
+  [189] pusharglistnoret 3 ...................... <m_date, [#Months, #short], rGetStr(#szidMonthNamesShort)>
+  [191] objcall 89 .............................. m_date.setStrings([#Months, #short], rGetStr(#szidMonthNamesShort))
+  [194] pushcons 152 ............................ <"Rock init mid">
+  [196] pusharglistnoret 1 ...................... <"Rock init mid">
+  [198] extcall 18 .............................. polandPott("Rock init mid")
+  [200] pushcons 160 ............................ <"ModifiersManagerScript">
+  [202] pusharglist 1 ........................... <"ModifiersManagerScript">
+  [204] extcall 10 .............................. <script("ModifiersManagerScript")>
+  [206] pusharglist 1 ........................... <script("ModifiersManagerScript")>
+  [208] objcall 11 .............................. <script("ModifiersManagerScript").new()>
+  [210] setprop 90 .............................. m_modifiersManager = script("ModifiersManagerScript").new()
+  [213] pushcons 168 ............................ <"ChartsManagerScript">
+  [215] pusharglist 1 ........................... <"ChartsManagerScript">
+  [217] extcall 10 .............................. <script("ChartsManagerScript")>
+  [219] pusharglist 1 ........................... <script("ChartsManagerScript")>
+  [221] objcall 11 .............................. <script("ChartsManagerScript").new()>
+  [223] setprop 91 .............................. m_chartsManager = script("ChartsManagerScript").new()
+  [226] pushcons 176 ............................ <"AgendaScript">
+  [228] pusharglist 1 ........................... <"AgendaScript">
+  [230] extcall 10 .............................. <script("AgendaScript")>
+  [232] pusharglist 1 ........................... <script("AgendaScript")>
+  [234] objcall 11 .............................. <script("AgendaScript").new()>
+  [236] setprop 34 .............................. m_agenda = script("AgendaScript").new()
+  [239] pushcons 184 ............................ <"KeysSaveLoadGameScript">
+  [241] pusharglist 1 ........................... <"KeysSaveLoadGameScript">
+  [243] extcall 10 .............................. <script("KeysSaveLoadGameScript")>
+  [245] pusharglist 1 ........................... <script("KeysSaveLoadGameScript")>
+  [247] objcall 11 .............................. <script("KeysSaveLoadGameScript").new()>
+  [249] setprop 92 .............................. m_CPSaveLoad = script("KeysSaveLoadGameScript").new()
+  [252] pushsymb 38 ............................. <#autoSave>
+  [255] pusharglist 1 ........................... <#autoSave>
+  [257] extcall 94 .............................. <rgetPref(#autoSave)>
+  [260] setprop 93 .............................. m_useAutoSave = rgetPref(#autoSave)
+  [263] getprop 93 .............................. <m_useAutoSave>
+  [266] pusharglist 1 ........................... <m_useAutoSave>
+  [268] extcall 61 .............................. <voidp(m_useAutoSave)>
+  [271] jmpifz [280] ............................ if voidp(m_useAutoSave) then
+  [274] pushint8 1 .............................. <1>
+  [277] setprop 93 .............................. m_useAutoSave = 1
+  [280] getmovieprop 55 ......................... <the runMode>
+  [283] pushcons 192 ............................ <"Author">
+  [285] eq ...................................... <the runMode = "Author">
+  [286] jmpifz [293] ............................ if the runMode = "Author" then
+  [289] pushzero ................................ <0>
+  [290] setprop 93 .............................. m_useAutoSave = 0
+  [293] pushzero ................................ <0>
+  [294] pusharglistnoret 1 ...................... <0>
+  [296] extcall 74 .............................. waitCursor(0)
+  [299] pushsymb 95 ............................. <#FirstMission>
+  [302] pusharglist 1 ........................... <#FirstMission>
+  [304] extcall 94 .............................. <rgetPref(#FirstMission)>
+  [307] setlocal 8 .............................. tmpFirstMission = rgetPref(#FirstMission)
+  [309] getlocal 8 .............................. <tmpFirstMission>
+  [311] pusharglist 1 ........................... <tmpFirstMission>
+  [313] extcall 96 .............................. <symbolp(tmpFirstMission)>
+  [316] not ..................................... <not symbolp(tmpFirstMission)>
+  [317] jmpifz [325] ............................ if not symbolp(tmpFirstMission) then
+  [320] pushsymb 97 ............................. <#Mission01>
+  [323] setlocal 8 .............................. tmpFirstMission = #Mission01
+  [325] pushsymb 3401 ........................... <#Pwd>
+  [328] pusharglist 1 ........................... <#Pwd>
+  [330] extcall 94 .............................. <rgetPref(#Pwd)>
+  [333] pushsymb 3402 ........................... <#Jonas>
+  [336] nteq .................................... <rgetPref(#Pwd) <> #Jonas>
+  [337] jmpifz [340] ............................ if rgetPref(#Pwd) <> #Jonas then
+  [340] pusharglist 0 ........................... <>
+  [342] extcall 98 .............................. <rOKCheatPass()>
+  [345] jmpifz [381] ............................ if rOKCheatPass() then / else
+  [348] getmovieprop 55 ......................... <the runMode>
+  [351] pushcons 200 ............................ <"Author">
+  [353] eq ...................................... <the runMode = "Author">
+  [354] jmpifz [368] ............................ if the runMode = "Author" then / else
+  [357] getprop 92 .............................. <m_CPSaveLoad>
+  [360] pusharglistnoret 1 ...................... <m_CPSaveLoad>
+  [362] objcall 41 .............................. m_CPSaveLoad.load()
+  [365] jmp [378]
+  [368] getparam 0 .............................. <me>
+  [370] pushsymb 99 ............................. <#Mission00>
+  [373] pusharglistnoret 2 ...................... <me, #Mission00>
+  [375] objcall 42 .............................. me.startMission(#Mission00)
+  [378] jmp [442]
+  [381] getparam 0 .............................. <me>
+  [383] pusharglist 1 ........................... <me>
+  [385] objcall 37 .............................. <me.gotSaveGame()>
+  [388] setlocal 16 ............................. tmp = me.gotSaveGame()
+  [390] getlocal 16 ............................. <tmp>
+  [392] pusharglist 1 ........................... <tmp>
+  [394] extcall 13 .............................. <stringp(tmp)>
+  [396] jmpifz [411] ............................ if stringp(tmp) then / else
+  [399] getparam 0 .............................. <me>
+  [401] getlocal 16 ............................. <tmp>
+  [403] pusharglistnoret 2 ...................... <me, tmp>
+  [405] objcall 41 .............................. me.load(tmp)
+  [408] jmp [442]
+  [411] getmovieprop 55 ......................... <the runMode>
+  [414] pushcons 208 ............................ <"Author">
+  [416] eq ...................................... <the runMode = "Author">
+  [417] jmpifz [433] ............................ if the runMode = "Author" then / else
+  [420] getparam 0 .............................. <me>
+  [422] pushsymb 100 ............................ <#Mission04>
+  [425] pusharglistnoret 2 ...................... <me, #Mission04>
+  [427] objcall 42 .............................. me.startMission(#Mission04)
+  [430] jmp [442]
+  [433] getparam 0 .............................. <me>
+  [435] getlocal 8 .............................. <tmpFirstMission>
+  [437] pusharglistnoret 2 ...................... <me, tmpFirstMission>
+  [439] objcall 42 .............................. me.startMission(tmpFirstMission)
+  [442] pushcons 216 ............................ <"Rock init end">
+  [444] pusharglistnoret 1 ...................... <"Rock init end">
+  [446] extcall 18 .............................. polandPott("Rock init end")
+  [448] ret
+end
+
+on prepareMovie me
+  [  0] getprop 48 .............................. <m_firstTimePrepare>
+  [  3] pushint8 1 .............................. <1>
+  [  6] eq ...................................... <m_firstTimePrepare = 1>
+  [  7] jmpifz [ 14] ............................ if m_firstTimePrepare = 1 then
+  [ 10] pushzero ................................ <0>
+  [ 11] setprop 48 .............................. m_firstTimePrepare = 0
+  [ 14] ret
+end
+
+on DirNewed me
+  [  0] ret
+end
+
+on DirInited me
+  [  0] ret
+end
+
+on stopMovie me
+  [  0] getprop 79 .............................. <m_context>
+  [  3] pusharglistnoret 1 ...................... <m_context>
+  [  5] objcall 104 ............................. m_context.hideEditor()
+  [  8] ret
+end
+
+on kill me
+  [  0] getprop 92 .............................. <m_CPSaveLoad>
+  [  3] pusharglist 1 ........................... <m_CPSaveLoad>
+  [  5] extcall 8 ............................... <objectp(m_CPSaveLoad)>
+  [  7] jmpifz [ 20] ............................ if objectp(m_CPSaveLoad) then
+  [ 10] getprop 92 .............................. <m_CPSaveLoad>
+  [ 13] pusharglist 1 ........................... <m_CPSaveLoad>
+  [ 15] objcall 31 .............................. <m_CPSaveLoad.kill()>
+  [ 17] setprop 92 .............................. m_CPSaveLoad = m_CPSaveLoad.kill()
+  [ 20] getprop 90 .............................. <m_modifiersManager>
+  [ 23] pusharglist 1 ........................... <m_modifiersManager>
+  [ 25] extcall 8 ............................... <objectp(m_modifiersManager)>
+  [ 27] jmpifz [ 40] ............................ if objectp(m_modifiersManager) then
+  [ 30] getprop 90 .............................. <m_modifiersManager>
+  [ 33] pusharglist 1 ........................... <m_modifiersManager>
+  [ 35] objcall 31 .............................. <m_modifiersManager.kill()>
+  [ 37] setprop 90 .............................. m_modifiersManager = m_modifiersManager.kill()
+  [ 40] getprop 91 .............................. <m_chartsManager>
+  [ 43] pusharglist 1 ........................... <m_chartsManager>
+  [ 45] extcall 8 ............................... <objectp(m_chartsManager)>
+  [ 47] jmpifz [ 60] ............................ if objectp(m_chartsManager) then
+  [ 50] getprop 91 .............................. <m_chartsManager>
+  [ 53] pusharglist 1 ........................... <m_chartsManager>
+  [ 55] objcall 31 .............................. <m_chartsManager.kill()>
+  [ 57] setprop 91 .............................. m_chartsManager = m_chartsManager.kill()
+  [ 60] getprop 34 .............................. <m_agenda>
+  [ 63] pusharglist 1 ........................... <m_agenda>
+  [ 65] extcall 8 ............................... <objectp(m_agenda)>
+  [ 67] jmpifz [ 80] ............................ if objectp(m_agenda) then
+  [ 70] getprop 34 .............................. <m_agenda>
+  [ 73] pusharglist 1 ........................... <m_agenda>
+  [ 75] objcall 31 .............................. <m_agenda.kill()>
+  [ 77] setprop 34 .............................. m_agenda = m_agenda.kill()
+  [ 80] getprop 81 .............................. <m_eventsManager>
+  [ 83] pusharglist 1 ........................... <m_eventsManager>
+  [ 85] extcall 8 ............................... <objectp(m_eventsManager)>
+  [ 87] jmpifz [100] ............................ if objectp(m_eventsManager) then
+  [ 90] getprop 81 .............................. <m_eventsManager>
+  [ 93] pusharglist 1 ........................... <m_eventsManager>
+  [ 95] objcall 31 .............................. <m_eventsManager.kill()>
+  [ 97] setprop 81 .............................. m_eventsManager = m_eventsManager.kill()
+  [100] getprop 82 .............................. <m_classManager>
+  [103] pusharglist 1 ........................... <m_classManager>
+  [105] extcall 8 ............................... <objectp(m_classManager)>
+  [107] jmpifz [120] ............................ if objectp(m_classManager) then
+  [110] getprop 82 .............................. <m_classManager>
+  [113] pusharglist 1 ........................... <m_classManager>
+  [115] objcall 31 .............................. <m_classManager.kill()>
+  [117] setprop 82 .............................. m_classManager = m_classManager.kill()
+  [120] getprop 80 .............................. <m_eventCardsManager>
+  [123] pusharglist 1 ........................... <m_eventCardsManager>
+  [125] extcall 8 ............................... <objectp(m_eventCardsManager)>
+  [127] jmpifz [140] ............................ if objectp(m_eventCardsManager) then
+  [130] getprop 80 .............................. <m_eventCardsManager>
+  [133] pusharglist 1 ........................... <m_eventCardsManager>
+  [135] objcall 31 .............................. <m_eventCardsManager.kill()>
+  [137] setprop 80 .............................. m_eventCardsManager = m_eventCardsManager.kill()
+  [140] getprop 79 .............................. <m_context>
+  [143] pusharglist 1 ........................... <m_context>
+  [145] extcall 8 ............................... <objectp(m_context)>
+  [147] jmpifz [160] ............................ if objectp(m_context) then
+  [150] getprop 79 .............................. <m_context>
+  [153] pusharglist 1 ........................... <m_context>
+  [155] objcall 31 .............................. <m_context.kill()>
+  [157] setprop 79 .............................. m_context = m_context.kill()
+  [160] getprop 77 .............................. <m_msgManager>
+  [163] pusharglist 1 ........................... <m_msgManager>
+  [165] extcall 8 ............................... <objectp(m_msgManager)>
+  [167] jmpifz [180] ............................ if objectp(m_msgManager) then
+  [170] getprop 77 .............................. <m_msgManager>
+  [173] pusharglist 1 ........................... <m_msgManager>
+  [175] objcall 31 .............................. <m_msgManager.kill()>
+  [177] setprop 77 .............................. m_msgManager = m_msgManager.kill()
+  [180] getprop 64 .............................. <m_gameTimer>
+  [183] pusharglist 1 ........................... <m_gameTimer>
+  [185] extcall 8 ............................... <objectp(m_gameTimer)>
+  [187] jmpifz [200] ............................ if objectp(m_gameTimer) then
+  [190] getprop 64 .............................. <m_gameTimer>
+  [193] pusharglist 1 ........................... <m_gameTimer>
+  [195] objcall 31 .............................. <m_gameTimer.kill()>
+  [197] setprop 64 .............................. m_gameTimer = m_gameTimer.kill()
+  [200] getprop 78 .............................. <m_waitOneFrame>
+  [203] pusharglist 1 ........................... <m_waitOneFrame>
+  [205] extcall 8 ............................... <objectp(m_waitOneFrame)>
+  [207] jmpifz [220] ............................ if objectp(m_waitOneFrame) then
+  [210] getprop 78 .............................. <m_waitOneFrame>
+  [213] pusharglist 1 ........................... <m_waitOneFrame>
+  [215] objcall 31 .............................. <m_waitOneFrame.kill()>
+  [217] setprop 78 .............................. m_waitOneFrame = m_waitOneFrame.kill()
+  [220] getprop 83 .............................. <m_languageManager>
+  [223] pusharglist 1 ........................... <m_languageManager>
+  [225] extcall 8 ............................... <objectp(m_languageManager)>
+  [227] jmpifz [240] ............................ if objectp(m_languageManager) then
+  [230] getprop 83 .............................. <m_languageManager>
+  [233] pusharglist 1 ........................... <m_languageManager>
+  [235] objcall 31 .............................. <m_languageManager.kill()>
+  [237] setprop 83 .............................. m_languageManager = m_languageManager.kill()
+  [240] getprop 33 .............................. <m_textFormatter>
+  [243] pusharglist 1 ........................... <m_textFormatter>
+  [245] extcall 8 ............................... <objectp(m_textFormatter)>
+  [247] jmpifz [260] ............................ if objectp(m_textFormatter) then
+  [250] getprop 33 .............................. <m_textFormatter>
+  [253] pusharglist 1 ........................... <m_textFormatter>
+  [255] objcall 31 .............................. <m_textFormatter.kill()>
+  [257] setprop 33 .............................. m_textFormatter = m_textFormatter.kill()
+  [260] getprop 75 .............................. <m_executor>
+  [263] pusharglist 1 ........................... <m_executor>
+  [265] extcall 8 ............................... <objectp(m_executor)>
+  [267] jmpifz [280] ............................ if objectp(m_executor) then
+  [270] getprop 75 .............................. <m_executor>
+  [273] pusharglist 1 ........................... <m_executor>
+  [275] objcall 31 .............................. <m_executor.kill()>
+  [277] setprop 75 .............................. m_executor = m_executor.kill()
+  [280] getprop 68 .............................. <m_waitCursor>
+  [283] pusharglist 1 ........................... <m_waitCursor>
+  [285] extcall 8 ............................... <objectp(m_waitCursor)>
+  [287] jmpifz [300] ............................ if objectp(m_waitCursor) then
+  [290] getprop 68 .............................. <m_waitCursor>
+  [293] pusharglist 1 ........................... <m_waitCursor>
+  [295] objcall 31 .............................. <m_waitCursor.kill()>
+  [297] setprop 68 .............................. m_waitCursor = m_waitCursor.kill()
+  [300] pushzero ................................ <0>
+  [301] pusharglistnoret 1 ...................... <0>
+  [303] extcall 69 .............................. return 0
+  [306] ret
+end
+
+on getIsFirstTime me
+  [  0] getparam 0 .............................. <me>
+  [  2] pusharglist 1 ........................... <me>
+  [  4] objcall 37 .............................. <me.gotSaveGame()>
+  [  7] setlocal 0 .............................. tmp = me.gotSaveGame()
+  [  9] getlocal 0 .............................. <tmp>
+  [ 11] pusharglist 1 ........................... <tmp>
+  [ 13] extcall 13 .............................. <stringp(tmp)>
+  [ 15] not ..................................... <not stringp(tmp)>
+  [ 16] jmpifz [ 27] ............................ if not stringp(tmp) then
+  [ 19] pushint8 1 .............................. <1>
+  [ 22] pusharglistnoret 1 ...................... <1>
+  [ 24] extcall 69 .............................. return 1
+  [ 27] pushzero ................................ <0>
+  [ 28] pusharglistnoret 1 ...................... <0>
+  [ 30] extcall 69 .............................. return 0
+  [ 33] ret
+end
+
+on gotSaveGame me
+  [  0] getprop 50 .............................. <m_paths>
+  [  3] pushsymb 39 ............................. <#save>
+  [  6] pusharglist 2 ........................... <m_paths, #save>
+  [  8] objcall 53 .............................. <m_paths.getPath(#save)>
+  [ 11] setlocal 0 .............................. tmpSavePath = m_paths.getPath(#save)
+  [ 13] getlocal 0 .............................. <tmpSavePath>
+  [ 15] pushcons 224 ............................ <"Auto.sav">
+  [ 17] joinstr ................................. <tmpSavePath & "Auto.sav">
+  [ 18] pusharglist 1 ........................... <tmpSavePath & "Auto.sav">
+  [ 20] extcall 105 ............................. <fileExists2(tmpSavePath & "Auto.sav")>
+  [ 23] jmpifz [ 39] ............................ if fileExists2(tmpSavePath & "Auto.sav") then / else
+  [ 26] getlocal 0 .............................. <tmpSavePath>
+  [ 28] pushcons 232 ............................ <"Auto.sav">
+  [ 30] joinstr ................................. <tmpSavePath & "Auto.sav">
+  [ 31] pusharglistnoret 1 ...................... <tmpSavePath & "Auto.sav">
+  [ 33] extcall 69 .............................. return tmpSavePath & "Auto.sav"
+  [ 36] jmp [ 45]
+  [ 39] pushzero ................................ <0>
+  [ 40] pusharglistnoret 1 ...................... <0>
+  [ 42] extcall 69 .............................. return 0
+  [ 45] ret
+end
+
+on autoSave me
+  [  0] getprop 93 .............................. <m_useAutoSave>
+  [  3] pushzero ................................ <0>
+  [  4] eq ...................................... <m_useAutoSave = 0>
+  [  5] jmpifz [  9] ............................ if m_useAutoSave = 0 then
+  [  8] ret ..................................... exit
+  [  9] getprop 50 .............................. <m_paths>
+  [ 12] pushsymb 39 ............................. <#save>
+  [ 15] pusharglist 2 ........................... <m_paths, #save>
+  [ 17] objcall 53 .............................. <m_paths.getPath(#save)>
+  [ 20] setlocal 0 .............................. tmpSavePath = m_paths.getPath(#save)
+  [ 22] getparam 0 .............................. <me>
+  [ 24] getlocal 0 .............................. <tmpSavePath>
+  [ 26] pushcons 240 ............................ <"Auto.sav">
+  [ 28] joinstr ................................. <tmpSavePath & "Auto.sav">
+  [ 29] pusharglistnoret 2 ...................... <me, tmpSavePath & "Auto.sav">
+  [ 31] objcall 39 .............................. me.save(tmpSavePath & "Auto.sav")
+  [ 34] ret
+end
+
+on save me, argFileName
+  [  0] pushcons 248 ............................ <"LoadSaveExtensionsScript">
+  [  2] pusharglist 1 ........................... <"LoadSaveExtensionsScript">
+  [  4] extcall 10 .............................. <script("LoadSaveExtensionsScript")>
+  [  6] pusharglist 1 ........................... <script("LoadSaveExtensionsScript")>
+  [  8] objcall 11 .............................. <script("LoadSaveExtensionsScript").new()>
+  [ 10] setlocal 0 .............................. classSaver = script("LoadSaveExtensionsScript").new()
+  [ 12] getprop 90 .............................. <m_modifiersManager>
+  [ 15] pusharglistnoret 1 ...................... <m_modifiersManager>
+  [ 17] objcall 107 ............................. m_modifiersManager.disableBeforeSave()
+  [ 20] pushsymb 108 ............................ <#date>
+  [ 23] getprop 76 .............................. <m_date>
+  [ 26] pusharglist 1 ........................... <m_date>
+  [ 28] objcall 39 .............................. <m_date.save()>
+  [ 31] pushsymb 109 ............................ <#Classes>
+  [ 34] getlocal 0 .............................. <classSaver>
+  [ 36] pusharglist 1 ........................... <classSaver>
+  [ 38] objcall 39 .............................. <classSaver.save()>
+  [ 41] pushsymb 110 ............................ <#Context>
+  [ 44] getprop 79 .............................. <m_context>
+  [ 47] pusharglist 1 ........................... <m_context>
+  [ 49] objcall 39 .............................. <m_context.save()>
+  [ 52] pushsymb 111 ............................ <#Modifiers>
+  [ 55] getprop 90 .............................. <m_modifiersManager>
+  [ 58] pusharglist 1 ........................... <m_modifiersManager>
+  [ 60] objcall 39 .............................. <m_modifiersManager.save()>
+  [ 63] pusharglist 8 ........................... <[#date: m_date.save(), #Classes: classSaver.save(), #Context: m_context.save(), #Modifiers: m_modifiersManager.save()]>
+  [ 65] pushproplist ............................ <[#date: m_date.save(), #Classes: classSaver.save(), #Context: m_context.save(), #Modifiers: m_modifiersManager.save()]>
+  [ 66] setlocal 8 .............................. saveList = [#date: m_date.save(), #Classes: classSaver.save(), #Context: m_context.save(), #Modifiers: m_modifiersManager.save()]
+  [ 68] getprop 90 .............................. <m_modifiersManager>
+  [ 71] pusharglistnoret 1 ...................... <m_modifiersManager>
+  [ 73] objcall 112 ............................. m_modifiersManager.enableAfterSave()
+  [ 76] getparam 8 .............................. <argFileName>
+  [ 78] pusharglist 1 ........................... <argFileName>
+  [ 80] extcall 61 .............................. <voidp(argFileName)>
+  [ 83] jmpifz [106] ............................ if voidp(argFileName) then
+  [ 86] getprop 50 .............................. <m_paths>
+  [ 89] pushsymb 50 ............................. <#m_paths>
+  [ 92] pushsymb 39 ............................. <#save>
+  [ 95] pusharglist 3 ........................... <m_paths, #m_paths, #save>
+  [ 97] objcall 113 ............................. <m_paths.m_paths[#save]>
+  [100] pushcons 256 ............................ <"Auto.sav">
+  [103] joinstr ................................. <m_paths.m_paths[#save] & "Auto.sav">
+  [104] setparam 8 .............................. argFileName = m_paths.m_paths[#save] & "Auto.sav"
+  [106] getlocal 8 .............................. <saveList>
+  [108] pusharglist 1 ........................... <saveList>
+  [110] extcall 114 ............................. <string(saveList)>
+  [113] setlocal 16 ............................. str = string(saveList)
+  [115] getlocal 16 ............................. <str>
+  [117] getobjprop 116 .......................... <str.value>
+  [120] pusharglist 1 ........................... <str.value>
+  [122] extcall 115 ............................. <listp(str.value)>
+  [125] not ..................................... <not listp(str.value)>
+  [126] jmpifz [190] ............................ if not listp(str.value) then
+  [129] pushcons 264 ............................ <"PropListManualParseScript">
+  [132] pusharglist 1 ........................... <"PropListManualParseScript">
+  [134] extcall 10 .............................. <script("PropListManualParseScript")>
+  [136] pusharglist 1 ........................... <script("PropListManualParseScript")>
+  [138] objcall 11 .............................. <script("PropListManualParseScript").new()>
+  [140] setlocal 24 ............................. a = script("PropListManualParseScript").new()
+  [142] pusharglist 0 ........................... <[]>
+  [144] pushlist ................................ <[]>
+  [145] setlocal 32 ............................. errStrPtr = []
+  [147] getlocal 24 ............................. <a>
+  [149] getlocal 16 ............................. <str>
+  [151] getlocal 32 ............................. <errStrPtr>
+  [153] pusharglistnoret 3 ...................... <a, str, errStrPtr>
+  [155] objcall 117 ............................. a.parse(str, errStrPtr)
+  [158] getlocal 32 ............................. <errStrPtr>
+  [160] pushint8 1 .............................. <1>
+  [163] pusharglist 2 ........................... <errStrPtr, 1>
+  [165] objcall 119 ............................. <errStrPtr[1]>
+  [168] pusharglist 1 ........................... <errStrPtr[1]>
+  [170] extcall 114 ............................. <string(errStrPtr[1])>
+  [173] pusharglistnoret 1 ...................... <string(errStrPtr[1])>
+  [175] extcall 118 ............................. alert(string(errStrPtr[1]))
+  [178] getparam 8 .............................. <argFileName>
+  [180] pushcons 272 ............................ <".txt">
+  [183] joinstr ................................. <argFileName & ".txt">
+  [184] getlocal 16 ............................. <str>
+  [186] pusharglistnoret 2 ...................... <argFileName & ".txt", str>
+  [188] extcall 17 .............................. writeFile(argFileName & ".txt", str)
+  [190] pushsymb 3437 ........................... <#SaveFormat>
+  [193] pusharglist 1 ........................... <#SaveFormat>
+  [195] extcall 94 .............................. <rgetPref(#SaveFormat)>
+  [198] pushsymb 414 ............................ <#text>
+  [201] nteq .................................... <rgetPref(#SaveFormat) <> #text>
+  [202] jmpifz [284] ............................ if rgetPref(#SaveFormat) <> #text then / else
+  [205] pushcons 280 ............................ <"vList">
+  [208] pusharglist 1 ........................... <"vList">
+  [210] extcall 120 ............................. <xtra("vList")>
+  [213] getparam 8 .............................. <argFileName>
+  [215] pusharglist 2 ........................... <xtra("vList"), argFileName>
+  [217] objcall 11 .............................. <xtra("vList").new(argFileName)>
+  [219] setlocal 40 ............................. vList = xtra("vList").new(argFileName)
+  [221] getlocal 40 ............................. <vList>
+  [223] getlocal 8 .............................. <saveList>
+  [225] pusharglist 2 ........................... <vList, saveList>
+  [227] objcall 121 ............................. <vList.write(saveList)>
+  [230] setlocal 48 ............................. tmpResult = vList.write(saveList)
+  [232] getlocal 48 ............................. <tmpResult>
+  [234] pushzero ................................ <0>
+  [235] nteq .................................... <tmpResult <> 0>
+  [236] jmpifz [249] ............................ if tmpResult <> 0 then
+  [239] pushcons 288 ............................ <"vList save Err">
+  [242] getlocal 48 ............................. <tmpResult>
+  [244] pusharglistnoret 2 ...................... <"vList save Err", tmpResult>
+  [246] extcall 122 ............................. pott("vList save Err", tmpResult)
+  [249] getmovieprop 55 ......................... <the runMode>
+  [252] pushcons 296 ............................ <"Author">
+  [255] eq ...................................... <the runMode = "Author">
+  [256] jmpifz [281] ............................ if the runMode = "Author" then
+  [259] getparam 8 .............................. <argFileName>
+  [261] pusharglist 1 ........................... <argFileName>
+  [263] extcall 123 ............................. <fileExtractPath(argFileName)>
+  [266] setlocal 56 ............................. tmpPath = fileExtractPath(argFileName)
+  [268] getlocal 8 .............................. <saveList>
+  [270] getlocal 56 ............................. <tmpPath>
+  [272] pushcons 304 ............................ <"_ReadableSave.txt">
+  [275] joinstr ................................. <tmpPath & "_ReadableSave.txt">
+  [276] pusharglistnoret 2 ...................... <saveList, tmpPath & "_ReadableSave.txt">
+  [278] extcall 124 ............................. savePropListAsTable(saveList, tmpPath & "_ReadableSave.txt")
+  [281] jmp [316]
+  [284] getlocal 8 .............................. <saveList>
+  [286] pusharglist 1 ........................... <saveList>
+  [288] extcall 114 ............................. <string(saveList)>
+  [291] setlocal 16 ............................. str = string(saveList)
+  [293] getparam 8 .............................. <argFileName>
+  [295] getlocal 16 ............................. <str>
+  [297] pusharglist 2 ........................... <argFileName, str>
+  [299] extcall 17 .............................. <writeFile(argFileName, str)>
+  [301] pushzero ................................ <0>
+  [302] nteq .................................... <writeFile(argFileName, str) <> 0>
+  [303] jmpifz [316] ............................ if writeFile(argFileName, str) <> 0 then
+  [306] pushcons 312 ............................ <"Err save: ">
+  [309] getparam 8 .............................. <argFileName>
+  [311] pusharglistnoret 2 ...................... <"Err save: ", argFileName>
+  [313] extcall 122 ............................. pott("Err save: ", argFileName)
+  [316] pushcons 320 ............................ <"Game saved as ">
+  [319] getparam 8 .............................. <argFileName>
+  [321] joinstr ................................. <"Game saved as " & argFileName>
+  [322] pusharglistnoret 1 ...................... <"Game saved as " & argFileName>
+  [324] extcall 122 ............................. pott("Game saved as " & argFileName)
+  [327] ret
+end
+
+on getLoadedAsList me, argListOrString, argIsMissionSave
+  [  0] getparam 8 .............................. <argListOrString>
+  [  2] pusharglist 1 ........................... <argListOrString>
+  [  4] extcall 115 ............................. <listp(argListOrString)>
+  [  7] not ..................................... <not listp(argListOrString)>
+  [  8] jmpifz [313] ............................ if not listp(argListOrString) then
+  [ 11] getparam 16 ............................. <argIsMissionSave>
+  [ 13] pushsymb 133 ............................ <#Mission>
+  [ 16] eq ...................................... <argIsMissionSave = #Mission>
+  [ 17] jmpifz [ 55] ............................ if argIsMissionSave = #Mission then / else
+  [ 20] getparam 8 .............................. <argListOrString>
+  [ 22] pusharglist 1 ........................... <argListOrString>
+  [ 24] extcall 3693 ............................ <getPathToMissionSave(argListOrString)>
+  [ 27] setlocal 0 .............................. tmpPath = getPathToMissionSave(argListOrString)
+  [ 29] getlocal 0 .............................. <tmpPath>
+  [ 31] pusharglist 1 ........................... <tmpPath>
+  [ 33] extcall 13 .............................. <stringp(tmpPath)>
+  [ 35] not ..................................... <not stringp(tmpPath)>
+  [ 36] jmpifz [ 52] ............................ if not stringp(tmpPath) then
+  [ 39] getprop 50 .............................. <m_paths>
+  [ 42] pushsymb 134 ............................ <#MissionSave>
+  [ 45] pusharglist 2 ........................... <m_paths, #MissionSave>
+  [ 47] objcall 53 .............................. <m_paths.getPath(#MissionSave)>
+  [ 50] setlocal 0 .............................. tmpPath = m_paths.getPath(#MissionSave)
+  [ 52] jmp [ 68]
+  [ 55] getprop 50 .............................. <m_paths>
+  [ 58] pushsymb 39 ............................. <#save>
+  [ 61] pusharglist 2 ........................... <m_paths, #save>
+  [ 63] objcall 53 .............................. <m_paths.getPath(#save)>
+  [ 66] setlocal 0 .............................. tmpPath = m_paths.getPath(#save)
+  [ 68] getparam 8 .............................. <argListOrString>
+  [ 70] pusharglist 1 ........................... <argListOrString>
+  [ 72] extcall 13 .............................. <stringp(argListOrString)>
+  [ 74] jmpifz [134] ............................ if stringp(argListOrString) then
+  [ 77] getparam 8 .............................. <argListOrString>
+  [ 79] pusharglist 1 ........................... <argListOrString>
+  [ 81] extcall 123 ............................. <fileExtractPath(argListOrString)>
+  [ 84] setlocal 8 .............................. tmpItsPath = fileExtractPath(argListOrString)
+  [ 86] getlocal 8 .............................. <tmpItsPath>
+  [ 88] getobjprop 135 .......................... <tmpItsPath.length>
+  [ 91] pushzero ................................ <0>
+  [ 92] eq ...................................... <tmpItsPath.length = 0>
+  [ 93] jmpifz [103] ............................ if tmpItsPath.length = 0 then
+  [ 96] getlocal 0 .............................. <tmpPath>
+  [ 98] getparam 8 .............................. <argListOrString>
+  [100] joinstr ................................. <tmpPath & argListOrString>
+  [101] setparam 8 .............................. argListOrString = tmpPath & argListOrString
+  [103] getparam 8 .............................. <argListOrString>
+  [105] pusharglist 1 ........................... <argListOrString>
+  [107] extcall 136 ............................. <fileExists(argListOrString)>
+  [110] not ..................................... <not fileExists(argListOrString)>
+  [111] jmpifz [134] ............................ if not fileExists(argListOrString) then
+  [114] pushcons 328 ............................ <"No such save">
+  [117] getlocal 0 .............................. <tmpPath>
+  [119] getparam 8 .............................. <argListOrString>
+  [121] pusharglistnoret 3 ...................... <"No such save", tmpPath, argListOrString>
+  [123] extcall 122 ............................. pott("No such save", tmpPath, argListOrString)
+  [126] pusharglist 0 ........................... <[:]>
+  [128] pushproplist ............................ <[:]>
+  [129] pusharglistnoret 1 ...................... <[:]>
+  [131] extcall 69 .............................. return [:]
+  [134] pushcons 336 ............................ <"Loading ">
+  [137] getparam 8 .............................. <argListOrString>
+  [139] joinstr ................................. <"Loading " & argListOrString>
+  [140] pusharglistnoret 1 ...................... <"Loading " & argListOrString>
+  [142] extcall 122 ............................. pott("Loading " & argListOrString)
+  [145] pushint8 1 .............................. <1>
+  [148] jmpifz [259] ............................ if 1 then / else
+  [151] getparam 8 .............................. <argListOrString>
+  [153] pusharglist 1 ........................... <argListOrString>
+  [155] extcall 137 ............................. <readFile(argListOrString)>
+  [158] setlocal 16 ............................. tmp = readFile(argListOrString)
+  [160] getlocal 16 ............................. <tmp>
+  [162] pushsymb 138 ............................ <#char>
+  [165] pushint8 1 .............................. <1>
+  [168] pusharglist 3 ........................... <tmp, #char, 1>
+  [170] objcall 113 ............................. <tmp.char[1]>
+  [173] pushcons 344 ............................ <"[">
+  [176] eq ...................................... <tmp.char[1] = "[">
+  [177] jmpifz [211] ............................ if tmp.char[1] = "[" then
+  [180] pushcons 352 ............................ <"OLD FORMAT SAVEGAME">
+  [183] pusharglistnoret 1 ...................... <"OLD FORMAT SAVEGAME">
+  [185] extcall 122 ............................. pott("OLD FORMAT SAVEGAME")
+  [188] getparam 8 .............................. <argListOrString>
+  [190] pusharglist 1 ........................... <argListOrString>
+  [192] extcall 137 ............................. <readFile(argListOrString)>
+  [195] setparam 8 .............................. argListOrString = readFile(argListOrString)
+  [197] getparam 8 .............................. <argListOrString>
+  [199] getobjprop 116 .......................... <argListOrString.value>
+  [202] setparam 8 .............................. argListOrString = argListOrString.value
+  [204] getparam 8 .............................. <argListOrString>
+  [206] pusharglistnoret 1 ...................... <argListOrString>
+  [208] extcall 69 .............................. return argListOrString
+  [211] pushcons 360 ............................ <"vList">
+  [214] pusharglist 1 ........................... <"vList">
+  [216] extcall 120 ............................. <xtra("vList")>
+  [219] getparam 8 .............................. <argListOrString>
+  [221] pusharglist 2 ........................... <xtra("vList"), argListOrString>
+  [223] objcall 11 .............................. <xtra("vList").new(argListOrString)>
+  [225] setlocal 24 ............................. vList = xtra("vList").new(argListOrString)
+  [227] getlocal 24 ............................. <vList>
+  [229] pusharglist 1 ........................... <vList>
+  [231] objcall 139 ............................. <vList.read()>
+  [234] setparam 8 .............................. argListOrString = vList.read()
+  [236] getparam 8 .............................. <argListOrString>
+  [238] pusharglist 1 ........................... <argListOrString>
+  [240] extcall 115 ............................. <listp(argListOrString)>
+  [243] not ..................................... <not listp(argListOrString)>
+  [244] jmpifz [256] ............................ if not listp(argListOrString) then
+  [247] pushcons 368 ............................ <"Couldn't make a list outta the vList savegame">
+  [250] pusharglistnoret 1 ...................... <"Couldn't make a list outta the vList savegame">
+  [252] extcall 122 ............................. pott("Couldn't make a list outta the vList savegame")
+  [255] ret ..................................... exit
+  [256] jmp [313]
+  [259] getparam 8 .............................. <argListOrString>
+  [261] pusharglist 1 ........................... <argListOrString>
+  [263] extcall 137 ............................. <readFile(argListOrString)>
+  [266] setparam 8 .............................. argListOrString = readFile(argListOrString)
+  [268] getparam 8 .............................. <argListOrString>
+  [270] pusharglist 1 ........................... <argListOrString>
+  [272] extcall 13 .............................. <stringp(argListOrString)>
+  [274] not ..................................... <not stringp(argListOrString)>
+  [275] jmpifz [286] ............................ if not stringp(argListOrString) then
+  [278] getparam 8 .............................. <argListOrString>
+  [280] pusharglistnoret 1 ...................... <argListOrString>
+  [282] extcall 122 ............................. pott(argListOrString)
+  [285] ret ..................................... exit
+  [286] getparam 8 .............................. <argListOrString>
+  [288] getobjprop 116 .......................... <argListOrString.value>
+  [291] setparam 8 .............................. argListOrString = argListOrString.value
+  [293] getparam 8 .............................. <argListOrString>
+  [295] pusharglist 1 ........................... <argListOrString>
+  [297] extcall 115 ............................. <listp(argListOrString)>
+  [300] not ..................................... <not listp(argListOrString)>
+  [301] jmpifz [313] ............................ if not listp(argListOrString) then
+  [304] pushcons 376 ............................ <"Couldn't make a list outta the savegame">
+  [307] pusharglistnoret 1 ...................... <"Couldn't make a list outta the savegame">
+  [309] extcall 122 ............................. pott("Couldn't make a list outta the savegame")
+  [312] ret ..................................... exit
+  [313] getparam 8 .............................. <argListOrString>
+  [315] pusharglistnoret 1 ...................... <argListOrString>
+  [317] extcall 69 .............................. return argListOrString
+  [320] ret
+end
+
+on load me, argListOrString
+  [  0] getparam 0 .............................. <me>
+  [  2] pushsymb 143 ............................ <#loadGame>
+  [  5] getparam 8 .............................. <argListOrString>
+  [  7] pusharglistnoret 3 ...................... <me, #loadGame, argListOrString>
+  [  9] objcall 43 .............................. me.start(#loadGame, argListOrString)
+  [ 12] ret
+end
+
+on startMission me, argID
+  [  0] getparam 0 .............................. <me>
+  [  2] pushsymb 42 ............................. <#startMission>
+  [  5] getparam 8 .............................. <argID>
+  [  7] pusharglistnoret 3 ...................... <me, #startMission, argID>
+  [  9] objcall 43 .............................. me.start(#startMission, argID)
+  [ 12] ret
+end
+
+on start me, argDoWhat, argMissionIDorSaveFile
+  [  0] pushzero ................................ <0>
+  [  1] setprop 145 ............................. m_noMissionActive = 0
+  [  4] pushint8 1 .............................. <1>
+  [  7] pusharglistnoret 1 ...................... <1>
+  [  9] extcall 74 .............................. waitCursor(1)
+  [ 12] pushcons 384 ............................ <"LoadSaveExtensionsScript">
+  [ 15] pusharglist 1 ........................... <"LoadSaveExtensionsScript">
+  [ 17] extcall 10 .............................. <script("LoadSaveExtensionsScript")>
+  [ 19] pusharglist 1 ........................... <script("LoadSaveExtensionsScript")>
+  [ 21] objcall 11 .............................. <script("LoadSaveExtensionsScript").new()>
+  [ 23] setlocal 0 .............................. classLoader = script("LoadSaveExtensionsScript").new()
+  [ 25] pushzero ................................ <0>
+  [ 26] setlocal 8 .............................. loadedGame = 0
+  [ 28] getparam 8 .............................. <argDoWhat>
+  [ 30] pushsymb 42 ............................. <#startMission>
+  [ 33] eq ...................................... <argDoWhat = #startMission>
+  [ 34] jmpifz [624] ............................ if argDoWhat = #startMission then / else
+  [ 37] getprop 79 .............................. <m_context>
+  [ 40] pushsymb 133 ............................ <#Mission>
+  [ 43] pusharglist 2 ........................... <m_context, #Mission>
+  [ 45] objcall 146 ............................. <m_context.getFocus(#Mission)>
+  [ 48] setlocal 16 ............................. currentMission_r = m_context.getFocus(#Mission)
+  [ 50] getlocal 16 ............................. <currentMission_r>
+  [ 52] pusharglist 1 ........................... <currentMission_r>
+  [ 54] extcall 8 ............................... <objectp(currentMission_r)>
+  [ 56] jmpifz [123] ............................ if objectp(currentMission_r) then / else
+  [ 59] pushsymb 147 ............................ <#class>
+  [ 62] pushsymb 148 ............................ <#player>
+  [ 65] pushsymb 66 ............................. <#Game>
+  [ 68] pusharglist 2 ........................... <[#player, #Game]>
+  [ 70] pushlist ................................ <[#player, #Game]>
+  [ 71] pusharglist 2 ........................... <[#class: [#player, #Game]]>
+  [ 73] pushproplist ............................ <[#class: [#player, #Game]]>
+  [ 74] setlocal 24 ............................. dontRemove = [#class: [#player, #Game]]
+  [ 76] getparam 0 .............................. <me>
+  [ 78] getlocal 24 ............................. <dontRemove>
+  [ 80] pusharglistnoret 2 ...................... <me, dontRemove>
+  [ 82] objcall 45 .............................. me.clearAll(dontRemove)
+  [ 85] getprop 82 .............................. <m_classManager>
+  [ 88] pushsymb 66 ............................. <#Game>
+  [ 91] pushsymb 66 ............................. <#Game>
+  [ 94] pusharglist 3 ........................... <m_classManager, #Game, #Game>
+  [ 96] objcall 149 ............................. <m_classManager.getObjByIDAndClass(#Game, #Game)>
+  [ 99] setlocal 32 ............................. game_r = m_classManager.getObjByIDAndClass(#Game, #Game)
+  [101] getprop 82 .............................. <m_classManager>
+  [104] getlocal 24 ............................. <dontRemove>
+  [106] getparam 0 .............................. <me>
+  [108] getparam 16 ............................. <argMissionIDorSaveFile>
+  [110] pusharglist 2 ........................... <me, argMissionIDorSaveFile>
+  [112] objcall 47 .............................. <me.getWildcardsForDataFiles(argMissionIDorSaveFile)>
+  [115] pusharglistnoret 3 ...................... <m_classManager, dontRemove, me.getWildcardsForDataFiles(argMissionIDorSaveFile)>
+  [117] objcall 150 ............................. m_classManager.instantiate(dontRemove, me.getWildcardsForDataFiles(argMissionIDorSaveFile))
+  [120] jmp [233]
+  [123] getprop 82 .............................. <m_classManager>
+  [126] pusharglist 0 ........................... <>
+  [128] extcall 151 ............................. <VOID>
+  [131] getparam 0 .............................. <me>
+  [133] getparam 16 ............................. <argMissionIDorSaveFile>
+  [135] pusharglist 2 ........................... <me, argMissionIDorSaveFile>
+  [137] objcall 47 .............................. <me.getWildcardsForDataFiles(argMissionIDorSaveFile)>
+  [140] pusharglistnoret 3 ...................... <m_classManager, VOID, me.getWildcardsForDataFiles(argMissionIDorSaveFile)>
+  [142] objcall 150 ............................. m_classManager.instantiate(VOID, me.getWildcardsForDataFiles(argMissionIDorSaveFile))
+  [145] pushcons 392 ............................ <"Rock m_classManager.instantiate">
+  [148] pusharglistnoret 1 ...................... <"Rock m_classManager.instantiate">
+  [150] extcall 18 .............................. polandPott("Rock m_classManager.instantiate")
+  [152] getprop 152 ............................. <m_player>
+  [155] pusharglist 1 ........................... <m_player>
+  [157] extcall 8 ............................... <objectp(m_player)>
+  [159] not ..................................... <not objectp(m_player)>
+  [160] jmpifz [186] ............................ if not objectp(m_player) then
+  [163] getprop 82 .............................. <m_classManager>
+  [166] pushsymb 148 ............................ <#player>
+  [169] pusharglist 2 ........................... <m_classManager, #player>
+  [171] objcall 153 ............................. <m_classManager.createUnregObj(#player)>
+  [174] setprop 152 ............................. m_player = m_classManager.createUnregObj(#player)
+  [177] getprop 152 ............................. <m_player>
+  [180] pushsymb 148 ............................ <#player>
+  [183] setobjprop 154 .......................... m_player.ID = #player
+  [186] getprop 82 .............................. <m_classManager>
+  [189] pushsymb 66 ............................. <#Game>
+  [192] pushsymb 66 ............................. <#Game>
+  [195] pusharglist 3 ........................... <m_classManager, #Game, #Game>
+  [197] objcall 149 ............................. <m_classManager.getObjByIDAndClass(#Game, #Game)>
+  [200] setlocal 32 ............................. game_r = m_classManager.getObjByIDAndClass(#Game, #Game)
+  [202] getlocal 32 ............................. <game_r>
+  [204] pusharglist 1 ........................... <game_r>
+  [206] extcall 8 ............................... <objectp(game_r)>
+  [208] not ..................................... <not objectp(game_r)>
+  [209] jmpifz [233] ............................ if not objectp(game_r) then
+  [212] getprop 82 .............................. <m_classManager>
+  [215] pushsymb 66 ............................. <#Game>
+  [218] pusharglist 2 ........................... <m_classManager, #Game>
+  [220] objcall 153 ............................. <m_classManager.createUnregObj(#Game)>
+  [223] setlocal 32 ............................. game_r = m_classManager.createUnregObj(#Game)
+  [225] getlocal 32 ............................. <game_r>
+  [227] pushsymb 66 ............................. <#Game>
+  [230] setobjprop 154 .......................... game_r.ID = #Game
+  [233] getprop 82 .............................. <m_classManager>
+  [236] pushsymb 148 ............................ <#player>
+  [239] pusharglist 2 ........................... <m_classManager, #player>
+  [241] objcall 155 ............................. <m_classManager.getObjsOfClass(#player)>
+  [244] getobjprop 156 .......................... <m_classManager.getObjsOfClass(#player).count>
+  [247] pushzero ................................ <0>
+  [248] gt ...................................... <m_classManager.getObjsOfClass(#player).count > 0>
+  [249] jmpifz [260] ............................ if m_classManager.getObjsOfClass(#player).count > 0 then
+  [252] pushcons 400 ............................ <"Already got player, no need to register!">
+  [255] pusharglistnoret 1 ...................... <"Already got player, no need to register!">
+  [257] extcall 122 ............................. pott("Already got player, no need to register!")
+  [260] getprop 152 ............................. <m_player>
+  [263] pusharglist 1 ........................... <m_player>
+  [265] extcall 8 ............................... <objectp(m_player)>
+  [267] not ..................................... <not objectp(m_player)>
+  [268] jmpifz [279] ............................ if not objectp(m_player) then
+  [271] pushcons 408 ............................ <"Zap! No Player!">
+  [274] pusharglistnoret 1 ...................... <"Zap! No Player!">
+  [276] extcall 122 ............................. pott("Zap! No Player!")
+  [279] getlocal 32 ............................. <game_r>
+  [281] pusharglist 1 ........................... <game_r>
+  [283] extcall 8 ............................... <objectp(game_r)>
+  [285] not ..................................... <not objectp(game_r)>
+  [286] jmpifz [297] ............................ if not objectp(game_r) then
+  [289] pushcons 416 ............................ <"Zap! No Game!">
+  [292] pusharglistnoret 1 ...................... <"Zap! No Game!">
+  [294] extcall 122 ............................. pott("Zap! No Game!")
+  [297] getprop 82 .............................. <m_classManager>
+  [300] getprop 152 ............................. <m_player>
+  [303] pusharglist 0 ........................... <>
+  [305] extcall 151 ............................. <VOID>
+  [308] pushint8 1 .............................. <1>
+  [311] pushint8 1 .............................. <1>
+  [314] pusharglistnoret 5 ...................... <m_classManager, m_player, VOID, 1, 1>
+  [316] objcall 157 ............................. m_classManager.registerObj(m_player, VOID, 1, 1)
+  [319] getprop 82 .............................. <m_classManager>
+  [322] getlocal 32 ............................. <game_r>
+  [324] pusharglist 0 ........................... <>
+  [326] extcall 151 ............................. <VOID>
+  [329] pushint8 1 .............................. <1>
+  [332] pushint8 1 .............................. <1>
+  [335] pusharglistnoret 5 ...................... <m_classManager, game_r, VOID, 1, 1>
+  [337] objcall 157 ............................. m_classManager.registerObj(game_r, VOID, 1, 1)
+  [340] getprop 82 .............................. <m_classManager>
+  [343] getparam 16 ............................. <argMissionIDorSaveFile>
+  [345] pushsymb 133 ............................ <#Mission>
+  [348] pusharglist 3 ........................... <m_classManager, argMissionIDorSaveFile, #Mission>
+  [350] objcall 149 ............................. <m_classManager.getObjByIDAndClass(argMissionIDorSaveFile, #Mission)>
+  [353] setlocal 40 ............................. mission_r = m_classManager.getObjByIDAndClass(argMissionIDorSaveFile, #Mission)
+  [355] getlocal 40 ............................. <mission_r>
+  [357] pusharglist 1 ........................... <mission_r>
+  [359] extcall 8 ............................... <objectp(mission_r)>
+  [361] not ..................................... <not objectp(mission_r)>
+  [362] jmpifz [376] ............................ if not objectp(mission_r) then
+  [365] pushcons 424 ............................ <"No such mission!">
+  [368] getparam 16 ............................. <argMissionIDorSaveFile>
+  [370] pusharglistnoret 2 ...................... <"No such mission!", argMissionIDorSaveFile>
+  [372] extcall 122 ............................. pott("No such mission!", argMissionIDorSaveFile)
+  [375] ret ..................................... exit
+  [376] getprop 152 ............................. <m_player>
+  [379] getlocal 40 ............................. <mission_r>
+  [381] pusharglistnoret 2 ...................... <m_player, mission_r>
+  [383] objcall 158 ............................. m_player.beforeMissionStart(mission_r)
+  [386] getlocal 40 ............................. <mission_r>
+  [388] getobjprop 159 .......................... <mission_r.autoLoad>
+  [391] getobjprop 135 .......................... <mission_r.autoLoad.length>
+  [394] pushzero ................................ <0>
+  [395] gt ...................................... <mission_r.autoLoad.length > 0>
+  [396] jmpifz [621] ............................ if mission_r.autoLoad.length > 0 then
+  [399] getparam 0 .............................. <me>
+  [401] getlocal 40 ............................. <mission_r>
+  [403] getobjprop 159 .......................... <mission_r.autoLoad>
+  [406] pushsymb 133 ............................ <#Mission>
+  [409] pusharglist 3 ........................... <me, mission_r.autoLoad, #Mission>
+  [411] objcall 40 .............................. <me.getLoadedAsList(mission_r.autoLoad, #Mission)>
+  [414] setlocal 48 ............................. loadedList = me.getLoadedAsList(mission_r.autoLoad, #Mission)
+  [416] getlocal 48 ............................. <loadedList>
+  [418] pusharglist 1 ........................... <loadedList>
+  [420] extcall 115 ............................. <listp(loadedList)>
+  [423] not ..................................... <not listp(loadedList)>
+  [424] jmpifz [438] ............................ if not listp(loadedList) then / else
+  [427] pushcons 432 ............................ <"Err autoload">
+  [430] pusharglistnoret 1 ...................... <"Err autoload">
+  [432] extcall 122 ............................. pott("Err autoload")
+  [435] jmp [621]
+  [438] pushint8 1 .............................. <1>
+  [441] setlocal 8 .............................. loadedGame = 1
+  [443] pushsymb 109 ............................ <#Classes>
+  [446] pushsymb 66 ............................. <#Game>
+  [449] pusharglist 2 ........................... <[#Classes, #Game]>
+  [451] pushlist ................................ <[#Classes, #Game]>
+  [452] pushsymb 109 ............................ <#Classes>
+  [455] pushsymb 148 ............................ <#player>
+  [458] pushsymb 148 ............................ <#player>
+  [461] pushsymb 160 ............................ <#points>
+  [464] pusharglist 4 ........................... <[#Classes, #player, #player, #points]>
+  [466] pushlist ................................ <[#Classes, #player, #player, #points]>
+  [467] pushsymb 109 ............................ <#Classes>
+  [470] pushsymb 148 ............................ <#player>
+  [473] pushsymb 148 ............................ <#player>
+  [476] pushsymb 57 ............................. <#name>
+  [479] pusharglist 4 ........................... <[#Classes, #player, #player, #name]>
+  [481] pushlist ................................ <[#Classes, #player, #player, #name]>
+  [482] pushsymb 109 ............................ <#Classes>
+  [485] pushsymb 148 ............................ <#player>
+  [488] pushsymb 148 ............................ <#player>
+  [491] pushsymb 161 ............................ <#MissionsInfo>
+  [494] pusharglist 4 ........................... <[#Classes, #player, #player, #MissionsInfo]>
+  [496] pushlist ................................ <[#Classes, #player, #player, #MissionsInfo]>
+  [497] pusharglist 4 ........................... <[[#Classes, #Game], [#Classes, #player, #player, #points], [#Classes, #player, #player, #name], [#Classes, #player, #player, #MissionsInfo]]>
+  [499] pushlist ................................ <[[#Classes, #Game], [#Classes, #player, #player, #points], [#Classes, #player, #player, #name], [#Classes, #player, #player, #MissionsInfo]]>
+  [500] setlocal 56 ............................. tmpAllDontAllow = [[#Classes, #Game], [#Classes, #player, #player, #points], [#Classes, #player, #player, #name], [#Classes, #player, #player, #MissionsInfo]]
+  [502] getlocal 56 ............................. <tmpAllDontAllow>
+  [504] peek 0
+  [506] pusharglist 1
+  [508] extcall 156
+  [511] pushint8 1
+  [513] peek 0
+  [515] peek 2
+  [517] lteq
+  [518] jmpifz [566] ............................ repeat with tmpDontAllow in tmpAllDontAllow
+  [521] peek 2
+  [523] peek 1
+  [525] pusharglist 2
+  [527] extcall 119
+  [530] setlocal 64
+  [532] getlocal 48 ............................. <loadedList>
+  [534] getlocal 64 ............................. <tmpDontAllow>
+  [536] pusharglist 2 ........................... <loadedList, tmpDontAllow>
+  [538] extcall 162 ............................. <rgetProp(loadedList, tmpDontAllow)>
+  [541] pusharglist 1 ........................... <rgetProp(loadedList, tmpDontAllow)>
+  [543] extcall 61 .............................. <voidp(rgetProp(loadedList, tmpDontAllow))>
+  [546] not ..................................... <not voidp(rgetProp(loadedList, tmpDontAllow))>
+  [547] jmpifz [560] ............................ if not voidp(rgetProp(loadedList, tmpDontAllow)) then
+  [550] pushcons 440 ............................ <"Don't load these:">
+  [553] getlocal 64 ............................. <tmpDontAllow>
+  [555] pusharglistnoret 2 ...................... <"Don't load these:", tmpDontAllow>
+  [557] extcall 122 ............................. pott("Don't load these:", tmpDontAllow)
+  [560] pushint8 1
+  [562] add
+  [563] endrepeat [513]
+  [566] pop 3
+  [568] getlocal 0 .............................. <classLoader>
+  [570] getlocal 48 ............................. <loadedList>
+  [572] pushsymb 109 ............................ <#Classes>
+  [575] pusharglist 2 ........................... <loadedList, #Classes>
+  [577] objcall 119 ............................. <loadedList[#Classes]>
+  [580] pusharglistnoret 2 ...................... <classLoader, loadedList[#Classes]>
+  [582] objcall 41 .............................. classLoader.load(loadedList[#Classes])
+  [585] getprop 79 .............................. <m_context>
+  [588] getlocal 48 ............................. <loadedList>
+  [590] pushsymb 110 ............................ <#Context>
+  [593] pusharglist 2 ........................... <loadedList, #Context>
+  [595] objcall 119 ............................. <loadedList[#Context]>
+  [598] pusharglistnoret 2 ...................... <m_context, loadedList[#Context]>
+  [600] objcall 41 .............................. m_context.load(loadedList[#Context])
+  [603] getprop 90 .............................. <m_modifiersManager>
+  [606] getlocal 48 ............................. <loadedList>
+  [608] pushsymb 111 ............................ <#Modifiers>
+  [611] pusharglist 2 ........................... <loadedList, #Modifiers>
+  [613] objcall 119 ............................. <loadedList[#Modifiers]>
+  [616] pusharglistnoret 2 ...................... <m_modifiersManager, loadedList[#Modifiers]>
+  [618] objcall 41 .............................. m_modifiersManager.load(loadedList[#Modifiers])
+  [621] jmp [839]
+  [624] getparam 0 .............................. <me>
+  [626] getparam 16 ............................. <argMissionIDorSaveFile>
+  [628] pusharglist 2 ........................... <me, argMissionIDorSaveFile>
+  [630] objcall 40 .............................. <me.getLoadedAsList(argMissionIDorSaveFile)>
+  [633] setlocal 48 ............................. loadedList = me.getLoadedAsList(argMissionIDorSaveFile)
+  [635] getlocal 48 ............................. <loadedList>
+  [637] pushsymb 109 ............................ <#Classes>
+  [640] pushsymb 133 ............................ <#Mission>
+  [643] pusharglist 2 ........................... <[#Classes, #Mission]>
+  [645] pushlist ................................ <[#Classes, #Mission]>
+  [646] pusharglist 2 ........................... <loadedList, [#Classes, #Mission]>
+  [648] extcall 162 ............................. <rgetProp(loadedList, [#Classes, #Mission])>
+  [651] setlocal 72 ............................. tmpSavedMission = rgetProp(loadedList, [#Classes, #Mission])
+  [653] getlocal 72 ............................. <tmpSavedMission>
+  [655] pusharglist 1 ........................... <tmpSavedMission>
+  [657] extcall 115 ............................. <listp(tmpSavedMission)>
+  [660] not ..................................... <not listp(tmpSavedMission)>
+  [661] jmpifz [669] ............................ if not listp(tmpSavedMission) then
+  [664] pusharglist 0 ........................... <[:]>
+  [666] pushproplist ............................ <[:]>
+  [667] setlocal 72 ............................. tmpSavedMission = [:]
+  [669] getlocal 72 ............................. <tmpSavedMission>
+  [671] getobjprop 156 .......................... <tmpSavedMission.count>
+  [674] pushzero ................................ <0>
+  [675] eq ...................................... <tmpSavedMission.count = 0>
+  [676] jmpifz [685] ............................ if tmpSavedMission.count = 0 then
+  [679] pushint8 1 .............................. <1>
+  [682] setprop 145 ............................. m_noMissionActive = 1
+  [685] pushint8 1 .............................. <1>
+  [688] setlocal 8 .............................. loadedGame = 1
+  [690] getprop 152 ............................. <m_player>
+  [693] pusharglist 1 ........................... <m_player>
+  [695] extcall 8 ............................... <objectp(m_player)>
+  [697] jmpifz [707] ............................ if objectp(m_player) then
+  [700] getparam 0 .............................. <me>
+  [702] pusharglistnoret 1 ...................... <me>
+  [704] objcall 45 .............................. me.clearAll()
+  [707] getprop 82 .............................. <m_classManager>
+  [710] pusharglist 0 ........................... <>
+  [712] extcall 151 ............................. <VOID>
+  [715] getparam 0 .............................. <me>
+  [717] getlocal 48 ............................. <loadedList>
+  [719] pushsymb 110 ............................ <#Context>
+  [722] pushsymb 133 ............................ <#Mission>
+  [725] pusharglist 2 ........................... <[#Context, #Mission]>
+  [727] pushlist ................................ <[#Context, #Mission]>
+  [728] pusharglist 2 ........................... <loadedList, [#Context, #Mission]>
+  [730] extcall 162 ............................. <rgetProp(loadedList, [#Context, #Mission])>
+  [733] pusharglist 2 ........................... <me, rgetProp(loadedList, [#Context, #Mission])>
+  [735] objcall 47 .............................. <me.getWildcardsForDataFiles(rgetProp(loadedList, [#Context, #Mission]))>
+  [738] pusharglistnoret 3 ...................... <m_classManager, VOID, me.getWildcardsForDataFiles(rgetProp(loadedList, [#Context, #Mission]))>
+  [740] objcall 150 ............................. m_classManager.instantiate(VOID, me.getWildcardsForDataFiles(rgetProp(loadedList, [#Context, #Mission])))
+  [743] getprop 76 .............................. <m_date>
+  [746] getlocal 48 ............................. <loadedList>
+  [748] pushsymb 108 ............................ <#date>
+  [751] pusharglist 2 ........................... <loadedList, #date>
+  [753] objcall 119 ............................. <loadedList[#date]>
+  [756] pusharglistnoret 2 ...................... <m_date, loadedList[#date]>
+  [758] objcall 41 .............................. m_date.load(loadedList[#date])
+  [761] getlocal 0 .............................. <classLoader>
+  [763] getlocal 48 ............................. <loadedList>
+  [765] pushsymb 109 ............................ <#Classes>
+  [768] pusharglist 2 ........................... <loadedList, #Classes>
+  [770] objcall 119 ............................. <loadedList[#Classes]>
+  [773] pusharglistnoret 2 ...................... <classLoader, loadedList[#Classes]>
+  [775] objcall 41 .............................. classLoader.load(loadedList[#Classes])
+  [778] getprop 79 .............................. <m_context>
+  [781] getlocal 48 ............................. <loadedList>
+  [783] pushsymb 110 ............................ <#Context>
+  [786] pusharglist 2 ........................... <loadedList, #Context>
+  [788] objcall 119 ............................. <loadedList[#Context]>
+  [791] pusharglistnoret 2 ...................... <m_context, loadedList[#Context]>
+  [793] objcall 41 .............................. m_context.load(loadedList[#Context])
+  [796] getprop 79 .............................. <m_context>
+  [799] pushsymb 66 ............................. <#Game>
+  [802] getprop 82 .............................. <m_classManager>
+  [805] pushsymb 66 ............................. <#Game>
+  [808] pushsymb 66 ............................. <#Game>
+  [811] pusharglist 3 ........................... <m_classManager, #Game, #Game>
+  [813] objcall 149 ............................. <m_classManager.getObjByIDAndClass(#Game, #Game)>
+  [816] pusharglistnoret 3 ...................... <m_context, #Game, m_classManager.getObjByIDAndClass(#Game, #Game)>
+  [818] objcall 163 ............................. m_context.setFocus(#Game, m_classManager.getObjByIDAndClass(#Game, #Game))
+  [821] getprop 90 .............................. <m_modifiersManager>
+  [824] getlocal 48 ............................. <loadedList>
+  [826] pushsymb 111 ............................ <#Modifiers>
+  [829] pusharglist 2 ........................... <loadedList, #Modifiers>
+  [831] objcall 119 ............................. <loadedList[#Modifiers]>
+  [834] pusharglistnoret 2 ...................... <m_modifiersManager, loadedList[#Modifiers]>
+  [836] objcall 41 .............................. m_modifiersManager.load(loadedList[#Modifiers])
+  [839] pushcons 448 ............................ <"Rock start mid">
+  [842] pusharglistnoret 1 ...................... <"Rock start mid">
+  [844] extcall 18 .............................. polandPott("Rock start mid")
+  [846] getprop 82 .............................. <m_classManager>
+  [849] pushsymb 164 ............................ <#PreInit>
+  [852] pusharglistnoret 2 ...................... <m_classManager, #PreInit>
+  [854] objcall 165 ............................. m_classManager.callObjects(#PreInit)
+  [857] pushcons 456 ............................ <"Called preInit">
+  [860] pusharglistnoret 1 ...................... <"Called preInit">
+  [862] extcall 122 ............................. pott("Called preInit")
+  [865] getlocal 8 .............................. <loadedGame>
+  [867] jmpifz [885] ............................ if loadedGame then
+  [870] getlocal 0 .............................. <classLoader>
+  [872] pusharglistnoret 1 ...................... <classLoader>
+  [874] objcall 166 ............................. classLoader.callLoad()
+  [877] pushcons 464 ............................ <"Called load">
+  [880] pusharglistnoret 1 ...................... <"Called load">
+  [882] extcall 122 ............................. pott("Called load")
+  [885] getprop 82 .............................. <m_classManager>
+  [888] pusharglistnoret 1 ...................... <m_classManager>
+  [890] objcall 167 ............................. m_classManager.callInit()
+  [893] pushcons 472 ............................ <"Called init">
+  [896] pusharglistnoret 1 ...................... <"Called init">
+  [898] extcall 122 ............................. pott("Called init")
+  [901] getprop 90 .............................. <m_modifiersManager>
+  [904] pusharglistnoret 1 ...................... <m_modifiersManager>
+  [906] objcall 168 ............................. m_modifiersManager.initAfterLoad()
+  [909] getparam 8 .............................. <argDoWhat>
+  [911] pushsymb 143 ............................ <#loadGame>
+  [914] eq ...................................... <argDoWhat = #loadGame>
+  [915] jmpifz [969] ............................ if argDoWhat = #loadGame then / else
+  [918] getprop 79 .............................. <m_context>
+  [921] pushsymb 133 ............................ <#Mission>
+  [924] pusharglist 2 ........................... <m_context, #Mission>
+  [926] objcall 146 ............................. <m_context.getFocus(#Mission)>
+  [929] setlocal 40 ............................. mission_r = m_context.getFocus(#Mission)
+  [931] getlocal 40 ............................. <mission_r>
+  [933] pushint8 1 .............................. <1>
+  [936] pusharglistnoret 2 ...................... <mission_r, 1>
+  [938] objcall 169 ............................. mission_r.activate(1)
+  [941] getprop 82 .............................. <m_classManager>
+  [944] pushsymb 148 ............................ <#player>
+  [947] pushsymb 148 ............................ <#player>
+  [950] pusharglist 3 ........................... <m_classManager, #player, #player>
+  [952] objcall 149 ............................. <m_classManager.getObjByIDAndClass(#player, #player)>
+  [955] setprop 152 ............................. m_player = m_classManager.getObjByIDAndClass(#player, #player)
+  [958] getprop 91 .............................. <m_chartsManager>
+  [961] pusharglistnoret 1 ...................... <m_chartsManager>
+  [963] objcall 170 ............................. m_chartsManager.initAfterNewGame()
+  [966] jmp [1157]
+  [969] getparam 8 .............................. <argDoWhat>
+  [971] pushsymb 42 ............................. <#startMission>
+  [974] eq ...................................... <argDoWhat = #startMission>
+  [975] jmpifz [1157] ........................... if argDoWhat = #startMission then
+  [978] getprop 79 .............................. <m_context>
+  [981] pushsymb 148 ............................ <#player>
+  [984] getprop 152 ............................. <m_player>
+  [987] pusharglistnoret 3 ...................... <m_context, #player, m_player>
+  [989] objcall 163 ............................. m_context.setFocus(#player, m_player)
+  [992] getprop 79 .............................. <m_context>
+  [995] pushsymb 66 ............................. <#Game>
+  [998] getlocal 32 ............................. <game_r>
+  [1000] pusharglistnoret 3 ..................... <m_context, #Game, game_r>
+  [1002] objcall 163 ............................ m_context.setFocus(#Game, game_r)
+  [1005] getprop 82 ............................. <m_classManager>
+  [1008] pushsymb 171 ........................... <#Band>
+  [1011] pushsymb 171 ........................... <#Band>
+  [1014] pusharglist 3 .......................... <m_classManager, #Band, #Band>
+  [1016] objcall 149 ............................ <m_classManager.getObjByIDAndClass(#Band, #Band)>
+  [1019] setlocal 80 ............................ band_r = m_classManager.getObjByIDAndClass(#Band, #Band)
+  [1021] getlocal 80 ............................ <band_r>
+  [1023] pusharglist 1 .......................... <band_r>
+  [1025] extcall 8 .............................. <objectp(band_r)>
+  [1027] not .................................... <not objectp(band_r)>
+  [1028] jmpifz [1068] .......................... if not objectp(band_r) then
+  [1031] getprop 82 ............................. <m_classManager>
+  [1034] pushsymb 171 ........................... <#Band>
+  [1037] pusharglist 2 .......................... <m_classManager, #Band>
+  [1039] objcall 172 ............................ <m_classManager.createObj(#Band)>
+  [1042] setlocal 80 ............................ band_r = m_classManager.createObj(#Band)
+  [1044] getlocal 80 ............................ <band_r>
+  [1046] pushsymb 171 ........................... <#Band>
+  [1049] setobjprop 154 ......................... band_r.ID = #Band
+  [1052] getlocal 80 ............................ <band_r>
+  [1054] getprop 83 ............................. <m_languageManager>
+  [1057] pushsymb 173 ........................... <#szidUnnamedBand>
+  [1060] pusharglist 2 .......................... <m_languageManager, #szidUnnamedBand>
+  [1062] objcall 174 ............................ <m_languageManager.getStr(#szidUnnamedBand)>
+  [1065] setobjprop 57 .......................... band_r.name = m_languageManager.getStr(#szidUnnamedBand)
+  [1068] getlocal 80 ............................ <band_r>
+  [1070] getobjprop 57 .......................... <band_r.name>
+  [1073] getobjprop 135 ......................... <band_r.name.length>
+  [1076] pushzero ............................... <0>
+  [1077] eq ..................................... <band_r.name.length = 0>
+  [1078] jmpifz [1097] .......................... if band_r.name.length = 0 then
+  [1081] getlocal 80 ............................ <band_r>
+  [1083] getprop 83 ............................. <m_languageManager>
+  [1086] pushsymb 173 ........................... <#szidUnnamedBand>
+  [1089] pusharglist 2 .......................... <m_languageManager, #szidUnnamedBand>
+  [1091] objcall 174 ............................ <m_languageManager.getStr(#szidUnnamedBand)>
+  [1094] setobjprop 57 .......................... band_r.name = m_languageManager.getStr(#szidUnnamedBand)
+  [1097] getprop 79 ............................. <m_context>
+  [1100] pushsymb 171 ........................... <#Band>
+  [1103] getlocal 80 ............................ <band_r>
+  [1105] pusharglistnoret 3 ..................... <m_context, #Band, band_r>
+  [1107] objcall 163 ............................ m_context.setFocus(#Band, band_r)
+  [1110] getlocal 40 ............................ <mission_r>
+  [1112] pushint8 1 ............................. <1>
+  [1115] pusharglistnoret 2 ..................... <mission_r, 1>
+  [1117] objcall 43 ............................. mission_r.start(1)
+  [1120] getparam 0 ............................. <me>
+  [1122] pusharglistnoret 1 ..................... <me>
+  [1124] objcall 46 ............................. me.missionAutoLoadFixDates()
+  [1127] getprop 152 ............................ <m_player>
+  [1130] getprop 152 ............................ <m_player>
+  [1133] pusharglist 1 .......................... <m_player>
+  [1135] objcall 175 ............................ <m_player.getWealth()>
+  [1138] inv .................................... <-m_player.getWealth()>
+  [1139] pusharglistnoret 2 ..................... <m_player, -m_player.getWealth()>
+  [1141] objcall 176 ............................ m_player.transactMoney(-m_player.getWealth())
+  [1144] getprop 152 ............................ <m_player>
+  [1147] getlocal 40 ............................ <mission_r>
+  [1149] getobjprop 177 ......................... <mission_r.StartMoney>
+  [1152] pusharglistnoret 2 ..................... <m_player, mission_r.StartMoney>
+  [1154] objcall 176 ............................ m_player.transactMoney(mission_r.StartMoney)
+  [1157] getlocal 40 ............................ <mission_r>
+  [1159] pusharglist 1 .......................... <mission_r>
+  [1161] objcall 178 ............................ <mission_r.getIsMissionOver()>
+  [1164] jmpifz [1173] .......................... if mission_r.getIsMissionOver() then
+  [1167] pushint8 1 ............................. <1>
+  [1170] setprop 145 ............................ m_noMissionActive = 1
+  [1173] getprop 91 ............................. <m_chartsManager>
+  [1176] pusharglistnoret 1 ..................... <m_chartsManager>
+  [1178] objcall 170 ............................ m_chartsManager.initAfterNewGame()
+  [1181] getprop 79 ............................. <m_context>
+  [1184] pushsymb 171 ........................... <#Band>
+  [1187] pusharglist 2 .......................... <m_context, #Band>
+  [1189] objcall 146 ............................ <m_context.getFocus(#Band)>
+  [1192] setlocal 80 ............................ band_r = m_context.getFocus(#Band)
+  [1194] getlocal 80 ............................ <band_r>
+  [1196] pushint8 1 ............................. <1>
+  [1199] pusharglistnoret 2 ..................... <band_r, 1>
+  [1201] objcall 169 ............................ band_r.activate(1)
+  [1204] getprop 82 ............................. <m_classManager>
+  [1207] pushsymb 148 ........................... <#player>
+  [1210] pusharglist 2 .......................... <m_classManager, #player>
+  [1212] objcall 155 ............................ <m_classManager.getObjsOfClass(#player)>
+  [1215] getobjprop 156 ......................... <m_classManager.getObjsOfClass(#player).count>
+  [1218] pushint8 1 ............................. <1>
+  [1221] gt ..................................... <m_classManager.getObjsOfClass(#player).count > 1>
+  [1222] jmpifz [1233] .......................... if m_classManager.getObjsOfClass(#player).count > 1 then
+  [1225] pushcons 480 ........................... <"Too many player objs!">
+  [1228] pusharglistnoret 1 ..................... <"Too many player objs!">
+  [1230] extcall 122 ............................ pott("Too many player objs!")
+  [1233] getprop 82 ............................. <m_classManager>
+  [1236] pushsymb 66 ............................ <#Game>
+  [1239] pusharglist 2 .......................... <m_classManager, #Game>
+  [1241] objcall 155 ............................ <m_classManager.getObjsOfClass(#Game)>
+  [1244] getobjprop 156 ......................... <m_classManager.getObjsOfClass(#Game).count>
+  [1247] pushint8 1 ............................. <1>
+  [1250] gt ..................................... <m_classManager.getObjsOfClass(#Game).count > 1>
+  [1251] jmpifz [1262] .......................... if m_classManager.getObjsOfClass(#Game).count > 1 then
+  [1254] pushcons 488 ........................... <"Too many game objs!">
+  [1257] pusharglistnoret 1 ..................... <"Too many game objs!">
+  [1259] extcall 122 ............................ pott("Too many game objs!")
+  [1262] getglobal 24 ........................... <gDir>
+  [1264] pusharglist 1 .......................... <gDir>
+  [1266] extcall 8 .............................. <objectp(gDir)>
+  [1268] jmpifz [1328] .......................... if objectp(gDir) then
+  [1271] getglobal 24 ........................... <gDir>
+  [1273] pushsymb 179 ........................... <#redraw>
+  [1276] pusharglist 2 .......................... <gDir, #redraw>
+  [1278] objcall 180 ............................ <gDir.handler(#redraw)>
+  [1281] jmpifz [1328] .......................... if gDir.handler(#redraw) then
+  [1284] getglobal 24 ........................... <gDir>
+  [1286] pusharglistnoret 1 ..................... <gDir>
+  [1288] objcall 181 ............................ gDir.redrawAfterLoad()
+  [1291] getglobal 24 ........................... <gDir>
+  [1293] pusharglistnoret 1 ..................... <gDir>
+  [1295] objcall 179 ............................ gDir.redraw()
+  [1298] getglobal 24 ........................... <gDir>
+  [1300] pushsymb 182 ........................... <#m_interfaceBar>
+  [1303] pusharglist 2 .......................... <gDir, #m_interfaceBar>
+  [1305] objcall 183 ............................ <gDir.getaProp(#m_interfaceBar)>
+  [1308] pusharglist 1 .......................... <gDir.getaProp(#m_interfaceBar)>
+  [1310] extcall 8 .............................. <objectp(gDir.getaProp(#m_interfaceBar))>
+  [1312] jmpifz [1328] .......................... if objectp(gDir.getaProp(#m_interfaceBar)) then
+  [1315] getglobal 24 ........................... <gDir>
+  [1317] getobjprop 182 ......................... <gDir.m_interfaceBar>
+  [1320] getobjprop 184 ......................... <gDir.m_interfaceBar.m_objMoney>
+  [1323] pusharglistnoret 1 ..................... <gDir.m_interfaceBar.m_objMoney>
+  [1325] objcall 185 ............................ gDir.m_interfaceBar.m_objMoney.registerWithNewPlayer()
+  [1328] pushzero ............................... <0>
+  [1329] pusharglistnoret 1 ..................... <0>
+  [1331] extcall 74 ............................. waitCursor(0)
+  [1334] ret
+end
+
+on zzclearCurrentMission me, argDontInit
+  [  0] getprop 79 .............................. <m_context>
+  [  3] pushsymb 133 ............................ <#Mission>
+  [  6] pusharglist 2 ........................... <m_context, #Mission>
+  [  8] objcall 146 ............................. <m_context.getFocus(#Mission)>
+  [ 11] setlocal 0 .............................. mission_r = m_context.getFocus(#Mission)
+  [ 13] getlocal 0 .............................. <mission_r>
+  [ 15] pusharglist 1 ........................... <mission_r>
+  [ 17] extcall 8 ............................... <objectp(mission_r)>
+  [ 19] jmpifz [ 69] ............................ if objectp(mission_r) then
+  [ 22] pushsymb 147 ............................ <#class>
+  [ 25] pushsymb 148 ............................ <#player>
+  [ 28] pushsymb 66 ............................. <#Game>
+  [ 31] pusharglist 2 ........................... <[#player, #Game]>
+  [ 33] pushlist ................................ <[#player, #Game]>
+  [ 34] pusharglist 2 ........................... <[#class: [#player, #Game]]>
+  [ 36] pushproplist ............................ <[#class: [#player, #Game]]>
+  [ 37] setlocal 8 .............................. dontRemove = [#class: [#player, #Game]]
+  [ 39] getparam 0 .............................. <me>
+  [ 41] getlocal 8 .............................. <dontRemove>
+  [ 43] pusharglistnoret 2 ...................... <me, dontRemove>
+  [ 45] objcall 45 .............................. me.clearAll(dontRemove)
+  [ 48] getparam 8 .............................. <argDontInit>
+  [ 50] pushsymb 199 ............................ <#DontInit>
+  [ 53] nteq .................................... <argDontInit <> #DontInit>
+  [ 54] jmpifz [ 69] ............................ if argDontInit <> #DontInit then
+  [ 57] getprop 82 .............................. <m_classManager>
+  [ 60] pushsymb 200 ............................ <#InitInstances>
+  [ 63] getlocal 8 .............................. <dontRemove>
+  [ 65] pusharglistnoret 3 ...................... <m_classManager, #InitInstances, dontRemove>
+  [ 67] objcall 19 .............................. m_classManager.init(#InitInstances, dontRemove)
+  [ 69] ret
+end
+
+on clearAll me, argExceptions
+  [  0] getprop 79 .............................. <m_context>
+  [  3] pusharglist 0 ........................... <[:]>
+  [  5] pushproplist ............................ <[:]>
+  [  6] pusharglistnoret 2 ...................... <m_context, [:]>
+  [  8] objcall 41 .............................. m_context.load([:])
+  [ 11] getprop 77 .............................. <m_msgManager>
+  [ 14] pusharglistnoret 1 ...................... <m_msgManager>
+  [ 16] objcall 202 ............................. m_msgManager.cleanUp()
+  [ 19] getprop 80 .............................. <m_eventCardsManager>
+  [ 22] pusharglistnoret 1 ...................... <m_eventCardsManager>
+  [ 24] objcall 202 ............................. m_eventCardsManager.cleanUp()
+  [ 27] getprop 81 .............................. <m_eventsManager>
+  [ 30] pusharglistnoret 1 ...................... <m_eventsManager>
+  [ 32] objcall 202 ............................. m_eventsManager.cleanUp()
+  [ 35] getprop 80 .............................. <m_eventCardsManager>
+  [ 38] pusharglistnoret 1 ...................... <m_eventCardsManager>
+  [ 40] objcall 203 ............................. m_eventCardsManager.reinit()
+  [ 43] getprop 82 .............................. <m_classManager>
+  [ 46] pushsymb 204 ............................ <#Trigger>
+  [ 49] pusharglist 2 ........................... <m_classManager, #Trigger>
+  [ 51] objcall 155 ............................. <m_classManager.getObjsOfClass(#Trigger)>
+  [ 54] setlocal 0 .............................. triggers_r = m_classManager.getObjsOfClass(#Trigger)
+  [ 56] getlocal 0 .............................. <triggers_r>
+  [ 58] peek 0
+  [ 60] pusharglist 1
+  [ 62] extcall 156
+  [ 65] pushint8 1
+  [ 67] peek 0
+  [ 69] peek 2
+  [ 71] lteq
+  [ 72] jmpifz [ 99] ............................ repeat with trigger_r in triggers_r
+  [ 75] peek 2
+  [ 77] peek 1
+  [ 79] pusharglist 2
+  [ 81] extcall 119
+  [ 84] setlocal 8
+  [ 86] getlocal 8 .............................. <trigger_r>
+  [ 88] pushzero ................................ <0>
+  [ 89] pusharglistnoret 2 ...................... <trigger_r, 0>
+  [ 91] objcall 169 ............................. trigger_r.activate(0)
+  [ 94] pushint8 1
+  [ 96] add
+  [ 97] endrepeat [ 67]
+  [ 99] pop 3
+  [101] getprop 82 .............................. <m_classManager>
+  [104] getparam 8 .............................. <argExceptions>
+  [106] pusharglistnoret 2 ...................... <m_classManager, argExceptions>
+  [108] objcall 205 ............................. m_classManager.removeAllRegisteredObjs(argExceptions)
+  [111] getprop 90 .............................. <m_modifiersManager>
+  [114] pusharglistnoret 1 ...................... <m_modifiersManager>
+  [116] objcall 45 .............................. m_modifiersManager.clearAll()
+  [119] getprop 91 .............................. <m_chartsManager>
+  [122] pusharglistnoret 1 ...................... <m_chartsManager>
+  [124] objcall 45 .............................. m_chartsManager.clearAll()
+  [127] getprop 75 .............................. <m_executor>
+  [130] pusharglistnoret 1 ...................... <m_executor>
+  [132] objcall 206 ............................. m_executor.clear()
+  [135] getprop 82 .............................. <m_classManager>
+  [138] pushsymb 207 ............................ <#m_objsCreatedFromGame>
+  [141] pusharglist 2 ........................... <m_classManager, #m_objsCreatedFromGame>
+  [143] objcall 156 ............................. <m_classManager.m_objsCreatedFromGame.count>
+  [146] jmpifz [239] ............................ if m_classManager.m_objsCreatedFromGame.count then
+  [149] pushcons 496 ............................ <"m_objsCreatedFromGame">
+  [152] getprop 82 .............................. <m_classManager>
+  [155] getobjprop 207 .......................... <m_classManager.m_objsCreatedFromGame>
+  [158] pusharglistnoret 2 ...................... <"m_objsCreatedFromGame", m_classManager.m_objsCreatedFromGame>
+  [160] extcall 122 ............................. pott("m_objsCreatedFromGame", m_classManager.m_objsCreatedFromGame)
+  [163] getprop 82 .............................. <m_classManager>
+  [166] getobjprop 207 .......................... <m_classManager.m_objsCreatedFromGame>
+  [169] peek 0
+  [171] pusharglist 1
+  [173] extcall 156
+  [176] pushint8 1
+  [178] peek 0
+  [180] peek 2
+  [182] lteq
+  [183] jmpifz [237] ............................ repeat with obj in m_classManager.m_objsCreatedFromGame
+  [186] peek 2
+  [188] peek 1
+  [190] pusharglist 2
+  [192] extcall 119
+  [195] setlocal 16
+  [197] getlocal 16 ............................. <obj>
+  [199] pushsymb 208 ............................ <#belongsTo>
+  [202] pusharglist 2 ........................... <obj, #belongsTo>
+  [204] extcall 162 ............................. <rgetProp(obj, #belongsTo)>
+  [207] pusharglist 1 ........................... <rgetProp(obj, #belongsTo)>
+  [209] extcall 61 .............................. <voidp(rgetProp(obj, #belongsTo))>
+  [212] not ..................................... <not voidp(rgetProp(obj, #belongsTo))>
+  [213] jmpifz [231] ............................ if not voidp(rgetProp(obj, #belongsTo)) then
+  [216] getlocal 16 ............................. <obj>
+  [218] pushsymb 208 ............................ <#belongsTo>
+  [221] pusharglist 2 ........................... <obj, #belongsTo>
+  [223] extcall 162 ............................. <rgetProp(obj, #belongsTo)>
+  [226] pusharglistnoret 1 ...................... <rgetProp(obj, #belongsTo)>
+  [228] extcall 122 ............................. pott(rgetProp(obj, #belongsTo))
+  [231] pushint8 1
+  [233] add
+  [234] endrepeat [178]
+  [237] pop 3
+  [239] getprop 82 .............................. <m_classManager>
+  [242] pushsymb 209 ............................ <#m_objsCreatedFromInit>
+  [245] pusharglist 2 ........................... <m_classManager, #m_objsCreatedFromInit>
+  [247] objcall 156 ............................. <m_classManager.m_objsCreatedFromInit.count>
+  [250] jmpifz [267] ............................ if m_classManager.m_objsCreatedFromInit.count then
+  [253] pushcons 504 ............................ <"CreatedFromInit">
+  [256] getprop 82 .............................. <m_classManager>
+  [259] getobjprop 209 .......................... <m_classManager.m_objsCreatedFromInit>
+  [262] pusharglistnoret 2 ...................... <"CreatedFromInit", m_classManager.m_objsCreatedFromInit>
+  [264] extcall 122 ............................. pott("CreatedFromInit", m_classManager.m_objsCreatedFromInit)
+  [267] getprop 82 .............................. <m_classManager>
+  [270] pushsymb 210 ............................ <#m_objsCreatedFromFile>
+  [273] pusharglist 2 ........................... <m_classManager, #m_objsCreatedFromFile>
+  [275] objcall 156 ............................. <m_classManager.m_objsCreatedFromFile.count>
+  [278] jmpifz [295] ............................ if m_classManager.m_objsCreatedFromFile.count then
+  [281] pushcons 512 ............................ <"m_objsCreatedFromFile">
+  [284] getprop 82 .............................. <m_classManager>
+  [287] getobjprop 210 .......................... <m_classManager.m_objsCreatedFromFile>
+  [290] pusharglistnoret 2 ...................... <"m_objsCreatedFromFile", m_classManager.m_objsCreatedFromFile>
+  [292] extcall 122 ............................. pott("m_objsCreatedFromFile", m_classManager.m_objsCreatedFromFile)
+  [295] ret
+end
+
+on missionAutoLoadFixDates me
+  [  0] pushsymb 215 ............................ <#Event>
+  [  3] pushsymb 216 ............................ <#StartDate>
+  [  6] pusharglist 2 ........................... <[#Event, #StartDate]>
+  [  8] pushlist ................................ <[#Event, #StartDate]>
+  [  9] pushsymb 217 ............................ <#album>
+  [ 12] pushsymb 218 ............................ <#ReleaseDate>
+  [ 15] pusharglist 2 ........................... <[#album, #ReleaseDate]>
+  [ 17] pushlist ................................ <[#album, #ReleaseDate]>
+  [ 18] pushsymb 217 ............................ <#album>
+  [ 21] pushsymb 219 ............................ <#RecordingStartedDate>
+  [ 24] pusharglist 2 ........................... <[#album, #RecordingStartedDate]>
+  [ 26] pushlist ................................ <[#album, #RecordingStartedDate]>
+  [ 27] pusharglist 3 ........................... <[[#Event, #StartDate], [#album, #ReleaseDate], [#album, #RecordingStartedDate]]>
+  [ 29] pushlist ................................ <[[#Event, #StartDate], [#album, #ReleaseDate], [#album, #RecordingStartedDate]]>
+  [ 30] setlocal 0 .............................. fixList = [[#Event, #StartDate], [#album, #ReleaseDate], [#album, #RecordingStartedDate]]
+  [ 32] getprop 76 .............................. <m_date>
+  [ 35] pusharglist 1 ........................... <m_date>
+  [ 37] objcall 220 ............................. <m_date.getDateInt()>
+  [ 40] setlocal 8 .............................. TodayDate = m_date.getDateInt()
+  [ 42] pushint8 1 .............................. <1>
+  [ 45] setlocal 16
+  [ 47] getlocal 16
+  [ 49] getlocal 0 .............................. <fixList>
+  [ 51] getobjprop 156 .......................... <fixList.count>
+  [ 54] lteq
+  [ 55] jmpifz [180] ............................ repeat with n = 1 to fixList.count
+  [ 58] getlocal 0 .............................. <fixList>
+  [ 60] getlocal 16 ............................. <n>
+  [ 62] pusharglist 2 ........................... <fixList, n>
+  [ 64] objcall 119 ............................. <fixList[n]>
+  [ 67] setlocal 24 ............................. propPath = fixList[n]
+  [ 69] getlocal 24 ............................. <propPath>
+  [ 71] pushint8 1 .............................. <1>
+  [ 74] pusharglist 2 ........................... <propPath, 1>
+  [ 76] objcall 119 ............................. <propPath[1]>
+  [ 79] setlocal 32 ............................. className = propPath[1]
+  [ 81] getlocal 24 ............................. <propPath>
+  [ 83] pushint8 1 .............................. <1>
+  [ 86] pusharglistnoret 2 ...................... <propPath, 1>
+  [ 88] objcall 221 ............................. propPath.deleteAt(1)
+  [ 91] getprop 82 .............................. <m_classManager>
+  [ 94] getlocal 32 ............................. <className>
+  [ 96] pusharglist 2 ........................... <m_classManager, className>
+  [ 98] objcall 222 ............................. <m_classManager.getObjsWithBaseClass(className)>
+  [101] setlocal 40 ............................. objs = m_classManager.getObjsWithBaseClass(className)
+  [103] getlocal 40 ............................. <objs>
+  [105] peek 0
+  [107] pusharglist 1
+  [109] extcall 156
+  [112] pushint8 1
+  [114] peek 0
+  [116] peek 2
+  [118] lteq
+  [119] jmpifz [167] ............................ repeat with obj in objs
+  [122] peek 2
+  [124] peek 1
+  [126] pusharglist 2
+  [128] extcall 119
+  [131] setlocal 48
+  [133] getlocal 48 ............................. <obj>
+  [135] getlocal 24 ............................. <propPath>
+  [137] pusharglist 2 ........................... <obj, propPath>
+  [139] extcall 162 ............................. <rgetProp(obj, propPath)>
+  [142] pushzero ................................ <0>
+  [143] nteq .................................... <rgetProp(obj, propPath) <> 0>
+  [144] jmpifz [161] ............................ if rgetProp(obj, propPath) <> 0 then
+  [147] getlocal 48 ............................. <obj>
+  [149] getlocal 24 ............................. <propPath>
+  [151] getlocal 8 .............................. <TodayDate>
+  [153] pushcons 520 ............................ <"+=">
+  [156] pusharglistnoret 4 ...................... <obj, propPath, TodayDate, "+=">
+  [158] extcall 223 ............................. rsetProp(obj, propPath, TodayDate, "+=")
+  [161] pushint8 1
+  [163] add
+  [164] endrepeat [114]
+  [167] pop 3
+  [169] pushint8 1
+  [172] getlocal 16
+  [174] add
+  [175] setlocal 16
+  [177] endrepeat [ 47]
+  [180] ret
+end
+
+on getWildcardsForDataFiles me, argMissionID
+  [  0] getparam 8 .............................. <argMissionID>
+  [  2] pusharglist 1 ........................... <argMissionID>
+  [  4] extcall 61 .............................. <voidp(argMissionID)>
+  [  7] jmpifz [ 21] ............................ if voidp(argMissionID) then
+  [ 10] pushcons 528 ............................ <"*">
+  [ 13] pusharglist 1 ........................... <["*"]>
+  [ 15] pushlist ................................ <["*"]>
+  [ 16] pusharglistnoret 1 ...................... <["*"]>
+  [ 18] extcall 69 .............................. return ["*"]
+  [ 21] getmovieprop 55 ......................... <the runMode>
+  [ 24] pushcons 536 ............................ <"Author">
+  [ 27] eq ...................................... <the runMode = "Author">
+  [ 28] jmpifz [ 42] ............................ if the runMode = "Author" then
+  [ 31] pushcons 544 ............................ <"*">
+  [ 34] pusharglist 1 ........................... <["*"]>
+  [ 36] pushlist ................................ <["*"]>
+  [ 37] pusharglistnoret 1 ...................... <["*"]>
+  [ 39] extcall 69 .............................. return ["*"]
+  [ 42] getparam 8 .............................. <argMissionID>
+  [ 44] pusharglist 1 ........................... <argMissionID>
+  [ 46] extcall 114 ............................. <string(argMissionID)>
+  [ 49] setlocal 0 .............................. str = string(argMissionID)
+  [ 51] pushcons 552 ............................ <"Mission">
+  [ 54] setlocal 8 .............................. tmp = "Mission"
+  [ 56] getlocal 0 .............................. <str>
+  [ 58] pushsymb 138 ............................ <#char>
+  [ 61] getlocal 8 .............................. <tmp>
+  [ 63] getobjprop 135 .......................... <tmp.length>
+  [ 66] pushint8 1 .............................. <1>
+  [ 69] add ..................................... <tmp.length + 1>
+  [ 70] getlocal 0 .............................. <str>
+  [ 72] getobjprop 135 .......................... <str.length>
+  [ 75] pusharglist 4 ........................... <str, #char, tmp.length + 1, str.length>
+  [ 77] objcall 113 ............................. <str.char[tmp.length + 1..str.length]>
+  [ 80] setlocal 0 .............................. str = str.char[tmp.length + 1..str.length]
+  [ 82] getlocal 0 .............................. <str>
+  [ 84] pushcons 560 ............................ <"00">
+  [ 87] eq ...................................... <str = "00">
+  [ 88] jmpifz [102] ............................ if str = "00" then
+  [ 91] pushcons 568 ............................ <"*">
+  [ 94] pusharglist 1 ........................... <["*"]>
+  [ 96] pushlist ................................ <["*"]>
+  [ 97] pusharglistnoret 1 ...................... <["*"]>
+  [ 99] extcall 69 .............................. return ["*"]
+  [102] pushcons 576 ............................ <"*00*">
+  [105] pusharglist 1 ........................... <["*00*"]>
+  [107] pushlist ................................ <["*00*"]>
+  [108] setlocal 16 ............................. lst = ["*00*"]
+  [110] getlocal 16 ............................. <lst>
+  [112] pushcons 584 ............................ <"*">
+  [115] getlocal 0 .............................. <str>
+  [117] joinstr ................................. <"*" & str>
+  [118] pushcons 592 ............................ <"*">
+  [121] joinstr ................................. <"*" & str & "*">
+  [122] pusharglistnoret 2 ...................... <lst, "*" & str & "*">
+  [124] objcall 229 ............................. lst.add("*" & str & "*")
+  [127] getlocal 16 ............................. <lst>
+  [129] pusharglistnoret 1 ...................... <lst>
+  [131] extcall 69 .............................. return lst
+  [134] ret
+end

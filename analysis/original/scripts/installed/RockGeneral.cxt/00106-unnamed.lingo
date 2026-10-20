@@ -1,0 +1,72 @@
+on fakeLoad argFile
+  global gRock, gDir
+  if voidp(argFile) then
+    argFile = the moviePath & "_Fake.txt"
+  end if
+  if offset("\", argFile) then
+    argFile = the moviePath & argFile
+  end if
+  tmp = loadTableAsPropList(argFile)
+  repeat with classNr = 1 to tmp[#Classes].count
+    className = tmp[#Classes].getPropAt(classNr)
+    instances = tmp[#Classes][classNr]
+    repeat with instanceNr = 1 to instances.count
+      ID = instances.getPropAt(instanceNr)
+      props = instances[instanceNr]
+      if className = #Band then
+        obj_r = gRock.m_context.getFocus(#Band)
+        repeat with n = obj_r.members.count down to 1
+          obj_r.deleteMusician(obj_r.members[n])
+        end repeat
+        setPropsInObject(obj_r, props)
+        tmpMembers = obj_r.members.duplicate()
+        emptyList(obj_r.members)
+        tmpAtPos = [#Guitar: [1, 2], #Keyboards: [1, 2], #Drums: [3], #Bass: [4], #Vocals: [5]]
+        repeat with musID in tmpMembers
+          musician_r = gRock.m_classManager.getObjByIDAndClass(musID, #RealMusician)
+          obj_r.addMusician(musician_r)
+          instr = musician_r.getBestInstrument()
+          musician_r.setNowPlaying(instr)
+          Pos = tmpAtPos[instr][1]
+          musician_r.setSpatialPos(Pos)
+          musician_r.setActiveState(#InBand)
+        end repeat
+        next repeat
+      end if
+      obj_r = gRock.m_classManager.createObj(className)
+      obj_r.ID = ID
+      setPropsInObject(obj_r, props)
+      if className = #album then
+        song_r = gRock.m_classManager.getObjByIDAndClass(obj_r.SongID, #Song)
+        if not objectp(song_r) then
+          song_r = gRock.m_classManager.getObjByIDAndClass(#Sng01, #Song)
+        end if
+        obj_r.recorded(song_r)
+        gRock.m_context.setFocus(className, obj_r)
+      end if
+    end repeat
+  end repeat
+  if objectp(gDir) then
+    if gDir.handler(#redraw) then
+      gDir.redrawAfterLoad()
+      gDir.redraw()
+    end if
+  end if
+end
+
+on setPropsInObject argObj, argPropList
+  repeat with n = 1 to argPropList.count
+    prop = argPropList.getPropAt(n)
+    val = argPropList[n]
+    if ilk(val) = #propList then
+      obj = getPropFromObjOrAncestor(argObj, prop)
+      if objectp(obj) then
+        setPropsInObject(obj, val)
+      else
+        setPropInObjOrAncestor(argObj, prop, val)
+      end if
+      next repeat
+    end if
+    setPropInObjOrAncestor(argObj, prop, val)
+  end repeat
+end

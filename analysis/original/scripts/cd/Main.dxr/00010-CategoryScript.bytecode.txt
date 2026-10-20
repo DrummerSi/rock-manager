@@ -1,0 +1,368 @@
+property m_dlg, m_chosenObj, m_action_r, m_actionDlgLoc
+global gRock
+
+on new me, argDlgObj
+  [  0] getparam 8 .............................. <argDlgObj>
+  [  2] setprop 398 ............................. m_dlg = argDlgObj
+  [  5] pusharglist 0 ........................... <>
+  [  7] extcall 381 ............................. <VOID>
+  [ 10] setprop 399 ............................. m_actionDlgLoc = VOID
+  [ 13] getparam 0 .............................. <me>
+  [ 15] pusharglistnoret 1 ...................... <me>
+  [ 17] extcall 46 .............................. return me
+  [ 20] ret
+end
+
+on kill me
+  [  0] pushzero ................................ <0>
+  [  1] setprop 400 ............................. m_action_r = 0
+  [  4] pushzero ................................ <0>
+  [  5] setprop 398 ............................. m_dlg = 0
+  [  8] pushzero ................................ <0>
+  [  9] setprop 401 ............................. m_chosenObj = 0
+  [ 12] pushzero ................................ <0>
+  [ 13] pusharglistnoret 1 ...................... <0>
+  [ 15] extcall 46 .............................. return 0
+  [ 18] ret
+end
+
+on makeObjsOfIDs me, argIDs
+  [  0] pusharglist 0 ........................... <[]>
+  [  2] pushlist ................................ <[]>
+  [  3] setlocal 0 .............................. objs_r = []
+  [  5] getparam 8 .............................. <argIDs>
+  [  7] peek 0
+  [  9] pusharglist 1
+  [ 11] extcall 85
+  [ 14] pushint8 1
+  [ 16] peek 0
+  [ 18] peek 2
+  [ 20] lteq
+  [ 21] jmpifz [107] ............................ repeat with ID in argIDs
+  [ 24] peek 2
+  [ 26] peek 1
+  [ 28] pusharglist 2
+  [ 30] extcall 51
+  [ 33] setlocal 8
+  [ 35] getglobal 35 ............................ <gRock>
+  [ 38] getobjprop 77 ........................... <gRock.m_classManager>
+  [ 41] getlocal 8 .............................. <ID>
+  [ 43] pushsymb 402 ............................ <#ActionCategory>
+  [ 46] pusharglist 3 ........................... <gRock.m_classManager, ID, #ActionCategory>
+  [ 48] objcall 403 ............................. <gRock.m_classManager.getObjByIDAndClass(ID, #ActionCategory)>
+  [ 51] setlocal 16 ............................. obj_r = gRock.m_classManager.getObjByIDAndClass(ID, #ActionCategory)
+  [ 53] getlocal 16 ............................. <obj_r>
+  [ 55] pusharglist 1 ........................... <obj_r>
+  [ 57] extcall 63 .............................. <objectp(obj_r)>
+  [ 60] not ..................................... <not objectp(obj_r)>
+  [ 61] jmpifz [ 82] ............................ if not objectp(obj_r) then
+  [ 64] getglobal 35 ............................ <gRock>
+  [ 67] getobjprop 77 ........................... <gRock.m_classManager>
+  [ 70] getlocal 8 .............................. <ID>
+  [ 72] pushsymb 271 ............................ <#Action>
+  [ 75] pusharglist 3 ........................... <gRock.m_classManager, ID, #Action>
+  [ 77] objcall 403 ............................. <gRock.m_classManager.getObjByIDAndClass(ID, #Action)>
+  [ 80] setlocal 16 ............................. obj_r = gRock.m_classManager.getObjByIDAndClass(ID, #Action)
+  [ 82] getlocal 16 ............................. <obj_r>
+  [ 84] pusharglist 1 ........................... <obj_r>
+  [ 86] extcall 63 .............................. <objectp(obj_r)>
+  [ 89] jmpifz [101] ............................ if objectp(obj_r) then
+  [ 92] getlocal 0 .............................. <objs_r>
+  [ 94] getlocal 16 ............................. <obj_r>
+  [ 96] pusharglistnoret 2 ...................... <objs_r, obj_r>
+  [ 98] objcall 98 .............................. objs_r.add(obj_r)
+  [101] pushint8 1
+  [103] add
+  [104] endrepeat [ 16]
+  [107] pop 3
+  [109] getlocal 0 .............................. <objs_r>
+  [111] pusharglistnoret 1 ...................... <objs_r>
+  [113] extcall 46 .............................. return objs_r
+  [116] ret
+end
+
+on createScrollData me, argIDs, argOverrideType
+  [  0] getparam 8 .............................. <argIDs>
+  [  2] pusharglist 1 ........................... <argIDs>
+  [  4] extcall 181 ............................. <voidp(argIDs)>
+  [  7] jmpifz [ 21] ............................ if voidp(argIDs) then
+  [ 10] getprop 398 ............................. <m_dlg>
+  [ 13] getobjprop 407 .......................... <m_dlg.m_place_r>
+  [ 16] getobjprop 408 .......................... <m_dlg.m_place_r.Actions>
+  [ 19] setparam 8 .............................. argIDs = m_dlg.m_place_r.Actions
+  [ 21] getparam 16 ............................. <argOverrideType>
+  [ 23] pusharglist 1 ........................... <argOverrideType>
+  [ 25] extcall 181 ............................. <voidp(argOverrideType)>
+  [ 28] jmpifz [ 36] ............................ if voidp(argOverrideType) then
+  [ 31] pushsymb 402 ............................ <#ActionCategory>
+  [ 34] setparam 16 ............................. argOverrideType = #ActionCategory
+  [ 36] getparam 0 .............................. <me>
+  [ 38] getparam 8 .............................. <argIDs>
+  [ 40] pusharglist 2 ........................... <me, argIDs>
+  [ 42] objcall 394 ............................. <me.makeObjsOfIDs(argIDs)>
+  [ 45] setlocal 0 .............................. objs_r = me.makeObjsOfIDs(argIDs)
+  [ 47] getprop 398 ............................. <m_dlg>
+  [ 50] getobjprop 360 .......................... <m_dlg.m_objDlg>
+  [ 53] pushsymb 409 ............................ <#ScrollView>
+  [ 56] pushsymb 410 ............................ <#Head1>
+  [ 59] pushsymb 393 ............................ <#Info>
+  [ 62] pusharglist 3 ........................... <[#ScrollView, #Head1, #Info]>
+  [ 64] pushlist ................................ <[#ScrollView, #Head1, #Info]>
+  [ 65] pusharglist 2 ........................... <m_dlg.m_objDlg, [#ScrollView, #Head1, #Info]>
+  [ 67] objcall 411 ............................. <m_dlg.m_objDlg.getItemByPath([#ScrollView, #Head1, #Info])>
+  [ 70] setlocal 8 .............................. itemObj = m_dlg.m_objDlg.getItemByPath([#ScrollView, #Head1, #Info])
+  [ 72] getlocal 8 .............................. <itemObj>
+  [ 74] pusharglist 1 ........................... <itemObj>
+  [ 76] extcall 63 .............................. <objectp(itemObj)>
+  [ 79] jmpifz [100] ............................ if objectp(itemObj) then
+  [ 82] getlocal 8 .............................. <itemObj>
+  [ 84] pushsymb 412 ............................ <#editData>
+  [ 87] pushsymb 414 ............................ <#szidCategory>
+  [ 90] pusharglist 1 ........................... <#szidCategory>
+  [ 92] extcall 413 ............................. <rGetStr(#szidCategory)>
+  [ 95] pusharglistnoret 3 ...................... <itemObj, #editData, rGetStr(#szidCategory)>
+  [ 97] objcall 364 ............................. itemObj.setOneProp(#editData, rGetStr(#szidCategory))
+  [100] pusharglist 0 ........................... <[]>
+  [102] pushlist ................................ <[]>
+  [103] setlocal 16 ............................. allScrollData = []
+  [105] getlocal 0 .............................. <objs_r>
+  [107] peek 0
+  [109] pusharglist 1
+  [111] extcall 85
+  [114] pushint8 1
+  [116] peek 0
+  [118] peek 2
+  [120] lteq
+  [121] jmpifz [352] ............................ repeat with obj_r in objs_r
+  [124] peek 2
+  [126] peek 1
+  [128] pusharglist 2
+  [130] extcall 51
+  [133] setlocal 24
+  [135] getlocal 24 ............................. <obj_r>
+  [137] pusharglist 1 ........................... <obj_r>
+  [139] extcall 63 .............................. <objectp(obj_r)>
+  [142] not ..................................... <not objectp(obj_r)>
+  [143] jmpifz [149] ............................ if not objectp(obj_r) then
+  [146] jmp [346] ............................... next repeat
+  [149] pushzero ................................ <0>
+  [150] setlocal 32 ............................. tmpDimmed = 0
+  [152] getlocal 24 ............................. <obj_r>
+  [154] getobjprop 315 .......................... <obj_r.className>
+  [157] pushsymb 402 ............................ <#ActionCategory>
+  [160] eq ...................................... <obj_r.className = #ActionCategory>
+  [161] jmpifz [234] ............................ if obj_r.className = #ActionCategory then / else
+  [164] getlocal 24 ............................. <obj_r>
+  [166] pushsymb 408 ............................ <#Actions>
+  [169] pusharglist 2 ........................... <obj_r, #Actions>
+  [171] objcall 85 .............................. <obj_r.Actions.count>
+  [174] pushzero ................................ <0>
+  [175] eq ...................................... <obj_r.Actions.count = 0>
+  [176] jmpifz [187] ............................ if obj_r.Actions.count = 0 then / else
+  [179] pushint8 1 .............................. <1>
+  [182] setlocal 32 ............................. tmpDimmed = 1
+  [184] jmp [231]
+  [187] getlocal 24 ............................. <obj_r>
+  [189] getobjprop 272 .......................... <obj_r.PreExecuteThis>
+  [192] getobjprop 244 .......................... <obj_r.PreExecuteThis.length>
+  [195] pushzero ................................ <0>
+  [196] gt ...................................... <obj_r.PreExecuteThis.length > 0>
+  [197] jmpifz [231] ............................ if obj_r.PreExecuteThis.length > 0 then
+  [200] getlocal 24 ............................. <obj_r>
+  [202] getobjprop 272 .......................... <obj_r.PreExecuteThis>
+  [205] pusharglist 0 ........................... <[:]>
+  [207] pushproplist ............................ <[:]>
+  [208] getlocal 24 ............................. <obj_r>
+  [210] pusharglist 3 ........................... <obj_r.PreExecuteThis, [:], obj_r>
+  [212] extcall 415 ............................. <rExecuteActions(obj_r.PreExecuteThis, [:], obj_r)>
+  [215] setlocal 40 ............................. tmpPreExecuteResult = rExecuteActions(obj_r.PreExecuteThis, [:], obj_r)
+  [217] getlocal 40 ............................. <tmpPreExecuteResult>
+  [219] pushsymb 416 ............................ <#DimAction>
+  [222] eq ...................................... <tmpPreExecuteResult = #DimAction>
+  [223] jmpifz [231] ............................ if tmpPreExecuteResult = #DimAction then
+  [226] pushint8 1 .............................. <1>
+  [229] setlocal 32 ............................. tmpDimmed = 1
+  [231] jmp [305]
+  [234] getlocal 24 ............................. <obj_r>
+  [236] getobjprop 315 .......................... <obj_r.className>
+  [239] pushsymb 271 ............................ <#Action>
+  [242] eq ...................................... <obj_r.className = #Action>
+  [243] jmpifz [305] ............................ if obj_r.className = #Action then
+  [246] getlocal 24 ............................. <obj_r>
+  [248] getobjprop 272 .......................... <obj_r.PreExecuteThis>
+  [251] getobjprop 244 .......................... <obj_r.PreExecuteThis.length>
+  [254] pushzero ................................ <0>
+  [255] gt ...................................... <obj_r.PreExecuteThis.length > 0>
+  [256] jmpifz [305] ............................ if obj_r.PreExecuteThis.length > 0 then
+  [259] getlocal 24 ............................. <obj_r>
+  [261] getobjprop 272 .......................... <obj_r.PreExecuteThis>
+  [264] pusharglist 0 ........................... <[:]>
+  [266] pushproplist ............................ <[:]>
+  [267] getlocal 24 ............................. <obj_r>
+  [269] pusharglist 3 ........................... <obj_r.PreExecuteThis, [:], obj_r>
+  [271] extcall 415 ............................. <rExecuteActions(obj_r.PreExecuteThis, [:], obj_r)>
+  [274] setlocal 40 ............................. tmpPreExecuteResult = rExecuteActions(obj_r.PreExecuteThis, [:], obj_r)
+  [276] getlocal 40 ............................. <tmpPreExecuteResult>
+  [278] pushsymb 416 ............................ <#DimAction>
+  [281] eq ...................................... <tmpPreExecuteResult = #DimAction>
+  [282] jmpifz [293] ............................ if tmpPreExecuteResult = #DimAction then / else
+  [285] pushint8 1 .............................. <1>
+  [288] setlocal 32 ............................. tmpDimmed = 1
+  [290] jmp [305]
+  [293] getlocal 40 ............................. <tmpPreExecuteResult>
+  [295] pushsymb 417 ............................ <#HideAction>
+  [298] eq ...................................... <tmpPreExecuteResult = #HideAction>
+  [299] jmpifz [305] ............................ if tmpPreExecuteResult = #HideAction then
+  [302] pushzero ................................ <0>
+  [303] setlocal 24 ............................. obj_r = 0
+  [305] pusharglist 0 ........................... <>
+  [307] extcall 418 ............................. <rOKCheatPass()>
+  [310] jmpifz [316] ............................ if rOKCheatPass() then
+  [313] pushzero ................................ <0>
+  [314] setlocal 32 ............................. tmpDimmed = 0
+  [316] getlocal 24 ............................. <obj_r>
+  [318] pusharglist 1 ........................... <obj_r>
+  [320] extcall 63 .............................. <objectp(obj_r)>
+  [323] jmpifz [346] ............................ if objectp(obj_r) then
+  [326] getlocal 16 ............................. <allScrollData>
+  [328] getlocal 24 ............................. <obj_r>
+  [330] getlocal 24 ............................. <obj_r>
+  [332] getparam 16 ............................. <argOverrideType>
+  [334] getlocal 32 ............................. <tmpDimmed>
+  [336] pusharglist 4 ........................... <obj_r, obj_r, argOverrideType, tmpDimmed>
+  [338] extcall 419 ............................. <rDlgCreateScrollItemInfo(obj_r, obj_r, argOverrideType, tmpDimmed)>
+  [341] pusharglistnoret 2 ...................... <allScrollData, rDlgCreateScrollItemInfo(obj_r, obj_r, argOverrideType, tmpDimmed)>
+  [343] objcall 98 .............................. allScrollData.add(rDlgCreateScrollItemInfo(obj_r, obj_r, argOverrideType, tmpDimmed))
+  [346] pushint8 1
+  [348] add
+  [349] endrepeat [116]
+  [352] pop 3
+  [354] getlocal 16 ............................. <allScrollData>
+  [356] pusharglistnoret 1 ...................... <allScrollData>
+  [358] extcall 46 .............................. return allScrollData
+  [361] ret
+end
+
+on getIsChosenOfClass me, argClass
+  [  0] getprop 401 ............................. <m_chosenObj>
+  [  3] pusharglist 1 ........................... <m_chosenObj>
+  [  5] extcall 63 .............................. <objectp(m_chosenObj)>
+  [  8] not ..................................... <not objectp(m_chosenObj)>
+  [  9] jmpifz [ 18] ............................ if not objectp(m_chosenObj) then
+  [ 12] pushzero ................................ <0>
+  [ 13] pusharglistnoret 1 ...................... <0>
+  [ 15] extcall 46 .............................. return 0
+  [ 18] getprop 401 ............................. <m_chosenObj>
+  [ 21] getobjprop 315 .......................... <m_chosenObj.className>
+  [ 24] getparam 8 .............................. <argClass>
+  [ 26] eq ...................................... <m_chosenObj.className = argClass>
+  [ 27] jmpifz [ 38] ............................ if m_chosenObj.className = argClass then
+  [ 30] pushint8 1 .............................. <1>
+  [ 33] pusharglistnoret 1 ...................... <1>
+  [ 35] extcall 46 .............................. return 1
+  [ 38] pushzero ................................ <0>
+  [ 39] pusharglistnoret 1 ...................... <0>
+  [ 41] extcall 46 .............................. return 0
+  [ 44] ret
+end
+
+on checkCategoryReport me, argObj, argWhat, argOption
+  [  0] getparam 8 .............................. <argObj>
+  [  2] getprop 398 ............................. <m_dlg>
+  [  5] getobjprop 425 .......................... <m_dlg.m_scroller>
+  [  8] eq ...................................... <argObj = m_dlg.m_scroller>
+  [  9] jmpifz [167] ............................ if argObj = m_dlg.m_scroller then / else
+  [ 12] getparam 16 ............................. <argWhat>
+  [ 14] pushsymb 426 ............................ <#select>
+  [ 17] eq ...................................... <argWhat = #select>
+  [ 18] jmpifz [164] ............................ if argWhat = #select then
+  [ 21] getparam 24 ............................. <argOption>
+  [ 23] getobjprop 158 .......................... <argOption.m_ID>
+  [ 26] setlocal 0 .............................. obj_r = argOption.m_ID
+  [ 28] getlocal 0 .............................. <obj_r>
+  [ 30] setprop 401 ............................. m_chosenObj = obj_r
+  [ 33] getlocal 0 .............................. <obj_r>
+  [ 35] getobjprop 315 .......................... <obj_r.className>
+  [ 38] pushsymb 402 ............................ <#ActionCategory>
+  [ 41] eq ...................................... <obj_r.className = #ActionCategory>
+  [ 42] jmpifz [111] ............................ if obj_r.className = #ActionCategory then / else
+  [ 45] getprop 398 ............................. <m_dlg>
+  [ 48] getparam 0 .............................. <me>
+  [ 50] pushsymb 402 ............................ <#ActionCategory>
+  [ 53] getprop 401 ............................. <m_chosenObj>
+  [ 56] pusharglistnoret 4 ...................... <m_dlg, me, #ActionCategory, m_chosenObj>
+  [ 58] objcall 156 ............................. m_dlg.Report(me, #ActionCategory, m_chosenObj)
+  [ 61] getglobal 81 ............................ <gDir>
+  [ 64] getobjprop 50 ........................... <gDir.m_objDialogsMaster>
+  [ 67] pushsymb 427 ............................ <#ActionChoose>
+  [ 70] pushsymb 428 ............................ <#ActionIDs>
+  [ 73] getlocal 0 .............................. <obj_r>
+  [ 75] getobjprop 408 .......................... <obj_r.Actions>
+  [ 78] pushsymb 429 ............................ <#icon>
+  [ 81] getlocal 0 .............................. <obj_r>
+  [ 83] getobjprop 277 .......................... <obj_r.Gfx>
+  [ 86] pushsymb 172 ............................ <#name>
+  [ 89] getlocal 0 .............................. <obj_r>
+  [ 91] getobjprop 172 .......................... <obj_r.name>
+  [ 94] pushsymb 84 ............................. <#loc>
+  [ 97] getprop 399 ............................. <m_actionDlgLoc>
+  [100] pusharglist 8 ........................... <[#ActionIDs: obj_r.Actions, #icon: obj_r.Gfx, #name: obj_r.name, #loc: m_actionDlgLoc]>
+  [102] pushproplist ............................ <[#ActionIDs: obj_r.Actions, #icon: obj_r.Gfx, #name: obj_r.name, #loc: m_actionDlgLoc]>
+  [103] pusharglistnoret 3 ...................... <gDir.m_objDialogsMaster, #ActionChoose, [#ActionIDs: obj_r.Actions, #icon: obj_r.Gfx, #name: obj_r.name, #loc: m_actionDlgLoc]>
+  [105] objcall 61 .............................. gDir.m_objDialogsMaster.openDialog(#ActionChoose, [#ActionIDs: obj_r.Actions, #icon: obj_r.Gfx, #name: obj_r.name, #loc: m_actionDlgLoc])
+  [108] jmp [164]
+  [111] getlocal 0 .............................. <obj_r>
+  [113] getobjprop 315 .......................... <obj_r.className>
+  [116] pushsymb 271 ............................ <#Action>
+  [119] eq ...................................... <obj_r.className = #Action>
+  [120] jmpifz [164] ............................ if obj_r.className = #Action then
+  [123] getlocal 0 .............................. <obj_r>
+  [125] setprop 400 ............................. m_action_r = obj_r
+  [128] getglobal 81 ............................ <gDir>
+  [131] getobjprop 50 ........................... <gDir.m_objDialogsMaster>
+  [134] pushsymb 430 ............................ <#Confirm>
+  [137] pushsymb 431 ............................ <#InfoImage>
+  [140] getprop 400 ............................. <m_action_r>
+  [143] getobjprop 172 .......................... <m_action_r.name>
+  [146] pusharglist 2 ........................... <[#InfoImage: m_action_r.name]>
+  [148] pushproplist ............................ <[#InfoImage: m_action_r.name]>
+  [149] pusharglist 3 ........................... <gDir.m_objDialogsMaster, #Confirm, [#InfoImage: m_action_r.name]>
+  [151] objcall 61 .............................. <gDir.m_objDialogsMaster.openDialog(#Confirm, [#InfoImage: m_action_r.name])>
+  [154] setlocal 8 .............................. newDlg = gDir.m_objDialogsMaster.openDialog(#Confirm, [#InfoImage: m_action_r.name])
+  [156] getlocal 8 .............................. <newDlg>
+  [158] getprop 398 ............................. <m_dlg>
+  [161] setobjprop 432 .......................... newDlg.m_objReportTo = m_dlg
+  [164] jmp [229]
+  [167] getparam 16 ............................. <argWhat>
+  [169] pushsymb 433 ............................ <#DlgConfirm>
+  [172] eq ...................................... <argWhat = #DlgConfirm>
+  [173] jmpifz [223] ............................ if argWhat = #DlgConfirm then / else
+  [176] getparam 8 .............................. <argObj>
+  [178] pusharglistnoret 1 ...................... <argObj>
+  [180] objcall 3 ............................... argObj.kill()
+  [182] pushcons 0 .............................. <"Confirmed...TODO! Maybe don't want automatic executeActions!">
+  [184] pusharglistnoret 1 ...................... <"Confirmed...TODO! Maybe don't want automatic executeActions!">
+  [186] extcall 161 ............................. pott("Confirmed...TODO! Maybe don't want automatic executeActions!")
+  [189] getprop 400 ............................. <m_action_r>
+  [192] pusharglist 1 ........................... <m_action_r>
+  [194] extcall 63 .............................. <objectp(m_action_r)>
+  [197] not ..................................... <not objectp(m_action_r)>
+  [198] jmpifz [202] ............................ if not objectp(m_action_r) then
+  [201] ret ..................................... exit
+  [202] getparam 24 ............................. <argOption>
+  [204] pushsymb 278 ............................ <#ButtonOK>
+  [207] nteq .................................... <argOption <> #ButtonOK>
+  [208] jmpifz [212] ............................ if argOption <> #ButtonOK then
+  [211] ret ..................................... exit
+  [212] getprop 400 ............................. <m_action_r>
+  [215] pusharglistnoret 1 ...................... <m_action_r>
+  [217] extcall 434 ............................. rPlayerOkayedAction(m_action_r)
+  [220] jmp [229]
+  [223] pushzero ................................ <0>
+  [224] pusharglistnoret 1 ...................... <0>
+  [226] extcall 46 .............................. return 0
+  [229] pushint8 1 .............................. <1>
+  [232] pusharglistnoret 1 ...................... <1>
+  [234] extcall 46 .............................. return 1
+  [237] ret
+end

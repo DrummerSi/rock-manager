@@ -1,0 +1,91 @@
+property m_array, m_currentLoc, m_numDimensions
+
+on new me
+  m_currentLoc = []
+  m_array = []
+  return me
+end
+
+on setAtCurrent me, argVal
+  me[m_currentLoc] = argVal
+end
+
+on setAt me, argCoords, argVal
+  if argCoords.count > m_numDimensions then
+    m_numDimensions = argCoords.count
+  end if
+  lst = m_array
+  repeat with n = 1 to argCoords.count() - 1
+    Pos = argCoords[n]
+    if lst.count < Pos then
+      repeat with m = lst.count + 1 to Pos
+        lst[m] = []
+      end repeat
+    end if
+    lst = lst[Pos]
+  end repeat
+  Pos = argCoords[n]
+  if lst.count < Pos then
+    repeat with m = lst.count + 1 to Pos
+      lst[m] = VOID
+    end repeat
+  end if
+  lst[Pos] = argVal
+end
+
+on setPos me, argCoords
+  if argCoords.count > m_numDimensions then
+    m_numDimensions = argCoords.count
+  end if
+  m_currentLoc = argCoords
+end
+
+on movePos me, argCoords
+  if argCoords.count > m_numDimensions then
+    m_numDimensions = argCoords.count
+  end if
+  m_currentLoc = m_currentLoc + argCoords
+end
+
+on getAt me, argCoords
+  if argCoords.count > m_numDimensions then
+    m_numDimensions = argCoords.count
+  end if
+  lst = m_array
+  repeat with n = 1 to argCoords.count() - 1
+    Pos = argCoords[n]
+    if lst.count < Pos then
+      repeat with m = lst.count + 1 to Pos
+        lst[m] = []
+      end repeat
+    end if
+    lst = lst[Pos]
+  end repeat
+  Pos = argCoords[n]
+  if lst.count < Pos then
+    return VOID
+  else
+    return lst[Pos]
+  end if
+end
+
+on convToStr me, argDelimChar, argNLChar
+  if m_numDimensions <> 2 then
+    return VOID
+  end if
+  if voidp(argDelimChar) then
+    argDelimChar = numToChar(9)
+  end if
+  if voidp(argNLChar) then
+    argNLChar = RETURN
+  end if
+  str = EMPTY
+  repeat with X = 1 to m_array.count
+    lst = m_array[X]
+    repeat with Y = 1 to lst.count
+      str = str & lst[Y] & argDelimChar
+    end repeat
+    str = str & argNLChar
+  end repeat
+  return str
+end

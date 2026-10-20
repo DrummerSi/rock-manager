@@ -1,0 +1,182 @@
+property ancestor, m_musician_r, m_OKMusicians_r, m_musicians_r, m_musiciansAndInstrument, m_musPos, m_tmpForcedInstrumentID, m_band_r, m_instrumentsAllowed, m_scroller
+global gDir, gRock
+
+on new me, argOptions
+  argOptions.setaProp(#ReportTo, me)
+  argOptions.setaProp(#child, me)
+  ancestor = script("DlgRockAncestorScript").new(argOptions)
+  itemObj = ancestor.m_objDlg.getItemByPath([#ScrollView, #Head1, #Info])
+  if objectp(itemObj) then
+    itemObj.setOneProp(#editData, rGetStr(#szidMusician))
+  end if
+  itemObj = ancestor.m_objDlg.getItemByPath([#ScrollView, #Head2, #Info])
+  if objectp(itemObj) then
+    itemObj.setOneProp(#editData, rGetStr(#szidPricePerWeek))
+  end if
+  m_OKMusicians_r = gRock.m_classManager.getObjsOfClass(#RealMusician).duplicate()
+  m_band_r = gRock.m_context.getFocus(#Band)
+  mission_r = gRock.m_context.getFocus(#Mission)
+  musiciansAllowedInMission = mission_r.AvailableMusicians
+  repeat with n = m_OKMusicians_r.count down to 1
+    if m_band_r.members.getPos(m_OKMusicians_r[n].ID) or (mission_r.AvailableMusicians.getPos(m_OKMusicians_r[n].ID) = 0) then
+      m_OKMusicians_r.deleteAt(n)
+    end if
+  end repeat
+  m_musPos = argOptions[#spatialPos]
+  instrumentsAllowedAtSpatialPos = [[#Guitar, #Brass, #Keyboards], [#Guitar, #Brass, #Keyboards], [#Drums], [#Bass], [#Vocals]]
+  m_instrumentsAllowed = instrumentsAllowedAtSpatialPos[m_musPos]
+  ancestor.m_objDlg.recalc(#DontPaint)
+  me.prepareScrollList()
+  me.setMusician()
+  ancestor.render()
+  return me
+end
+
+on kill me
+  if objectp(m_scroller) then
+    m_scroller = m_scroller.kill()
+  end if
+  ancestor.kill()
+  return 0
+end
+
+on Report me, argObj, argWhat, argOption
+  if argObj = m_scroller then
+    if argWhat = #select then
+      Info = argOption.m_ID
+      me.setMusician(Info[1], Info[2])
+    end if
+  end if
+end
+
+on mouse me, argObj, argWhat, argOption
+  if objectp(argOption) then
+    if argWhat = #click then
+      ID = argOption.getOneProp(#ID)
+      IDStr = string(ID)
+      if ID = #ButtonOK then
+        if objectp(m_musician_r) then
+          dlgUnder = gDir.m_objDialogsMaster.getDialogUnder(me)
+          if (dlgUnder.m_numMembersOnEnterRehearsal = 0) or (dlgUnder.m_numMembersOnEnterRehearsal > 3) then
+            dlgUnder.m_calcSmallBandOnExitRehearsal = 1
+            gRock.m_tempVars[#BandCalcModsOnly] = #Relations
+          end if
+          m_band_r.addMusician(m_musician_r.ID)
+          m_musician_r.setNowPlaying(m_tmpForcedInstrumentID)
+          m_musician_r.setSpatialPos(m_musPos)
+          m_musician_r.setActiveState(#InBand)
+          gRock.m_context.setFocus(symbol("RealMusician" & string(m_tmpForcedInstrumentID)), m_musician_r, 1)
+          gRock.m_msgManager.msg(#HireBandMember, m_musician_r)
+          dlgUnder.refresh()
+          gDir.redraw()
+          me.kill()
+        end if
+      else
+        if ID = #ButtonCancel then
+          ancestor.mouse(argObj, argWhat, argOption)
+        else
+          me.setInstrument(ID)
+          me.setMusician(m_musiciansAndInstrument[1][1], m_musiciansAndInstrument[1][2])
+        end if
+      end if
+    end if
+  end if
+end
+
+on getMusiciansPlaying me, argInstrumentID
+  lst = []
+  if listp(m_OKMusicians_r) then
+    repeat with musician_r in m_OKMusicians_r
+      if (musician_r.InstrumentalSkills[argInstrumentID] > 0) and musician_r.Alive then
+        lst.add(musician_r)
+      end if
+    end repeat
+  end if
+  return lst
+end
+
+on sortMusiciansBy me, argMusList, argByWhat
+  if voidp(argByWhat) then
+    argByWhat = #WantedSalary
+  end if
+  sorted = [:]
+  sorted.sort()
+  repeat with mus_r in argMusList
+    sorted.addProp(rgetProp(mus_r, argByWhat), mus_r)
+  end repeat
+  return sorted
+end
+
+on prepareScrollList me
+  tmpAllMusicians_r = []
+  tmpInstrPerMus = [:]
+  repeat with instrID in m_instrumentsAllowed
+    musicians_r = me.getMusiciansPlaying(instrID)
+    repeat with mus_r in musicians_r
+      instrLst = tmpInstrPerMus.getaProp(mus_r)
+      if voidp(instrLst) then
+        instrLst = []
+        tmpInstrPerMus.setaProp(mus_r, instrLst)
+      end if
+      instrLst.add(instrID)
+    end repeat
+    mergeLists(tmpAllMusicians_r, musicians_r, #Replace)
+  end repeat
+  sortedMusicians_r = me.sortMusiciansBy(tmpAllMusicians_r, #WantedSalary)
+  allScrollData = []
+  m_musiciansAndInstrument = []
+  if sortedMusicians_r.count > 0 then
+    repeat with n = 1 to sortedMusicians_r.count
+      mus_r = sortedMusicians_r[n]
+      tmpInstruments = tmpInstrPerMus.getaProp(mus_r)
+      repeat with tmpInstrID in tmpInstruments
+        allScrollData.add(rDlgCreateScrollItemInfo(mus_r, [mus_r, tmpInstrID], VOID, VOID, [#instrumentID: tmpInstrID]))
+        m_musiciansAndInstrument.add([mus_r, tmpInstrID])
+      end repeat
+    end repeat
+  else
+    allScrollData.add(rDlgCreateScrollItemInfo(VOID, VOID, #NoRealMusician, 1))
+  end if
+  if objectp(m_scroller) then
+    m_scroller = m_scroller.kill()
+  end if
+  itemObj = ancestor.m_objDlg.getItemByPath([#ScrollView, #Frame2])
+  rct = itemObj.getOnStageRect()
+  rct = rct + rect(2, 2, -2, -2)
+  m_scroller = script("CPScrollerScript").new(me, ancestor.getSPOverDlg(), allScrollData, rct, ancestor.m_objDlg.highestMouseLayer)
+end
+
+on setMusician me, argObj, argInstrumentID
+  waitCursor(1)
+  if voidp(argInstrumentID) then
+    argInstrumentID = m_tmpForcedInstrumentID
+  end if
+  m_tmpForcedInstrumentID = argInstrumentID
+  if objectp(argObj) then
+    m_musician_r = argObj
+    m_musician_r.NowPlaying = argInstrumentID
+    m_musician_r.spatialPos = m_musPos
+    itemObj = ancestor.m_objDlg.getItem(#ButtonOK)
+    itemObj.send(#dimButton, 0)
+  else
+    itemObj = ancestor.m_objDlg.getItem(#ButtonOK)
+    itemObj.send(#dimButton, 1)
+  end if
+  setMusicianInfoSheet(m_musician_r, ancestor.m_objDlg, [:])
+  if not objectp(m_musician_r) then
+    exit
+  end if
+  gRock.m_context.setFocus(#RealMusician, m_musician_r, 1)
+  itemObj = ancestor.m_objDlg.getItem(#Photo)
+  ancestor.m_objDlg.recalc(#DontPaint)
+  portraitRect = itemObj.getOnStageRect()
+  tmpLoc = point(portraitRect[1], portraitRect[2]) + (getRectSize(portraitRect) / 2) + point(-4, -4)
+  lst = m_musician_r.calcFaceSettings()
+  ancestor.showFace(0)
+  updateStage()
+  ancestor.showFace(1, m_musician_r.Gfx, tmpLoc)
+  tmpMood = lst[#Mood]
+  tmpFile = getSpeechFile(m_musician_r, [#Choose, #Greeting])
+  speakAndSetFace(tmpFile, tmpMood)
+  gRock.m_context.setContext(#RealMusician)
+end

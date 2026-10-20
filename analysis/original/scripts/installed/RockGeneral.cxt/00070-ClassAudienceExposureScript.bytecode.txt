@@ -1,0 +1,477 @@
+property ancestor, child, className, belongsTo, _killed, type, MediaID, Intensity, ReachesGroups, IntensityPerGroup, QualityPerGroup, quality, InfluenceWhat
+global gRock
+
+on new me, argChild, argBelongsTo
+  [  0] getparam 8 .............................. <argChild>
+  [  2] pusharglist 1 ........................... <argChild>
+  [  4] extcall 8 ............................... <objectp(argChild)>
+  [  6] jmpifz [ 17] ............................ if objectp(argChild) then / else
+  [  9] getparam 8 .............................. <argChild>
+  [ 11] setprop 496 ............................. child = argChild
+  [ 14] jmp [ 22]
+  [ 17] getparam 0 .............................. <me>
+  [ 19] setprop 496 ............................. child = me
+  [ 22] getparam 16 ............................. <argBelongsTo>
+  [ 24] setprop 208 ............................. belongsTo = argBelongsTo
+  [ 27] pushcons 0 .............................. <"ClassEventScript">
+  [ 29] pusharglist 1 ........................... <"ClassEventScript">
+  [ 31] extcall 10 .............................. <script("ClassEventScript")>
+  [ 33] getprop 496 ............................. <child>
+  [ 36] pusharglist 2 ........................... <script("ClassEventScript"), child>
+  [ 38] objcall 11 .............................. <script("ClassEventScript").new(child)>
+  [ 40] setprop 347 ............................. ancestor = script("ClassEventScript").new(child)
+  [ 43] pushsymb 817 ............................ <#AudienceExposure>
+  [ 46] setprop 224 ............................. className = #AudienceExposure
+  [ 49] pushsymb 268 ............................ <#none>
+  [ 52] setprop 359 ............................. type = #none
+  [ 55] pushsymb 268 ............................ <#none>
+  [ 58] setprop 812 ............................. MediaID = #none
+  [ 61] pushcons 8 .............................. <0.0>
+  [ 63] setprop 826 ............................. Intensity = 0.0
+  [ 66] pusharglist 0 ........................... <[:]>
+  [ 68] pushproplist ............................ <[:]>
+  [ 69] setprop 1099 ............................ ReachesGroups = [:]
+  [ 72] pusharglist 0 ........................... <[:]>
+  [ 74] pushproplist ............................ <[:]>
+  [ 75] setprop 1603 ............................ IntensityPerGroup = [:]
+  [ 78] pusharglist 0 ........................... <[:]>
+  [ 80] pushproplist ............................ <[:]>
+  [ 81] setprop 1604 ............................ QualityPerGroup = [:]
+  [ 84] pushcons 16 ............................. <0.0>
+  [ 86] setprop 724 ............................. quality = 0.0
+  [ 89] pusharglist 0 ........................... <[:]>
+  [ 91] pushproplist ............................ <[:]>
+  [ 92] setprop 1378 ............................ InfluenceWhat = [:]
+  [ 95] getparam 0 .............................. <me>
+  [ 97] pusharglistnoret 1 ...................... <me>
+  [ 99] extcall 69 .............................. return me
+  [102] ret
+end
+
+on kill me
+  [  0] pushint8 1 .............................. <1>
+  [  3] setprop 506 ............................. _killed = 1
+  [  6] getglobal 23 ............................ <gRock>
+  [  8] getobjprop 64 ........................... <gRock.m_gameTimer>
+  [ 11] getparam 0 .............................. <me>
+  [ 13] pusharglistnoret 2 ...................... <gRock.m_gameTimer, me>
+  [ 15] objcall 280 ............................. gRock.m_gameTimer.deleteObject(me)
+  [ 18] getprop 347 ............................. <ancestor>
+  [ 21] pusharglist 1 ........................... <ancestor>
+  [ 23] extcall 8 ............................... <objectp(ancestor)>
+  [ 25] jmpifz [ 38] ............................ if objectp(ancestor) then
+  [ 28] getprop 347 ............................. <ancestor>
+  [ 31] pusharglist 1 ........................... <ancestor>
+  [ 33] objcall 31 .............................. <ancestor.kill()>
+  [ 35] setprop 347 ............................. ancestor = ancestor.kill()
+  [ 38] pushzero ................................ <0>
+  [ 39] setprop 496 ............................. child = 0
+  [ 42] pushzero ................................ <0>
+  [ 43] setprop 208 ............................. belongsTo = 0
+  [ 46] pushzero ................................ <0>
+  [ 47] pusharglistnoret 1 ...................... <0>
+  [ 49] extcall 69 .............................. return 0
+  [ 52] ret
+end
+
+on stdSetReachesGroups me
+  [  0] getglobal 23 ............................ <gRock>
+  [  2] getobjprop 82 ........................... <gRock.m_classManager>
+  [  5] getprop 812 ............................. <MediaID>
+  [  8] pushsymb 815 ............................ <#media>
+  [ 11] pusharglist 3 ........................... <gRock.m_classManager, MediaID, #media>
+  [ 13] objcall 149 ............................. <gRock.m_classManager.getObjByIDAndClass(MediaID, #media)>
+  [ 16] setlocal 0 .............................. media_r = gRock.m_classManager.getObjByIDAndClass(MediaID, #media)
+  [ 18] getlocal 0 .............................. <media_r>
+  [ 20] pusharglist 1 ........................... <media_r>
+  [ 22] extcall 8 ............................... <objectp(media_r)>
+  [ 24] not ..................................... <not objectp(media_r)>
+  [ 25] jmpifz [ 99] ............................ if not objectp(media_r) then / else
+  [ 28] getglobal 23 ............................ <gRock>
+  [ 30] getobjprop 82 ........................... <gRock.m_classManager>
+  [ 33] pushsymb 589 ............................ <#Group>
+  [ 36] pusharglist 2 ........................... <gRock.m_classManager, #Group>
+  [ 38] objcall 155 ............................. <gRock.m_classManager.getObjsOfClass(#Group)>
+  [ 41] setlocal 8 .............................. groups_r = gRock.m_classManager.getObjsOfClass(#Group)
+  [ 43] getlocal 8 .............................. <groups_r>
+  [ 45] peek 0
+  [ 47] pusharglist 1
+  [ 49] extcall 156
+  [ 52] pushint8 1
+  [ 54] peek 0
+  [ 56] peek 2
+  [ 58] lteq
+  [ 59] jmpifz [ 94] ............................ repeat with group_r in groups_r
+  [ 62] peek 2
+  [ 64] peek 1
+  [ 66] pusharglist 2
+  [ 68] extcall 119
+  [ 71] setlocal 16
+  [ 73] getprop 1099 ............................ <ReachesGroups>
+  [ 76] getlocal 16 ............................. <group_r>
+  [ 78] getobjprop 154 .......................... <group_r.ID>
+  [ 81] pushcons 24 ............................. <1.0>
+  [ 83] pusharglistnoret 3 ...................... <ReachesGroups, group_r.ID, 1.0>
+  [ 85] objcall 309 ............................. ReachesGroups.addProp(group_r.ID, 1.0)
+  [ 88] pushint8 1
+  [ 90] add
+  [ 91] endrepeat [ 54]
+  [ 94] pop 3
+  [ 96] jmp [112]
+  [ 99] getlocal 0 .............................. <media_r>
+  [101] getobjprop 1099 ......................... <media_r.ReachesGroups>
+  [104] pusharglist 1 ........................... <media_r.ReachesGroups>
+  [106] objcall 287 ............................. <media_r.ReachesGroups.duplicate()>
+  [109] setprop 1099 ............................ ReachesGroups = media_r.ReachesGroups.duplicate()
+  [112] ret
+end
+
+on stdSetInfluenceWhat me
+  [  0] pusharglist 0 ........................... <[:]>
+  [  2] pushproplist ............................ <[:]>
+  [  3] setprop 1378 ............................ InfluenceWhat = [:]
+  [  6] getglobal 23 ............................ <gRock>
+  [  8] getobjprop 79 ........................... <gRock.m_context>
+  [ 11] pushsymb 171 ............................ <#Band>
+  [ 14] pusharglist 2 ........................... <gRock.m_context, #Band>
+  [ 16] objcall 146 ............................. <gRock.m_context.getFocus(#Band)>
+  [ 19] setlocal 0 .............................. band_r = gRock.m_context.getFocus(#Band)
+  [ 21] getlocal 0 .............................. <band_r>
+  [ 23] pusharglist 1 ........................... <band_r>
+  [ 25] extcall 8 ............................... <objectp(band_r)>
+  [ 27] jmpifz [ 45] ............................ if objectp(band_r) then
+  [ 30] getprop 1378 ............................ <InfluenceWhat>
+  [ 33] getlocal 0 .............................. <band_r>
+  [ 35] getobjprop 154 .......................... <band_r.ID>
+  [ 38] pushcons 32 ............................. <1.0>
+  [ 40] pusharglistnoret 3 ...................... <InfluenceWhat, band_r.ID, 1.0>
+  [ 42] objcall 309 ............................. InfluenceWhat.addProp(band_r.ID, 1.0)
+  [ 45] getglobal 23 ............................ <gRock>
+  [ 47] getobjprop 79 ........................... <gRock.m_context>
+  [ 50] pushsymb 217 ............................ <#album>
+  [ 53] pusharglist 2 ........................... <gRock.m_context, #album>
+  [ 55] objcall 146 ............................. <gRock.m_context.getFocus(#album)>
+  [ 58] setlocal 8 .............................. album_r = gRock.m_context.getFocus(#album)
+  [ 60] getlocal 8 .............................. <album_r>
+  [ 62] pusharglist 1 ........................... <album_r>
+  [ 64] extcall 8 ............................... <objectp(album_r)>
+  [ 66] jmpifz [ 94] ............................ if objectp(album_r) then
+  [ 69] getlocal 8 .............................. <album_r>
+  [ 71] pusharglist 1 ........................... <album_r>
+  [ 73] objcall 684 ............................. <album_r.getAlbumIsSigned()>
+  [ 76] jmpifz [ 94] ............................ if album_r.getAlbumIsSigned() then
+  [ 79] getprop 1378 ............................ <InfluenceWhat>
+  [ 82] getlocal 8 .............................. <album_r>
+  [ 84] getobjprop 154 .......................... <album_r.ID>
+  [ 87] pushcons 40 ............................. <1.0>
+  [ 89] pusharglistnoret 3 ...................... <InfluenceWhat, album_r.ID, 1.0>
+  [ 91] objcall 309 ............................. InfluenceWhat.addProp(album_r.ID, 1.0)
+  [ 94] ret
+end
+
+on stdFillInBlanks me
+  [  0] getprop 1099 ............................ <ReachesGroups>
+  [  3] getobjprop 156 .......................... <ReachesGroups.count>
+  [  6] pushzero ................................ <0>
+  [  7] eq ...................................... <ReachesGroups.count = 0>
+  [  8] jmpifz [ 18] ............................ if ReachesGroups.count = 0 then
+  [ 11] getparam 0 .............................. <me>
+  [ 13] pusharglistnoret 1 ...................... <me>
+  [ 15] objcall 1598 ............................ me.stdSetReachesGroups()
+  [ 18] getprop 1378 ............................ <InfluenceWhat>
+  [ 21] getobjprop 156 .......................... <InfluenceWhat.count>
+  [ 24] pushzero ................................ <0>
+  [ 25] eq ...................................... <InfluenceWhat.count = 0>
+  [ 26] jmpifz [ 36] ............................ if InfluenceWhat.count = 0 then
+  [ 29] getparam 0 .............................. <me>
+  [ 31] pusharglistnoret 1 ...................... <me>
+  [ 33] objcall 1599 ............................ me.stdSetInfluenceWhat()
+  [ 36] getprop 1603 ............................ <IntensityPerGroup>
+  [ 39] getobjprop 156 .......................... <IntensityPerGroup.count>
+  [ 42] pushzero ................................ <0>
+  [ 43] eq ...................................... <IntensityPerGroup.count = 0>
+  [ 44] jmpifz [160] ............................ if IntensityPerGroup.count = 0 then
+  [ 47] getprop 826 ............................. <Intensity>
+  [ 50] pusharglist 1 ........................... <Intensity>
+  [ 52] extcall 115 ............................. <listp(Intensity)>
+  [ 55] jmpifz [ 65] ............................ if listp(Intensity) then
+  [ 58] pushcons 48 ............................. <"Intensity is a list!">
+  [ 60] pusharglistnoret 1 ...................... <"Intensity is a list!">
+  [ 62] extcall 122 ............................. pott("Intensity is a list!")
+  [ 65] pusharglist 0 ........................... <[:]>
+  [ 67] pushproplist ............................ <[:]>
+  [ 68] setprop 1603 ............................ IntensityPerGroup = [:]
+  [ 71] pushint8 1 .............................. <1>
+  [ 74] setlocal 0
+  [ 76] getlocal 0
+  [ 78] getprop 1099 ............................ <ReachesGroups>
+  [ 81] getobjprop 156 .......................... <ReachesGroups.count>
+  [ 84] lteq
+  [ 85] jmpifz [160] ............................ repeat with n = 1 to ReachesGroups.count
+  [ 88] getglobal 23 ............................ <gRock>
+  [ 90] getobjprop 82 ........................... <gRock.m_classManager>
+  [ 93] getprop 1099 ............................ <ReachesGroups>
+  [ 96] getlocal 0 .............................. <n>
+  [ 98] pusharglist 2 ........................... <ReachesGroups, n>
+  [100] objcall 295 ............................. <ReachesGroups.getPropAt(n)>
+  [103] pushsymb 589 ............................ <#Group>
+  [106] pusharglist 3 ........................... <gRock.m_classManager, ReachesGroups.getPropAt(n), #Group>
+  [108] objcall 149 ............................. <gRock.m_classManager.getObjByIDAndClass(ReachesGroups.getPropAt(n), #Group)>
+  [111] setlocal 8 .............................. group_r = gRock.m_classManager.getObjByIDAndClass(ReachesGroups.getPropAt(n), #Group)
+  [113] getprop 1099 ............................ <ReachesGroups>
+  [116] getlocal 0 .............................. <n>
+  [118] pusharglist 2 ........................... <ReachesGroups, n>
+  [120] objcall 119 ............................. <ReachesGroups[n]>
+  [123] getprop 826 ............................. <Intensity>
+  [126] mul ..................................... <ReachesGroups[n] * Intensity>
+  [127] setlocal 16 ............................. tmpReach = ReachesGroups[n] * Intensity
+  [129] getprop 1603 ............................ <IntensityPerGroup>
+  [132] getprop 1099 ............................ <ReachesGroups>
+  [135] getlocal 0 .............................. <n>
+  [137] pusharglist 2 ........................... <ReachesGroups, n>
+  [139] objcall 295 ............................. <ReachesGroups.getPropAt(n)>
+  [142] getlocal 16 ............................. <tmpReach>
+  [144] pusharglistnoret 3 ...................... <IntensityPerGroup, ReachesGroups.getPropAt(n), tmpReach>
+  [146] objcall 309 ............................. IntensityPerGroup.addProp(ReachesGroups.getPropAt(n), tmpReach)
+  [149] pushint8 1
+  [152] getlocal 0
+  [154] add
+  [155] setlocal 0
+  [157] endrepeat [ 76]
+  [160] getprop 1604 ............................ <QualityPerGroup>
+  [163] getobjprop 156 .......................... <QualityPerGroup.count>
+  [166] pushzero ................................ <0>
+  [167] eq ...................................... <QualityPerGroup.count = 0>
+  [168] jmpifz [226] ............................ if QualityPerGroup.count = 0 then
+  [171] pusharglist 0 ........................... <[:]>
+  [173] pushproplist ............................ <[:]>
+  [174] setprop 1604 ............................ QualityPerGroup = [:]
+  [177] pushint8 1 .............................. <1>
+  [180] setlocal 0
+  [182] getlocal 0
+  [184] getprop 1099 ............................ <ReachesGroups>
+  [187] getobjprop 156 .......................... <ReachesGroups.count>
+  [190] lteq
+  [191] jmpifz [226] ............................ repeat with n = 1 to ReachesGroups.count
+  [194] getprop 1604 ............................ <QualityPerGroup>
+  [197] getprop 1099 ............................ <ReachesGroups>
+  [200] getlocal 0 .............................. <n>
+  [202] pusharglist 2 ........................... <ReachesGroups, n>
+  [204] objcall 295 ............................. <ReachesGroups.getPropAt(n)>
+  [207] getprop 724 ............................. <quality>
+  [210] pusharglistnoret 3 ...................... <QualityPerGroup, ReachesGroups.getPropAt(n), quality>
+  [212] objcall 309 ............................. QualityPerGroup.addProp(ReachesGroups.getPropAt(n), quality)
+  [215] pushint8 1
+  [218] getlocal 0
+  [220] add
+  [221] setlocal 0
+  [223] endrepeat [182]
+  [226] ret
+end
+
+on eventChangeState me, argAction, argOption
+  [  0] getparam 8 .............................. <argAction>
+  [  2] pushsymb 43 ............................. <#start>
+  [  5] eq ...................................... <argAction = #start>
+  [  6] jmpifz [ 76] ............................ if argAction = #start then / else
+  [  9] getprop 496 ............................. <child>
+  [ 12] getobjprop 224 .......................... <child.className>
+  [ 15] pushsymb 869 ............................ <#ExpoReview>
+  [ 18] eq ...................................... <child.className = #ExpoReview>
+  [ 19] jmpifz [ 34] ............................ if child.className = #ExpoReview then
+  [ 22] pushcons 56 ............................. <"ADDOBJ">
+  [ 24] getparam 0 .............................. <me>
+  [ 26] getprop 496 ............................. <child>
+  [ 29] pusharglistnoret 3 ...................... <"ADDOBJ", me, child>
+  [ 31] extcall 122 ............................. pott("ADDOBJ", me, child)
+  [ 34] getglobal 23 ............................ <gRock>
+  [ 36] getobjprop 64 ........................... <gRock.m_gameTimer>
+  [ 39] getparam 0 .............................. <me>
+  [ 41] pusharglistnoret 2 ...................... <gRock.m_gameTimer, me>
+  [ 43] objcall 282 ............................. gRock.m_gameTimer.addObject(me)
+  [ 46] getprop 1604 ............................ <QualityPerGroup>
+  [ 49] getobjprop 156 .......................... <QualityPerGroup.count>
+  [ 52] pushzero ................................ <0>
+  [ 53] eq ...................................... <QualityPerGroup.count = 0>
+  [ 54] getprop 1603 ............................ <IntensityPerGroup>
+  [ 57] getobjprop 156 .......................... <IntensityPerGroup.count>
+  [ 60] pushzero ................................ <0>
+  [ 61] eq ...................................... <IntensityPerGroup.count = 0>
+  [ 62] or ...................................... <(QualityPerGroup.count = 0) or (IntensityPerGroup.count = 0)>
+  [ 63] jmpifz [ 73] ............................ if (QualityPerGroup.count = 0) or (IntensityPerGroup.count = 0) then
+  [ 66] getparam 0 .............................. <me>
+  [ 68] pusharglistnoret 1 ...................... <me>
+  [ 70] objcall 1600 ............................ me.stdFillInBlanks()
+  [ 73] jmp [ 97]
+  [ 76] getparam 8 .............................. <argAction>
+  [ 78] pushsymb 663 ............................ <#stop>
+  [ 81] eq ...................................... <argAction = #stop>
+  [ 82] jmpifz [ 97] ............................ if argAction = #stop then
+  [ 85] getglobal 23 ............................ <gRock>
+  [ 87] getobjprop 64 ........................... <gRock.m_gameTimer>
+  [ 90] getparam 0 .............................. <me>
+  [ 92] pusharglistnoret 2 ...................... <gRock.m_gameTimer, me>
+  [ 94] objcall 280 ............................. gRock.m_gameTimer.deleteObject(me)
+  [ 97] getprop 347 ............................. <ancestor>
+  [100] getparam 8 .............................. <argAction>
+  [102] getparam 16 ............................. <argOption>
+  [104] pusharglistnoret 3 ...................... <ancestor, argAction, argOption>
+  [106] objcall 660 ............................. ancestor.eventChangeState(argAction, argOption)
+  [109] ret
+end
+
+on timeTick me
+  [  0] pushint8 1 .............................. <1>
+  [  3] setlocal 0
+  [  5] getlocal 0
+  [  7] getprop 1603 ............................ <IntensityPerGroup>
+  [ 10] getobjprop 156 .......................... <IntensityPerGroup.count>
+  [ 13] lteq
+  [ 14] jmpifz [137] ............................ repeat with n = 1 to IntensityPerGroup.count
+  [ 17] getprop 1603 ............................ <IntensityPerGroup>
+  [ 20] getlocal 0 .............................. <n>
+  [ 22] pusharglist 2 ........................... <IntensityPerGroup, n>
+  [ 24] objcall 295 ............................. <IntensityPerGroup.getPropAt(n)>
+  [ 27] setlocal 8 .............................. tmpGroupID = IntensityPerGroup.getPropAt(n)
+  [ 29] getglobal 23 ............................ <gRock>
+  [ 31] getobjprop 82 ........................... <gRock.m_classManager>
+  [ 34] getlocal 8 .............................. <tmpGroupID>
+  [ 36] pushsymb 589 ............................ <#Group>
+  [ 39] pusharglist 3 ........................... <gRock.m_classManager, tmpGroupID, #Group>
+  [ 41] objcall 149 ............................. <gRock.m_classManager.getObjByIDAndClass(tmpGroupID, #Group)>
+  [ 44] setlocal 16 ............................. group_r = gRock.m_classManager.getObjByIDAndClass(tmpGroupID, #Group)
+  [ 46] getprop 1603 ............................ <IntensityPerGroup>
+  [ 49] getlocal 0 .............................. <n>
+  [ 51] pusharglist 2 ........................... <IntensityPerGroup, n>
+  [ 53] objcall 119 ............................. <IntensityPerGroup[n]>
+  [ 56] setlocal 24 ............................. tmpReach = IntensityPerGroup[n]
+  [ 58] pushint8 1 .............................. <1>
+  [ 61] setlocal 32
+  [ 63] getlocal 32
+  [ 65] getprop 1378 ............................ <InfluenceWhat>
+  [ 68] getobjprop 156 .......................... <InfluenceWhat.count>
+  [ 71] lteq
+  [ 72] jmpifz [126] ............................ repeat with m = 1 to InfluenceWhat.count
+  [ 75] getlocal 16 ............................. <group_r>
+  [ 77] getprop 1378 ............................ <InfluenceWhat>
+  [ 80] getlocal 32 ............................. <m>
+  [ 82] pusharglist 2 ........................... <InfluenceWhat, m>
+  [ 84] objcall 295 ............................. <InfluenceWhat.getPropAt(m)>
+  [ 87] getprop 1378 ............................ <InfluenceWhat>
+  [ 90] getlocal 32 ............................. <m>
+  [ 92] pusharglist 2 ........................... <InfluenceWhat, m>
+  [ 94] objcall 119 ............................. <InfluenceWhat[m]>
+  [ 97] getlocal 24 ............................. <tmpReach>
+  [ 99] mul ..................................... <InfluenceWhat[m] * tmpReach>
+  [100] getprop 1604 ............................ <QualityPerGroup>
+  [103] getlocal 8 .............................. <tmpGroupID>
+  [105] pusharglist 2 ........................... <QualityPerGroup, tmpGroupID>
+  [107] objcall 183 ............................. <QualityPerGroup.getaProp(tmpGroupID)>
+  [110] pusharglistnoret 4 ...................... <group_r, InfluenceWhat.getPropAt(m), InfluenceWhat[m] * tmpReach, QualityPerGroup.getaProp(tmpGroupID)>
+  [112] objcall 673 ............................. group_r.expose(InfluenceWhat.getPropAt(m), InfluenceWhat[m] * tmpReach, QualityPerGroup.getaProp(tmpGroupID))
+  [115] pushint8 1
+  [118] getlocal 32
+  [120] add
+  [121] setlocal 32
+  [123] endrepeat [ 63]
+  [126] pushint8 1
+  [129] getlocal 0
+  [131] add
+  [132] setlocal 0
+  [134] endrepeat [  5]
+  [137] ret
+end
+
+on getAverageIntensity me
+  [  0] pusharglist 0 ........................... <[:]>
+  [  2] pushproplist ............................ <[:]>
+  [  3] setlocal 0 .............................. avgWeighted = [:]
+  [  5] pushint8 1 .............................. <1>
+  [  8] setlocal 8
+  [ 10] getlocal 8
+  [ 12] getprop 1603 ............................ <IntensityPerGroup>
+  [ 15] getobjprop 156 .......................... <IntensityPerGroup.count>
+  [ 18] lteq
+  [ 19] jmpifz [ 88] ............................ repeat with n = 1 to IntensityPerGroup.count
+  [ 22] getprop 1603 ............................ <IntensityPerGroup>
+  [ 25] getlocal 8 .............................. <n>
+  [ 27] pusharglist 2 ........................... <IntensityPerGroup, n>
+  [ 29] objcall 295 ............................. <IntensityPerGroup.getPropAt(n)>
+  [ 32] setlocal 16 ............................. tmpGroupID = IntensityPerGroup.getPropAt(n)
+  [ 34] getglobal 23 ............................ <gRock>
+  [ 36] getobjprop 82 ........................... <gRock.m_classManager>
+  [ 39] getlocal 16 ............................. <tmpGroupID>
+  [ 41] pushsymb 589 ............................ <#Group>
+  [ 44] pusharglist 3 ........................... <gRock.m_classManager, tmpGroupID, #Group>
+  [ 46] objcall 149 ............................. <gRock.m_classManager.getObjByIDAndClass(tmpGroupID, #Group)>
+  [ 49] setlocal 24 ............................. group_r = gRock.m_classManager.getObjByIDAndClass(tmpGroupID, #Group)
+  [ 51] getprop 1603 ............................ <IntensityPerGroup>
+  [ 54] getlocal 8 .............................. <n>
+  [ 56] pusharglist 2 ........................... <IntensityPerGroup, n>
+  [ 58] objcall 119 ............................. <IntensityPerGroup[n]>
+  [ 61] setlocal 32 ............................. tmp = IntensityPerGroup[n]
+  [ 63] getlocal 0 .............................. <avgWeighted>
+  [ 65] getlocal 24 ............................. <group_r>
+  [ 67] getobjprop 645 .......................... <group_r.size>
+  [ 70] getlocal 32 ............................. <tmp>
+  [ 72] pusharglistnoret 3 ...................... <avgWeighted, group_r.size, tmp>
+  [ 74] objcall 309 ............................. avgWeighted.addProp(group_r.size, tmp)
+  [ 77] pushint8 1
+  [ 80] getlocal 8
+  [ 82] add
+  [ 83] setlocal 8
+  [ 85] endrepeat [ 10]
+  [ 88] getlocal 0 .............................. <avgWeighted>
+  [ 90] pusharglist 1 ........................... <avgWeighted>
+  [ 92] extcall 650 ............................. <calcAverage(avgWeighted)>
+  [ 95] pusharglistnoret 1 ...................... <calcAverage(avgWeighted)>
+  [ 97] extcall 69 .............................. return calcAverage(avgWeighted)
+  [100] ret
+end
+
+on getAverageQuality me
+  [  0] pusharglist 0 ........................... <[:]>
+  [  2] pushproplist ............................ <[:]>
+  [  3] setlocal 0 .............................. avgWeighted = [:]
+  [  5] pushint8 1 .............................. <1>
+  [  8] setlocal 8
+  [ 10] getlocal 8
+  [ 12] getprop 1603 ............................ <IntensityPerGroup>
+  [ 15] getobjprop 156 .......................... <IntensityPerGroup.count>
+  [ 18] lteq
+  [ 19] jmpifz [ 88] ............................ repeat with n = 1 to IntensityPerGroup.count
+  [ 22] getprop 1603 ............................ <IntensityPerGroup>
+  [ 25] getlocal 8 .............................. <n>
+  [ 27] pusharglist 2 ........................... <IntensityPerGroup, n>
+  [ 29] objcall 295 ............................. <IntensityPerGroup.getPropAt(n)>
+  [ 32] setlocal 16 ............................. tmpGroupID = IntensityPerGroup.getPropAt(n)
+  [ 34] getglobal 23 ............................ <gRock>
+  [ 36] getobjprop 82 ........................... <gRock.m_classManager>
+  [ 39] getlocal 16 ............................. <tmpGroupID>
+  [ 41] pushsymb 589 ............................ <#Group>
+  [ 44] pusharglist 3 ........................... <gRock.m_classManager, tmpGroupID, #Group>
+  [ 46] objcall 149 ............................. <gRock.m_classManager.getObjByIDAndClass(tmpGroupID, #Group)>
+  [ 49] setlocal 24 ............................. group_r = gRock.m_classManager.getObjByIDAndClass(tmpGroupID, #Group)
+  [ 51] getprop 1604 ............................ <QualityPerGroup>
+  [ 54] getlocal 8 .............................. <n>
+  [ 56] pusharglist 2 ........................... <QualityPerGroup, n>
+  [ 58] objcall 119 ............................. <QualityPerGroup[n]>
+  [ 61] setlocal 32 ............................. tmp = QualityPerGroup[n]
+  [ 63] getlocal 0 .............................. <avgWeighted>
+  [ 65] getlocal 24 ............................. <group_r>
+  [ 67] getobjprop 645 .......................... <group_r.size>
+  [ 70] getlocal 32 ............................. <tmp>
+  [ 72] pusharglistnoret 3 ...................... <avgWeighted, group_r.size, tmp>
+  [ 74] objcall 309 ............................. avgWeighted.addProp(group_r.size, tmp)
+  [ 77] pushint8 1
+  [ 80] getlocal 8
+  [ 82] add
+  [ 83] setlocal 8
+  [ 85] endrepeat [ 10]
+  [ 88] getlocal 0 .............................. <avgWeighted>
+  [ 90] pusharglist 1 ........................... <avgWeighted>
+  [ 92] extcall 650 ............................. <calcAverage(avgWeighted)>
+  [ 95] pusharglistnoret 1 ...................... <calcAverage(avgWeighted)>
+  [ 97] extcall 69 .............................. return calcAverage(avgWeighted)
+  [100] ret
+end

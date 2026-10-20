@@ -1,0 +1,64 @@
+on unloadActorCasts
+  repeat with n = 1 to the number of castLibs
+    if offset("Actor", castLib(n).name) = 1 then
+      castLib(n).fileName = "Empty.cst"
+    end if
+  end repeat
+end
+
+on genScoreInfo
+  newSpeakersInfo = [:]
+  beginRecording()
+  repeat with frameNr = 1 to the lastFrame
+    go(frameNr)
+    frameInfo = [:]
+    repeat with SPNr = 1 to 120
+      SP = sprite(SPNr)
+      if SP.startFrame < frameNr then
+        next repeat
+      end if
+      if SP.scriptList.count = 0 then
+        next repeat
+      end if
+      repeat with scriptInfo in SP.scriptList
+        if scriptInfo[1].name = "Speak" then
+          props = scriptInfo[2].value
+          tmpPerson = props[#m_personString]
+          if tmpPerson.length = 0 then
+            tmpPerson = SP.member.name
+          end if
+          frameInfo.addProp(SPNr, tmpPerson)
+        end if
+      end repeat
+    end repeat
+    if frameInfo.count then
+      newSpeakersInfo.addProp(frameNr, frameInfo)
+    end if
+  end repeat
+  endRecording()
+  member("ScoreInfo").text = string(newSpeakersInfo)
+end
+
+on preloadCastsOfFrame argFrame
+  global gDir
+  frameInfo = gDir.m_scoreInfo.getaProp(argFrame)
+  if listp(frameInfo) then
+    repeat with n = 1 to frameInfo.count
+      if 0 then
+        next repeat
+      end if
+      tmpPerson = frameInfo[n]
+      castName = gDir.m_actorCasts.linkCast(0, tmpPerson)
+      if not stringp(castName) then
+        pott("No free cast")
+        next repeat
+      end if
+      tmp = CPgetActorInfo(tmpPerson, castName)
+      if tmp.count = 0 then
+        pott("Not available cast", tmpPerson)
+        next repeat
+      end if
+      pott("Preload of", tmpPerson, castName)
+    end repeat
+  end if
+end

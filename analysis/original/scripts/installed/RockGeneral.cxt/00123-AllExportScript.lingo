@@ -1,0 +1,92 @@
+property m_classesPerFile, m_path, m_classManager, m_switches
+global gRock
+
+on new me, argDataPath, argSwitchesObj, argClassManager
+  global gClassManager
+  m_switches = argSwitchesObj
+  if not objectp(m_switches) then
+    m_switches = script("ImportSwitchesScript").new()
+  end if
+  m_classManager = argClassManager
+  if voidp(m_classManager) then
+    if objectp(gRock) then
+      m_classManager = gRock.m_classManager
+    end if
+  end if
+  gClassManager = m_classManager
+  m_path = argDataPath
+  if voidp(m_path) then
+    if not objectp(gRock) then
+      m_path = "\\resurs\Monsterland\_Projects\Rockmanager\Data\"
+    else
+      m_path = gRock.m_paths.getPath(#data)
+    end if
+  end if
+  return me
+end
+
+on getClassesPerFile me
+  Files = getFilesInFolder(m_path)
+  Files = wildCardSearch("Data*00.txt", Files)
+  m_classesPerFile = [:]
+  classesStr = EMPTY
+  repeat with file in Files
+    str = readFile(m_path & file)
+    tmpLine = str.line[1]
+    Classes = []
+    repeat with wordNr = 1 to the number of words in tmpLine
+      className = tmpLine.word[wordNr]
+      if Classes.getPos(symbol(className)) > 0 then
+        next repeat
+      end if
+      Classes.add(symbol(className))
+      classesStr = classesStr & RETURN & className
+    end repeat
+    m_classesPerFile.addProp(fileStripName(file), Classes)
+    classesStr = classesStr & RETURN & ":" & fileStripName(file) & RETURN
+  end repeat
+  return classesStr
+end
+
+on generateDataFiles me, argOutPath
+  fileContentsStr = me.getClassesPerFile()
+  missionDivided = ["DataDBEC", "DataDBRest"]
+  if 0 then
+    objsByClass = gRock.m_classManager.m_objsByClass
+    repeat with classNr = 1 to objsByClass.count
+      className = objsByClass.getPropAt(classNr)
+      tmpOff = offset(RETURN & string(className) & RETURN, fileContentsStr)
+      if tmpOff then
+        tmpOffToFile = offset(RETURN & ":", fileContentsStr.char[tmpOff..fileContentsStr.length])
+        if tmpOffToFile then
+          tmpOffToFile = tmpOffToFile + tmpOff
+          lineNr = the number of lines in fileContentsStr.char[1..tmpOffToFile]
+          fileName = fileContentsStr.line[lineNr]
+          delete missionDivided.char[1]
+        end if
+      end if
+    end repeat
+  end if
+  exporter = script("ExportScript").new(m_switches)
+  if voidp(argOutPath) then
+    argOutPath = m_path
+  end if
+  repeat with fileNr = 1 to m_classesPerFile.count
+    file = m_classesPerFile.getPropAt(fileNr)
+    Classes = m_classesPerFile[fileNr]
+    isDivided = 0
+    repeat with tmp in missionDivided
+      if offset(tmp, file) then
+        isDivided = 1
+      end if
+    end repeat
+    if isDivided = 0 then
+      pott("Export " & string(Classes) & " " & argOutPath & file & ".txt")
+      exporter.export(Classes, argOutPath & file & ".txt")
+      next repeat
+    end if
+    file = file.char[1..file.length - 2]
+    pott("Export mis " & string(Classes) & " " & argOutPath & file & ".txt")
+    exporter.exportObjsByMission(Classes, argOutPath & file & ".txt")
+  end repeat
+end

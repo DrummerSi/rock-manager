@@ -1,0 +1,224 @@
+on unloadActorCasts
+  [  0] pushint8 1 .............................. <1>
+  [  3] setlocal 0
+  [  5] getlocal 0
+  [  7] pushint8 4 .............................. <4>
+  [ 10] get 8 ................................... <the number of castLibs>
+  [ 12] lteq
+  [ 13] jmpifz [ 63] ............................ repeat with n = 1 to the number of castLibs
+  [ 16] pushcons 0 .............................. <"Actor">
+  [ 18] getlocal 0 .............................. <n>
+  [ 20] pusharglist 1 ........................... <n>
+  [ 22] extcall 72 .............................. <castLib(n)>
+  [ 25] getobjprop 90 ........................... <castLib(n).name>
+  [ 28] pusharglist 2 ........................... <"Actor", castLib(n).name>
+  [ 30] extcall 89 .............................. <offset("Actor", castLib(n).name)>
+  [ 33] pushint8 1 .............................. <1>
+  [ 36] eq ...................................... <offset("Actor", castLib(n).name) = 1>
+  [ 37] jmpifz [ 52] ............................ if offset("Actor", castLib(n).name) = 1 then
+  [ 40] getlocal 0 .............................. <n>
+  [ 42] pusharglist 1 ........................... <n>
+  [ 44] extcall 72 .............................. <castLib(n)>
+  [ 47] pushcons 8 .............................. <"Empty.cst">
+  [ 49] setobjprop 99 ........................... castLib(n).fileName = "Empty.cst"
+  [ 52] pushint8 1
+  [ 55] getlocal 0
+  [ 57] add
+  [ 58] setlocal 0
+  [ 60] endrepeat [  5]
+  [ 63] ret
+end
+
+on genScoreInfo
+  [  0] pusharglist 0 ........................... <[:]>
+  [  2] pushproplist ............................ <[:]>
+  [  3] setlocal 0 .............................. newSpeakersInfo = [:]
+  [  5] pusharglistnoret 0 ...................... <>
+  [  7] extcall 148 ............................. beginRecording()
+  [ 10] pushint8 1 .............................. <1>
+  [ 13] setlocal 8
+  [ 15] getlocal 8
+  [ 17] getmovieprop 149 ........................ <the lastFrame>
+  [ 20] lteq
+  [ 21] jmpifz [243] ............................ repeat with frameNr = 1 to the lastFrame
+  [ 24] getlocal 8 .............................. <frameNr>
+  [ 26] pusharglistnoret 1 ...................... <frameNr>
+  [ 28] extcall 44 .............................. go(frameNr)
+  [ 31] pusharglist 0 ........................... <[:]>
+  [ 33] pushproplist ............................ <[:]>
+  [ 34] setlocal 16 ............................. frameInfo = [:]
+  [ 36] pushint8 1 .............................. <1>
+  [ 39] setlocal 24
+  [ 41] getlocal 24
+  [ 43] pushint8 120 ............................ <120>
+  [ 46] lteq
+  [ 47] jmpifz [213] ............................ repeat with SPNr = 1 to 120
+  [ 50] getlocal 24 ............................. <SPNr>
+  [ 52] pusharglist 1 ........................... <SPNr>
+  [ 54] extcall 21 .............................. <sprite(SPNr)>
+  [ 56] setlocal 32 ............................. SP = sprite(SPNr)
+  [ 58] getlocal 32 ............................. <SP>
+  [ 60] getobjprop 150 .......................... <SP.startFrame>
+  [ 63] getlocal 8 .............................. <frameNr>
+  [ 65] lt ...................................... <SP.startFrame < frameNr>
+  [ 66] jmpifz [ 72] ............................ if SP.startFrame < frameNr then
+  [ 69] jmp [202] ............................... next repeat
+  [ 72] getlocal 32 ............................. <SP>
+  [ 74] pushsymb 151 ............................ <#scriptList>
+  [ 77] pusharglist 2 ........................... <SP, #scriptList>
+  [ 79] objcall 67 .............................. <SP.scriptList.count>
+  [ 82] pushzero ................................ <0>
+  [ 83] eq ...................................... <SP.scriptList.count = 0>
+  [ 84] jmpifz [ 90] ............................ if SP.scriptList.count = 0 then
+  [ 87] jmp [202] ............................... next repeat
+  [ 90] getlocal 32 ............................. <SP>
+  [ 92] getobjprop 151 .......................... <SP.scriptList>
+  [ 95] peek 0
+  [ 97] pusharglist 1
+  [ 99] extcall 67
+  [102] pushint8 1
+  [104] peek 0
+  [106] peek 2
+  [108] lteq
+  [109] jmpifz [200] ............................ repeat with scriptInfo in SP.scriptList
+  [112] peek 2
+  [114] peek 1
+  [116] pusharglist 2
+  [118] extcall 19
+  [120] setlocal 40
+  [122] getlocal 40 ............................. <scriptInfo>
+  [124] pushint8 1 .............................. <1>
+  [127] pusharglist 2 ........................... <scriptInfo, 1>
+  [129] objcall 19 .............................. <scriptInfo[1]>
+  [131] getobjprop 90 ........................... <scriptInfo[1].name>
+  [134] pushcons 16 ............................. <"Speak">
+  [136] eq ...................................... <scriptInfo[1].name = "Speak">
+  [137] jmpifz [194] ............................ if scriptInfo[1].name = "Speak" then
+  [140] getlocal 40 ............................. <scriptInfo>
+  [142] pushint8 2 .............................. <2>
+  [145] pusharglist 2 ........................... <scriptInfo, 2>
+  [147] objcall 19 .............................. <scriptInfo[2]>
+  [149] getobjprop 8 ............................ <scriptInfo[2].value>
+  [151] setlocal 48 ............................. props = scriptInfo[2].value
+  [153] getlocal 48 ............................. <props>
+  [155] pushsymb 110 ............................ <#m_personString>
+  [158] pusharglist 2 ........................... <props, #m_personString>
+  [160] objcall 19 .............................. <props[#m_personString]>
+  [162] setlocal 56 ............................. tmpPerson = props[#m_personString]
+  [164] getlocal 56 ............................. <tmpPerson>
+  [166] getobjprop 111 .......................... <tmpPerson.length>
+  [169] pushzero ................................ <0>
+  [170] eq ...................................... <tmpPerson.length = 0>
+  [171] jmpifz [183] ............................ if tmpPerson.length = 0 then
+  [174] getlocal 32 ............................. <SP>
+  [176] getobjprop 6 ............................ <SP.member>
+  [178] getobjprop 90 ........................... <SP.member.name>
+  [181] setlocal 56 ............................. tmpPerson = SP.member.name
+  [183] getlocal 16 ............................. <frameInfo>
+  [185] getlocal 24 ............................. <SPNr>
+  [187] getlocal 56 ............................. <tmpPerson>
+  [189] pusharglistnoret 3 ...................... <frameInfo, SPNr, tmpPerson>
+  [191] objcall 152 ............................. frameInfo.addProp(SPNr, tmpPerson)
+  [194] pushint8 1
+  [196] add
+  [197] endrepeat [104]
+  [200] pop 3
+  [202] pushint8 1
+  [205] getlocal 24
+  [207] add
+  [208] setlocal 24
+  [210] endrepeat [ 41]
+  [213] getlocal 16 ............................. <frameInfo>
+  [215] getobjprop 67 ........................... <frameInfo.count>
+  [218] jmpifz [232] ............................ if frameInfo.count then
+  [221] getlocal 0 .............................. <newSpeakersInfo>
+  [223] getlocal 8 .............................. <frameNr>
+  [225] getlocal 16 ............................. <frameInfo>
+  [227] pusharglistnoret 3 ...................... <newSpeakersInfo, frameNr, frameInfo>
+  [229] objcall 152 ............................. newSpeakersInfo.addProp(frameNr, frameInfo)
+  [232] pushint8 1
+  [235] getlocal 8
+  [237] add
+  [238] setlocal 8
+  [240] endrepeat [ 15]
+  [243] pusharglistnoret 0 ...................... <>
+  [245] extcall 153 ............................. endRecording()
+  [248] pushcons 24 ............................. <"ScoreInfo">
+  [250] pusharglist 1 ........................... <"ScoreInfo">
+  [252] extcall 6 ............................... <member("ScoreInfo")>
+  [254] getlocal 0 .............................. <newSpeakersInfo>
+  [256] pusharglist 1 ........................... <newSpeakersInfo>
+  [258] extcall 39 .............................. <string(newSpeakersInfo)>
+  [261] setobjprop 7 ............................ member("ScoreInfo").text = string(newSpeakersInfo)
+  [263] ret
+end
+
+on preloadCastsOfFrame argFrame
+  [  0] getglobal 63 ............................ <gDir>
+  [  3] getobjprop 22 ........................... <gDir.m_scoreInfo>
+  [  5] getparam 0 .............................. <argFrame>
+  [  7] pusharglist 2 ........................... <gDir.m_scoreInfo, argFrame>
+  [  9] objcall 162 ............................. <gDir.m_scoreInfo.getaProp(argFrame)>
+  [ 12] setlocal 0 .............................. frameInfo = gDir.m_scoreInfo.getaProp(argFrame)
+  [ 14] getlocal 0 .............................. <frameInfo>
+  [ 16] pusharglist 1 ........................... <frameInfo>
+  [ 18] extcall 9 ............................... <listp(frameInfo)>
+  [ 20] jmpifz [144] ............................ if listp(frameInfo) then
+  [ 23] pushint8 1 .............................. <1>
+  [ 26] setlocal 8
+  [ 28] getlocal 8
+  [ 30] getlocal 0 .............................. <frameInfo>
+  [ 32] getobjprop 67 ........................... <frameInfo.count>
+  [ 35] lteq
+  [ 36] jmpifz [144] ............................ repeat with n = 1 to frameInfo.count
+  [ 39] pushzero ................................ <0>
+  [ 40] jmpifz [ 46] ............................ if 0 then
+  [ 43] jmp [133] ............................... next repeat
+  [ 46] getlocal 0 .............................. <frameInfo>
+  [ 48] getlocal 8 .............................. <n>
+  [ 50] pusharglist 2 ........................... <frameInfo, n>
+  [ 52] objcall 19 .............................. <frameInfo[n]>
+  [ 54] setlocal 16 ............................. tmpPerson = frameInfo[n]
+  [ 56] getglobal 63 ............................ <gDir>
+  [ 59] getobjprop 20 ........................... <gDir.m_actorCasts>
+  [ 61] pushzero ................................ <0>
+  [ 62] getlocal 16 ............................. <tmpPerson>
+  [ 64] pusharglist 3 ........................... <gDir.m_actorCasts, 0, tmpPerson>
+  [ 66] objcall 85 .............................. <gDir.m_actorCasts.linkCast(0, tmpPerson)>
+  [ 69] setlocal 24 ............................. castName = gDir.m_actorCasts.linkCast(0, tmpPerson)
+  [ 71] getlocal 24 ............................. <castName>
+  [ 73] pusharglist 1 ........................... <castName>
+  [ 75] extcall 107 ............................. <stringp(castName)>
+  [ 78] not ..................................... <not stringp(castName)>
+  [ 79] jmpifz [ 91] ............................ if not stringp(castName) then
+  [ 82] pushcons 32 ............................. <"No free cast">
+  [ 84] pusharglistnoret 1 ...................... <"No free cast">
+  [ 86] extcall 4 ............................... pott("No free cast")
+  [ 88] jmp [133] ............................... next repeat
+  [ 91] getlocal 16 ............................. <tmpPerson>
+  [ 93] getlocal 24 ............................. <castName>
+  [ 95] pusharglist 2 ........................... <tmpPerson, castName>
+  [ 97] extcall 66 .............................. <CPgetActorInfo(tmpPerson, castName)>
+  [100] setlocal 32 ............................. tmp = CPgetActorInfo(tmpPerson, castName)
+  [102] getlocal 32 ............................. <tmp>
+  [104] getobjprop 67 ........................... <tmp.count>
+  [107] pushzero ................................ <0>
+  [108] eq ...................................... <tmp.count = 0>
+  [109] jmpifz [123] ............................ if tmp.count = 0 then
+  [112] pushcons 40 ............................. <"Not available cast">
+  [114] getlocal 16 ............................. <tmpPerson>
+  [116] pusharglistnoret 2 ...................... <"Not available cast", tmpPerson>
+  [118] extcall 4 ............................... pott("Not available cast", tmpPerson)
+  [120] jmp [133] ............................... next repeat
+  [123] pushcons 48 ............................. <"Preload of">
+  [125] getlocal 16 ............................. <tmpPerson>
+  [127] getlocal 24 ............................. <castName>
+  [129] pusharglistnoret 3 ...................... <"Preload of", tmpPerson, castName>
+  [131] extcall 4 ............................... pott("Preload of", tmpPerson, castName)
+  [133] pushint8 1
+  [136] getlocal 8
+  [138] add
+  [139] setlocal 8
+  [141] endrepeat [ 28]
+  [144] ret
+end

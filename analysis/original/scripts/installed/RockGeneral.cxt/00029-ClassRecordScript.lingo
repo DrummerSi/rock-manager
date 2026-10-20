@@ -1,0 +1,346 @@
+property ancestor, child, className, belongsTo, _killed, DistributionInfo, StyleMix, StyleMixTolerance, SongType, SongTypeTolerance, MediaTargets, MinQuality, PreferredPriceModel, MinPriceModel, albums, PreferredNumAlbums, daysToNextPay, earnedMoneyFromEarlierAlbums, ConditionalAdvances, Advance, PayedToPlayer, PlayerRepaidAdvance, payPercentToPlayerUntilAdvanceRepaid
+global gRock
+
+on new me, argChild, argBelongsTo
+  if objectp(argChild) then
+    child = argChild
+  else
+    child = me
+  end if
+  belongsTo = argBelongsTo
+  ancestor = script("ClassPlaceScript").new(child)
+  className = #Record
+  DistributionInfo = EMPTY
+  StyleMix = script("ClassStyleMixScript").new(VOID, me)
+  StyleMixTolerance = script("ClassStyleMixScript").new(VOID, me)
+  SongType = 0.0
+  SongTypeTolerance = 0.0
+  MediaTargets = []
+  MinQuality = 0.0
+  PreferredPriceModel = script("ClassPriceModelScript").new(VOID, me)
+  MinPriceModel = script("ClassPriceModelScript").new(VOID, me)
+  albums = []
+  PreferredNumAlbums = 0
+  daysToNextPay = 0
+  earnedMoneyFromEarlierAlbums = 0
+  ConditionalAdvances = [:]
+  Advance = 0
+  PayedToPlayer = 0
+  PlayerRepaidAdvance = 0
+  payPercentToPlayerUntilAdvanceRepaid = 0.0
+  return me
+end
+
+on kill me
+  _killed = 1
+  gRock.m_gameTimer.deleteObject(me)
+  if objectp(StyleMix) then
+    StyleMix = StyleMix.kill()
+  end if
+  if objectp(StyleMixTolerance) then
+    StyleMixTolerance = StyleMixTolerance.kill()
+  end if
+  if objectp(PreferredPriceModel) then
+    PreferredPriceModel = PreferredPriceModel.kill()
+  end if
+  if objectp(MinPriceModel) then
+    MinPriceModel = MinPriceModel.kill()
+  end if
+  if objectp(ancestor) then
+    ancestor = ancestor.kill()
+  end if
+  child = 0
+  belongsTo = 0
+  return 0
+end
+
+on init me
+  human_r = gRock.m_classManager.getObjByIDAndClass(ancestor.Human, #Human)
+  if objectp(human_r) then
+    human_r.BelongsToPlace = ancestor.ID
+  end if
+  gRock.m_gameTimer.addObject(me)
+end
+
+on timeTick me
+  if daysToNextPay = 0 then
+    exit
+  end if
+  tmpTotalEarned = me.getPlayerEarnedMoney(#Total)
+  tmpPlayerRepaidAdvance = (1.0 - payPercentToPlayerUntilAdvanceRepaid) * tmpTotalEarned
+  if tmpPlayerRepaidAdvance >= Advance then
+    if PlayerRepaidAdvance < Advance then
+      gRock.m_eventCardsManager.tryNewShowEventCard(#ECOCBreakEven)
+    end if
+    PlayerRepaidAdvance = Advance
+  else
+    PlayerRepaidAdvance = tmpPlayerRepaidAdvance
+  end if
+  tmpTotalPlayer = tmpTotalEarned - PlayerRepaidAdvance
+  tmpPayToPlayer = tmpTotalPlayer - PayedToPlayer
+  if tmpPayToPlayer > 0 then
+    gRock.m_player.transactMoney(tmpPayToPlayer, [#Record, #Royalty])
+  end if
+  PayedToPlayer = tmpTotalPlayer
+end
+
+on willSignAlbumWithBand me, argAlbum_r, argBand_r
+  argBand_r.calcStyleMix()
+  gRock.m_classManager.copy(argBand_r.MusicStyle, argAlbum_r.MusicStyle)
+  tmpLikesAlbumInfo = rDefLikesAlbum(me, argAlbum_r, [#music: 1, #image: 1, #SongType: 1, #quality: 1], #ExtraInfo)
+  tmpLike = tmpLikesAlbumInfo[#Like]
+  feedBackObj = script("DemoFeedbackScript").new()
+  feedBackComment = feedBackObj.getFeedback(me, tmpLikesAlbumInfo)
+  tmpWorstReason = feedBackObj.getWorstReason()
+  tuneDebug(tmpLikesAlbumInfo)
+  if objectp(tmpLikesAlbumInfo[#target]) then
+    tuneDebug("Used target", tmpLikesAlbumInfo[#target].ID)
+  end if
+  totalSubZero = tmpLikesAlbumInfo[#totalSubZero]
+  addThis = (0.20000000000000001 * argBand_r.LiveReputation) + (0.01 * argBand_r.getTotalHype())
+  tmp = totalSubZero + addThis
+  if tmp >= 0 then
+    if tmpLike < 0 then
+      return 0.01
+    else
+      return tmpLike
+    end if
+  end if
+  return [#text: feedBackComment, #WorstReason: tmpWorstReason]
+  tuneDebug("Record likes album", tmpLikesAlbumInfo)
+  tmpLike = tmpLike + (0.20000000000000001 * argBand_r.LiveReputation)
+  tuneDebug("/w LiveReputation", tmpLike)
+  tmpLike = tmpLike + (0.01 * argBand_r.getTotalHype())
+  tuneDebug("/w band.hype", tmpLike)
+  return tmpLike
+end
+
+on getDebtToPlayer me
+  tmpTotalEarned = me.getPlayerEarnedMoney(#Total)
+  tmpPlayerRepaidAdvance = (1.0 - payPercentToPlayerUntilAdvanceRepaid) * tmpTotalEarned
+  if tmpPlayerRepaidAdvance >= Advance then
+    tmpPlayerRepaidAdvance = Advance
+  end if
+  tmpTotalPlayer = tmpTotalEarned - tmpPlayerRepaidAdvance
+  tmpPayToPlayer = tmpTotalPlayer - PayedToPlayer
+  tmpLeftToPayOnAdvance = Advance - tmpPlayerRepaidAdvance
+  return tmpPayToPlayer - tmpLeftToPayOnAdvance
+end
+
+on getPlayerEarnedMoney me, argTotalOrOnlyCurrentAlbum
+  if voidp(argTotalOrOnlyCurrentAlbum) then
+    argTotalOrOnlyCurrentAlbum = #Total
+  end if
+  if argTotalOrOnlyCurrentAlbum = #Total then
+    Money = earnedMoneyFromEarlierAlbums
+  else
+    Money = 0
+  end if
+  repeat with albumID in albums
+    album_r = gRock.m_classManager.getObjByIDAndClass(albumID, #album)
+    Money = Money + (gRock.m_player.CPContractPriceModel.Royalty * album_r.getRevenue())
+  end repeat
+  return Money
+end
+
+on giveUpCurrentAlbum me
+  earnedMoneyFromEarlierAlbums = earnedMoneyFromEarlierAlbums + me.getPlayerEarnedMoney(#CurrentAlbumOnly)
+  repeat with albumID in albums
+    album_r = gRock.m_classManager.getObjByIDAndClass(albumID, #album)
+    album_r.SignedToRecord = #none
+    album_r.Remove()
+  end repeat
+  albums = []
+  daysToNextPay = 0
+end
+
+on getOffer me, argLikes, argExtraAdvance
+  if voidp(argLikes) then
+    argLikes = 0.5
+  end if
+  if argLikes < 0 then
+    argLikes = 0
+  end if
+  if voidp(argExtraAdvance) then
+    argExtraAdvance = 0
+  end if
+  tmpDebt = me.getDebtToPlayer()
+  if tmpDebt < 0 then
+    argExtraAdvance = argExtraAdvance + tmpDebt
+  end if
+  if 1 then
+    tmpMinAdvance = MinPriceModel.BasePrice
+    tmpMaxAdvance = PreferredPriceModel.BasePrice
+    tmpDiffAdvance = tmpMaxAdvance - tmpMinAdvance
+    tmpProposedAdv = (argLikes * tmpDiffAdvance / 2) + (tmpDiffAdvance / 4) + tmpMinAdvance
+    tmpMinAdvance = tmpProposedAdv - (tmpDiffAdvance / 4)
+    tmpMaxAdvance = tmpProposedAdv + (tmpDiffAdvance / 4)
+    tmpDiffAdvance = tmpDiffAdvance / 2
+    tmpMinRoyalty = MinPriceModel.Royalty
+    tmpMaxRoyalty = PreferredPriceModel.Royalty
+    tmpDiffRoyalty = tmpMaxRoyalty - tmpMinRoyalty
+    tmpProposedRoyalty = (float(tmpDiffRoyalty) / 2) + tmpMinRoyalty
+    Steps = [:]
+    if tmpDiffRoyalty = 0 then
+      Steps.addProp(tmpProposedRoyalty, tmpProposedAdv)
+    else
+      tmpAdvancePerPercent = float(tmpDiffAdvance) / integer(tmpDiffRoyalty * 100)
+      repeat with n = 0 to integer(tmpDiffRoyalty * 100)
+        tmpAdvance = tmpMaxAdvance - (tmpAdvancePerPercent * n)
+        Steps.addProp(tmpMinRoyalty + (float(n) / 100), roundToNearest(tmpAdvance, 1000))
+      end repeat
+    end if
+    tmpPos = Steps.count / 2
+    if tmpPos = 0 then
+      tmpPos = 1
+    end if
+    return [#ProposedRoyalty: Steps.getPropAt(tmpPos), #StepPos: tmpPos, #Steps: Steps]
+  end if
+  tmpMinRoyalty = MinPriceModel.Royalty
+  tmpMaxRoyalty = PreferredPriceModel.Royalty
+  tmpDiffRoyalty = tmpMaxRoyalty - tmpMinRoyalty
+  tmpProposedRoyalty = (0.5 * tmpDiffRoyalty) + tmpMinRoyalty
+  tmpProposedRoyalty = integer(tmpProposedRoyalty * 100)
+  tmpProposedRoyalty = tmpProposedRoyalty / 100.0
+  tmpMinAdvance = MinPriceModel.BasePrice
+  tmpMaxAdvance = PreferredPriceModel.BasePrice
+  tmpProposedAdv = (argLikes * (tmpMaxAdvance - tmpMinAdvance)) + tmpMinAdvance
+  tmpProposedAdv = integer(tmpProposedAdv / 2000.0)
+  tmpProposedAdv = tmpProposedAdv * 2000
+  wholeSteps = [:]
+  if tmpDiffRoyalty = 0 then
+    wholeSteps.addProp(tmpProposedRoyalty, tmpProposedAdv)
+  else
+    tmpAdvPerPercent = tmpProposedAdv / tmpDiffRoyalty * 2.0
+    repeat with n = integer(tmpMinRoyalty * 100) to integer(tmpMaxRoyalty * 100)
+      tmpRoyalty = n / 100.0
+      tmpAdvance = (tmpAdvPerPercent * tmpDiffRoyalty) - (tmpAdvPerPercent * (tmpRoyalty - tmpMinRoyalty))
+      tmpAdvance = integer(tmpAdvance) + argExtraAdvance
+      if tmpAdvance < 0 then
+        tmpAdvance = 0
+      end if
+      wholeSteps.addProp(tmpRoyalty, tmpAdvance)
+    end repeat
+  end if
+  tmpPos = wholeSteps.findPos(tmpProposedRoyalty)
+  return [#ProposedRoyalty: tmpProposedRoyalty, #StepPos: tmpPos, #Steps: wholeSteps]
+end
+
+on signContract me, argAdvance, argRoyalty, argAlbum_r, argNumAlbums
+  gRock.m_player.transactMoney(argAdvance, [#Record, #Advance])
+  mission_r = gRock.m_context.getFocus(#Mission)
+  if gRock.m_player.CPContractor <> ancestor.ID then
+    Advance = argAdvance
+  else
+    Advance = Advance + argAdvance
+  end if
+  daysToNextPay = 1
+  gRock.m_player.CPContractPriceModel.UnitPrice = PreferredPriceModel.UnitPrice
+  gRock.m_player.CPContractPriceModel.BasePrice = argAdvance
+  gRock.m_player.CPContractPriceModel.Royalty = argRoyalty
+  gRock.m_player.CPContractor = ancestor.ID
+  gRock.m_player.CPContractAlbumsLeft = argNumAlbums
+  gRock.m_context.setFocus(#ContractedRecord, me)
+  if objectp(argAlbum_r) then
+    albums.add(argAlbum_r.ID)
+    argAlbum_r.signed(me, gRock.m_player.CPContractPriceModel.Royalty)
+  end if
+end
+
+on cancelContract me
+  me.removeAllConditions()
+  me.giveUpCurrentAlbum()
+  giveToPlayer = me.getDebtToPlayer()
+  if giveToPlayer > 0 then
+    gRock.m_player.transactMoney(giveToPlayer, [#Record, #Royalty])
+  else
+    if gRock.m_player.hasThisMoney(-giveToPlayer) = 0 then
+      giveToPlayer = -gRock.m_player.getWealth() + 3000
+    end if
+    gRock.m_player.transactMoney(giveToPlayer, [#Record])
+  end if
+  mission_r = gRock.m_context.getFocus(#Mission)
+  Advance = 0
+  PlayerRepaidAdvance = 0
+  PayedToPlayer = 0
+  daysToNextPay = 0
+  earnedMoneyFromEarlierAlbums = 0
+  gRock.m_player.CPContractor = #none
+  gRock.m_context.setFocus(#ContractedRecord, 0)
+  gRock.m_msgManager.msg(#cancelContract, me)
+end
+
+on gotCondition me, argID
+  return listp(ConditionalAdvances.getaProp(argID))
+end
+
+on giveConditionalAdvance me, argID, argMoney, argTriggers
+  if voidp(argTriggers) then
+    tmpStr = string(argID)
+    tmpOff = offset("Record", tmpStr)
+    delete tmpStr.char[1..tmpOff - 1]
+    tmpStr = "TR" & tmpStr
+    argTriggers = [symbol(tmpStr & "Fail"), symbol(tmpStr & "Succeed")]
+  end if
+  repeat with tmpTrID in argTriggers
+    trigger_r = gRock.m_classManager.getObjByIDAndClass(tmpTrID, #Trigger)
+    if objectp(trigger_r) then
+      trigger_r.activate(1)
+      next repeat
+    end if
+    pott("Trigger doesn't exist", tmpTrID)
+  end repeat
+  if argMoney < 0 then
+    argMoney = -argMoney
+  end if
+  pott("Advance Triggers", argTriggers, argMoney)
+  gRock.m_player.transactMoney(argMoney, [#Record, #Advance])
+  Advance = Advance + argMoney
+  ConditionalAdvances.addProp(argID, [#Triggers: argTriggers, #Money: argMoney])
+end
+
+on findConditionByTriggerID me, argTriggerID
+  repeat with n = 1 to ConditionalAdvances.count
+    tmpConditionID = ConditionalAdvances.getPropAt(n)
+    tmpInfo = ConditionalAdvances[n]
+    tmpTriggerIDs = tmpInfo[#Triggers]
+    if tmpTriggerIDs.getPos(argTriggerID) then
+      return tmpConditionID
+    end if
+  end repeat
+end
+
+on conditionFulfilled me, argTriggerID
+  tmpConditionID = me.findConditionByTriggerID(argTriggerID)
+  me.removeCondition(tmpConditionID)
+end
+
+on conditionMissed me, argTriggerID
+  tmpConditionID = me.findConditionByTriggerID(argTriggerID)
+  tmpInfo = ConditionalAdvances.getaProp(tmpConditionID)
+  tmpPayBack = tmpInfo[#Money]
+  str = string(argTriggerID)
+  ECID = symbol("ECOC" & str.char[3..str.length])
+  gRock.m_eventCardsManager.tryNewShowEventCard(ECID, [#EventCardOptions: [#HumanID: ancestor.Human]])
+  Advance = Advance - tmpPayBack
+  me.removeCondition(tmpConditionID)
+  gRock.m_player.transactMoney(-tmpPayBack, [#Record, #Advance])
+end
+
+on removeCondition me, argID
+  tmpInfo = ConditionalAdvances.getaProp(argID)
+  tmpTriggerIDs = tmpInfo[#Triggers]
+  repeat with tmpTriggerID in tmpTriggerIDs
+    trigger_r = gRock.m_classManager.getObjByIDAndClass(tmpTriggerID, #Trigger)
+    trigger_r.activate(0)
+  end repeat
+  tmpInfo[#Used] = 1
+  ConditionalAdvances.deleteProp(argID)
+end
+
+on removeAllConditions me
+  repeat with n = ConditionalAdvances.count down to 1
+    tmpConditionID = ConditionalAdvances[n]
+    me.removeCondition(tmpConditionID)
+  end repeat
+end

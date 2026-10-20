@@ -1,0 +1,429 @@
+property m_wordSeparators, m_str, m_nesting, m_lastWordStart, m_lineStart, m_realNestingDepth
+
+on new me, argStr
+  m_wordSeparators = [RETURN, SPACE, numToChar(9)]
+  return me
+end
+
+on convFile me, argFile
+  str = readFile(argFile)
+  if not stringp(str) then
+    exit
+  end if
+  argStr = changeChars(numToChar(10), EMPTY, argStr)
+  code = me.codeToList(argStr)
+  stripped = fileStripName(argFile)
+  path = fileExtractPath(argFile)
+  writeFile(path & stripped & ".dat", string(code))
+end
+
+on codeToList me, argStr
+  m_str = argStr
+  if voidp(m_str) then
+    m_str = member("TestThisFucker").scriptText
+  end if
+  m_nesting = []
+  results = []
+  currentSubList = []
+  results.add(currentSubList)
+  m_realNestingDepth = 1
+  keywords = [#on, #if, #else, #end, #then, #repeat, #for, #return]
+  firstWordOnThisLine = 1
+  m_lastWordStart = 0
+  m_lineStart = 1
+  currLineNr = 1
+  isOneLiner = 0
+  m_str = m_str & RETURN
+  repeat with chNr = 1 to m_str.length
+    ch = m_str.char[chNr]
+    if m_lastWordStart > 0 then
+      if m_str.char[m_lastWordStart..chNr] = "--" then
+        repeat while chNr < m_str.length
+          if m_str.char[chNr] = RETURN then
+            chNr = chNr - 1
+            tmpDeleteLen = chNr - m_lastWordStart
+            delete m_str.char[m_lastWordStart..chNr]
+            chNr = chNr - tmpDeleteLen
+            currLineNr = currLineNr + 1
+            exit repeat
+          end if
+          chNr = chNr + 1
+        end repeat
+        m_lastWordStart = 0
+        next repeat
+      end if
+    end if
+    if m_wordSeparators.getPos(ch) then
+      tmpStartedChNr = chNr
+      isKeyword = 0
+      if m_lastWordStart > 0 then
+        tmpWord = m_str.char[m_lastWordStart..chNr - 1]
+        lastKeyword = me.getLastKeyword()
+        isKeyword = keywords.getPos(symbol(tmpWord))
+        if isKeyword then
+          if tmpWord = "end" then
+            currentSubList = me.closeCurrentNesting(results)
+            if not listp(currentSubList) then
+              return 0
+            end if
+            repeat while chNr < m_str.length
+              if m_str.char[chNr] = RETURN then
+                exit repeat
+              end if
+              chNr = chNr + 1
+            end repeat
+          else
+            if tmpWord = "on" then
+              chNr = chNr + 1
+              tmpHandlerStart = chNr
+              tmpHandlerName = EMPTY
+              repeat while chNr < m_str.length
+                if m_str.char[chNr] = " " then
+                  tmpHandlerName = m_str.char[tmpHandlerStart..chNr - 1]
+                else
+                  if m_str.char[chNr] = RETURN then
+                    if tmpHandlerName.length = 0 then
+                      tmpHandlerName = m_str.char[tmpHandlerStart..chNr - 1]
+                    end if
+                    exit repeat
+                  end if
+                end if
+                chNr = chNr + 1
+              end repeat
+              currentSubList.add([#on, [tmpHandlerName]])
+              currentSubList = currentSubList[currentSubList.count]
+              currentSubList = currentSubList[currentSubList.count]
+              m_nesting.add([tmpWord, chNr, currLineNr])
+              m_realNestingDepth = m_realNestingDepth + 2
+            else
+              if tmpWord = "if" then
+                currentSubList.add([#if, []])
+                currentSubList = currentSubList[currentSubList.count]
+                currentSubList = currentSubList[currentSubList.count]
+                m_realNestingDepth = m_realNestingDepth + 2
+                m_nesting.add([tmpWord, chNr, currLineNr])
+              else
+                if tmpWord = "then" then
+                  if lastKeyword = "if" then
+                    betweenKeywords = me.cleanBetweenKeywords()
+                    tmp = betweenKeywords[1]
+                    if (tmp.char[1] = "(") and (tmp.char[tmp.length] = ")") then
+                      delete keywords.char[1]
+                      delete keywords.char[tmp.length]
+                    end if
+                    currentSubList.add(tmp)
+                    currentSubList = me.stepDown(currentSubList)
+                    m_realNestingDepth = m_realNestingDepth + 1
+                  end if
+                else
+                  if tmpWord = "else" then
+                    if lastKeyword = "if" then
+                      m_realNestingDepth = m_realNestingDepth - 1
+                      currentSubList = me.stepInto(results, m_realNestingDepth)
+                      m_realNestingDepth = m_realNestingDepth + 1
+                      currentSubList = me.stepDown(currentSubList)
+                      m_nesting[m_nesting.count] = [tmpWord, chNr, currLineNr]
+                    else
+                      pott("else without if!")
+                    end if
+                  else
+                    if tmpWord = "return" then
+                      currentSubList.add([#return, []])
+                      currentSubList = currentSubList[currentSubList.count]
+                      currentSubList = currentSubList[currentSubList.count]
+                      m_realNestingDepth = m_realNestingDepth + 2
+                      m_nesting.add([tmpWord, chNr, currLineNr])
+                    end if
+                  end if
+                end if
+              end if
+            end if
+          end if
+          if ch = RETURN then
+            currLineNr = currLineNr + 1
+          end if
+          if (m_str.char[chNr] = RETURN) and (tmpStartedChNr <> chNr) then
+            currLineNr = currLineNr + 1
+          end if
+          m_lineStart = chNr
+          m_lastWordStart = 0
+          isOneLiner = 0
+        end if
+      end if
+      if isKeyword = 0 then
+        if ch = RETURN then
+          if lastKeyword = "return" then
+            m_lastWordStart = chNr
+            betweenKeywords = me.cleanBetweenKeywords()
+            repeat with tmp in betweenKeywords
+              currentSubList.add(tmp)
+            end repeat
+            m_realNestingDepth = m_realNestingDepth - 2
+            currentSubList = me.stepInto(results, m_realNestingDepth)
+            m_nesting.deleteAt(m_nesting.count)
+          else
+            str = m_str.char[m_lineStart..chNr - 1]
+            cleaned = trimStringFromChars(str, m_wordSeparators)
+            if cleaned.length > 0 then
+              if isOneLiner then
+                currentSubList = me.closeCurrentNesting(results)
+                if not listp(currentSubList) then
+                  return 0
+                end if
+              end if
+              isOneLiner = 0
+              lastKeyword = me.getLastKeyword()
+              if (lastKeyword = "if") or (lastKeyword = "else") then
+                if currLineNr = m_nesting[m_nesting.count][3] then
+                  if cleaned.length then
+                    pott(cleaned, currLineNr, m_nesting[m_nesting.count])
+                    isOneLiner = 1
+                  end if
+                end if
+              end if
+              cleaned = me.fixQuotes(cleaned)
+              currentSubList.add(cleaned)
+            end if
+          end if
+          currLineNr = currLineNr + 1
+          m_lineStart = chNr
+        end if
+        m_lastWordStart = 0
+      end if
+      next repeat
+    end if
+    if m_lastWordStart = 0 then
+      m_lastWordStart = chNr
+    end if
+  end repeat
+  results = results[1]
+  return results
+end
+
+on closeCurrentNesting me, argResults
+  lastKeyword = me.getLastKeyword()
+  if (lastKeyword = "if") or (lastKeyword = "else") then
+    m_realNestingDepth = m_realNestingDepth - 3
+  else
+    if lastKeyword = "on" then
+      m_realNestingDepth = m_realNestingDepth - 2
+    else
+      pott("end without start of nesting!")
+    end if
+  end if
+  currentSubList = me.stepInto(argResults, m_realNestingDepth)
+  if m_nesting.count = 0 then
+    pott("Nesting error!")
+    return 0
+  end if
+  m_nesting.deleteAt(m_nesting.count)
+  return currentSubList
+end
+
+on getLastKeyword me
+  cnt = m_nesting.count
+  if cnt = 0 then
+    return VOID
+  end if
+  return m_nesting[cnt][1]
+end
+
+on cleanBetweenKeywords me
+  cnt = m_nesting.count
+  if cnt = 0 then
+    return []
+  end if
+  startChNr = m_nesting[cnt][2]
+  return me.linesToList(m_str.char[startChNr..m_lastWordStart - 1])
+end
+
+on linesToList me, argStr
+  uncleaned = trimStringFromChars(argStr, m_wordSeparators)
+  betweenKeywords = []
+  repeat with n = 1 to the number of lines in uncleaned
+    tmpCleanedLine = trimStringFromChars(uncleaned.line[n], m_wordSeparators)
+    if 1 then
+      tmpCleanedLine = me.fixQuotes(tmpCleanedLine)
+    end if
+    if tmpCleanedLine.char[1] = "[" then
+      tmpCleanedLine = value(tmpCleanedLine)
+      betweenKeywords.add(tmpCleanedLine)
+      next repeat
+    end if
+    if tmpCleanedLine.length then
+      betweenKeywords.add(tmpCleanedLine)
+    end if
+  end repeat
+  return betweenKeywords
+end
+
+on removeTheOns me, argList
+  repeat with n = 1 to argList.count()
+    tmp = argList[n]
+    if tmp[1] = #on then
+      pott(tmp[2][2])
+    end if
+  end repeat
+end
+
+on listToCode me, argList, argStrPtr, argDepth
+  if voidp(argStrPtr) then
+    argStrPtr = [EMPTY]
+  end if
+  if voidp(argDepth) then
+    argDepth = -1
+  end if
+  argDepth = argDepth + 1
+  spacesStr = EMPTY
+  repeat with n = 1 to argDepth * 2
+    spacesStr = spacesStr & " "
+  end repeat
+  if not listp(argList) then
+    pott("Error in listToCode!")
+    return EMPTY
+  end if
+  if not listp(argStrPtr) then
+    pott("No strPtr in listToCode!")
+    return EMPTY
+  else
+    if argStrPtr.count = 0 then
+      pott("strPtr empty in listToCode!")
+      return EMPTY
+    end if
+  end if
+  repeat with n = 1 to argList.count
+    tmp = argList[n]
+    if listp(tmp) then
+      func = tmp[1]
+      if tmp.count() > 1 then
+        Args = tmp[2]
+      end if
+      if symbolp(func) then
+        if func = #on then
+          argStrPtr[1] = argStrPtr[1] & "on " & Args[1] & RETURN
+          Args = Args.duplicate()
+          Args.deleteAt(1)
+          me.listToCode(Args, argStrPtr, argDepth)
+          argStrPtr[1] = argStrPtr[1] & "end" & RETURN & RETURN
+        else
+          if func = #if then
+            if Args.count = 0 then
+              pott("Err in listToCode, if!")
+              return EMPTY
+            end if
+            argStrPtr[1] = argStrPtr[1] & spacesStr & "if (" & Args[1] & ") then" & RETURN
+            if Args.count() > 1 then
+              me.listToCode(Args[2], argStrPtr, argDepth)
+            end if
+            if Args.count() > 2 then
+              argStrPtr[1] = argStrPtr[1] & spacesStr & "else" & RETURN
+              me.listToCode(Args[3], argStrPtr, argDepth)
+            end if
+            argStrPtr[1] = argStrPtr[1] & spacesStr & "end if" & RETURN
+          else
+            if func = #return then
+              if Args.count then
+                argStrPtr[1] = argStrPtr[1] & spacesStr & "return " & Args[1] & RETURN
+              else
+                argStrPtr[1] = argStrPtr[1] & spacesStr & "return" & RETURN
+              end if
+            else
+              argStrPtr[1] = argStrPtr[1] & spacesStr & string(tmp) & RETURN
+            end if
+          end if
+        end if
+      else
+        argStrPtr[1] = argStrPtr[1] & spacesStr & string(tmp) & "  YO!" & RETURN
+      end if
+      next repeat
+    end if
+    argStrPtr[1] = argStrPtr[1] & spacesStr & tmp & RETURN
+  end repeat
+  return argStrPtr[1]
+end
+
+on stepInto me, argList, argDepth
+  repeat with n = 1 to argDepth
+    argList = argList[argList.count()]
+  end repeat
+  return argList
+end
+
+on stepDown me, argList
+  argList.add([])
+  return argList[argList.count()]
+end
+
+on fixQuotes me, argStr
+  tmpListLevel = 0
+  repeat with n = argStr.length down to 1
+    ch = argStr.char[n]
+    if ch = "]" then
+      tmpListLevel = tmpListLevel + 1
+    else
+      if ch = "[" then
+        tmpListLevel = tmpListLevel - 1
+      end if
+    end if
+    if tmpListLevel = 0 then
+      if ch = QUOTE then
+        put QUOTE & "&QUOTE&" & QUOTE into me.char[n]
+      end if
+    end if
+  end repeat
+  return argStr
+end
+
+on convEditCodeToDBCode me, argStr
+  argStr = changeChars(numToChar(10), EMPTY, argStr)
+  argStr = changeChars(numToChar(9), EMPTY, argStr)
+  str = "on x" & RETURN & argStr & RETURN & "end" & RETURN
+  lst = me.codeToList(str)
+  if listp(lst) then
+    lst = lst[1][2]
+    lst.deleteAt(1)
+  else
+    lst = []
+  end if
+  if lst.count > 0 then
+    return string(lst)
+  end if
+  if argStr.length > 1 then
+    alert("Unable to compile!")
+  end if
+  argStr = changeChars(RETURN, "\n", argStr)
+  return argStr
+end
+
+on convDBCodeToEditCode me, argStr
+  lst = value(argStr)
+  if not listp(lst) then
+    repeat while 1
+      tmpOff = offset("\n", argStr)
+      if tmpOff then
+        put RETURN into me.char[tmpOff..tmpOff + 1]
+        repeat with n = tmpOff + 1 to argStr.length
+          if argStr.char[n] <> SPACE then
+            if n > (tmpOff + 1) then
+              put EMPTY into me.char[tmpOff + 1..n - 1]
+            end if
+            exit repeat
+          end if
+        end repeat
+        next repeat
+      end if
+      exit repeat
+    end repeat
+    lst = me.codeToList(argStr)
+  end if
+  if listp(lst) then
+    strPtr = [EMPTY]
+    me.listToCode(lst, strPtr)
+    return strPtr[1]
+  end if
+  if argStr.length > 1 then
+    pott(argStr)
+    alert("Unable to recreate to lingo!")
+  end if
+  return argStr
+end

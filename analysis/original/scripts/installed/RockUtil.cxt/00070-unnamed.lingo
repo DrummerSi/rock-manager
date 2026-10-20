@@ -1,0 +1,152 @@
+global gRock
+
+on rBothersBand
+  band_r = gRock.m_context.getFocus(#Band)
+  musicians_r = band_r.getMusicianObjs()
+  commentThresholds = [[#Mood, 0.5], [#Health, 0.45000000000000001], [#Patience, 0.29999999999999999]]
+  sortedProps = [:]
+  sortedProps.sort()
+  repeat with musician_r in musicians_r
+    repeat with Info in commentThresholds
+      sortedProps.addProp(rgetProp(musician_r, Info[1]), [#Musician: musician_r, #Info: Info])
+    end repeat
+  end repeat
+  commentThese = [:]
+  commentThese.sort()
+  maxComments = 3
+  repeat with n = 1 to sortedProps.count
+    val = sortedProps.getPropAt(n)
+    tmp = sortedProps[n]
+    if val <= tmp[#Info][2] then
+      prop = tmp[#Info][1]
+      commentThese.addProp(tmp[#Musician], prop)
+      if commentThese.count = maxComments then
+        exit repeat
+      end if
+    end if
+  end repeat
+  str = EMPTY
+  repeat with n = 1 to commentThese.count
+    musician_r = commentThese.getPropAt(n)
+    prop = commentThese[n]
+    modifiersModifyingThisProp = gRock.m_modifiersManager.findModifiers([#ModifiedID: musician_r.ID, #prop: prop])
+    if modifiersModifyingThisProp.count then
+      sortedMods = gRock.m_modifiersManager.sortByModification(modifiersModifyingThisProp, prop)
+      mainReasonObj = sortedMods[1]
+      mainReasonStr = string(mainReasonObj.ID)
+    else
+      mainReasonStr = EMPTY
+    end if
+    str = str & musician_r.name.word[1] & ":" & string(prop) & " " & rgetProp(musician_r, prop) & " " & mainReasonStr & RETURN
+  end repeat
+  return str
+end
+
+on rBothersMusician argMusician_r, argGetLongTexts
+  checkTheseProps = [#Mood: [#Pos, #Neg], #Health: [#Neg]]
+  totStr = EMPTY
+  strList = []
+  repeat with propNr = 1 to checkTheseProps.count
+    checkProp = checkTheseProps.getPropAt(propNr)
+    Modifiers = gRock.m_modifiersManager.findModifiers([#ModifiedID: argMusician_r.ID, #prop: checkProp])
+    sortedModifiers = gRock.m_modifiersManager.sortByModification(Modifiers, checkProp)
+    maxNum = 2
+    tmpCount = sortedModifiers.count
+    if maxNum > tmpCount then
+      maxNum = tmpCount
+    end if
+    if checkTheseProps[propNr].getPos(#Neg) then
+      str = EMPTY
+      numComments = 0
+      repeat with n = 1 to sortedModifiers.count
+        ID = sortedModifiers[n].ID
+        val = sortedModifiers.getPropAt(n)
+        if val >= 0 then
+          exit repeat
+        end if
+        tmpComment = getModifierComment(ID, checkProp, val, argMusician_r)
+        if tmpComment.length = 0 then
+          next repeat
+        end if
+        numComments = numComments + 1
+        str = str & tmpComment & ", "
+        if numComments = maxNum then
+          exit repeat
+        end if
+      end repeat
+      if str.length > 0 then
+        str = str.char[1..str.length - 2]
+      else
+        str = rGetStr(symbol("szidMod" & string(checkProp) & "NoNeg"))
+      end if
+      strList.add(str)
+    end if
+    if checkTheseProps[propNr].getPos(#Pos) then
+      str = EMPTY
+      numComments = 0
+      repeat with n = tmpCount down to 1
+        ID = sortedModifiers[n].ID
+        val = sortedModifiers.getPropAt(n)
+        if val <= 0 then
+          exit repeat
+        end if
+        tmpComment = getModifierComment(ID, checkProp, val, argMusician_r)
+        if tmpComment.length = 0 then
+          next repeat
+        end if
+        numComments = numComments + 1
+        str = str & tmpComment & ", "
+        if numComments = maxNum then
+          exit repeat
+        end if
+      end repeat
+      if str.length > 0 then
+        str = str.char[1..str.length - 2]
+      else
+        str = rGetStr(symbol("szidMod" & string(checkProp) & "NoPos"))
+      end if
+      strList.add(str)
+    end if
+  end repeat
+  return strList
+  delete checkTheseProps.char[totStr.length]
+  return totStr
+end
+
+on getModifierComment argModifierID, argProp, argVal, argMusician_r
+  if abs(argVal) > 0.08 then
+    level = "2"
+  else
+    if abs(argVal) > 0.02 then
+      level = "1"
+    else
+      return EMPTY
+    end if
+  end if
+  modIDStr = string(argModifierID)
+  tmp = "szidMod" & string(argProp)
+  if offset("Need", modIDStr) = 1 then
+    tmp = tmp & modIDStr
+  else
+    if offset("RMC", modIDStr) then
+      otherMus_r = gRock.m_classManager.getObjByIDAndClass(argModifierID, #RealMusician)
+      firstName = otherMus_r.name
+      firstName = firstName.word[1]
+      rex("tmpname = " & QUOTE & firstName & QUOTE)
+      tmp = tmp & "Attitude"
+    else
+      tmp = tmp & modIDStr
+    end if
+  end if
+  if argVal < 0 then
+    tmp = tmp & "N"
+  else
+    tmp = tmp & "P"
+  end if
+  str = rGetStr(symbol(tmp & level))
+  if (str = EMPTY) and (level = "2") then
+    str = rGetStr(symbol(tmp & "1"))
+  end if
+  str = rGetStr(str)
+  return str
+end

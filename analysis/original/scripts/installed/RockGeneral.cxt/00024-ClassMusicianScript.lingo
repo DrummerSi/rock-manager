@@ -1,0 +1,42 @@
+property ancestor, child, className, belongsTo, _killed, InstrumentalSkills, Selfperception, OccupiedWith, Charisma, Genre
+
+on new me, argChild, argBelongsTo
+  if objectp(argChild) then
+    child = argChild
+  else
+    child = me
+  end if
+  belongsTo = argBelongsTo
+  ancestor = script("ClassHumanScript").new(child)
+  className = #Musician
+  InstrumentalSkills = script("ClassInstrumentalSkillsScript").new(VOID, me)
+  Selfperception = 0.0
+  OccupiedWith = [:]
+  Charisma = 0.0
+  Genre = EMPTY
+  return me
+end
+
+on kill me
+  _killed = 1
+  if objectp(InstrumentalSkills) then
+    InstrumentalSkills = InstrumentalSkills.kill()
+  end if
+  if objectp(ancestor) then
+    ancestor = ancestor.kill()
+  end if
+  child = 0
+  belongsTo = 0
+  return 0
+end
+
+on getBestInstrument me
+  global gRock
+  sorted = [:]
+  sorted.sort()
+  props = gRock.m_classManager.getPropsInClass(#InstrumentalSkills)
+  repeat with n = 1 to props.count
+    sorted.addProp(InstrumentalSkills.getaProp(props.getPropAt(n)), props.getPropAt(n))
+  end repeat
+  return sorted[sorted.count]
+end

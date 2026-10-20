@@ -1,0 +1,193 @@
+property ancestor, m_Xplace_r, m_numDays, m_startDate, m_event_r, m_events_r, m_CPHaveRendered, m_price
+global gDir, gRock
+
+on new me, argOptions
+  ID = argOptions[#ID]
+  m_Xplace_r = gRock.m_context.getFocus(#place)
+  argOptions.setaProp(#ReportTo, me)
+  argOptions.setaProp(#child, me)
+  dialog_r = gRock.m_classManager.getObjByIDAndClass(#DlgMediaAd, #Dialog)
+  dialog_r.dataMemberName = "DlgMediaAdData"
+  dialog_r.icon = m_Xplace_r.icon
+  argOptions[#DlgInfoObj] = dialog_r
+  ancestor = script("DlgRockAncestorScript").new(argOptions)
+  tmpIDs = argOptions[#AdIDs]
+  m_events_r = []
+  repeat with n = 1 to tmpIDs.count
+    tmpID = tmpIDs[n]
+    tmpObj = gRock.m_classManager.getObjByIDAndClass(tmpID, #Event)
+    if objectp(tmpObj) then
+      m_events_r.add(tmpObj)
+    end if
+  end repeat
+  obj = ancestor.m_objDlg.getItemByPath([#ChooseAction, #Chooser, #text])
+  tmp = obj.getOneProp(#inOffsetRect)
+  tmp[3] = 210
+  obj.setOneProp(#inOffsetRect, tmp)
+  obj = ancestor.m_objDlg.getItemByPath([#ChooseAction, #Head, #icon])
+  obj.setOneProp(#Pic, "Dummy")
+  obj = ancestor.m_objDlg.getItemByPath([#ChooseAction, #Head, #Info])
+  obj.setOneProp(#editData, gRock.m_languageManager.getStr(#szidCampaignType, [#FirstUppercase: 1]))
+  obj = ancestor.m_objDlg.getItemByPath([#ChooseDays, #Chooser, #text])
+  tmp = obj.getOneProp(#inOffsetRect)
+  tmp[3] = 50
+  obj.setOneProp(#inOffsetRect, tmp)
+  obj = ancestor.m_objDlg.getItemByPath([#ChooseDays, #Head, #icon])
+  obj.setOneProp(#Pic, "Dummy")
+  obj = ancestor.m_objDlg.getItemByPath([#ChooseDays, #Head, #Info])
+  obj.setOneProp(#editData, gRock.m_languageManager.getStr(#szidCampaignTime, [#FirstUppercase: 1]))
+  itemObj = ancestor.m_objDlg.getItem(#Pic)
+  tmpImgMember = string(m_Xplace_r.ID)
+  if objectp(itemObj) then
+    itemObj.setOneProp(#Pic, "image_" & tmpImgMember & "_small01")
+  end if
+  m_startDate = 5 + gRock.m_date.getDateInt()
+  m_CPHaveRendered = 0
+  me.setEvent(m_events_r[1])
+  me.setNumDays(5)
+  ancestor.m_objDlg.recalc(#DontPaint)
+  itemObj = ancestor.m_objDlg.getItem(#AgendaBG)
+  rOpenAgenda(itemObj.getOnStageRect() + rect(0, 0, 0, 0), [#MoveItems: 1, #show: [:], #bgPic: "agenda_background01", #ShrinkRect: rect(6, 5, -6, -5), #SPNum: ancestor.getSPOverDlg()])
+  m_CPHaveRendered = 1
+  ancestor.render()
+  return me
+end
+
+on kill me
+  rCloseAgenda()
+  ancestor.kill()
+  return 0
+end
+
+on GetSPNeed me
+  return ancestor.GetSPNeed() + gRock.m_agenda.GetSPNeed()
+end
+
+on Report me, argObj, argWhat
+end
+
+on mouse me, argObj, argWhat, argOption
+  if objectp(argOption) then
+    if argWhat = #click then
+      ID = argOption.getOneProp(#ID)
+      IDStr = string(ID)
+      if offset("Arrow", IDStr) then
+        obj = argOption
+        if objectp(obj) then
+          overIDs = obj.masterObj.getOverIDs()
+          cnt = overIDs.count()
+          if cnt >= 2 then
+            belongingToID = overIDs[1]
+            tmp = string(belongingToID)
+            if offset("Choose", tmp) then
+              delete ID.char[1..6]
+            else
+              exit
+            end if
+            tmpDir = (2 * (ID = #ArrowDown)) - 1
+            if belongingToID = #ChooseAction then
+              tmpDir = -tmpDir
+              tmpPos = m_events_r.getPos(m_event_r)
+              tmpPos = rDlgCheckUpDownArrows(ancestor.m_objDlg, tmpPos + tmpDir, m_events_r.count)
+              me.setEvent(m_events_r[tmpPos])
+            else
+              if belongingToID = #ChooseDays then
+                m_numDays = m_numDays - tmpDir
+                if m_numDays = 0 then
+                  m_numDays = 1
+                end if
+                me.setNumDays(m_numDays)
+              end if
+            end if
+          end if
+        end if
+      else
+        if ID = #ButtonOK then
+          if gRock.m_player.hasThisMoney(m_price) then
+            gRock.m_player.transactMoney(-m_price, [#media, #Ads])
+            eventToBook_r = gRock.m_classManager.createObj(m_event_r.className)
+            gRock.m_classManager.copy(m_event_r, eventToBook_r)
+            eventToBook_r.ID = gRock.m_classManager.genUniqueID(eventToBook_r)
+            eventToBook_r.Moveable = 0
+            eventToBook_r.setDates(eventToBook_r.StartDate, eventToBook_r.duration)
+            m_event_r.visible = 0
+            tmpMsg = symbol("Book" & string(eventToBook_r.className))
+            gRock.m_msgManager.msg(tmpMsg, eventToBook_r)
+            gRock.m_msgManager.msg(tmpMsg, eventToBook_r)
+            obj = gDir.m_objDialogsMaster.getDialogUnder(me)
+            ancestor.mouse(argObj, argWhat, argOption)
+            if objectp(obj) then
+              obj.Report(me, #Ad)
+            end if
+            exit
+          else
+            rWarnMoney()
+            exit
+          end if
+        else
+          if ID = #ButtonCancel then
+            m_event_r.setDates(1, 1)
+            m_event_r.visible = 0
+          end if
+        end if
+        ancestor.mouse(argObj, argWhat, argOption)
+      end if
+    end if
+  end if
+end
+
+on calcPrice me
+  m_price = m_numDays * m_event_r.price
+  itemObj = ancestor.m_objDlg.getItemByPath([#ChooseAction, #Chooser, #text])
+  itemObj.setOneProp(#editData, m_event_r.name & " " & rCurrency(m_price, 0, 1))
+end
+
+on setNumDays me, argNumDays
+  beforeNumDays = m_numDays
+  m_numDays = argNumDays
+  obj = ancestor.m_objDlg.getItemByPath([#ChooseDays, #Chooser, #text])
+  obj.setOneProp(#editData, string(m_numDays))
+  me.calcPrice()
+  m_event_r.duration = m_numDays
+  m_startDate = m_event_r.StartDate
+  tmpDate = gRock.m_eventsManager.closestPossibleDate(m_event_r, m_startDate)
+  if tmpDate >= 0 then
+    m_event_r.setDates(tmpDate, m_numDays)
+  else
+    alert("Couldn't find any place to put concert (within reasonable future)")
+  end if
+  if objectp(m_event_r) and m_CPHaveRendered then
+    planned = gRock.m_agenda.getPlannedEvent(m_event_r.ID)
+    if objectp(planned) then
+      planned.setEvent(m_event_r)
+      if planned.putIntoFreeChannel() = 0 then
+        if m_numDays <> beforeNumDays then
+          if beforeNumDays > 0 then
+            me.setNumDays(beforeNumDays)
+          else
+          end if
+        end if
+      end if
+      gRock.m_agenda.draw()
+    end if
+  end if
+end
+
+on setEvent me, argEvent
+  if objectp(m_event_r) and m_CPHaveRendered then
+    m_startDate = m_event_r.StartDate
+    m_event_r.setDates(1, 1)
+    m_event_r.visible = 0
+    planned = gRock.m_agenda.getPlannedEvent(m_event_r.ID)
+  end if
+  m_event_r = argEvent
+  m_event_r.setDates(m_startDate, m_numDays)
+  m_event_r.visible = 1
+  if objectp(planned) then
+    planned.setEvent(m_event_r)
+    gRock.m_agenda.draw()
+  end if
+  me.calcPrice()
+  itemObj = ancestor.m_objDlg.getItem(#Info)
+  itemObj.setOneProp(#Pic, rFormatText([m_event_r.comment], "MediaAdFormatting", [#shadow: 1]))
+end

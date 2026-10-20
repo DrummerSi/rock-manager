@@ -1,0 +1,200 @@
+property ID, rect, rel, chains, levels
+
+on new me, argID, argRel
+  [  0] getparam 8 .............................. <argID>
+  [  2] setprop 46 .............................. ID = argID
+  [  5] getparam 16 ............................. <argRel>
+  [  7] pusharglist 1 ........................... <argRel>
+  [  9] extcall 41 .............................. <voidp(argRel)>
+  [ 12] jmpifz [ 20] ............................ if voidp(argRel) then
+  [ 15] pusharglist 0 ........................... <[]>
+  [ 17] pushlist ................................ <[]>
+  [ 18] setparam 16 ............................. argRel = []
+  [ 20] pusharglist 0 ........................... <[]>
+  [ 22] pushlist ................................ <[]>
+  [ 23] setprop 144 ............................. rel = []
+  [ 26] pushint8 1 .............................. <1>
+  [ 29] setlocal 0
+  [ 31] getlocal 0
+  [ 33] getparam 16 ............................. <argRel>
+  [ 35] pusharglist 1 ........................... <argRel>
+  [ 37] objcall 111 ............................. <argRel.count()>
+  [ 40] lteq
+  [ 41] jmpifz [113] ............................ repeat with n = 1 to argRel.count()
+  [ 44] getparam 16 ............................. <argRel>
+  [ 46] getlocal 0 .............................. <n>
+  [ 48] pusharglist 2 ........................... <argRel, n>
+  [ 50] objcall 43 .............................. <argRel[n]>
+  [ 53] setlocal 8 .............................. tmp = argRel[n]
+  [ 55] getlocal 8 .............................. <tmp>
+  [ 57] pusharglist 1 ........................... <tmp>
+  [ 59] extcall 50 .............................. <listp(tmp)>
+  [ 62] jmpifz [ 90] ............................ if listp(tmp) then
+  [ 65] getlocal 8 .............................. <tmp>
+  [ 67] pusharglist 1 ........................... <tmp>
+  [ 69] objcall 111 ............................. <tmp.count()>
+  [ 72] jmpifz [ 87] ............................ if tmp.count() then
+  [ 75] getprop 144 ............................. <rel>
+  [ 78] getlocal 0 .............................. <n>
+  [ 80] getlocal 8 .............................. <tmp>
+  [ 82] pusharglistnoret 3 ...................... <rel, n, tmp>
+  [ 84] objcall 146 ............................. rel[n] = tmp
+  [ 87] jmp [102] ............................... next repeat
+  [ 90] getprop 144 ............................. <rel>
+  [ 93] getlocal 0 .............................. <n>
+  [ 95] getlocal 8 .............................. <tmp>
+  [ 97] pusharglistnoret 3 ...................... <rel, n, tmp>
+  [ 99] objcall 146 ............................. rel[n] = tmp
+  [102] pushint8 1
+  [105] getlocal 0
+  [107] add
+  [108] setlocal 0
+  [110] endrepeat [ 31]
+  [113] getlocal 0 .............................. <n>
+  [115] setlocal 16
+  [117] getlocal 16
+  [119] pushint8 4 .............................. <4>
+  [122] lteq
+  [123] jmpifz [147] ............................ repeat with m = n to 4
+  [126] getprop 144 ............................. <rel>
+  [129] getlocal 16 ............................. <m>
+  [131] pushzero ................................ <0>
+  [132] pusharglistnoret 3 ...................... <rel, m, 0>
+  [134] objcall 146 ............................. rel[m] = 0
+  [137] pushint8 1
+  [140] getlocal 16
+  [142] add
+  [143] setlocal 16
+  [145] endrepeat [117]
+  [147] pusharglist 0 ........................... <[]>
+  [149] pushlist ................................ <[]>
+  [150] setprop 470 ............................. levels = []
+  [153] pusharglist 0 ........................... <[]>
+  [155] pushlist ................................ <[]>
+  [156] setprop 495 ............................. chains = []
+  [159] pushint8 1 .............................. <1>
+  [162] setlocal 0
+  [164] getlocal 0
+  [166] pushint8 4 .............................. <4>
+  [169] lteq
+  [170] jmpifz [205] ............................ repeat with n = 1 to 4
+  [173] getprop 470 ............................. <levels>
+  [176] pushint8 2 .............................. <2>
+  [179] inv ..................................... <-2>
+  [180] pusharglistnoret 2 ...................... <levels, -2>
+  [182] objcall 115 ............................. levels.add(-2)
+  [185] getprop 495 ............................. <chains>
+  [188] pushzero ................................ <0>
+  [189] pusharglistnoret 2 ...................... <chains, 0>
+  [191] objcall 115 ............................. chains.add(0)
+  [194] pushint8 1
+  [197] getlocal 0
+  [199] add
+  [200] setlocal 0
+  [202] endrepeat [164]
+  [205] getparam 0 .............................. <me>
+  [207] pusharglistnoret 1 ...................... <me>
+  [209] extcall 96 .............................. return me
+  [212] ret
+end
+
+on kill me
+  [  0] pushzero ................................ <0>
+  [  1] pusharglistnoret 1 ...................... <0>
+  [  3] extcall 96 .............................. return 0
+  [  6] ret
+end
+
+on getOther me, argWhich
+  [  0] getparam 8 .............................. <argWhich>
+  [  2] pushint8 2 .............................. <2>
+  [  5] gt ...................................... <argWhich > 2>
+  [  6] jmpifz [ 20] ............................ if argWhich > 2 then / else
+  [  9] getparam 8 .............................. <argWhich>
+  [ 11] pushint8 2 .............................. <2>
+  [ 14] sub ..................................... <argWhich - 2>
+  [ 15] setlocal 0 .............................. tmpOther = argWhich - 2
+  [ 17] jmp [ 28]
+  [ 20] getparam 8 .............................. <argWhich>
+  [ 22] pushint8 2 .............................. <2>
+  [ 25] add ..................................... <argWhich + 2>
+  [ 26] setlocal 0 .............................. tmpOther = argWhich + 2
+  [ 28] getlocal 0 .............................. <tmpOther>
+  [ 30] pusharglistnoret 1 ...................... <tmpOther>
+  [ 32] extcall 96 .............................. return tmpOther
+  [ 35] ret
+end
+
+on getChain me, argWhich
+  [  0] getparam 8 .............................. <argWhich>
+  [  2] setlocal 0 .............................. tmpNewWhich = argWhich
+  [  4] getprop 144 ............................. <rel>
+  [  7] getparam 8 .............................. <argWhich>
+  [  9] pusharglist 2 ........................... <rel, argWhich>
+  [ 11] objcall 43 .............................. <rel[argWhich]>
+  [ 14] pushsymb 280 ............................ <#Auto>
+  [ 17] eq ...................................... <rel[argWhich] = #Auto>
+  [ 18] jmpifz [ 52] ............................ if rel[argWhich] = #Auto then
+  [ 21] getparam 0 .............................. <me>
+  [ 23] getparam 8 .............................. <argWhich>
+  [ 25] pusharglist 2 ........................... <me, argWhich>
+  [ 27] objcall 266 ............................. <me.getOther(argWhich)>
+  [ 30] setlocal 0 .............................. tmpNewWhich = me.getOther(argWhich)
+  [ 32] getprop 470 ............................. <levels>
+  [ 35] getparam 8 .............................. <argWhich>
+  [ 37] getprop 470 ............................. <levels>
+  [ 40] getlocal 0 .............................. <tmpNewWhich>
+  [ 42] pusharglist 2 ........................... <levels, tmpNewWhich>
+  [ 44] objcall 43 .............................. <levels[tmpNewWhich]>
+  [ 47] pusharglistnoret 3 ...................... <levels, argWhich, levels[tmpNewWhich]>
+  [ 49] objcall 146 ............................. levels[argWhich] = levels[tmpNewWhich]
+  [ 52] getprop 495 ............................. <chains>
+  [ 55] getlocal 0 .............................. <tmpNewWhich>
+  [ 57] pusharglist 2 ........................... <chains, tmpNewWhich>
+  [ 59] objcall 43 .............................. <chains[tmpNewWhich]>
+  [ 62] pusharglistnoret 1 ...................... <chains[tmpNewWhich]>
+  [ 64] extcall 96 .............................. return chains[tmpNewWhich]
+  [ 67] ret
+end
+
+on setChain me, argWhich, argChain
+  [  0] getparam 16 ............................. <argChain>
+  [  2] getprop 46 .............................. <ID>
+  [  5] pusharglist 2 ........................... <argChain, ID>
+  [  7] objcall 229 ............................. <argChain.getPos(ID)>
+  [ 10] pushint8 1 .............................. <1>
+  [ 13] sub ..................................... <argChain.getPos(ID) - 1>
+  [ 14] setlocal 0 .............................. tmpLevel = argChain.getPos(ID) - 1
+  [ 16] getprop 470 ............................. <levels>
+  [ 19] getparam 8 .............................. <argWhich>
+  [ 21] getlocal 0 .............................. <tmpLevel>
+  [ 23] pusharglistnoret 3 ...................... <levels, argWhich, tmpLevel>
+  [ 25] objcall 146 ............................. levels[argWhich] = tmpLevel
+  [ 28] getparam 8 .............................. <argWhich>
+  [ 30] setlocal 8 .............................. tmpNewWhich = argWhich
+  [ 32] getprop 144 ............................. <rel>
+  [ 35] getparam 8 .............................. <argWhich>
+  [ 37] pusharglist 2 ........................... <rel, argWhich>
+  [ 39] objcall 43 .............................. <rel[argWhich]>
+  [ 42] pushsymb 280 ............................ <#Auto>
+  [ 45] eq ...................................... <rel[argWhich] = #Auto>
+  [ 46] jmpifz [ 60] ............................ if rel[argWhich] = #Auto then
+  [ 49] getparam 0 .............................. <me>
+  [ 51] getparam 8 .............................. <argWhich>
+  [ 53] pusharglist 2 ........................... <me, argWhich>
+  [ 55] objcall 266 ............................. <me.getOther(argWhich)>
+  [ 58] setlocal 8 .............................. tmpNewWhich = me.getOther(argWhich)
+  [ 60] getprop 495 ............................. <chains>
+  [ 63] getlocal 8 .............................. <tmpNewWhich>
+  [ 65] pusharglist 2 ........................... <chains, tmpNewWhich>
+  [ 67] objcall 43 .............................. <chains[tmpNewWhich]>
+  [ 70] pushzero ................................ <0>
+  [ 71] eq ...................................... <chains[tmpNewWhich] = 0>
+  [ 72] jmpifz [ 87] ............................ if chains[tmpNewWhich] = 0 then
+  [ 75] getprop 495 ............................. <chains>
+  [ 78] getlocal 8 .............................. <tmpNewWhich>
+  [ 80] getparam 16 ............................. <argChain>
+  [ 82] pusharglistnoret 3 ...................... <chains, tmpNewWhich, argChain>
+  [ 84] objcall 146 ............................. chains[tmpNewWhich] = argChain
+  [ 87] ret
+end

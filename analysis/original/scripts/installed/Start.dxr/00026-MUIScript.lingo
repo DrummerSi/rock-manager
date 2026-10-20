@@ -1,0 +1,79 @@
+property m_items, m_wnd, m_options
+global gMUICallbackObj
+
+on new me, argDialogPropList, argOptions
+  m_options = argOptions
+  if not listp(m_options) then
+    m_options = [:]
+  end if
+  if ilk(argDialogPropList) = #member then
+    argDialogPropList = propListFromTable(argDialogPropList.text)
+    put argDialogPropList
+  end if
+  if not listp(argDialogPropList) then
+    argDialogPropList = [#window: [:], #items: [:]]
+  end if
+  m_wnd = xtra("mui").new()
+  tmp = setMUIWndProps(m_wnd, argDialogPropList[#window], argDialogPropList[#items])
+  m_items = tmp[#items]
+  gMUICallbackObj = me
+  return me
+end
+
+on kill me
+  gMUICallbackObj = 0
+  m_items = 0
+  me.close()
+  m_wnd = 0
+  return 0
+end
+
+on open me
+  m_wnd.Run()
+end
+
+on close me
+  if objectp(m_wnd) then
+    m_wnd.stop(0)
+    m_wnd = 0
+  end if
+end
+
+on makeCallBack me, argWhat, argOption
+  if not listp(m_options[#CallBackInfo]) then
+    exit
+  end if
+  obj = m_options[#CallBackInfo][#object]
+  if not objectp(obj) then
+    whatStr = string(argWhat)
+    if symbolp(argWhat) then
+      whatStr = "#" & whatStr
+    end if
+    do(string(m_options[#CallBackInfo][#handler]) & "(" & whatStr & ")")
+  else
+    call(m_options[#CallBackInfo][#handler], obj, me, argWhat, argOption)
+  end if
+end
+
+on callback me, argWhat, arg2, arg3
+  whatStr = string(argWhat)
+  if offset("Item", whatStr) = 1 then
+    ID = m_items.getPropAt(arg2)
+    if argWhat = #itemClicked then
+      me.makeCallBack(argWhat, ID)
+    else
+      if argWhat = #itemChanged then
+        if arg3[#type] = #editText then
+          put ID, arg3[#value]
+        end if
+      end if
+    end if
+  else
+    if offset("Window", whatStr) = 1 then
+    else
+      put "ERROR"
+    end if
+  end if
+  repeat with n = 2 to the paramCount
+  end repeat
+end

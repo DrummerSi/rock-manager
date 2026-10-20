@@ -1,0 +1,468 @@
+property m_delim, m_projectPath, m_exePath, m_CDPath, m_HDPath, m_foundCD, m_prefs, m_userPath, m_searchPaths
+
+on new me, argUniqueFilesOnCDList
+  [  0] pushcons 0 .............................. <"\\">
+  [  2] setprop 286 ............................. m_delim = "\\"
+  [  5] getmovieprop 39 ......................... <the moviePath>
+  [  8] setprop 287 ............................. m_projectPath = the moviePath
+  [ 11] getmovieprop 39 ......................... <the moviePath>
+  [ 14] setprop 288 ............................. m_HDPath = the moviePath
+  [ 17] pushcons 8 .............................. <EMPTY>
+  [ 19] setprop 289 ............................. m_exePath = EMPTY
+  [ 22] pushzero ................................ <0>
+  [ 23] setprop 304 ............................. m_foundCD = 0
+  [ 26] pusharglist 0 ........................... <[:]>
+  [ 28] pushproplist ............................ <[:]>
+  [ 29] setprop 338 ............................. m_prefs = [:]
+  [ 32] pusharglist 0 ........................... <[:]>
+  [ 34] pushproplist ............................ <[:]>
+  [ 35] setprop 358 ............................. m_searchPaths = [:]
+  [ 38] getparam 8 .............................. <argUniqueFilesOnCDList>
+  [ 40] pusharglist 1 ........................... <argUniqueFilesOnCDList>
+  [ 42] extcall 223 ............................. <voidp(argUniqueFilesOnCDList)>
+  [ 45] jmpifz [ 60] ............................ if voidp(argUniqueFilesOnCDList) then
+  [ 48] pushcons 16 ............................. <"Movies\\Main.dir">
+  [ 50] pushcons 24 ............................. <"Movies\\Main.dxr">
+  [ 52] pusharglist 2 ........................... <["Movies\\Main.dir", "Movies\\Main.dxr"]>
+  [ 54] pushlist ................................ <["Movies\\Main.dir", "Movies\\Main.dxr"]>
+  [ 55] pusharglist 1 ........................... <[["Movies\\Main.dir", "Movies\\Main.dxr"]]>
+  [ 57] pushlist ................................ <[["Movies\\Main.dir", "Movies\\Main.dxr"]]>
+  [ 58] setparam 8 .............................. argUniqueFilesOnCDList = [["Movies\\Main.dir", "Movies\\Main.dxr"]]
+  [ 60] getmovieprop 215 ........................ <the runMode>
+  [ 63] pushcons 32 ............................. <"Author">
+  [ 65] eq ...................................... <the runMode = "Author">
+  [ 66] jmpifz [ 98] ............................ if the runMode = "Author" then / else
+  [ 69] getparam 0 .............................. <me>
+  [ 71] getparam 8 .............................. <argUniqueFilesOnCDList>
+  [ 73] pusharglist 2 ........................... <me, argUniqueFilesOnCDList>
+  [ 75] objcall 211 ............................. <me.getCDPath(argUniqueFilesOnCDList)>
+  [ 78] setprop 290 ............................. m_CDPath = me.getCDPath(argUniqueFilesOnCDList)
+  [ 81] getprop 290 ............................. <m_CDPath>
+  [ 84] pushzero ................................ <0>
+  [ 85] eq ...................................... <m_CDPath = 0>
+  [ 86] jmpifz [ 95] ............................ if m_CDPath = 0 then
+  [ 89] getmovieprop 39 ......................... <the moviePath>
+  [ 92] setprop 290 ............................. m_CDPath = the moviePath
+  [ 95] jmp [121]
+  [ 98] getmovieprop 250 ........................ <the applicationPath>
+  [101] pusharglist 1 ........................... <the applicationPath>
+  [103] extcall 255 ............................. <fileExtractPath(the applicationPath)>
+  [106] setprop 287 ............................. m_projectPath = fileExtractPath(the applicationPath)
+  [109] getparam 0 .............................. <me>
+  [111] getparam 8 .............................. <argUniqueFilesOnCDList>
+  [113] pusharglist 2 ........................... <me, argUniqueFilesOnCDList>
+  [115] objcall 211 ............................. <me.getCDPath(argUniqueFilesOnCDList)>
+  [118] setprop 290 ............................. m_CDPath = me.getCDPath(argUniqueFilesOnCDList)
+  [121] getparam 0 .............................. <me>
+  [123] pusharglist 1 ........................... <me>
+  [125] objcall 352 ............................. <me.getUserPath()>
+  [128] setprop 353 ............................. m_userPath = me.getUserPath()
+  [131] getparam 0 .............................. <me>
+  [133] pusharglistnoret 1 ...................... <me>
+  [135] extcall 2 ............................... return me
+  [137] ret
+end
+
+on kill me
+  [  0] pushzero ................................ <0>
+  [  1] pusharglistnoret 1 ...................... <0>
+  [  3] extcall 2 ............................... return 0
+  [  5] ret
+end
+
+on getCDPath me, argUniqueFilesOnCDList
+  [  0] getparam 8 .............................. <argUniqueFilesOnCDList>
+  [  2] getobjprop 62 ........................... <argUniqueFilesOnCDList.count>
+  [  5] pushzero ................................ <0>
+  [  6] eq ...................................... <argUniqueFilesOnCDList.count = 0>
+  [  7] jmpifz [ 19] ............................ if argUniqueFilesOnCDList.count = 0 then
+  [ 10] pushzero ................................ <0>
+  [ 11] setprop 304 ............................. m_foundCD = 0
+  [ 14] pushzero ................................ <0>
+  [ 15] pusharglistnoret 1 ...................... <0>
+  [ 17] extcall 2 ............................... return 0
+  [ 19] getparam 0 .............................. <me>
+  [ 21] getparam 8 .............................. <argUniqueFilesOnCDList>
+  [ 23] pusharglist 2 ........................... <me, argUniqueFilesOnCDList>
+  [ 25] objcall 309 ............................. <me.findFilesInDriveRoots(argUniqueFilesOnCDList)>
+  [ 28] setlocal 0 .............................. tmp = me.findFilesInDriveRoots(argUniqueFilesOnCDList)
+  [ 30] getlocal 0 .............................. <tmp>
+  [ 32] pusharglist 1 ........................... <tmp>
+  [ 34] extcall 313 ............................. <stringp(tmp)>
+  [ 37] jmpifz [ 52] ............................ if stringp(tmp) then
+  [ 40] pushint8 1 .............................. <1>
+  [ 43] setprop 304 ............................. m_foundCD = 1
+  [ 46] getlocal 0 .............................. <tmp>
+  [ 48] pusharglistnoret 1 ...................... <tmp>
+  [ 50] extcall 2 ............................... return tmp
+  [ 52] getparam 0 .............................. <me>
+  [ 54] getparam 8 .............................. <argUniqueFilesOnCDList>
+  [ 56] getmovieprop 39 ......................... <the moviePath>
+  [ 59] pusharglist 3 ........................... <me, argUniqueFilesOnCDList, the moviePath>
+  [ 61] objcall 310 ............................. <me.findFilesOverFolder(argUniqueFilesOnCDList, the moviePath)>
+  [ 64] setlocal 0 .............................. tmp = me.findFilesOverFolder(argUniqueFilesOnCDList, the moviePath)
+  [ 66] getlocal 0 .............................. <tmp>
+  [ 68] pusharglist 1 ........................... <tmp>
+  [ 70] extcall 313 ............................. <stringp(tmp)>
+  [ 73] jmpifz [ 82] ............................ if stringp(tmp) then
+  [ 76] getlocal 0 .............................. <tmp>
+  [ 78] pusharglistnoret 1 ...................... <tmp>
+  [ 80] extcall 2 ............................... return tmp
+  [ 82] getparam 0 .............................. <me>
+  [ 84] getparam 8 .............................. <argUniqueFilesOnCDList>
+  [ 86] getmovieprop 39 ......................... <the moviePath>
+  [ 89] pusharglist 3 ........................... <me, argUniqueFilesOnCDList, the moviePath>
+  [ 91] objcall 311 ............................. <me.findFilesInSubFolders(argUniqueFilesOnCDList, the moviePath)>
+  [ 94] setlocal 0 .............................. tmp = me.findFilesInSubFolders(argUniqueFilesOnCDList, the moviePath)
+  [ 96] getlocal 0 .............................. <tmp>
+  [ 98] pusharglist 1 ........................... <tmp>
+  [100] extcall 313 ............................. <stringp(tmp)>
+  [103] jmpifz [112] ............................ if stringp(tmp) then
+  [106] getlocal 0 .............................. <tmp>
+  [108] pusharglistnoret 1 ...................... <tmp>
+  [110] extcall 2 ............................... return tmp
+  [112] pushzero ................................ <0>
+  [113] pusharglistnoret 1 ...................... <0>
+  [115] extcall 2 ............................... return 0
+  [117] ret
+end
+
+on findFilesInDriveRoots me, argFindFiles
+  [  0] pushcons 40 ............................. <"C">
+  [  2] pusharglist 1 ........................... <"C">
+  [  4] extcall 218 ............................. <charToNum("C")>
+  [  7] setlocal 0
+  [  9] getlocal 0
+  [ 11] pushcons 48 ............................. <"Z">
+  [ 13] pusharglist 1 ........................... <"Z">
+  [ 15] extcall 218 ............................. <charToNum("Z")>
+  [ 18] lteq
+  [ 19] jmpifz [ 69] ............................ repeat with n = charToNum("C") to charToNum("Z")
+  [ 22] getlocal 0 .............................. <n>
+  [ 24] pusharglist 1 ........................... <n>
+  [ 26] extcall 219 ............................. <numToChar(n)>
+  [ 29] setlocal 8 .............................. tmpCh = numToChar(n)
+  [ 31] getlocal 8 .............................. <tmpCh>
+  [ 33] pushcons 56 ............................. <":\\">
+  [ 35] joinstr ................................. <tmpCh & ":\\">
+  [ 36] setlocal 16 ............................. tmpDrive = tmpCh & ":\\"
+  [ 38] getparam 0 .............................. <me>
+  [ 40] getparam 8 .............................. <argFindFiles>
+  [ 42] getlocal 16 ............................. <tmpDrive>
+  [ 44] pusharglist 3 ........................... <me, argFindFiles, tmpDrive>
+  [ 46] objcall 322 ............................. <me.checkForFilesInFolder(argFindFiles, tmpDrive)>
+  [ 49] jmpifz [ 58] ............................ if me.checkForFilesInFolder(argFindFiles, tmpDrive) then
+  [ 52] getlocal 16 ............................. <tmpDrive>
+  [ 54] pusharglistnoret 1 ...................... <tmpDrive>
+  [ 56] extcall 2 ............................... return tmpDrive
+  [ 58] pushint8 1
+  [ 61] getlocal 0
+  [ 63] add
+  [ 64] setlocal 0
+  [ 66] endrepeat [  9]
+  [ 69] pushzero ................................ <0>
+  [ 70] pusharglistnoret 1 ...................... <0>
+  [ 72] extcall 2 ............................... return 0
+  [ 74] ret
+end
+
+on findFilesOverFolder me, argFindFiles, argPath
+  [  0] getparam 16 ............................. <argPath>
+  [  2] getobjprop 247 .......................... <argPath.length>
+  [  5] pushint8 1 .............................. <1>
+  [  8] sub ..................................... <argPath.length - 1>
+  [  9] setlocal 0
+  [ 11] getlocal 0
+  [ 13] pushint8 3 .............................. <3>
+  [ 16] gteq
+  [ 17] jmpifz [ 94] ............................ repeat with n = argPath.length - 1 down to 3
+  [ 20] getparam 16 ............................. <argPath>
+  [ 22] pushsymb 248 ............................ <#char>
+  [ 25] getlocal 0 .............................. <n>
+  [ 27] pusharglist 3 ........................... <argPath, #char, n>
+  [ 29] objcall 138 ............................. <argPath.char[n]>
+  [ 32] setlocal 8 .............................. tmpCh = argPath.char[n]
+  [ 34] getlocal 8 .............................. <tmpCh>
+  [ 36] getprop 286 ............................. <m_delim>
+  [ 39] eq ...................................... <tmpCh = m_delim>
+  [ 40] jmpifz [ 83] ............................ if tmpCh = m_delim then
+  [ 43] getparam 16 ............................. <argPath>
+  [ 45] pushsymb 248 ............................ <#char>
+  [ 48] pushint8 1 .............................. <1>
+  [ 51] getlocal 0 .............................. <n>
+  [ 53] pusharglist 4 ........................... <argPath, #char, 1, n>
+  [ 55] objcall 138 ............................. <argPath.char[1..n]>
+  [ 58] setlocal 16 ............................. tmpTestPath = argPath.char[1..n]
+  [ 60] getparam 0 .............................. <me>
+  [ 62] getparam 8 .............................. <argFindFiles>
+  [ 64] getlocal 16 ............................. <tmpTestPath>
+  [ 66] pushint8 1 .............................. <1>
+  [ 69] pusharglist 4 ........................... <me, argFindFiles, tmpTestPath, 1>
+  [ 71] objcall 322 ............................. <me.checkForFilesInFolder(argFindFiles, tmpTestPath, 1)>
+  [ 74] jmpifz [ 83] ............................ if me.checkForFilesInFolder(argFindFiles, tmpTestPath, 1) then
+  [ 77] getlocal 16 ............................. <tmpTestPath>
+  [ 79] pusharglistnoret 1 ...................... <tmpTestPath>
+  [ 81] extcall 2 ............................... return tmpTestPath
+  [ 83] pushint8 -1
+  [ 86] getlocal 0
+  [ 88] add
+  [ 89] setlocal 0
+  [ 91] endrepeat [ 11]
+  [ 94] pushzero ................................ <0>
+  [ 95] pusharglistnoret 1 ...................... <0>
+  [ 97] extcall 2 ............................... return 0
+  [ 99] ret
+end
+
+on findFilesInSubFolders me, argFindFiles, argPath
+  [  0] getparam 16 ............................. <argPath>
+  [  2] pusharglist 1 ........................... <argPath>
+  [  4] extcall 260 ............................. <getFilesInFolder(argPath)>
+  [  7] setlocal 0 .............................. tmpFilesAndFolders = getFilesInFolder(argPath)
+  [  9] getlocal 0 .............................. <tmpFilesAndFolders>
+  [ 11] peek 0
+  [ 13] pusharglist 1
+  [ 15] extcall 62
+  [ 18] pushint8 1
+  [ 20] peek 0
+  [ 22] peek 2
+  [ 24] lteq
+  [ 25] jmpifz [ 94] ............................ repeat with tmpFileOrFolder in tmpFilesAndFolders
+  [ 28] peek 2
+  [ 30] peek 1
+  [ 32] pusharglist 2
+  [ 34] extcall 63
+  [ 37] setlocal 8
+  [ 39] pushcons 64 ............................. <".">
+  [ 41] getlocal 8 .............................. <tmpFileOrFolder>
+  [ 43] pusharglist 2 ........................... <".", tmpFileOrFolder>
+  [ 45] extcall 55 .............................. <offset(".", tmpFileOrFolder)>
+  [ 48] pushzero ................................ <0>
+  [ 49] eq ...................................... <offset(".", tmpFileOrFolder) = 0>
+  [ 50] setlocal 16 ............................. isFolder = offset(".", tmpFileOrFolder) = 0
+  [ 52] getlocal 16 ............................. <isFolder>
+  [ 54] jmpifz [ 88] ............................ if isFolder then
+  [ 57] getparam 16 ............................. <argPath>
+  [ 59] getlocal 8 .............................. <tmpFileOrFolder>
+  [ 61] joinstr ................................. <argPath & tmpFileOrFolder>
+  [ 62] getprop 286 ............................. <m_delim>
+  [ 65] joinstr ................................. <argPath & tmpFileOrFolder & m_delim>
+  [ 66] setlocal 24 ............................. tmpTestPath = argPath & tmpFileOrFolder & m_delim
+  [ 68] getparam 0 .............................. <me>
+  [ 70] getparam 8 .............................. <argFindFiles>
+  [ 72] getlocal 24 ............................. <tmpTestPath>
+  [ 74] pusharglist 3 ........................... <me, argFindFiles, tmpTestPath>
+  [ 76] objcall 322 ............................. <me.checkForFilesInFolder(argFindFiles, tmpTestPath)>
+  [ 79] jmpifz [ 88] ............................ if me.checkForFilesInFolder(argFindFiles, tmpTestPath) then
+  [ 82] getlocal 24 ............................. <tmpTestPath>
+  [ 84] pusharglistnoret 1 ...................... <tmpTestPath>
+  [ 86] extcall 2 ............................... return tmpTestPath
+  [ 88] pushint8 1
+  [ 90] add
+  [ 91] endrepeat [ 20]
+  [ 94] pop 3
+  [ 96] pushzero ................................ <0>
+  [ 97] pusharglistnoret 1 ...................... <0>
+  [ 99] extcall 2 ............................... return 0
+  [101] ret
+end
+
+on checkForFilesInFolder me, argFileList, argFolder, argDebug
+  [  0] getparam 16 ............................. <argFolder>
+  [  2] pushsymb 248 ............................ <#char>
+  [  5] getparam 16 ............................. <argFolder>
+  [  7] getobjprop 247 .......................... <argFolder.length>
+  [ 10] pusharglist 3 ........................... <argFolder, #char, argFolder.length>
+  [ 12] objcall 138 ............................. <argFolder.char[argFolder.length]>
+  [ 15] getprop 286 ............................. <m_delim>
+  [ 18] nteq .................................... <argFolder.char[argFolder.length] <> m_delim>
+  [ 19] jmpifz [ 30] ............................ if argFolder.char[argFolder.length] <> m_delim then
+  [ 22] getparam 16 ............................. <argFolder>
+  [ 24] getprop 286 ............................. <m_delim>
+  [ 27] joinstr ................................. <argFolder & m_delim>
+  [ 28] setparam 16 ............................. argFolder = argFolder & m_delim
+  [ 30] getparam 8 .............................. <argFileList>
+  [ 32] peek 0
+  [ 34] pusharglist 1
+  [ 36] extcall 62
+  [ 39] pushint8 1
+  [ 41] peek 0
+  [ 43] peek 2
+  [ 45] lteq
+  [ 46] jmpifz [150] ............................ repeat with sublist in argFileList
+  [ 49] peek 2
+  [ 51] peek 1
+  [ 53] pusharglist 2
+  [ 55] extcall 63
+  [ 58] setlocal 0
+  [ 60] getlocal 0 .............................. <sublist>
+  [ 62] pusharglist 1 ........................... <sublist>
+  [ 64] extcall 323 ............................. <listp(sublist)>
+  [ 67] jmpifz [144] ............................ if listp(sublist) then
+  [ 70] pushzero ................................ <0>
+  [ 71] setlocal 8 .............................. tmpOK = 0
+  [ 73] getlocal 0 .............................. <sublist>
+  [ 75] peek 0
+  [ 77] pusharglist 1
+  [ 79] extcall 62
+  [ 82] pushint8 1
+  [ 84] peek 0
+  [ 86] peek 2
+  [ 88] lteq
+  [ 89] jmpifz [130] ............................ repeat with tmpFile in sublist
+  [ 92] peek 2
+  [ 94] peek 1
+  [ 96] pusharglist 2
+  [ 98] extcall 63
+  [101] setlocal 16
+  [103] getparam 16 ............................. <argFolder>
+  [105] getlocal 16 ............................. <tmpFile>
+  [107] joinstr ................................. <argFolder & tmpFile>
+  [108] pusharglist 1 ........................... <argFolder & tmpFile>
+  [110] extcall 258 ............................. <fileExists2(argFolder & tmpFile)>
+  [113] jmpifz [124] ............................ if fileExists2(argFolder & tmpFile) then
+  [116] pushint8 1 .............................. <1>
+  [119] setlocal 8 .............................. tmpOK = 1
+  [121] jmp [130] ............................... exit repeat
+  [124] pushint8 1
+  [126] add
+  [127] endrepeat [ 84]
+  [130] pop 3
+  [132] getlocal 8 .............................. <tmpOK>
+  [134] pushzero ................................ <0>
+  [135] eq ...................................... <tmpOK = 0>
+  [136] jmpifz [144] ............................ if tmpOK = 0 then
+  [139] pushzero ................................ <0>
+  [140] pusharglistnoret 1 ...................... <0>
+  [142] extcall 2 ............................... return 0
+  [144] pushint8 1
+  [146] add
+  [147] endrepeat [ 41]
+  [150] pop 3
+  [152] pushint8 1 .............................. <1>
+  [155] pusharglistnoret 1 ...................... <1>
+  [157] extcall 2 ............................... return 1
+  [159] ret
+end
+
+on getUserPath me, argKey, argValue
+  [  0] getparam 8 .............................. <argKey>
+  [  2] pusharglist 1 ........................... <argKey>
+  [  4] extcall 223 ............................. <voidp(argKey)>
+  [  7] jmpifz [ 14] ............................ if voidp(argKey) then
+  [ 10] pushcons 72 ............................. <"HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Shell Folders">
+  [ 12] setparam 8 .............................. argKey = "HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Shell Folders"
+  [ 14] getparam 16 ............................. <argValue>
+  [ 16] pusharglist 1 ........................... <argValue>
+  [ 18] extcall 223 ............................. <voidp(argValue)>
+  [ 21] jmpifz [ 28] ............................ if voidp(argValue) then
+  [ 24] pushcons 80 ............................. <"AppData">
+  [ 26] setparam 16 ............................. argValue = "AppData"
+  [ 28] getparam 8 .............................. <argKey>
+  [ 30] getparam 16 ............................. <argValue>
+  [ 32] pusharglist 2 ........................... <argKey, argValue>
+  [ 34] extcall 354 ............................. <ReadRegistryValue(argKey, argValue)>
+  [ 37] setlocal 0 .............................. userPath = ReadRegistryValue(argKey, argValue)
+  [ 39] getlocal 0 .............................. <userPath>
+  [ 41] pusharglist 1 ........................... <userPath>
+  [ 43] extcall 313 ............................. <stringp(userPath)>
+  [ 46] not ..................................... <not stringp(userPath)>
+  [ 47] jmpifz [ 63] ............................ if not stringp(userPath) then
+  [ 50] pushcons 88 ............................. <"Unable to find user info!">
+  [ 52] pusharglistnoret 1 ...................... <"Unable to find user info!">
+  [ 54] extcall 72 .............................. alert("Unable to find user info!")
+  [ 57] pushcons 96 ............................. <EMPTY>
+  [ 59] pusharglistnoret 1 ...................... <EMPTY>
+  [ 61] extcall 2 ............................... return EMPTY
+  [ 63] getlocal 0 .............................. <userPath>
+  [ 65] pusharglistnoret 1 ...................... <userPath>
+  [ 67] extcall 2 ............................... return userPath
+  [ 69] ret
+end
+
+on resolveSearchPaths me, argList
+  [  0] getparam 8 .............................. <argList>
+  [  2] pusharglist 1 ........................... <argList>
+  [  4] extcall 223 ............................. <voidp(argList)>
+  [  7] jmpifz [ 20] ............................ if voidp(argList) then
+  [ 10] getprop 358 ............................. <m_searchPaths>
+  [ 13] pusharglist 1 ........................... <m_searchPaths>
+  [ 15] objcall 359 ............................. <m_searchPaths.duplicate()>
+  [ 18] setparam 8 .............................. argList = m_searchPaths.duplicate()
+  [ 20] pushcons 104 ............................ <"<CD>">
+  [ 22] getprop 290 ............................. <m_CDPath>
+  [ 25] pushcons 112 ............................ <"<PROJECT>">
+  [ 27] getprop 287 ............................. <m_projectPath>
+  [ 30] pusharglist 4 ........................... <["<CD>", m_CDPath, "<PROJECT>", m_projectPath]>
+  [ 32] pushlist ................................ <["<CD>", m_CDPath, "<PROJECT>", m_projectPath]>
+  [ 33] setlocal 0 .............................. replaceList = ["<CD>", m_CDPath, "<PROJECT>", m_projectPath]
+  [ 35] pushint8 1 .............................. <1>
+  [ 38] setlocal 8
+  [ 40] getlocal 8
+  [ 42] getparam 8 .............................. <argList>
+  [ 44] getobjprop 62 ........................... <argList.count>
+  [ 47] lteq
+  [ 48] jmpifz [179] ............................ repeat with n = 1 to argList.count
+  [ 51] getparam 8 .............................. <argList>
+  [ 53] getlocal 8 .............................. <n>
+  [ 55] pusharglist 2 ........................... <argList, n>
+  [ 57] objcall 63 .............................. <argList[n]>
+  [ 60] setlocal 16 ............................. str = argList[n]
+  [ 62] pushcons 120 ............................ <"<">
+  [ 64] getlocal 16 ............................. <str>
+  [ 66] pusharglist 2 ........................... <"<", str>
+  [ 68] extcall 55 .............................. <offset("<", str)>
+  [ 71] setlocal 24 ............................. tmpStart = offset("<", str)
+  [ 73] getlocal 24 ............................. <tmpStart>
+  [ 75] jmpifz [168] ............................ if tmpStart then
+  [ 78] pushcons 128 ............................ <">">
+  [ 80] getlocal 16 ............................. <str>
+  [ 82] pusharglist 2 ........................... <">", str>
+  [ 84] extcall 55 .............................. <offset(">", str)>
+  [ 87] setlocal 32 ............................. tmpEnd = offset(">", str)
+  [ 89] getlocal 16 ............................. <str>
+  [ 91] pushsymb 248 ............................ <#char>
+  [ 94] getlocal 24 ............................. <tmpStart>
+  [ 96] getlocal 32 ............................. <tmpEnd>
+  [ 98] pusharglist 4 ........................... <str, #char, tmpStart, tmpEnd>
+  [100] objcall 138 ............................. <str.char[tmpStart..tmpEnd]>
+  [103] setlocal 40 ............................. tmpReplaceThis = str.char[tmpStart..tmpEnd]
+  [105] getlocal 0 .............................. <replaceList>
+  [107] getlocal 40 ............................. <tmpReplaceThis>
+  [109] pusharglist 2 ........................... <replaceList, tmpReplaceThis>
+  [111] objcall 335 ............................. <replaceList.getPos(tmpReplaceThis)>
+  [114] setlocal 48 ............................. tmpPos = replaceList.getPos(tmpReplaceThis)
+  [116] getlocal 48 ............................. <tmpPos>
+  [118] jmpifz [168] ............................ if tmpPos then
+  [121] getlocal 0 .............................. <replaceList>
+  [123] getlocal 48 ............................. <tmpPos>
+  [125] pushint8 1 .............................. <1>
+  [128] add ..................................... <tmpPos + 1>
+  [129] pusharglist 2 ........................... <replaceList, tmpPos + 1>
+  [131] objcall 63 .............................. <replaceList[tmpPos + 1]>
+  [134] pushint8 2 .............................. <2>
+  [137] pushchunkvarref 5 ....................... <replaceList>
+  [139] pushsymb 248 ............................ <#char>
+  [142] getlocal 24 ............................. <tmpStart>
+  [144] getlocal 32 ............................. <tmpEnd>
+  [146] pusharglist 4 ........................... <replaceList, #char, tmpStart, tmpEnd>
+  [148] objcall 300 ............................. <replaceList.char[tmpStart..tmpEnd]>
+  [151] swap
+  [152] pusharglistnoret 2 ...................... <replaceList.char[tmpStart..tmpEnd], replaceList[tmpPos + 1]>
+  [154] objcall 336 ............................. put replaceList[tmpPos + 1] into replaceList.char[tmpStart..tmpEnd]
+  [157] getparam 8 .............................. <argList>
+  [159] getlocal 8 .............................. <n>
+  [161] getlocal 16 ............................. <str>
+  [163] pusharglistnoret 3 ...................... <argList, n, str>
+  [165] objcall 321 ............................. argList[n] = str
+  [168] pushint8 1
+  [171] getlocal 8
+  [173] add
+  [174] setlocal 8
+  [176] endrepeat [ 40]
+  [179] pushzero ................................ <0>
+  [180] setmovieprop 242 ........................ the searchCurrentFolder = 0
+  [183] getparam 8 .............................. <argList>
+  [185] setmovieprop 230 ........................ the searchPaths = argList
+  [188] ret
+end

@@ -1,0 +1,95 @@
+property waitForWhat, m_go, m_do
+
+on beginSprite me
+  [  0] pushsymb 109 ............................ <#talkFinished>
+  [  3] setprop 173 ............................. waitForWhat = #talkFinished
+  [  6] ret
+end
+
+on Report me, argObj, argWhat
+  [  0] getparam 16 ............................. <argWhat>
+  [  2] getprop 173 ............................. <waitForWhat>
+  [  5] eq ...................................... <argWhat = waitForWhat>
+  [  6] jmpifz [ 94] ............................ if argWhat = waitForWhat then
+  [  9] getprop 174 ............................. <m_do>
+  [ 12] pushsymb 175 ............................ <#FreezeSpeaker>
+  [ 15] eq ...................................... <m_do = #FreezeSpeaker>
+  [ 16] jmpifz [ 29] ............................ if m_do = #FreezeSpeaker then / else
+  [ 19] getparam 8 .............................. <argObj>
+  [ 21] pusharglistnoret 1 ...................... <argObj>
+  [ 23] objcall 103 ............................. argObj.freeze()
+  [ 26] jmp [ 46]
+  [ 29] getprop 174 ............................. <m_do>
+  [ 32] pushsymb 176 ............................ <#RenderSpeaker>
+  [ 35] eq ...................................... <m_do = #RenderSpeaker>
+  [ 36] jmpifz [ 46] ............................ if m_do = #RenderSpeaker then
+  [ 39] getparam 8 .............................. <argObj>
+  [ 41] pusharglistnoret 1 ...................... <argObj>
+  [ 43] objcall 104 ............................. argObj.render()
+  [ 46] getprop 177 ............................. <m_go>
+  [ 49] pushsymb 178 ............................ <#NextFrame>
+  [ 52] eq ...................................... <m_go = #NextFrame>
+  [ 53] jmpifz [ 72] ............................ if m_go = #NextFrame then / else
+  [ 56] pusharglist 0 ........................... <>
+  [ 58] thebuiltin 24 ........................... <the frame>
+  [ 60] pushint8 1 .............................. <1>
+  [ 63] add ..................................... <the frame + 1>
+  [ 64] pusharglistnoret 1 ...................... <the frame + 1>
+  [ 66] extcall 44 .............................. go(the frame + 1)
+  [ 69] jmp [ 94]
+  [ 72] getprop 177 ............................. <m_go>
+  [ 75] pushsymb 179 ............................ <#NextMarker>
+  [ 78] eq ...................................... <m_go = #NextMarker>
+  [ 79] jmpifz [ 94] ............................ if m_go = #NextMarker then
+  [ 82] pushint8 1 .............................. <1>
+  [ 85] pusharglist 1 ........................... <1>
+  [ 87] extcall 25 .............................. <marker(1)>
+  [ 89] pusharglistnoret 1 ...................... <marker(1)>
+  [ 91] extcall 44 .............................. go(marker(1))
+  [ 94] ret
+end
+
+on exitFrame me
+  [  0] pusharglist 0 ........................... <>
+  [  2] thebuiltin 24 ........................... <the frame>
+  [  4] pusharglistnoret 1 ...................... <the frame>
+  [  6] extcall 44 .............................. go(the frame)
+  [  9] ret
+end
+
+on getPropertyDescriptionList me
+  [  0] pushsymb 174 ............................ <#m_do>
+  [  3] pushsymb 138 ............................ <#comment>
+  [  6] pushcons 0 .............................. <"Do">
+  [  8] pushsymb 139 ............................ <#format>
+  [ 11] pushsymb 33 ............................. <#symbol>
+  [ 14] pushsymb 140 ............................ <#default>
+  [ 17] pushsymb 176 ............................ <#RenderSpeaker>
+  [ 20] pushsymb 141 ............................ <#range>
+  [ 23] pushsymb 180 ............................ <#nothing>
+  [ 26] pushsymb 176 ............................ <#RenderSpeaker>
+  [ 29] pushsymb 175 ............................ <#FreezeSpeaker>
+  [ 32] pusharglist 3 ........................... <[#nothing, #RenderSpeaker, #FreezeSpeaker]>
+  [ 34] pushlist ................................ <[#nothing, #RenderSpeaker, #FreezeSpeaker]>
+  [ 35] pusharglist 8 ........................... <[#comment: "Do", #format: #symbol, #default: #RenderSpeaker, #range: [#nothing, #RenderSpeaker, #FreezeSpeaker]]>
+  [ 37] pushproplist ............................ <[#comment: "Do", #format: #symbol, #default: #RenderSpeaker, #range: [#nothing, #RenderSpeaker, #FreezeSpeaker]]>
+  [ 38] pushsymb 177 ............................ <#m_go>
+  [ 41] pushsymb 138 ............................ <#comment>
+  [ 44] pushcons 8 .............................. <"Go">
+  [ 46] pushsymb 139 ............................ <#format>
+  [ 49] pushsymb 33 ............................. <#symbol>
+  [ 52] pushsymb 140 ............................ <#default>
+  [ 55] pushsymb 178 ............................ <#NextFrame>
+  [ 58] pushsymb 141 ............................ <#range>
+  [ 61] pushsymb 178 ............................ <#NextFrame>
+  [ 64] pushsymb 179 ............................ <#NextMarker>
+  [ 67] pusharglist 2 ........................... <[#NextFrame, #NextMarker]>
+  [ 69] pushlist ................................ <[#NextFrame, #NextMarker]>
+  [ 70] pusharglist 8 ........................... <[#comment: "Go", #format: #symbol, #default: #NextFrame, #range: [#NextFrame, #NextMarker]]>
+  [ 72] pushproplist ............................ <[#comment: "Go", #format: #symbol, #default: #NextFrame, #range: [#NextFrame, #NextMarker]]>
+  [ 73] pusharglist 4 ........................... <[#m_do: [#comment: "Do", #format: #symbol, #default: #RenderSpeaker, #range: [#nothing, #RenderSpeaker, #FreezeSpeaker]], #m_go: [#comment: "Go", #format: #symbol, #default: #NextFrame, #range: [#NextFrame, #NextMarker]]]>
+  [ 75] pushproplist ............................ <[#m_do: [#comment: "Do", #format: #symbol, #default: #RenderSpeaker, #range: [#nothing, #RenderSpeaker, #FreezeSpeaker]], #m_go: [#comment: "Go", #format: #symbol, #default: #NextFrame, #range: [#NextFrame, #NextMarker]]]>
+  [ 76] pusharglistnoret 1 ...................... <[#m_do: [#comment: "Do", #format: #symbol, #default: #RenderSpeaker, #range: [#nothing, #RenderSpeaker, #FreezeSpeaker]], #m_go: [#comment: "Go", #format: #symbol, #default: #NextFrame, #range: [#NextFrame, #NextMarker]]]>
+  [ 78] extcall 12 .............................. return [#m_do: [#comment: "Do", #format: #symbol, #default: #RenderSpeaker, #range: [#nothing, #RenderSpeaker, #FreezeSpeaker]], #m_go: [#comment: "Go", #format: #symbol, #default: #NextFrame, #range: [#NextFrame, #NextMarker]]]
+  [ 80] ret
+end

@@ -1,0 +1,212 @@
+property mouseObj, cnt, reportObj, myText, ID, displaying, myLoc, options, Active
+global gUseful
+
+on new me, argReportObj, argRectOrSPOrMember, argID, argLoc, argOptions
+  [  0] getparam 8 .............................. <argReportObj>
+  [  2] setprop 691 ............................. reportObj = argReportObj
+  [  5] getparam 40 ............................. <argOptions>
+  [  7] setprop 468 ............................. options = argOptions
+  [ 10] getparam 24 ............................. <argID>
+  [ 12] setprop 160 ............................. ID = argID
+  [ 15] pushint8 1 .............................. <1>
+  [ 18] setlocal 0 .............................. tmpUseOwnMouse = 1
+  [ 20] getparam 32 ............................. <argLoc>
+  [ 22] setprop 246 ............................. myLoc = argLoc
+  [ 25] getprop 468 ............................. <options>
+  [ 28] pusharglist 1 ........................... <options>
+  [ 30] extcall 128 ............................. <listp(options)>
+  [ 33] jmpifz [ 49] ............................ if listp(options) then
+  [ 36] getprop 468 ............................. <options>
+  [ 39] pushsymb 776 ............................ <#UseOwnMouseObj>
+  [ 42] pusharglist 2 ........................... <options, #UseOwnMouseObj>
+  [ 44] extcall 152 ............................. <getaProp(options, #UseOwnMouseObj)>
+  [ 47] setlocal 0 .............................. tmpUseOwnMouse = getaProp(options, #UseOwnMouseObj)
+  [ 49] getlocal 0 .............................. <tmpUseOwnMouse>
+  [ 51] jmpifz [176] ............................ if tmpUseOwnMouse then
+  [ 54] getparam 16 ............................. <argRectOrSPOrMember>
+  [ 56] pusharglist 1 ........................... <argRectOrSPOrMember>
+  [ 58] extcall 129 ............................. <ilk(argRectOrSPOrMember)>
+  [ 61] setlocal 8 .............................. tmp = ilk(argRectOrSPOrMember)
+  [ 63] getlocal 8 .............................. <tmp>
+  [ 65] pushsymb 105 ............................ <#rect>
+  [ 68] eq ...................................... <tmp = #rect>
+  [ 69] jmpifz [ 79] ............................ if tmp = #rect then / else
+  [ 72] getparam 16 ............................. <argRectOrSPOrMember>
+  [ 74] setlocal 16 ............................. tmpRect = argRectOrSPOrMember
+  [ 76] jmp [144]
+  [ 79] getlocal 8 .............................. <tmp>
+  [ 81] pushsymb 307 ............................ <#member>
+  [ 84] eq ...................................... <tmp = #member>
+  [ 85] jmpifz [100] ............................ if tmp = #member then / else
+  [ 88] getparam 16 ............................. <argRectOrSPOrMember>
+  [ 90] pusharglist 1 ........................... <argRectOrSPOrMember>
+  [ 92] extcall 464 ............................. <getMemberRect(argRectOrSPOrMember)>
+  [ 95] setlocal 16 ............................. tmpRect = getMemberRect(argRectOrSPOrMember)
+  [ 97] jmp [144]
+  [100] getlocal 8 .............................. <tmp>
+  [102] pushsymb 68 ............................. <#string>
+  [105] eq ...................................... <tmp = #string>
+  [106] jmpifz [126] ............................ if tmp = #string then / else
+  [109] getparam 16 ............................. <argRectOrSPOrMember>
+  [111] pusharglist 1 ........................... <argRectOrSPOrMember>
+  [113] extcall 307 ............................. <member(argRectOrSPOrMember)>
+  [116] pusharglist 1 ........................... <member(argRectOrSPOrMember)>
+  [118] extcall 464 ............................. <getMemberRect(member(argRectOrSPOrMember))>
+  [121] setlocal 16 ............................. tmpRect = getMemberRect(member(argRectOrSPOrMember))
+  [123] jmp [144]
+  [126] getlocal 8 .............................. <tmp>
+  [128] pushsymb 95 ............................. <#integer>
+  [131] eq ...................................... <tmp = #integer>
+  [132] jmpifz [144] ............................ if tmp = #integer then
+  [135] getparam 16 ............................. <argRectOrSPOrMember>
+  [137] pushint8 34 ............................. <34>
+  [140] get 6 ................................... <the rect of sprite argRectOrSPOrMember>
+  [142] setlocal 16 ............................. tmpRect = the rect of sprite argRectOrSPOrMember
+  [144] pushcons 0 .............................. <"MouseObject">
+  [146] pusharglist 1 ........................... <"MouseObject">
+  [148] extcall 11 .............................. <script("MouseObject")>
+  [150] getparam 0 .............................. <me>
+  [152] getlocal 16 ............................. <tmpRect>
+  [154] pushsymb 242 ............................ <#layer>
+  [157] pushint8 1000 ........................... <1000>
+  [160] pushsymb 243 ............................ <#PassButton>
+  [163] pushint8 1 .............................. <1>
+  [166] pusharglist 4 ........................... <[#layer: 1000, #PassButton: 1]>
+  [168] pushproplist ............................ <[#layer: 1000, #PassButton: 1]>
+  [169] pusharglist 4 ........................... <script("MouseObject"), me, tmpRect, [#layer: 1000, #PassButton: 1]>
+  [171] extcall 0 ............................... <new(script("MouseObject"), me, tmpRect, [#layer: 1000, #PassButton: 1])>
+  [173] setprop 460 ............................. mouseObj = new(script("MouseObject"), me, tmpRect, [#layer: 1000, #PassButton: 1])
+  [176] pushint8 1 .............................. <1>
+  [179] setprop 164 ............................. Active = 1
+  [182] pushzero ................................ <0>
+  [183] setprop 458 ............................. displaying = 0
+  [186] getparam 0 .............................. <me>
+  [188] pusharglistnoret 1 ...................... <me>
+  [190] extcall 32 .............................. return me
+  [193] ret
+end
+
+on kill me
+  [  0] getprop 460 ............................. <mouseObj>
+  [  3] pusharglist 1 ........................... <mouseObj>
+  [  5] extcall 34 .............................. <objectp(mouseObj)>
+  [  8] jmpifz [ 21] ............................ if objectp(mouseObj) then
+  [ 11] getprop 460 ............................. <mouseObj>
+  [ 14] pusharglist 1 ........................... <mouseObj>
+  [ 16] localcall 1 ............................. <kill(mouseObj)>
+  [ 18] setprop 460 ............................. mouseObj = kill(mouseObj)
+  [ 21] getglobal 66 ............................ <gUseful>
+  [ 24] getobjprop 13 ........................... <gUseful.frameTimer>
+  [ 26] getparam 0 .............................. <me>
+  [ 28] pusharglistnoret 2 ...................... <gUseful.frameTimer, me>
+  [ 30] extcall 36 .............................. deleteObject(gUseful.frameTimer, me)
+  [ 33] pushzero ................................ <0>
+  [ 34] setprop 691 ............................. reportObj = 0
+  [ 37] pushzero ................................ <0>
+  [ 38] pusharglistnoret 1 ...................... <0>
+  [ 40] extcall 32 .............................. return 0
+  [ 43] ret
+end
+
+on setLoc me, argLoc
+  [  0] getparam 8 .............................. <argLoc>
+  [  2] setprop 246 ............................. myLoc = argLoc
+  [  5] ret
+end
+
+on setRect me, argRect
+  [  0] getprop 460 ............................. <mouseObj>
+  [  3] getparam 8 .............................. <argRect>
+  [  5] setobjprop 239 .......................... mouseObj.myRect = argRect
+  [  8] ret
+end
+
+on activate me, argIsTRUE
+  [  0] getparam 8 .............................. <argIsTRUE>
+  [  2] setprop 164 ............................. Active = argIsTRUE
+  [  5] getprop 460 ............................. <mouseObj>
+  [  8] getparam 8 .............................. <argIsTRUE>
+  [ 10] pusharglistnoret 2 ...................... <mouseObj, argIsTRUE>
+  [ 12] localcall 4 ............................. activate(mouseObj, argIsTRUE)
+  [ 14] ret
+end
+
+on timeTick me
+  [  0] getprop 683 ............................. <cnt>
+  [  3] jmpifz [ 69] ............................ if cnt then
+  [  6] getprop 683 ............................. <cnt>
+  [  9] pushint8 1 .............................. <1>
+  [ 12] sub ..................................... <cnt - 1>
+  [ 13] setprop 683 ............................. cnt = cnt - 1
+  [ 16] getprop 683 ............................. <cnt>
+  [ 19] pushzero ................................ <0>
+  [ 20] eq ...................................... <cnt = 0>
+  [ 21] jmpifz [ 69] ............................ if cnt = 0 then
+  [ 24] pushint8 1 .............................. <1>
+  [ 27] setprop 458 ............................. displaying = 1
+  [ 30] getprop 691 ............................. <reportObj>
+  [ 33] pusharglist 1 ........................... <reportObj>
+  [ 35] extcall 34 .............................. <objectp(reportObj)>
+  [ 38] jmpifz [ 57] ............................ if objectp(reportObj) then
+  [ 41] getprop 691 ............................. <reportObj>
+  [ 44] getparam 0 .............................. <me>
+  [ 46] pushsymb 215 ............................ <#display>
+  [ 49] pushint8 1 .............................. <1>
+  [ 52] pusharglistnoret 4 ...................... <reportObj, me, #display, 1>
+  [ 54] extcall 785 ............................. Report(reportObj, me, #display, 1)
+  [ 57] getglobal 66 ............................ <gUseful>
+  [ 60] getobjprop 13 ........................... <gUseful.frameTimer>
+  [ 62] getparam 0 .............................. <me>
+  [ 64] pusharglistnoret 2 ...................... <gUseful.frameTimer, me>
+  [ 66] extcall 36 .............................. deleteObject(gUseful.frameTimer, me)
+  [ 69] ret
+end
+
+on mouse me, argObj, argWhat
+  [  0] getprop 164 ............................. <Active>
+  [  3] not ..................................... <not Active>
+  [  4] jmpifz [  8] ............................ if not Active then
+  [  7] ret ..................................... exit
+  [  8] getparam 16 ............................. <argWhat>
+  [ 10] pushsymb 263 ............................ <#enter>
+  [ 13] eq ...................................... <argWhat = #enter>
+  [ 14] jmpifz [ 37] ............................ if argWhat = #enter then / else
+  [ 17] getglobal 66 ............................ <gUseful>
+  [ 20] getobjprop 13 ........................... <gUseful.frameTimer>
+  [ 22] getparam 0 .............................. <me>
+  [ 24] pusharglistnoret 2 ...................... <gUseful.frameTimer, me>
+  [ 26] extcall 17 .............................. addObject(gUseful.frameTimer, me)
+  [ 28] pushint8 10 ............................. <10>
+  [ 31] setprop 683 ............................. cnt = 10
+  [ 34] jmp [ 93]
+  [ 37] getparam 16 ............................. <argWhat>
+  [ 39] pushsymb 264 ............................ <#Leave>
+  [ 42] eq ...................................... <argWhat = #Leave>
+  [ 43] jmpifz [ 93] ............................ if argWhat = #Leave then
+  [ 46] getprop 458 ............................. <displaying>
+  [ 49] jmpifz [ 81] ............................ if displaying then
+  [ 52] getprop 691 ............................. <reportObj>
+  [ 55] pusharglist 1 ........................... <reportObj>
+  [ 57] extcall 34 .............................. <objectp(reportObj)>
+  [ 60] jmpifz [ 77] ............................ if objectp(reportObj) then
+  [ 63] getprop 691 ............................. <reportObj>
+  [ 66] getparam 0 .............................. <me>
+  [ 68] pushsymb 215 ............................ <#display>
+  [ 71] pushzero ................................ <0>
+  [ 72] pusharglistnoret 4 ...................... <reportObj, me, #display, 0>
+  [ 74] extcall 785 ............................. Report(reportObj, me, #display, 0)
+  [ 77] pushzero ................................ <0>
+  [ 78] setprop 683 ............................. cnt = 0
+  [ 81] getglobal 66 ............................ <gUseful>
+  [ 84] getobjprop 13 ........................... <gUseful.frameTimer>
+  [ 86] getparam 0 .............................. <me>
+  [ 88] pusharglistnoret 2 ...................... <gUseful.frameTimer, me>
+  [ 90] extcall 36 .............................. deleteObject(gUseful.frameTimer, me)
+  [ 93] ret
+end
+
+on setText me, argStr
+  [  0] getparam 8 .............................. <argStr>
+  [  2] setprop 786 ............................. myText = argStr
+  [  5] ret
+end

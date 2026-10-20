@@ -1,0 +1,66 @@
+on zzrGenerateMeter argFraction, argPrefix, argImg, argOffsetLoc
+  if voidp(argImg) then
+    argImg = image(100, 100, 24)
+  end if
+  if voidp(argOffsetLoc) then
+    argOffsetLoc = point(0, 0)
+  end if
+  if voidp(argPrefix) then
+    argPrefix = "meter01_"
+  end if
+  bgMemb = member(argPrefix & "background01")
+  itemsList = []
+  argOffsetLoc = argOffsetLoc + bgMemb.regPoint
+  barTotWidth = 0
+  barMembers = ["Left", "Mid", "Right"]
+  repeat with n = 1 to barMembers.count
+    memb = member(argPrefix & "line01" & barMembers[n])
+    barMembers[n] = memb
+    barTotWidth = barTotWidth + memb.width
+  end repeat
+  tmpWidth = integer(argFraction * barTotWidth)
+  barSidesWidth = barTotWidth - barMembers[2].width
+  midWidth = tmpWidth - barSidesWidth
+  offrect = rect(argOffsetLoc, argOffsetLoc)
+  itemDef = [#ID: #BG, #type: #Pic, #Pic: bgMemb.image, #ch: 1, #inOffsetRect: rect(0, 0, 0, 0), #rel: [0, 0, #Auto, #Auto]]
+  itemsList.add(itemDef)
+  if objectp(argImg) then
+    argImg.copyPixels(bgMemb.image, offrect + bgMemb.rect - rect(bgMemb.regPoint, bgMemb.regPoint), bgMemb.rect)
+  end if
+  tmpRegDiffLoc = bgMemb.regPoint - barMembers[1].regPoint
+  tmpLeftsRightSide = tmpRegDiffLoc[1]
+  itemDef = [#ID: #left, #type: #Pic, #Pic: barMembers[1].image, #ch: 2, #inOffsetRect: rect(tmpRegDiffLoc[1], tmpRegDiffLoc[2], 0, 0), #rel: [0, 0, #Auto, #Auto]]
+  itemsList.add(itemDef)
+  if objectp(argImg) then
+    tmpOffRect = barMembers[1].rect - rect(barMembers[1].regPoint, barMembers[1].regPoint)
+    argImg.copyPixels(barMembers[1].image, offrect + tmpOffRect, barMembers[1].rect)
+    tmpLeftEndOff = point(tmpOffRect[3], 0)
+  end if
+  if midWidth > 0 then
+    tmpRegDiffLoc = bgMemb.regPoint - barMembers[2].regPoint
+    tmpRegDiffLoc = point(barMembers[1].rect[3] + tmpLeftsRightSide, tmpRegDiffLoc[2])
+    itemDef = [#ID: #Mid, #type: #Pic, #Pic: barMembers[2].image, #ch: 3, #inOffsetRect: rect(tmpRegDiffLoc[1], tmpRegDiffLoc[2], tmpRegDiffLoc[1] + midWidth, 0), #rel: [0, 0, 0, #Auto]]
+    itemsList.add(itemDef)
+    if objectp(argImg) then
+      tmpOff = tmpLeftEndOff + point(0, -barMembers[2].regPoint[2])
+      tmpOffRect = rect(0, 0, midWidth, barMembers[2].rect[4]) + rect(tmpOff, tmpOff)
+      argImg.copyPixels(barMembers[2].image, offrect + tmpOffRect, barMembers[2].rect)
+    end if
+  end if
+  if midWidth < 0 then
+    midWidth = 0
+  end if
+  tmpRegDiffLoc = bgMemb.regPoint - barMembers[3].regPoint
+  tmpRegDiffLoc = point(barMembers[1].rect[3] + midWidth + tmpLeftsRightSide, tmpRegDiffLoc[2])
+  itemDef = [#ID: #right, #type: #Pic, #Pic: barMembers[3].image, #ch: 4, #inOffsetRect: rect(tmpRegDiffLoc[1], tmpRegDiffLoc[2], 0, 0), #rel: [0, 0, #Auto, #Auto]]
+  itemsList.add(itemDef)
+  if objectp(argImg) then
+    tmpOff = tmpLeftEndOff + point(midWidth, 0)
+    tmpOffRect = barMembers[3].rect - rect(barMembers[3].regPoint, barMembers[3].regPoint) + rect(tmpOff, tmpOff)
+    argImg.copyPixels(barMembers[3].image, offrect + tmpOffRect, barMembers[3].rect)
+  end if
+  return itemsList
+end
+
+on xChangeMeter argFract
+end

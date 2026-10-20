@@ -1,0 +1,211 @@
+property mouseObj, overMouseObj, reportObj, deltaMove, downLoc, lastLoc
+global gUseful
+
+on new me, argReportObj, argRect, argOptions
+  [  0] getparam 8 .............................. <argReportObj>
+  [  2] setprop 691 ............................. reportObj = argReportObj
+  [  5] getparam 24 ............................. <argOptions>
+  [  7] pusharglist 1 ........................... <argOptions>
+  [  9] extcall 104 ............................. <voidp(argOptions)>
+  [ 12] jmpifz [ 20] ............................ if voidp(argOptions) then
+  [ 15] pusharglist 0 ........................... <[:]>
+  [ 17] pushproplist ............................ <[:]>
+  [ 18] setparam 24 ............................. argOptions = [:]
+  [ 20] pushcons 0 .............................. <"MouseObject">
+  [ 22] pusharglist 1 ........................... <"MouseObject">
+  [ 24] extcall 11 .............................. <script("MouseObject")>
+  [ 26] getparam 0 .............................. <me>
+  [ 28] getparam 16 ............................. <argRect>
+  [ 30] getparam 24 ............................. <argOptions>
+  [ 32] pusharglist 4 ........................... <script("MouseObject"), me, argRect, argOptions>
+  [ 34] extcall 0 ............................... <new(script("MouseObject"), me, argRect, argOptions)>
+  [ 36] setprop 460 ............................. mouseObj = new(script("MouseObject"), me, argRect, argOptions)
+  [ 39] getparam 24 ............................. <argOptions>
+  [ 41] pusharglist 1 ........................... <argOptions>
+  [ 43] objcall 312 ............................. <argOptions.duplicate()>
+  [ 46] setparam 24 ............................. argOptions = argOptions.duplicate()
+  [ 48] getparam 24 ............................. <argOptions>
+  [ 50] pushsymb 242 ............................ <#layer>
+  [ 53] pushint8 2000 ........................... <2000>
+  [ 56] pusharglistnoret 3 ...................... <argOptions, #layer, 2000>
+  [ 58] extcall 180 ............................. setaProp(argOptions, #layer, 2000)
+  [ 61] pushcons 8 .............................. <"MouseObject">
+  [ 63] pusharglist 1 ........................... <"MouseObject">
+  [ 65] extcall 11 .............................. <script("MouseObject")>
+  [ 67] getparam 0 .............................. <me>
+  [ 69] pushint8 1000 ........................... <1000>
+  [ 72] inv ..................................... <-1000>
+  [ 73] pushint8 1000 ........................... <1000>
+  [ 76] inv ..................................... <-1000>
+  [ 77] pushint8 2000 ........................... <2000>
+  [ 80] pushint8 2000 ........................... <2000>
+  [ 83] pusharglist 4 ........................... <-1000, -1000, 2000, 2000>
+  [ 85] extcall 105 ............................. <rect(-1000, -1000, 2000, 2000)>
+  [ 88] getparam 24 ............................. <argOptions>
+  [ 90] pusharglist 4 ........................... <script("MouseObject"), me, rect(-1000, -1000, 2000, 2000), argOptions>
+  [ 92] extcall 0 ............................... <new(script("MouseObject"), me, rect(-1000, -1000, 2000, 2000), argOptions)>
+  [ 94] setprop 900 ............................. overMouseObj = new(script("MouseObject"), me, rect(-1000, -1000, 2000, 2000), argOptions)
+  [ 97] getprop 900 ............................. <overMouseObj>
+  [100] pushzero ................................ <0>
+  [101] pusharglistnoret 2 ...................... <overMouseObj, 0>
+  [103] extcall 158 ............................. activate(overMouseObj, 0)
+  [106] pushzero ................................ <0>
+  [107] pushzero ................................ <0>
+  [108] pusharglist 2 ........................... <0, 0>
+  [110] extcall 75 .............................. <point(0, 0)>
+  [113] setprop 901 ............................. downLoc = point(0, 0)
+  [116] pushzero ................................ <0>
+  [117] pushzero ................................ <0>
+  [118] pusharglist 2 ........................... <0, 0>
+  [120] extcall 75 .............................. <point(0, 0)>
+  [123] setprop 798 ............................. lastLoc = point(0, 0)
+  [126] pushzero ................................ <0>
+  [127] pushzero ................................ <0>
+  [128] pusharglist 2 ........................... <0, 0>
+  [130] extcall 75 .............................. <point(0, 0)>
+  [133] setprop 902 ............................. deltaMove = point(0, 0)
+  [136] getparam 0 .............................. <me>
+  [138] pusharglistnoret 1 ...................... <me>
+  [140] extcall 32 .............................. return me
+  [143] ret
+end
+
+on kill me
+  [  0] getprop 460 ............................. <mouseObj>
+  [  3] pusharglist 1 ........................... <mouseObj>
+  [  5] localcall 1 ............................. <kill(mouseObj)>
+  [  7] setprop 460 ............................. mouseObj = kill(mouseObj)
+  [ 10] getprop 900 ............................. <overMouseObj>
+  [ 13] pusharglist 1 ........................... <overMouseObj>
+  [ 15] localcall 1 ............................. <kill(overMouseObj)>
+  [ 17] setprop 900 ............................. overMouseObj = kill(overMouseObj)
+  [ 20] pushzero ................................ <0>
+  [ 21] pusharglistnoret 1 ...................... <0>
+  [ 23] extcall 32 .............................. return 0
+  [ 26] ret
+end
+
+on mouse me, argObj, argWhat
+  [  0] getparam 8 .............................. <argObj>
+  [  2] getprop 460 ............................. <mouseObj>
+  [  5] eq ...................................... <argObj = mouseObj>
+  [  6] jmpifz [ 67] ............................ if argObj = mouseObj then / else
+  [  9] getparam 16 ............................. <argWhat>
+  [ 11] pushsymb 223 ............................ <#down>
+  [ 14] eq ...................................... <argWhat = #down>
+  [ 15] jmpifz [ 64] ............................ if argWhat = #down then
+  [ 18] getglobal 66 ............................ <gUseful>
+  [ 21] getobjprop 20 ........................... <gUseful.mouseObjects>
+  [ 23] pusharglist 1 ........................... <gUseful.mouseObjects>
+  [ 25] extcall 191 ............................. <getMouseLoc(gUseful.mouseObjects)>
+  [ 28] setprop 901 ............................. downLoc = getMouseLoc(gUseful.mouseObjects)
+  [ 31] getprop 901 ............................. <downLoc>
+  [ 34] setprop 798 ............................. lastLoc = downLoc
+  [ 37] getprop 900 ............................. <overMouseObj>
+  [ 40] pushint8 1 .............................. <1>
+  [ 43] pusharglistnoret 2 ...................... <overMouseObj, 1>
+  [ 45] extcall 158 ............................. activate(overMouseObj, 1)
+  [ 48] getprop 460 ............................. <mouseObj>
+  [ 51] pushzero ................................ <0>
+  [ 52] setobjprop 257 .......................... mouseObj.downOn = 0
+  [ 55] getprop 900 ............................. <overMouseObj>
+  [ 58] pushint8 1 .............................. <1>
+  [ 61] setobjprop 257 .......................... overMouseObj.downOn = 1
+  [ 64] jmp [132]
+  [ 67] getparam 8 .............................. <argObj>
+  [ 69] getprop 900 ............................. <overMouseObj>
+  [ 72] eq ...................................... <argObj = overMouseObj>
+  [ 73] jmpifz [132] ............................ if argObj = overMouseObj then
+  [ 76] getparam 16 ............................. <argWhat>
+  [ 78] pushsymb 262 ............................ <#stillDown>
+  [ 81] eq ...................................... <argWhat = #stillDown>
+  [ 82] jmpifz [114] ............................ if argWhat = #stillDown then / else
+  [ 85] getglobal 66 ............................ <gUseful>
+  [ 88] getobjprop 20 ........................... <gUseful.mouseObjects>
+  [ 90] pusharglist 1 ........................... <gUseful.mouseObjects>
+  [ 92] extcall 191 ............................. <getMouseLoc(gUseful.mouseObjects)>
+  [ 95] setlocal 0 .............................. tmp = getMouseLoc(gUseful.mouseObjects)
+  [ 97] getlocal 0 .............................. <tmp>
+  [ 99] getprop 798 ............................. <lastLoc>
+  [102] sub ..................................... <tmp - lastLoc>
+  [103] setprop 902 ............................. deltaMove = tmp - lastLoc
+  [106] getlocal 0 .............................. <tmp>
+  [108] setprop 798 ............................. lastLoc = tmp
+  [111] jmp [132]
+  [114] getparam 16 ............................. <argWhat>
+  [116] pushsymb 250 ............................ <#click>
+  [119] eq ...................................... <argWhat = #click>
+  [120] jmpifz [132] ............................ if argWhat = #click then
+  [123] getprop 900 ............................. <overMouseObj>
+  [126] pushzero ................................ <0>
+  [127] pusharglistnoret 2 ...................... <overMouseObj, 0>
+  [129] extcall 158 ............................. activate(overMouseObj, 0)
+  [132] getprop 691 ............................. <reportObj>
+  [135] getparam 0 .............................. <me>
+  [137] getparam 16 ............................. <argWhat>
+  [139] pusharglistnoret 3 ...................... <reportObj, me, argWhat>
+  [141] localcall 2 ............................. mouse(reportObj, me, argWhat)
+  [143] ret
+end
+
+on getDraggedRect me
+  [  0] getprop 901 ............................. <downLoc>
+  [  3] getprop 798 ............................. <lastLoc>
+  [  6] pusharglist 2 ........................... <downLoc, lastLoc>
+  [  8] extcall 105 ............................. <rect(downLoc, lastLoc)>
+  [ 11] pusharglistnoret 1 ...................... <rect(downLoc, lastLoc)>
+  [ 13] extcall 32 .............................. return rect(downLoc, lastLoc)
+  [ 16] ret
+end
+
+on getMove me, argMode
+  [  0] getparam 8 .............................. <argMode>
+  [  2] pushsymb 223 ............................ <#down>
+  [  5] eq ...................................... <argMode = #down>
+  [  6] jmpifz [ 21] ............................ if argMode = #down then
+  [  9] getprop 798 ............................. <lastLoc>
+  [ 12] getprop 901 ............................. <downLoc>
+  [ 15] sub ..................................... <lastLoc - downLoc>
+  [ 16] pusharglistnoret 1 ...................... <lastLoc - downLoc>
+  [ 18] extcall 32 .............................. return lastLoc - downLoc
+  [ 21] getprop 902 ............................. <deltaMove>
+  [ 24] pusharglistnoret 1 ...................... <deltaMove>
+  [ 26] extcall 32 .............................. return deltaMove
+  [ 29] ret
+end
+
+on getID me
+  [  0] getprop 460 ............................. <mouseObj>
+  [  3] pusharglist 1 ........................... <mouseObj>
+  [  5] localcall 5 ............................. <getID(mouseObj)>
+  [  7] pusharglistnoret 1 ...................... <getID(mouseObj)>
+  [  9] extcall 32 .............................. return getID(mouseObj)
+  [ 12] ret
+end
+
+on getOption me, argOpt
+  [  0] getprop 460 ............................. <mouseObj>
+  [  3] getparam 8 .............................. <argOpt>
+  [  5] pusharglist 2 ........................... <mouseObj, argOpt>
+  [  7] localcall 6 ............................. <getOption(mouseObj, argOpt)>
+  [  9] pusharglistnoret 1 ...................... <getOption(mouseObj, argOpt)>
+  [ 11] extcall 32 .............................. return getOption(mouseObj, argOpt)
+  [ 14] ret
+end
+
+on getRect me
+  [  0] getprop 460 ............................. <mouseObj>
+  [  3] pusharglist 1 ........................... <mouseObj>
+  [  5] localcall 7 ............................. <getRect(mouseObj)>
+  [  7] pusharglistnoret 1 ...................... <getRect(mouseObj)>
+  [  9] extcall 32 .............................. return getRect(mouseObj)
+  [ 12] ret
+end
+
+on setRect me, argRect
+  [  0] getprop 460 ............................. <mouseObj>
+  [  3] getparam 8 .............................. <argRect>
+  [  5] pusharglistnoret 2 ...................... <mouseObj, argRect>
+  [  7] localcall 8 ............................. setRect(mouseObj, argRect)
+  [  9] ret
+end

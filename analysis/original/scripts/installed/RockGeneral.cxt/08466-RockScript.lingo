@@ -1,0 +1,487 @@
+property m_classManager, m_dataPath, m_gameTimer, m_date, m_context, m_msgManager, m_waitOneFrame, m_eventCardsManager, m_eventsManager, m_agenda, m_languageManager, m_player, m_paths, m_textFormatter, m_executor, m_justStartedGame, m_firstTimePrepare, m_chartsManager, m_modifiersManager, m_tempVars, m_useAutoSave, m_waitCursor, m_CPSaveLoad, m_noMissionActive
+global gUseful
+
+on new me
+  m_firstTimePrepare = 1
+  m_justStartedGame = 0
+  m_paths = script("PathsScript").new()
+  gUseful.soundObj.soundPath = m_paths.getPath(#sound)
+  if the runMode = "Author" then
+    repeat with n = 1 to the number of castMembers of castLib 1
+      memb = member(n)
+      if memb.name = "__TEMP" then
+        erase(memb)
+      end if
+    end repeat
+  else
+  end if
+  polandPott("Rock new")
+  m_dataPath = m_paths.getPath(#data)
+  secsPerDay = getSystemPref(#secsPerDay)
+  if voidp(secsPerDay) then
+    if the runMode = "Author" then
+      secsPerDay = 1
+    else
+      secsPerDay = 3
+    end if
+  end if
+  framesPerDay = integer(secsPerDay * the frameTempo)
+  m_gameTimer = script("RockTimer").new(framesPerDay, gUseful.frameTimer, #Game)
+  m_tempVars = [:]
+  m_waitCursor = script("WaitCursorScript").new()
+  return me
+end
+
+on init me
+  polandPott("Rock init start")
+  waitCursor(1)
+  m_executor = script("ExecuteListsScript").new()
+  m_textFormatter = script("TextFormatterScript").new()
+  m_date = script("RockDateScript").new()
+  m_msgManager = script("RockSystemMessagesScript").new()
+  m_waitOneFrame = script("TellMeNextTickScript").new()
+  m_context = script("ContextScript").new()
+  m_eventCardsManager = script("EventCardsManagerScript").new()
+  m_eventsManager = script("EventsManagerScript").new()
+  m_classManager = script("ClassManagerScript").new(m_dataPath)
+  tmpPath = getPathToLanguageAndTranslation()
+  m_languageManager = script("LanguageScript").new(tmpPath, "English")
+  m_languageManager.setClassManager(m_classManager)
+  m_date.setStrings([#Months, #short], rGetStr(#szidMonthNamesShort))
+  polandPott("Rock init mid")
+  m_modifiersManager = script("ModifiersManagerScript").new()
+  m_chartsManager = script("ChartsManagerScript").new()
+  m_agenda = script("AgendaScript").new()
+  m_CPSaveLoad = script("KeysSaveLoadGameScript").new()
+  m_useAutoSave = rgetPref(#autoSave)
+  if voidp(m_useAutoSave) then
+    m_useAutoSave = 1
+  end if
+  if the runMode = "Author" then
+    m_useAutoSave = 0
+  end if
+  waitCursor(0)
+  tmpFirstMission = rgetPref(#FirstMission)
+  if not symbolp(tmpFirstMission) then
+    tmpFirstMission = #Mission01
+  end if
+  if rgetPref(#Pwd) <> #Jonas then
+  end if
+  if rOKCheatPass() then
+    if the runMode = "Author" then
+      m_CPSaveLoad.load()
+    else
+      me.startMission(#Mission00)
+    end if
+  else
+    tmp = me.gotSaveGame()
+    if stringp(tmp) then
+      me.load(tmp)
+    else
+      if the runMode = "Author" then
+        me.startMission(#Mission04)
+      else
+        me.startMission(tmpFirstMission)
+      end if
+    end if
+  end if
+  polandPott("Rock init end")
+end
+
+on prepareMovie me
+  if m_firstTimePrepare = 1 then
+    m_firstTimePrepare = 0
+  end if
+end
+
+on DirNewed me
+end
+
+on DirInited me
+end
+
+on stopMovie me
+  m_context.hideEditor()
+end
+
+on kill me
+  if objectp(m_CPSaveLoad) then
+    m_CPSaveLoad = m_CPSaveLoad.kill()
+  end if
+  if objectp(m_modifiersManager) then
+    m_modifiersManager = m_modifiersManager.kill()
+  end if
+  if objectp(m_chartsManager) then
+    m_chartsManager = m_chartsManager.kill()
+  end if
+  if objectp(m_agenda) then
+    m_agenda = m_agenda.kill()
+  end if
+  if objectp(m_eventsManager) then
+    m_eventsManager = m_eventsManager.kill()
+  end if
+  if objectp(m_classManager) then
+    m_classManager = m_classManager.kill()
+  end if
+  if objectp(m_eventCardsManager) then
+    m_eventCardsManager = m_eventCardsManager.kill()
+  end if
+  if objectp(m_context) then
+    m_context = m_context.kill()
+  end if
+  if objectp(m_msgManager) then
+    m_msgManager = m_msgManager.kill()
+  end if
+  if objectp(m_gameTimer) then
+    m_gameTimer = m_gameTimer.kill()
+  end if
+  if objectp(m_waitOneFrame) then
+    m_waitOneFrame = m_waitOneFrame.kill()
+  end if
+  if objectp(m_languageManager) then
+    m_languageManager = m_languageManager.kill()
+  end if
+  if objectp(m_textFormatter) then
+    m_textFormatter = m_textFormatter.kill()
+  end if
+  if objectp(m_executor) then
+    m_executor = m_executor.kill()
+  end if
+  if objectp(m_waitCursor) then
+    m_waitCursor = m_waitCursor.kill()
+  end if
+  return 0
+end
+
+on getIsFirstTime me
+  tmp = me.gotSaveGame()
+  if not stringp(tmp) then
+    return 1
+  end if
+  return 0
+end
+
+on gotSaveGame me
+  tmpSavePath = m_paths.getPath(#save)
+  if fileExists2(tmpSavePath & "Auto.sav") then
+    return tmpSavePath & "Auto.sav"
+  else
+    return 0
+  end if
+end
+
+on autoSave me
+  if m_useAutoSave = 0 then
+    exit
+  end if
+  tmpSavePath = m_paths.getPath(#save)
+  me.save(tmpSavePath & "Auto.sav")
+end
+
+on save me, argFileName
+  classSaver = script("LoadSaveExtensionsScript").new()
+  m_modifiersManager.disableBeforeSave()
+  saveList = [#date: m_date.save(), #Classes: classSaver.save(), #Context: m_context.save(), #Modifiers: m_modifiersManager.save()]
+  m_modifiersManager.enableAfterSave()
+  if voidp(argFileName) then
+    argFileName = m_paths.m_paths[#save] & "Auto.sav"
+  end if
+  str = string(saveList)
+  if not listp(str.value) then
+    a = script("PropListManualParseScript").new()
+    errStrPtr = []
+    a.parse(str, errStrPtr)
+    alert(string(errStrPtr[1]))
+    writeFile(argFileName & ".txt", str)
+  end if
+  if rgetPref(#SaveFormat) <> #text then
+    vList = xtra("vList").new(argFileName)
+    tmpResult = vList.write(saveList)
+    if tmpResult <> 0 then
+      pott("vList save Err", tmpResult)
+    end if
+    if the runMode = "Author" then
+      tmpPath = fileExtractPath(argFileName)
+      savePropListAsTable(saveList, tmpPath & "_ReadableSave.txt")
+    end if
+  else
+    str = string(saveList)
+    if writeFile(argFileName, str) <> 0 then
+      pott("Err save: ", argFileName)
+    end if
+  end if
+  pott("Game saved as " & argFileName)
+end
+
+on getLoadedAsList me, argListOrString, argIsMissionSave
+  if not listp(argListOrString) then
+    if argIsMissionSave = #Mission then
+      tmpPath = getPathToMissionSave(argListOrString)
+      if not stringp(tmpPath) then
+        tmpPath = m_paths.getPath(#MissionSave)
+      end if
+    else
+      tmpPath = m_paths.getPath(#save)
+    end if
+    if stringp(argListOrString) then
+      tmpItsPath = fileExtractPath(argListOrString)
+      if tmpItsPath.length = 0 then
+        argListOrString = tmpPath & argListOrString
+      end if
+      if not fileExists(argListOrString) then
+        pott("No such save", tmpPath, argListOrString)
+        return [:]
+      end if
+    end if
+    pott("Loading " & argListOrString)
+    if 1 then
+      tmp = readFile(argListOrString)
+      if tmp.char[1] = "[" then
+        pott("OLD FORMAT SAVEGAME")
+        argListOrString = readFile(argListOrString)
+        argListOrString = argListOrString.value
+        return argListOrString
+      end if
+      vList = xtra("vList").new(argListOrString)
+      argListOrString = vList.read()
+      if not listp(argListOrString) then
+        pott("Couldn't make a list outta the vList savegame")
+        exit
+      end if
+    else
+      argListOrString = readFile(argListOrString)
+      if not stringp(argListOrString) then
+        pott(argListOrString)
+        exit
+      end if
+      argListOrString = argListOrString.value
+      if not listp(argListOrString) then
+        pott("Couldn't make a list outta the savegame")
+        exit
+      end if
+    end if
+  end if
+  return argListOrString
+end
+
+on load me, argListOrString
+  me.start(#loadGame, argListOrString)
+end
+
+on startMission me, argID
+  me.start(#startMission, argID)
+end
+
+on start me, argDoWhat, argMissionIDorSaveFile
+  global gDir
+  m_noMissionActive = 0
+  waitCursor(1)
+  classLoader = script("LoadSaveExtensionsScript").new()
+  loadedGame = 0
+  if argDoWhat = #startMission then
+    currentMission_r = m_context.getFocus(#Mission)
+    if objectp(currentMission_r) then
+      dontRemove = [#class: [#player, #Game]]
+      me.clearAll(dontRemove)
+      game_r = m_classManager.getObjByIDAndClass(#Game, #Game)
+      m_classManager.instantiate(dontRemove, me.getWildcardsForDataFiles(argMissionIDorSaveFile))
+    else
+      m_classManager.instantiate(VOID, me.getWildcardsForDataFiles(argMissionIDorSaveFile))
+      polandPott("Rock m_classManager.instantiate")
+      if not objectp(m_player) then
+        m_player = m_classManager.createUnregObj(#player)
+        m_player.ID = #player
+      end if
+      game_r = m_classManager.getObjByIDAndClass(#Game, #Game)
+      if not objectp(game_r) then
+        game_r = m_classManager.createUnregObj(#Game)
+        game_r.ID = #Game
+      end if
+    end if
+    if m_classManager.getObjsOfClass(#player).count > 0 then
+      pott("Already got player, no need to register!")
+    end if
+    if not objectp(m_player) then
+      pott("Zap! No Player!")
+    end if
+    if not objectp(game_r) then
+      pott("Zap! No Game!")
+    end if
+    m_classManager.registerObj(m_player, VOID, 1, 1)
+    m_classManager.registerObj(game_r, VOID, 1, 1)
+    mission_r = m_classManager.getObjByIDAndClass(argMissionIDorSaveFile, #Mission)
+    if not objectp(mission_r) then
+      pott("No such mission!", argMissionIDorSaveFile)
+      exit
+    end if
+    m_player.beforeMissionStart(mission_r)
+    if mission_r.autoLoad.length > 0 then
+      loadedList = me.getLoadedAsList(mission_r.autoLoad, #Mission)
+      if not listp(loadedList) then
+        pott("Err autoload")
+      else
+        loadedGame = 1
+        tmpAllDontAllow = [[#Classes, #Game], [#Classes, #player, #player, #points], [#Classes, #player, #player, #name], [#Classes, #player, #player, #MissionsInfo]]
+        repeat with tmpDontAllow in tmpAllDontAllow
+          if not voidp(rgetProp(loadedList, tmpDontAllow)) then
+            pott("Don't load these:", tmpDontAllow)
+          end if
+        end repeat
+        classLoader.load(loadedList[#Classes])
+        m_context.load(loadedList[#Context])
+        m_modifiersManager.load(loadedList[#Modifiers])
+      end if
+    end if
+  else
+    loadedList = me.getLoadedAsList(argMissionIDorSaveFile)
+    tmpSavedMission = rgetProp(loadedList, [#Classes, #Mission])
+    if not listp(tmpSavedMission) then
+      tmpSavedMission = [:]
+    end if
+    if tmpSavedMission.count = 0 then
+      m_noMissionActive = 1
+    end if
+    loadedGame = 1
+    if objectp(m_player) then
+      me.clearAll()
+    end if
+    m_classManager.instantiate(VOID, me.getWildcardsForDataFiles(rgetProp(loadedList, [#Context, #Mission])))
+    m_date.load(loadedList[#date])
+    classLoader.load(loadedList[#Classes])
+    m_context.load(loadedList[#Context])
+    m_context.setFocus(#Game, m_classManager.getObjByIDAndClass(#Game, #Game))
+    m_modifiersManager.load(loadedList[#Modifiers])
+  end if
+  polandPott("Rock start mid")
+  m_classManager.callObjects(#PreInit)
+  pott("Called preInit")
+  if loadedGame then
+    classLoader.callLoad()
+    pott("Called load")
+  end if
+  m_classManager.callInit()
+  pott("Called init")
+  m_modifiersManager.initAfterLoad()
+  if argDoWhat = #loadGame then
+    mission_r = m_context.getFocus(#Mission)
+    mission_r.activate(1)
+    m_player = m_classManager.getObjByIDAndClass(#player, #player)
+    m_chartsManager.initAfterNewGame()
+  else
+    if argDoWhat = #startMission then
+      m_context.setFocus(#player, m_player)
+      m_context.setFocus(#Game, game_r)
+      band_r = m_classManager.getObjByIDAndClass(#Band, #Band)
+      if not objectp(band_r) then
+        band_r = m_classManager.createObj(#Band)
+        band_r.ID = #Band
+        band_r.name = m_languageManager.getStr(#szidUnnamedBand)
+      end if
+      if band_r.name.length = 0 then
+        band_r.name = m_languageManager.getStr(#szidUnnamedBand)
+      end if
+      m_context.setFocus(#Band, band_r)
+      mission_r.start(1)
+      me.missionAutoLoadFixDates()
+      m_player.transactMoney(-m_player.getWealth())
+      m_player.transactMoney(mission_r.StartMoney)
+    end if
+  end if
+  if mission_r.getIsMissionOver() then
+    m_noMissionActive = 1
+  end if
+  m_chartsManager.initAfterNewGame()
+  band_r = m_context.getFocus(#Band)
+  band_r.activate(1)
+  if m_classManager.getObjsOfClass(#player).count > 1 then
+    pott("Too many player objs!")
+  end if
+  if m_classManager.getObjsOfClass(#Game).count > 1 then
+    pott("Too many game objs!")
+  end if
+  if objectp(gDir) then
+    if gDir.handler(#redraw) then
+      gDir.redrawAfterLoad()
+      gDir.redraw()
+      if objectp(gDir.getaProp(#m_interfaceBar)) then
+        gDir.m_interfaceBar.m_objMoney.registerWithNewPlayer()
+      end if
+    end if
+  end if
+  waitCursor(0)
+end
+
+on zzclearCurrentMission me, argDontInit
+  mission_r = m_context.getFocus(#Mission)
+  if objectp(mission_r) then
+    dontRemove = [#class: [#player, #Game]]
+    me.clearAll(dontRemove)
+    if argDontInit <> #DontInit then
+      m_classManager.init(#InitInstances, dontRemove)
+    end if
+  end if
+end
+
+on clearAll me, argExceptions
+  m_context.load([:])
+  m_msgManager.cleanUp()
+  m_eventCardsManager.cleanUp()
+  m_eventsManager.cleanUp()
+  m_eventCardsManager.reinit()
+  triggers_r = m_classManager.getObjsOfClass(#Trigger)
+  repeat with trigger_r in triggers_r
+    trigger_r.activate(0)
+  end repeat
+  m_classManager.removeAllRegisteredObjs(argExceptions)
+  m_modifiersManager.clearAll()
+  m_chartsManager.clearAll()
+  m_executor.clear()
+  if m_classManager.m_objsCreatedFromGame.count then
+    pott("m_objsCreatedFromGame", m_classManager.m_objsCreatedFromGame)
+    repeat with obj in m_classManager.m_objsCreatedFromGame
+      if not voidp(rgetProp(obj, #belongsTo)) then
+        pott(rgetProp(obj, #belongsTo))
+      end if
+    end repeat
+  end if
+  if m_classManager.m_objsCreatedFromInit.count then
+    pott("CreatedFromInit", m_classManager.m_objsCreatedFromInit)
+  end if
+  if m_classManager.m_objsCreatedFromFile.count then
+    pott("m_objsCreatedFromFile", m_classManager.m_objsCreatedFromFile)
+  end if
+end
+
+on missionAutoLoadFixDates me
+  fixList = [[#Event, #StartDate], [#album, #ReleaseDate], [#album, #RecordingStartedDate]]
+  TodayDate = m_date.getDateInt()
+  repeat with n = 1 to fixList.count
+    propPath = fixList[n]
+    className = propPath[1]
+    propPath.deleteAt(1)
+    objs = m_classManager.getObjsWithBaseClass(className)
+    repeat with obj in objs
+      if rgetProp(obj, propPath) <> 0 then
+        rsetProp(obj, propPath, TodayDate, "+=")
+      end if
+    end repeat
+  end repeat
+end
+
+on getWildcardsForDataFiles me, argMissionID
+  if voidp(argMissionID) then
+    return ["*"]
+  end if
+  if the runMode = "Author" then
+    return ["*"]
+  end if
+  str = string(argMissionID)
+  tmp = "Mission"
+  str = str.char[tmp.length + 1..str.length]
+  if str = "00" then
+    return ["*"]
+  end if
+  lst = ["*00*"]
+  lst.add("*" & str & "*")
+  return lst
+end

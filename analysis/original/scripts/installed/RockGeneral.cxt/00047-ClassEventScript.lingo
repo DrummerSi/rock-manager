@@ -1,0 +1,96 @@
+property ancestor, child, className, belongsTo, _killed, ID, name, comment, StartDate, duration, neededIDs, visible, Moveable, AutoRemove, onGoing
+global gRock
+
+on new me, argChild, argBelongsTo
+  if objectp(argChild) then
+    child = argChild
+  else
+    child = me
+  end if
+  belongsTo = argBelongsTo
+  className = #Event
+  ID = #none
+  name = EMPTY
+  comment = EMPTY
+  StartDate = 0
+  duration = 0
+  neededIDs = []
+  visible = 0
+  Moveable = 1
+  AutoRemove = 0
+  return me
+end
+
+on kill me
+  _killed = 1
+  if objectp(gRock) then
+    if me.getIsOngoing() = 1 then
+      me.tellNeededObjsAboutChange(#stop)
+    end if
+    gRock.m_eventsManager.deleteEvent(child)
+    gRock.m_classManager.removeObj(child)
+  end if
+  onGoing = 0
+  if objectp(ancestor) then
+    ancestor = ancestor.kill()
+  end if
+  child = 0
+  belongsTo = 0
+  return 0
+end
+
+on load me
+  me.setDates(StartDate, duration)
+end
+
+on getIsOngoing me
+  return gRock.m_eventsManager.m_ongoingEvents.getPos(child) > 0
+end
+
+on setDates me, argDate, argDuration
+  tmpStartRightNow = 0
+  if not voidp(argDate) then
+    StartDate = argDate
+  end if
+  if StartDate = #Now then
+    StartDate = gRock.m_date.getDateInt()
+    tmpStartRightNow = 1
+  end if
+  if not voidp(argDuration) then
+    duration = argDuration
+  end if
+  if objectp(gRock) then
+    gRock.m_eventsManager.changeEvent(child)
+    if tmpStartRightNow then
+      gRock.m_eventsManager.checkEventsStarting()
+    end if
+  end if
+end
+
+on eventChangeState me, argAction, argOption
+  if argAction = #start then
+    onGoing = 1
+    me.tellNeededObjsAboutChange(argAction)
+  else
+    if argAction = #stop then
+      onGoing = 0
+      me.tellNeededObjsAboutChange(argAction)
+      if AutoRemove then
+        child.kill()
+      end if
+    end if
+  end if
+end
+
+on tellNeededObjsAboutChange me, argAction
+  repeat with tmpID in neededIDs
+    if listp(tmpID) then
+      obj_r = gRock.m_classManager.getObjByIDAndClass(tmpID[1], tmpID[2])
+    else
+      obj_r = gRock.m_classManager.getObjByID(tmpID)
+    end if
+    if objectp(obj_r) then
+      call(#eventChanged, [obj_r], child, argAction)
+    end if
+  end repeat
+end

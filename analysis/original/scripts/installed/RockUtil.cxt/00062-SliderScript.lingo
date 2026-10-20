@@ -1,0 +1,212 @@
+property startLoc, dragging, SP, myMemb, constraints, protMouseObj, dragMouseObj, behindMouseObj, Reg, currentLoc, axis, draggerRect, stepSize, constraintSize, factor, topLeft, reportObj, lastLoc, options, minMaxObjs, whichCursor, clickBehindStep
+global gDir
+
+on new me, argReportObj, argSPNum, argMemb, argConstraints, argSteps, argOptions
+  reportObj = argReportObj
+  SP = argSPNum
+  constraints = argConstraints
+  topLeft = point(getAt(constraints, 1), getAt(constraints, 2))
+  constraintSize = point(getAt(constraints, 3), getAt(constraints, 4)) - topLeft
+  myMemb = argMemb
+  axis = 0
+  lastLoc = point(0, 0)
+  options = argOptions
+  if voidp(options) then
+    options = [:]
+  end if
+  stepSize = point(0, 0)
+  if voidp(argSteps) then
+  else
+    argSteps = argSteps - point(1, 1)
+    repeat with n = 1 to 2
+      tmp = getAt(argSteps, n)
+      if tmp then
+        setAt(stepSize, n, float(getAt(constraintSize, n)) / tmp)
+      end if
+    end repeat
+  end if
+  tmpLayer = getaProp(options, #layer)
+  if voidp(tmpLayer) then
+    tmpLayer = 500
+  end if
+  Reg = myMemb.regPoint
+  draggerRect = getMemberRect(myMemb)
+  currentLoc = point(0, 0)
+  dragMouseObj = new(script("MouseObject"), me, draggerRect, [#layer: tmpLayer])
+  protMouseObj = new(script("MouseObject"), me, rect(-100, -100, 1000, 1000), [#layer: tmpLayer + 1])
+  activate(protMouseObj, 0)
+  tmpExtraClickSpace = 15
+  tmpRect = duplicate(constraints)
+  if (getAt(constraints, 3) - getAt(constraints, 1)) = 0 then
+    setAxisOfInterest(me, 2)
+    tmp = rect(getAt(draggerRect, 1), -tmpExtraClickSpace, getAt(draggerRect, 3), tmpExtraClickSpace)
+    tmpRect = tmpRect + tmp
+  else
+    if (getAt(constraints, 4) - getAt(constraints, 2)) = 0 then
+      setAxisOfInterest(me, 1)
+      tmp = rect(-tmpExtraClickSpace, getAt(draggerRect, 2), tmpExtraClickSpace, getAt(draggerRect, 4))
+      tmpRect = tmpRect + tmp
+    end if
+  end if
+  behindMouseObj = new(script("MouseObject"), me, tmpRect, [#layer: tmpLayer - 1])
+  set the member of sprite SP to myMemb
+  setFactor(me, point(0, 0))
+  return me
+end
+
+on kill me
+  if objectp(protMouseObj) then
+    protMouseObj = protMouseObj.kill()
+  end if
+  if objectp(dragMouseObj) then
+    dragMouseObj = dragMouseObj.kill()
+  end if
+  if objectp(behindMouseObj) then
+    behindMouseObj = behindMouseObj.kill()
+  end if
+  sprite(SP).member = member("Dummy")
+  return 0
+end
+
+on setCursor me, argCursor
+  whichCursor = argCursor
+  if objectp(protMouseObj) then
+    protMouseObj.setCursor(whichCursor)
+  end if
+  if objectp(dragMouseObj) then
+    dragMouseObj.setCursor(whichCursor)
+  end if
+end
+
+on setAxisOfInterest me, argAxis
+  axis = argAxis
+end
+
+on refresh me, argGfxOnly
+  currentLoc = confine(me, currentLoc)
+  if lastLoc = currentLoc then
+    exit
+  end if
+  lastLoc = duplicate(currentLoc)
+  dragMouseObj.myRect = rect(currentLoc, currentLoc) + draggerRect
+  set the loc of sprite SP to currentLoc
+  if objectp(reportObj) then
+    calcFactor(me)
+    if argGfxOnly <> #Gfx then
+      Report(reportObj, me, #changed, getFactor(me))
+    end if
+  end if
+end
+
+on mouse me, argObj, argWhat
+  if argObj = dragMouseObj then
+    if argWhat = #down then
+      activate(protMouseObj, 1)
+      protMouseObj.downOn = 1
+      dragMouseObj.downOn = 0
+      startLoc = point(the mouseH, the mouseV) - currentLoc
+      dragging = 1
+    end if
+  else
+    if argObj = protMouseObj then
+      if dragging then
+        if argWhat = #stillDown then
+          tmpLoc = point(the mouseH, the mouseV)
+          currentLoc = tmpLoc - startLoc
+          refresh(me)
+        else
+          if (argWhat = #click) or (argWhat = #UpOutside) then
+            activate(protMouseObj, 0)
+          end if
+        end if
+      end if
+    else
+      if argObj = behindMouseObj then
+        if argWhat = #down then
+          dragging = 0
+          if axis > 0 then
+            protMouseObj.downOn = 1
+            behindMouseObj.downOn = 0
+            tmpLoc = point(the mouseH, the mouseV)
+            tmpSign = getSign(getAt(tmpLoc - currentLoc, axis))
+            tmpStepSize = getAt(stepSize, axis)
+            if tmpStepSize <= 0 then
+              tmpStepSize = getAt(constraintSize, axis) / 10
+            end if
+            if not voidp(clickBehindStep) then
+              tmpStepSize = clickBehindStep[axis]
+            end if
+            setAt(currentLoc, axis, getAt(currentLoc, axis) + (tmpSign * tmpStepSize))
+            refresh(me)
+          end if
+        end if
+      end if
+    end if
+  end if
+end
+
+on confine me, argLoc
+  if getAt(argLoc, 1) > getAt(constraints, 3) then
+    setAt(argLoc, 1, getAt(constraints, 3))
+  else
+    if getAt(argLoc, 1) < getAt(constraints, 1) then
+      setAt(argLoc, 1, getAt(constraints, 1))
+    end if
+  end if
+  if getAt(argLoc, 2) > getAt(constraints, 4) then
+    setAt(argLoc, 2, getAt(constraints, 4))
+  else
+    if getAt(argLoc, 2) < getAt(constraints, 2) then
+      setAt(argLoc, 2, getAt(constraints, 2))
+    end if
+  end if
+  argLoc = argLoc - topLeft
+  repeat with n = 1 to 2
+    tmpStep = getAt(stepSize, n)
+    if tmpStep > 0 then
+      tmp = getAt(argLoc, n)
+      tmpDec = tmp / getAt(stepSize, n)
+      tmpDec = integer(tmpDec)
+      setAt(argLoc, n, integer(tmpDec * getAt(stepSize, n)))
+    end if
+  end repeat
+  argLoc = argLoc + topLeft
+  return argLoc
+end
+
+on calcFactor me
+  tmp = [getAt(currentLoc, 1) - getAt(constraints, 1), getAt(currentLoc, 2) - getAt(constraints, 2)]
+  factor = point(0, 0)
+  repeat with n = 1 to 2
+    if getAt(constraintSize, n) > 0 then
+      setAt(factor, n, getAt(tmp, n) / float(getAt(constraintSize, n)))
+    end if
+  end repeat
+  return factor
+end
+
+on getFactor me
+  if axis <> 0 then
+    return getAt(factor, axis)
+  else
+    return factor
+  end if
+end
+
+on setFactor me, argFact, argGfxOnly
+  if listp(argFact) then
+  else
+    if axis <> 0 then
+      if axis = 1 then
+        argFact = 1 - argFact
+      end if
+      setAt(currentLoc, axis, getAt(constraints, axis + 2) + (argFact * (getAt(constraints, axis) - getAt(constraints, axis + 2))))
+    else
+      put "SetFactor err"
+    end if
+  end if
+  refresh(me, argGfxOnly)
+end
+
+on setSize me, argSize
+end

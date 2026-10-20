@@ -1,0 +1,66 @@
+property buttonObjs, SP, reportObj, currentlyUsingSPObj, lastUsingSPObj, mode
+
+on new me, argReportObj, argSP, argMode
+  reportObj = argReportObj
+  SP = argSP
+  buttonObjs = []
+  currentlyUsingSPObj = 0
+  lastUsingSPObj = 0
+  mode = argMode
+  return me
+end
+
+on kill me
+  repeat with tmpObj in buttonObjs
+    kill(tmpObj)
+  end repeat
+  buttonObjs = []
+  return 0
+end
+
+on addButton me, argInfo
+  tmpObj = new(script("ButtonScript"), me, getAt(argInfo, 1), getAt(argInfo, 2), getAt(argInfo, 3), getAt(argInfo, 4))
+  add(buttonObjs, tmpObj)
+end
+
+on fakeMouse me, argObj, argWhat
+  if not objectp(argObj) then
+    repeat with tmpObj in buttonObjs
+      if tmpObj.ID = argObj then
+        argObj = tmpObj
+        exit repeat
+      end if
+    end repeat
+    if not objectp(argObj) then
+      exit
+    end if
+  end if
+  mouse(argObj, argObj.mouseObj, argWhat)
+end
+
+on mouse me, argObj, argWhat
+  if argWhat = #down then
+    if objectp(currentlyUsingSPObj) then
+      lastUsingSPObj = currentlyUsingSPObj
+      setState(currentlyUsingSPObj, #normal)
+    end if
+    if (currentlyUsingSPObj = argObj) and not (mode = #Toggle) then
+      set the member of sprite SP to member("Dummy")
+      currentlyUsingSPObj = 0
+    else
+      setState(argObj, #down, 1)
+      currentlyUsingSPObj = argObj
+    end if
+  else
+    if argWhat = #click then
+    else
+      if argWhat = #UpOutside then
+      end if
+    end if
+  end if
+  mouse(reportObj, argObj, argWhat)
+end
+
+on getCurrentlyActive me
+  return currentlyUsingSPObj
+end

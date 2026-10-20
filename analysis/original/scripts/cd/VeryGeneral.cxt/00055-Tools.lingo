@@ -1,0 +1,312 @@
+on xxxGetScriptsAndTheirHandlers argCasts, argMode
+  if voidp(argCasts) then
+    argCasts = []
+    repeat with n = 1 to the number of castLibs
+      argCasts.add(n)
+    end repeat
+  else
+    if integerp(argCasts) then
+      argCasts = [argCasts]
+    else
+      if stringp(argCasts) then
+        argCasts = [castLib(argCasts).number]
+      end if
+    end if
+  end if
+  todoStr = EMPTY
+  delim = numToChar(9)
+  allStr = EMPTY
+  repeat with castNr in argCasts
+    castStr = EMPTY
+    repeat with memberNr = 1 to the number of castMembers of castLib castNr
+      memb = member(memberNr, castNr)
+      if memb.type = #script then
+        membStr = xxxGetInfoAboutScript(memb)
+        if 0 then
+          membStr = "SCRIPT "
+          tmpName = memb.name
+          tmpScriptType = memb.scriptType
+          if tmpScriptType <> #movie then
+            next repeat
+          end if
+          tmpStr = memb.scriptText
+          handlers = []
+          lastLine = #none
+          membStr = membStr & memb.name & RETURN
+          handlerName = EMPTY
+          repeat with lineNr = 1 to the number of lines in tmpStr
+            lineStr = line lineNr of tmpStr
+            tmpOff = offset("--", lineStr)
+            if tmpOff then
+              tmpOff = offset("TODO:", lineStr)
+              if tmpOff then
+                lastLine = #TODO
+                todoStr = todoStr & RETURN & "Member:" & memb.name & " " & "Handler:" & handlerName & RETURN
+              end if
+            end if
+            if lineStr.word[1] = "on" then
+              handlerName = lineStr.word[2]
+              if tmpScriptType = #movie then
+                delete delim.word[1..2]
+              else
+                delete delim.word[1..3]
+              end if
+              tmpOff = offset("--", lineStr)
+              if tmpOff then
+                delete delim.char[tmpOff..lineStr.length]
+              end if
+              handlers.add([handlerName, lineStr, [EMPTY]])
+              membStr = membStr & handlerName & "(" & lineStr & ")" & RETURN
+              lastLine = #on
+              next repeat
+            end if
+            if ((lastLine = #on) or (lastLine = #comment)) and (lineStr.word[1].char[1..2] = "--") then
+              lst = handlers[handlers.count()]
+              lst[1] = lst[1] & lineStr & RETURN
+              lastLine = #comment
+              membStr = membStr & lineStr & RETURN
+              next repeat
+            end if
+            if (lastLine = #TODO) and (lineStr.word[1].char[1..2] = "--") then
+              tmpOff = offset("--", lineStr)
+              delete delim.char[1..tmpOff + 1]
+              todoStr = todoStr & lineStr & RETURN
+              next repeat
+            end if
+            lastLine = #none
+          end repeat
+        end if
+        if membStr.length > 0 then
+          castStr = castStr & membStr & RETURN & RETURN
+        end if
+      end if
+    end repeat
+    allStr = allStr & castStr & RETURN & RETURN & RETURN
+  end repeat
+  if argMode = #TODO then
+    return todoStr
+  else
+    return allStr
+  end if
+end
+
+on xxxGetInfoAboutScript argScriptMember
+  membStr = "SCRIPT "
+  tmpName = argScriptMember.name
+  tmpScriptType = argScriptMember.scriptType
+  if tmpScriptType <> #movie then
+    return EMPTY
+  end if
+  tmpStr = argScriptMember.scriptText
+  handlers = []
+  lastLine = #none
+  membStr = membStr & argScriptMember.name & RETURN
+  handlerName = EMPTY
+  repeat with lineNr = 1 to the number of lines in tmpStr
+    lineStr = line lineNr of tmpStr
+    tmpOff = offset("--", lineStr)
+    if tmpOff then
+      tmpOff = offset("TODO:", lineStr)
+      if tmpOff then
+        lastLine = #TODO
+        todoStr = todoStr & RETURN & "Member:" & argScriptMember.name & " " & "Handler:" & handlerName & RETURN
+      end if
+    end if
+    if lineStr.word[1] = "on" then
+      handlerName = lineStr.word[2]
+      if tmpScriptType = #movie then
+        delete tmpName.word[1..2]
+      else
+        delete tmpName.word[1..3]
+      end if
+      tmpOff = offset("--", lineStr)
+      if tmpOff then
+        delete tmpName.char[tmpOff..lineStr.length]
+      end if
+      handlers.add([handlerName, lineStr, [EMPTY]])
+      membStr = membStr & RETURN & handlerName & "(" & lineStr & ")" & RETURN
+      lastLine = #on
+      next repeat
+    end if
+    if ((lastLine = #on) or (lastLine = #comment)) and (lineStr.word[1].char[1..2] = "--") then
+      lst = handlers[handlers.count()]
+      lst[1] = lst[1] & lineStr & RETURN
+      lastLine = #comment
+      membStr = membStr & lineStr & RETURN
+      next repeat
+    end if
+    if (lastLine = #TODO) and (lineStr.word[1].char[1..2] = "--") then
+      tmpOff = offset("--", lineStr)
+      delete tmpName.char[1..tmpOff + 1]
+      todoStr = todoStr & lineStr & RETURN
+      next repeat
+    end if
+    lastLine = #none
+  end repeat
+  return membStr
+end
+
+on xxxAutoComment argMemberList, argLinesStartingWithStr, argMode
+  argLinesStartingWithStr = argLinesStartingWithStr & "*"
+  argMemberList = [member("zzTryCommentScript")]
+  if argMode = #Uncomment then
+    argLinesStartingWithStr = "--" & argLinesStartingWithStr
+  end if
+  repeat with tmpMember in argMemberList
+    tmpStr = tmpMember.scriptText
+    tmpAnythingChanged = 0
+    repeat with lineNr = 1 to the number of lines in tmpStr
+      orgLineStr = tmpStr.line[lineNr]
+      lineStr = orgLineStr
+      repeat with n = 1 to lineStr.length
+        if lineStr.char[1] = " " then
+          delete tmpMember.char[1]
+          next repeat
+        end if
+        exit repeat
+      end repeat
+      tmp = wildCardSearch(argLinesStartingWithStr, [lineStr])
+      if tmp.count() then
+        tmpAnythingChanged = 1
+        if argMode = #Uncomment then
+          repeat with n = 1 to lineStr.length
+            if lineStr.char[n] <> "-" then
+              exit repeat
+            end if
+            delete tmpMember.char[n]
+          end repeat
+        else
+          tmpChar = lineStr.char[1]
+          put "--" & tmpChar into tmpMember.char[the length of orgLineStr - the length of lineStr + 1]
+        end if
+        put orgLineStr into tmpMember.line[lineNr]
+      end if
+    end repeat
+    if tmpAnythingChanged then
+      tmpMember.scriptText = tmpStr
+    end if
+  end repeat
+end
+
+on xxxCountCode
+  totNumLines = 0
+  numBytes = 0
+  repeat with castNr = 1 to the number of castLibs
+    numLines = 0
+    repeat with membNr = 1 to the number of castMembers of castLib castNr
+      memb = member(membNr, castNr)
+      if memb.type = #script then
+        lastLineNr = the number of lines in the scriptText of memb
+        repeat with lineNr = 1 to lastLineNr
+          tmpLine = memb.scriptText.line[lineNr]
+          countThisLine = 0
+          repeat with chNr = 1 to tmpLine.length
+            if tmpLine.char[chNr] <> " " then
+              countThisLine = 1
+              exit repeat
+            end if
+          end repeat
+          numLines = numLines + countThisLine
+        end repeat
+        numBytes = numBytes + memb.scriptText.length
+      end if
+    end repeat
+    pott("NumLines", castLib(castNr).name, numLines)
+    totNumLines = totNumLines + numLines
+  end repeat
+  pott("totNumLines", totNumLines, "totNumBytes", numBytes)
+end
+
+on xxxAddHandler argHandlerText, argReplaceOldHandlers, argMemberList
+  if voidp(argMemberList) then
+    argMemberList = findMembers("*", [#Types: [#script]], #members)
+  end if
+  firstLine = argHandlerText.line[1]
+  handlerName = firstLine.word[2]
+  numWords = the number of words in firstLine
+  searchStr = RETURN & "on " & handlerName
+  otherHandler = argHandlerText
+  if numWords = 2 then
+    put firstLine.word[1..2] & " me" into firstLine.line[1]
+  else
+    put firstLine.word[1..2] & " me, " & firstLine.word[3..numWords] into firstLine.line[1]
+  end if
+  repeat with membNr = 1 to argMemberList.count
+    memb = argMemberList[membNr]
+    if memb.type <> #script then
+      next repeat
+    end if
+    str = memb.scriptText
+    tmpOff = offset(searchStr, str)
+    if tmpOff then
+      nextChar = str.char[tmpOff + searchStr.length]
+      if (nextChar <> " ") and (nextChar <> RETURN) then
+        next repeat
+      end if
+      if argReplaceOldHandlers <> #Replace then
+        next repeat
+      end if
+      tmpEndOff = offset(RETURN & "end", str.char[tmpOff..str.length])
+      if memb.scriptType = #movie then
+        put argHandlerText into firstLine.char[tmpOff + 1..tmpOff + tmpEndOff + 2]
+      else
+        put otherHandler into firstLine.char[tmpOff + 1..tmpOff + tmpEndOff + 2]
+      end if
+      memb.scriptText = str
+      next repeat
+    end if
+    if memb.scriptType = #movie then
+      memb.scriptText = str & RETURN & RETURN & argHandlerText
+      next repeat
+    end if
+    memb.scriptText = str & RETURN & RETURN & otherHandler
+  end repeat
+end
+
+on xxxRemoveHandler argHandlerName, argMemberList
+  if voidp(argMemberList) then
+    argMemberList = findMembers("*", [#Types: [#script]], #members)
+  end if
+  searchStr = RETURN & "on " & argHandlerName
+  repeat with membNr = 1 to argMemberList.count
+    memb = argMemberList[membNr]
+    if memb.type <> #script then
+      next repeat
+    end if
+    str = memb.scriptText
+    tmpOff = offset(searchStr, str)
+    if not tmpOff then
+      next repeat
+    end if
+    nextChar = str.char[tmpOff + searchStr.length]
+    if (nextChar <> " ") and (nextChar <> RETURN) then
+      next repeat
+    end if
+    tmpEndOff = offset(RETURN & "end", str.char[tmpOff..str.length])
+    if not tmpEndOff then
+      put "Warning, no end"
+      next repeat
+    end if
+    put "remove", memb, str.char[tmpOff..tmpEndOff]
+    delete searchStr.char[tmpOff..tmpEndOff]
+  end repeat
+end
+
+on xxxFindStringInMembers argStr, argMembers
+  foundList = []
+  repeat with n = 1 to argMembers.count
+    memb = argMembers[n]
+    tmp = VOID
+    if memb.type = #script then
+      tmpOff = offset(argStr, memb.scriptText)
+    else
+      if (memb.type = #field) or (memb.type = #text) then
+        tmpOff = offset(argStr, memb.text)
+      end if
+    end if
+    if tmpOff > 0 then
+      foundList.add(memb)
+    end if
+  end repeat
+  return foundList
+end

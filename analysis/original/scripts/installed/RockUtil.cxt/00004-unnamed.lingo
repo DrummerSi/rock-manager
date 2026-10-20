@@ -1,0 +1,33 @@
+on xxxGenSyncInfo
+  exePath = "D:\Dok\cpp\RockWave\Debug\Rockwave.exe"
+  inputPath = the moviePath & "Sound\Music\Sliced\"
+  tmp = getFolderContents(inputPath)
+  instrFolders = tmp[#Folders]
+  allCommands = []
+  repeat with n = 1 to instrFolders.count()
+    tmpPath = inputPath & instrFolders[n] & "\"
+    tmp = getFolderContents(tmpPath)
+    Folders = tmp[#Folders]
+    repeat with m = 1 to Folders.count()
+      xxxRecurseGetSync(tmpPath, Folders[m], allCommands)
+    end repeat
+  end repeat
+  str = EMPTY
+  repeat with n = 1 to allCommands.count()
+    str = str & allCommands[n] & RETURN & numToChar(10)
+  end repeat
+  batchPath = inputPath & "batch.txt"
+  writeFile(batchPath, str)
+  open(exePath && "/batch:" & batchPath)
+end
+
+on xxxRecurseGetSync argPath, argLastFolder, argResultList
+  tmpMergedPath = argPath & argLastFolder & "\"
+  tmp = getFolderContents(tmpMergedPath)
+  if tmp[#Files].count() then
+    argResultList.add(tmpMergedPath & "*.*" && "/writeInfo:" & argLastFolder & ".txt")
+  end if
+  repeat with n = 1 to tmp[#Folders].count()
+    xxxRecurseGetSync(tmpMergedPath, tmp[#Folders][n], argResultList)
+  end repeat
+end

@@ -1,0 +1,36 @@
+property m_endMillisecs, m_framesLeft, m_reportObj
+global gUseful
+
+on new me, argReportObj, argNum, argWhat
+  m_reportObj = argReportObj
+  if voidp(argWhat) or (argWhat = #seconds) then
+    m_endMillisecs = the milliSeconds + integer(argNum * 1000)
+  else
+    if argWhat = #frames then
+      m_framesLeft = argNum
+    end if
+  end if
+  gUseful.frameTimer.addObject(me)
+  return me
+end
+
+on kill me
+  m_reportObj = 0
+  gUseful.frameTimer.deleteObject(me)
+  return 0
+end
+
+on timeTick me
+  if integerp(m_endMillisecs) then
+    if the milliSeconds >= m_endMillisecs then
+      m_reportObj.Report(me, #WaitDone)
+      me.kill()
+    end if
+  else
+    m_framesLeft = m_framesLeft - 1
+    if m_framesLeft = 0 then
+      m_reportObj.Report(me, #WaitDone)
+      me.kill()
+    end if
+  end if
+end

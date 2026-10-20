@@ -1,0 +1,122 @@
+on MUICallback argWhat, argItemNr, argItemProps
+  global gMUICallbackObj
+  if objectp(gMUICallbackObj) then
+    gMUICallbackObj.callback(argWhat, argItemNr, argItemProps)
+  end if
+end
+
+on setMUIWndProps argWnd, argWndPropList, argItemsPropList, argAutoInitializeWnd
+  if voidp(argAutoInitializeWnd) then
+    argAutoInitializeWnd = 1
+  end if
+  wndPropList = argWnd.GetWindowPropList()
+  repeat with propNr = 1 to argWndPropList.count
+    wndPropList.setaProp(argWndPropList.getPropAt(propNr), argWndPropList[propNr])
+  end repeat
+  newWndItemList = []
+  orgPropList = argWnd.GetItemPropList()
+  returnItemsPropList = [:]
+  repeat with itemNr = 1 to argItemsPropList.count
+    props = argItemsPropList[itemNr]
+    ID = argItemsPropList.getPropAt(itemNr)
+    if ID = 0 then
+      ID = itemNr
+    end if
+    tempItemPropList = orgPropList.duplicate()
+    repeat with n = 1 to props.count
+      tempItemPropList.setaProp(props.getPropAt(n), props[n])
+    end repeat
+    returnItemsPropList.setaProp(ID, tempItemPropList)
+    newWndItemList.append(tempItemPropList)
+  end repeat
+  if argAutoInitializeWnd = 1 then
+    argWnd.Initialize([#windowPropList: wndPropList, #windowItemList: newWndItemList])
+  end if
+  return [#window: wndPropList, #items: returnItemsPropList]
+end
+
+on propListFromTable argStr, argPropList
+  the itemDelimiter = numToChar(9)
+  if voidp(argPropList) then
+    argPropList = [:]
+  end if
+  tmpPropList = argPropList
+  numLines = the number of lines in argStr
+  lastIndent = 0
+  repeat with lineNr = 1 to numLines
+    if (lineNr mod 100) = 0 then
+      pott(lineNr)
+    end if
+    tmpLine = argStr.line[lineNr]
+    numWords = the number of words in tmpLine
+    if numWords = 0 then
+      next repeat
+    end if
+    tmpWord = tmpLine.word[1]
+    tmpOff = offset(tmpWord, tmpLine)
+    indent = the number of items in tmpLine.char[1..tmpOff]
+    prop = value(tmpWord)
+    if not (integerp(prop) or floatp(prop)) then
+      prop = symbol(tmpWord)
+    end if
+    if indent > lastIndent then
+    else
+      if indent < lastIndent then
+        tmpPropList = argPropList
+        repeat with n = 1 to indent - 1
+          tmpPropList = tmpPropList[tmpPropList.count]
+        end repeat
+      end if
+    end if
+    if numWords = 1 then
+      tmpNewPropList = [:]
+      tmpPropList.addProp(prop, tmpNewPropList)
+      tmpPropList = tmpNewPropList
+    end if
+    if numWords > 1 then
+      val = tmpLine.word[2..numWords]
+      val = value(val)
+      if stringp(val) then
+        val = replaceEscapeChars(val)
+      end if
+      prop = symbol(tmpWord)
+      tmpPropList.addProp(prop, val)
+    else
+    end if
+    lastIndent = indent
+  end repeat
+  return argPropList
+end
+
+on replaceEscapeChars argStr
+  insteadOfBackslashStr = "@£%%%%@"
+  repeat while 1
+    tmpOff = offset("\", argStr)
+    if not tmpOff then
+      exit repeat
+    end if
+    nextChar = argStr.char[tmpOff + 1]
+    if nextChar = "'" then
+      Replace = QUOTE
+    else
+      if nextChar = "n" then
+        Replace = RETURN
+      else
+        if nextChar = "\" then
+          Replace = insteadOfBackslashStr
+        else
+          Replace = EMPTY
+        end if
+      end if
+    end if
+    put Replace into argStr.char[tmpOff..tmpOff + 1]
+  end repeat
+  repeat while 1
+    tmpOff = offset(insteadOfBackslashStr, argStr)
+    if not tmpOff then
+      exit repeat
+    end if
+    put "\" into argStr.char[tmpOff..tmpOff + the length of insteadOfBackslashStr - 1]
+  end repeat
+  return argStr
+end

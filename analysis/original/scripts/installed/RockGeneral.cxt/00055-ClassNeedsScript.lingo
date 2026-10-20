@@ -1,0 +1,91 @@
+property ancestor, child, className, belongsTo, _killed, NeedsInitList, NeedObjs
+global gRock
+
+on new me, argChild, argBelongsTo
+  if objectp(argChild) then
+    child = argChild
+  else
+    child = me
+  end if
+  belongsTo = argBelongsTo
+  className = #Needs
+  NeedsInitList = [:]
+  NeedObjs = [:]
+  return me
+end
+
+on kill me
+  _killed = 1
+  repeat with obj in NeedObjs
+    gRock.m_classManager.removeObj(obj, #kill)
+  end repeat
+  NeedObjs = [:]
+  if objectp(ancestor) then
+    ancestor = ancestor.kill()
+  end if
+  child = 0
+  belongsTo = 0
+  return 0
+end
+
+on PreInit me
+  if not listp(NeedsInitList) then
+    pott("NeedsInitList empty", belongsTo.ID)
+  end if
+  repeat with n = 1 to NeedsInitList.count
+    tmpClassName = NeedsInitList.getPropAt(n)
+    tmpInits = NeedsInitList[n]
+    needObj = gRock.m_classManager.createUnregObj(tmpClassName)
+    needObj.belongsTo = me
+    if listp(tmpInits) then
+    else
+      needObj.DynamicTrigger.GainFact = tmpInits * needObj.DynamicTrigger.GainFact
+      needObj.DynamicTrigger.max = tmpInits * needObj.DynamicTrigger.max
+    end if
+    NeedObjs.addProp(needObj.className, needObj)
+  end repeat
+end
+
+on setActiveState me, argState
+  repeat with n = 1 to NeedObjs.count
+    NeedObjs[n].setActiveState(argState)
+  end repeat
+end
+
+on suspend me, argIsTRUE
+  repeat with n = 1 to NeedObjs.count
+    NeedObjs[n].suspend(argIsTRUE)
+  end repeat
+end
+
+on satisfy me, argNeedClassName, argVal
+  obj = NeedObjs[argNeedClassName]
+  if not objectp(obj) then
+    pott("Don't have that need", argNeedClassName)
+    exit
+  end if
+  obj.satisfy(argVal)
+end
+
+on getNeed me, argNeedClassName
+  obj = NeedObjs[argNeedClassName]
+  return obj.getOneProp(#Current)
+end
+
+on save me
+  tmp = [:]
+  repeat with n = 1 to NeedObjs.count
+    tmp.addProp(NeedObjs.getPropAt(n), NeedObjs[n].save())
+  end repeat
+  return tmp
+end
+
+on load me, argList
+  repeat with n = 1 to argList.count
+    tmpID = argList.getPropAt(n)
+    tmpObj = NeedObjs.getaProp(tmpID)
+    if objectp(tmpObj) then
+      tmpObj.load(argList[n])
+    end if
+  end repeat
+end

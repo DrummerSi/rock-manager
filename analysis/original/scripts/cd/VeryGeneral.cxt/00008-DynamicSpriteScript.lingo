@@ -1,0 +1,135 @@
+property spriteNums, startSPNum, endSPNum, maxNumSPs, autoShuffleSprites, layers, oldLayers, currentID, SPInfoCache, order
+
+on new me, argStartSPNum, argNumSPs
+  maxNumSPs = argNumSPs
+  me.setStartSPNum(argStartSPNum)
+  me.clear()
+  order = 1
+  autoShuffleSprites = 0
+  return me
+end
+
+on kill me
+  return 0
+end
+
+on clear me, argClearSprites
+  if argClearSprites = 1 then
+    repeat with tmpSPNum = startSPNum to endSPNum
+      sprite(tmpSPNum).member = member("Dummy")
+    end repeat
+  end if
+  layers = [:]
+  layers.sort()
+  currentID = 1
+  SPInfoCache = [:]
+end
+
+on hideUnused me
+  if order = 1 then
+    repeat with n = layers.count() + 1 to maxNumSPs
+      sprite(n + startSPNum - 1).member = member("Dummy")
+    end repeat
+  else
+    repeat with n = 1 to maxNumSPs - layers.count()
+      tmpSP = sprite(n + startSPNum - 1)
+      tmpSP.member = member("Dummy")
+    end repeat
+  end if
+end
+
+on cacheSPInfo me
+  if autoShuffleSprites then
+    SPInfoCache = [:]
+    repeat with n = 1 to layers.count()
+      tmpList = [:]
+      tmpSP = sprite(n + startSPNum - 1)
+      tmpList.addProp(#member, tmpSP.member)
+      tmpList.addProp(#rect, tmpSP.rect)
+      tmpList.addProp(#ink, tmpSP.ink)
+      SPInfoCache.addProp(layers[n], tmpList)
+    end repeat
+  end if
+end
+
+on moveToNewLayer me, argID, argLayer
+  me.cacheSPInfo()
+  tmpPos = layers.getPos(argID)
+  layers.deleteAt(tmpPos)
+  layers.addProp(argLayer, argID)
+  tmpNewPos = layers.getPos(argID)
+  tmpFirstPos = tmpNewPos
+  if tmpPos < tmpFirstPos then
+    tmpFirstPos = tmpPos
+  end if
+  me.orderChanged(tmpFirstPos)
+end
+
+on reserveSprite me, argLayer
+  me.cacheSPInfo()
+  layers.addProp(argLayer, currentID)
+  currentID = currentID + 1
+  me.orderChanged(layers.getPos(currentID))
+  return currentID - 1
+end
+
+on getSprite me, argID
+  tmpPos = layers.getPos(argID)
+  if order = 1 then
+    return tmpPos + startSPNum - 1
+  else
+    return maxNumSPs - tmpPos + startSPNum
+  end if
+end
+
+on returnSprite me, argID
+  me.cacheSPInfo()
+  tmpPos = layers.getPos(argID)
+  layers.deleteAt(tmpPos)
+  me.orderChanged(tmpPos)
+  return 0
+end
+
+on orderChanged me, argStartPos, argNewSPStart
+  if autoShuffleSprites then
+    me.shuffleSprites(argStartPos, argNewSPStart)
+  end if
+end
+
+on tellObjsAboutChange me, argStartPos
+end
+
+on shuffleSprites me, argStart, argNewSPStart
+  if voidp(argNewSPStart) then
+    repeat with n = 1 to layers.count()
+      tmpID = layers[n]
+      tmpInfo = SPInfoCache.getaProp(tmpID)
+      if listp(tmpInfo) then
+        tmpSP = sprite(n + startSPNum - 1)
+        tmpSP.member = tmpInfo[#member]
+        tmpSP.rect = tmpInfo[#rect]
+        tmpSP.ink = tmpInfo[#ink]
+        tmpSP.stretch = 0
+      end if
+    end repeat
+  else
+    repeat with n = argStart to layers.count()
+      tmpOldSP = sprite(n) + startSPNum - 1
+      tmpNewSP = sprite(n) + argNewSPStart - 1
+      me.copySPContent(tmpOldSP, tmpNewSP)
+    end repeat
+  end if
+end
+
+on copySPContent me, argFromSP, argToSP
+  argToSP.member = argFromSP.member
+  argToSP.rect = argFromSP.rect
+  argToSP.ink = argFromSP.ink
+end
+
+on setStartSPNum me, argSPNum
+  me.cacheSPInfo()
+  me.orderChanged(1, argSPNum)
+  startSPNum = argSPNum
+  endSPNum = argSPNum + maxNumSPs - 1
+end

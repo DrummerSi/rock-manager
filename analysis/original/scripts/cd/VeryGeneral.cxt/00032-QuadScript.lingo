@@ -1,0 +1,130 @@
+property myQuad, myRect, size, topLeft, bottomRight, area, centerPoint, pivotPoint
+
+on new me, argQuad
+  if ilk(argQuad) = #rect then
+    argQuad = me.makeQuadFromRect(argQuad)
+  end if
+  me.setQuad(argQuad)
+  return me
+end
+
+on kill me
+  return 0
+end
+
+on setQuad me, argQuad
+  if voidp(argQuad) then
+    argQuad = [point(0, 0), point(0, 0), point(0, 0), point(0, 0)]
+  end if
+  myQuad = argQuad
+  tmpMinH = 99999
+  tmpMaxH = -99999
+  tmpMinV = 99999
+  tmpMaxV = -99999
+  repeat with n = 1 to myQuad.count()
+    tmpPoint = myQuad[n]
+    if tmpPoint[1] > tmpMaxH then
+      tmpMaxH = tmpPoint[1]
+    end if
+    if tmpPoint[1] < tmpMinH then
+      tmpMinH = tmpPoint[1]
+    end if
+    if tmpPoint[2] > tmpMaxV then
+      tmpMaxV = tmpPoint[2]
+    end if
+    if tmpPoint[2] < tmpMinV then
+      tmpMinV = tmpPoint[2]
+    end if
+  end repeat
+  myRect = rect(point(tmpMinH, tmpMinV), point(tmpMaxH, tmpMaxV))
+  tmpRectSize = point(myRect[3] - myRect[1], myRect[4] - myRect[2])
+  pivotPoint = point(myRect[1], myRect[2]) + (tmpRectSize / 2)
+  centerPoint = pivotPoint
+end
+
+on setCenter me, argLoc
+end
+
+on setPivot me, argLoc
+  pivotPoint = argLoc
+end
+
+on rotate me, argDegrees
+  myQuad = me.getRotated(argDegrees)
+end
+
+on getRotated me, argRadians
+  tmpList = []
+  repeat with n = 1 to myQuad.count()
+    tmpPoint = myQuad[n]
+    tmpDiff = pivotPoint - tmpPoint
+    tmpHypo = sqrt(float((tmpDiff[1] * tmpDiff[1]) + (tmpDiff[2] * tmpDiff[2])))
+    tmpAng = calcDirection(pivotPoint, tmpPoint, #radians)
+    tmpAng = tmpAng + argRadians
+    if tmpAng > (PI * 2) then
+      tmpAng = tmpAng - (PI * 2)
+    else
+      if tmpAng < 0 then
+        tmpAng = (PI * 2) + tmpAng
+      end if
+    end if
+    tmpPoint = point(tmpHypo * sin(tmpAng), -tmpHypo * cos(tmpAng))
+    tmpPoint = tmpPoint + pivotPoint
+    tmpList.add(tmpPoint)
+  end repeat
+  return tmpList
+end
+
+on getQuad me
+  return myQuad
+end
+
+on getSize me
+  return size
+end
+
+on getRect me
+  return rect(0, 0, 0, 0)
+end
+
+on getCenter me
+  return centerPoint
+end
+
+on getPivot me
+  return pivotPoint
+end
+
+on getCenterFromTopLeft me
+  return size / 2
+end
+
+on move me, argPoint
+  repeat with n = 1 to myQuad.count()
+    myQuad[n] = myQuad[n] + argPoint
+  end repeat
+  topLeft = topLeft + argPoint
+  bottomRight = bottomRight + argPoint
+  centerPoint = centerPoint + argPoint
+  pivotPoint = pivotPoint + argPoint
+end
+
+on inside me, argPoint
+  return inside(argPoint, myRect)
+end
+
+on getWhereInRectFact me, argPoint
+  tmpOff = argPoint - topLeft
+  tmp = tmpOff / point(float(getAt(size, 1)), float(getAt(size, 2)))
+  return tmp
+end
+
+on getWhereInRectPix me, argPoint
+  tmp = argPoint * size
+  tmp = topLeft + tmp
+  return tmp
+end
+
+on makeQuadFromRect me, argInRect
+  return [point(argInRect[1], argInRect[2]), point(argInRect[3], argInRect[2]), point(argInRect[3], argInRect[4]), point(argInRect[1], argInRect[4])]
+end

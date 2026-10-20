@@ -1,0 +1,88 @@
+property m_str, m_mode, m_msecStart, m_options, m_active, m_password, m_msecLast
+
+on new me
+  m_str = EMPTY
+  m_options = [:]
+  me.setTimerToZero()
+  m_options[#IncludeTimer] = 1
+  m_active = 0
+  return me
+end
+
+on kill me
+  return 0
+end
+
+on start me, argPassword
+  me.clearBuffer()
+  me.activate(1)
+  me.setPassword(argPassword)
+  me.setTimerToZero()
+end
+
+on setTimerToZero me
+  m_msecStart = the milliSeconds
+  m_msecLast = m_msecStart
+end
+
+on activate me, argIsTRUE
+  if voidp(argIsTRUE) then
+    argIsTRUE = 1
+  end if
+  m_active = argIsTRUE
+end
+
+on clearBuffer me
+  m_str = EMPTY
+end
+
+on setPassword me, argPwd
+  m_password = argPwd
+end
+
+on debugOut me, argPwd, arg1, arg2, arg3, arg4, arg5, arg6, arg7
+  if not m_active then
+    exit
+  end if
+  if not voidp(m_password) then
+    if listp(m_password) then
+      if m_password.getPos(argPwd) = 0 then
+        exit
+      end if
+    else
+      if argPwd <> m_password then
+        exit
+      end if
+    end if
+  end if
+  X = [arg1, arg2, arg3, arg4, arg5, arg6, arg7]
+  str = EMPTY
+  repeat with n = 1 to X.count()
+    tmp = X[n]
+    if voidp(tmp) then
+      exit repeat
+    end if
+    str = str & string(tmp) & ", "
+  end repeat
+  str = str.char[1..str.length - 2]
+  tmpMsec = the milliSeconds
+  if m_options[#IncludeTimer] = 1 then
+    tmp = tmpMsec - m_msecStart
+    str = convItoS(tmpMsec - m_msecLast, 2) & " " & string(tmp) & " " & str
+  end if
+  m_msecLast = tmpMsec
+  if m_options[#TimerAutoReset] = 1 then
+    m_msecStart = the milliSeconds
+  end if
+  m_str = m_str & str
+  if m_mode = #Autoflush then
+    me.flush()
+  else
+    m_str = m_str & RETURN
+  end if
+end
+
+on flush me
+  put m_str
+  m_str = EMPTY
+end

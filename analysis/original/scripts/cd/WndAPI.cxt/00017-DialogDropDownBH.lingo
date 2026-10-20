@@ -1,0 +1,208 @@
+property childObj, isExpanded, dialogObj, scrollThisObj, dropDlgObj, scrDlgObj, stuffList, listItemPrototype, temporaryMember, itemObj
+global gUseful
+
+on new me, argItemObj, argChildObj
+  itemObj = argItemObj
+  childObj = argChildObj
+  if voidp(childObj) then
+    childObj = me
+  end if
+  stuffList = []
+  me.setListItemPrototype()
+  return me
+end
+
+on Died me, argObj
+  if argObj = itemObj then
+    me.kill()
+  end if
+end
+
+on kill me
+  itemObj = 0
+  if objectp(dropDlgObj) then
+    dropDlgObj = dropDlgObj.kill()
+  end if
+  return 0
+end
+
+on timeTick me
+  me.expand(0)
+  gUseful.frameTimer.deleteObject(me)
+end
+
+on mouse me, argObj, argWhat
+  if argWhat = #DownOnOther then
+    if isExpanded then
+    end if
+    exit
+  end if
+  if argWhat = #down then
+    if not isExpanded then
+    end if
+  else
+    if argWhat = #click then
+      if isExpanded then
+        gUseful.frameTimer.addObject(me)
+        IDStr = string(argObj.ID)
+        tmp = "ListItem"
+        if offset(tmp, IDStr) then
+          delete IDStr.char[1..tmp.length]
+          Nr = value(IDStr)
+          me.setSelected(Nr, #EditIt)
+        end if
+      else
+        me.expand(1)
+      end if
+    else
+      if argWhat = #enter then
+      else
+        if argWhat = #Leave then
+        end if
+      end if
+    end if
+  end if
+end
+
+on setSelected me, argIDorNrInList, argEditIt
+  if integerp(argIDorNrInList) then
+    tmpNr = argIDorNrInList
+    tmpID = stuffList[tmpNr][#ID]
+  else
+    tmpID = argIDorNrInList
+    repeat with n = 1 to stuffList.count()
+      if stuffList[n][#ID] = tmpID then
+        tmpNr = n
+      end if
+    end repeat
+  end if
+  if itemObj.type = #Dialog then
+    if objectp(scrDlgObj) then
+      lineObj = scrDlgObj.getItem(symbol("ListItem" & string(tmpNr)))
+    end if
+    tmpObj = itemObj.dialogObj.getItem(#text)
+    if objectp(tmpObj) then
+      tmpCh = tmpObj.getOneProp(#ch)
+      tmpXXX = itemObj.dialogObj.getItem(#text)
+      lst = tmpXXX.getProps()
+      newLst = [:]
+      repeat with n = 1 to lst.count()
+        tmp = lst[n]
+        newLst.addProp(lst.getPropAt(n), tmp[#default])
+      end repeat
+      itemObj.dialogObj.deleteItem(#text)
+    else
+      put "There's no #Text item in dropdown dialog!"
+      tmpCh = 1
+    end if
+    if objectp(lineObj) then
+      lst = lineObj.getProps()
+      newLst = [:]
+      repeat with n = 1 to lst.count()
+        tmp = lst[n]
+        newLst.addProp(lst.getPropAt(n), tmp[#default])
+      end repeat
+    else
+      newLst = listItemPrototype.duplicate()
+    end if
+    newLst.setaProp(#ID, #text)
+    newLst.setaProp(#ch, tmpCh)
+    newLst.setaProp(#rel, [0, 0, #Auto, #Auto])
+    newLst.deleteProp(#ScriptNames)
+    tmp = newLst.getaProp(#inOffsetRect)
+    tmp[3] = 100
+    itemObj.dialogObj.addItem(newLst)
+    if not voidp(argEditIt) then
+      repeat with tmpObj in itemObj.scriptInstanceList
+        if tmpObj.handler(#Report) then
+          call(#Report, tmpObj, me, #ChoseDropDown, [tmpNr, tmpID])
+        end if
+      end repeat
+    end if
+  end if
+end
+
+on setList me, argLst
+  if argLst.count() then
+    if not listp(argLst[1]) then
+      stuffList = []
+      repeat with tmp in argLst
+        tmpX = [:]
+        tmpX.addProp(#text, string(tmp))
+        tmpX.addProp(#ID, tmp)
+        stuffList.add(tmpX)
+      end repeat
+    else
+      stuffList = argLst
+    end if
+  else
+    stuffList = []
+  end if
+end
+
+on expand me, argIsTRUE
+  tmpDlg = itemObj.ancestor.masterObj
+  if argIsTRUE then
+    me.createDropped()
+    dropDlgObj.renderAtLoc(point(itemObj.onStageRect[1], itemObj.onStageRect[2]))
+  else
+    dropDlgObj = dropDlgObj.kill()
+  end if
+  isExpanded = argIsTRUE
+end
+
+on createDropped me
+  tmpDialogDataMemberName = "DlgScrollSetData"
+  temporaryMember = assertMember(#bitmap, "__TEMP", 1)
+  SP = sprite(65)
+  SP.ink = 0
+  dropDlgObj = script("Dialog").new([#AttachImageToMember: temporaryMember.name, #StartSpriteNum: SP.spriteNum, #NumSprites: 2, #OKtoResize: 1, #ID: #DroppedDlg])
+  dropDlgObj.rawCreate(member(tmpDialogDataMemberName).text.value)
+  scrollThisObj = dropDlgObj.getItem(#ScrollThis)
+  tmpScrollWnd = me.createScrollWnd2(stuffList, dropDlgObj, me)
+  scrollThisObj.scriptInstanceList.add(me)
+  scrollThisObj.setOneProp(#usingTopMouse, 1)
+  scrollThisObj.mouseObj.noPassButton = 0
+  scrollThisObj.mouseObj.noPassRoll = 0
+  scrollThisObj.mouseObj.overMouseObj.noPassButton = 0
+  scrollThisObj.setOneProp(#rel, [0, 0, 0, 0])
+  scrollThisObj.setOneProp(#inOffsetRect, rect(0, 0, itemObj.calcRect[3] - itemObj.calcRect[1] - 10, 100))
+  scrollThisObj.attachDlg(tmpScrollWnd)
+  dropDlgObj.incorporateNewItems()
+end
+
+on createScrollWnd2 me, argInfoList, argTopWnd, argReportObj
+  global gUseful
+  if voidp(argInfoList) then
+    argInfoList = [[#text: "WHATTA!"], [#text: "aa!"], [#text: "aaaaaaa!"], [#text: "bbbbbbb!"]]
+  end if
+  scrDlgObj = script("Dialog").new([#image: argTopWnd.myImagePtr, #OKtoResize: 0, #ID: #DlgDlg])
+  gUseful.frameTimer.deleteObject(scrDlgObj)
+  rel = [0, 0, #Auto, #Auto]
+  repeat with n = 1 to argInfoList.count()
+    itemLst = argInfoList[n]
+    ID = symbol("ListItem" & string(n))
+    tmpLst = listItemPrototype.duplicate()
+    tmpLst.setaProp(#ID, ID)
+    tmpLst.setaProp(#ch, n)
+    tmpLst.setaProp(#rel, rel)
+    tmpLst.setaProp(#inOffsetRect, [3, 3, 0, 0])
+    tmpLst.setaProp(#fieldName, "EnterField1")
+    tmpLst.setaProp(#editData, itemLst[#text])
+    tmpLst.setaProp(#shrinkToFitText, 1)
+    tmpItemObj = scrDlgObj.addItem(tmpLst)
+    if objectp(argReportObj) then
+      tmpItemObj.scriptInstanceList.addAt(1, argReportObj)
+    end if
+    rel = [0, [ID, 4], #Auto, #Auto]
+  end repeat
+  scrDlgObj.incorporateNewItems()
+  return scrDlgObj
+end
+
+on setListItemPrototype me, argList
+  if voidp(argList) then
+    argList = [#type: #EnterField, #editable: 0, #shrinkToFitText: 1, #fieldName: "TextField1", #inOffsetRect: [0, 0, 0, 0], #FgColorStr: "#000000", #alignment: #left]
+  end if
+  listItemPrototype = argList
+end

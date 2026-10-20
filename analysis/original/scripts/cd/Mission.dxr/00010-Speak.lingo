@@ -1,0 +1,109 @@
+property m_faceObj, m_soundName, m_castName, m_tempMember, m_personString, m_mood, m_firstEnter
+global gDir
+
+on beginSprite me
+  if m_personString.length = 0 then
+    m_personString = sprite(me.spriteNum).member.name
+  end if
+  m_castName = gDir.m_actorCasts.linkCast(me, m_personString)
+  if not stringp(m_castName) then
+    put "No cast available!"
+    sendSprite(0, #Report, me, #talkFinished)
+    exit
+  end if
+  tmp = CPgetActorInfo(m_personString, m_castName)
+  if tmp.count = 0 then
+    put "Couldn't load cast", m_personString
+    sendSprite(0, #Report, me, #talkFinished)
+  else
+    m_faceObj = CPshowFace(m_personString, sprite(me.spriteNum).loc, m_mood, VOID, me.spriteNum, m_castName)
+  end if
+  m_firstEnter = 1
+end
+
+on enterFrame me
+  if m_firstEnter then
+    m_firstEnter = 0
+    if objectp(m_faceObj) then
+      if m_soundName.length > 0 then
+        me.Speak(m_soundName)
+      end if
+    end if
+  end if
+end
+
+on exitFrame me
+end
+
+on stopSound me
+  if objectp(m_faceObj) then
+    m_faceObj = m_faceObj.kill()
+  end if
+end
+
+on endSprite me
+  if stringp(m_castName) and objectp(gDir) then
+    gDir.m_actorCasts.returnCast(me, m_castName)
+  end if
+  if objectp(m_faceObj) then
+    m_faceObj = m_faceObj.kill()
+  end if
+  if not voidp(m_tempMember) then
+    m_tempMember.erase()
+  end if
+end
+
+on Speak me, argSnd, argMood
+  if not objectp(m_faceObj) then
+    exit
+  end if
+  if not voidp(argMood) and (argMood <> #Same) then
+    m_faceObj.setMood(argMood)
+  end if
+  if argSnd.length > 0 then
+    m_faceObj.say(argSnd, #Mp3, me)
+  end if
+end
+
+on getPerson me
+  return m_personString
+end
+
+on Report me, argObj, argWhat
+  if argWhat = #finished then
+    sendSprite(0, #Report, me, #talkFinished)
+  end if
+end
+
+on freeze me
+  if objectp(m_faceObj) then
+    m_faceObj.freeze()
+  end if
+end
+
+on render me
+  if not objectp(m_faceObj) then
+    exit
+  end if
+  memberList = m_faceObj.getDisplayMembers()
+  m_tempMember = newMember(#bitmap, "_TEMP")
+  memb = memberList[1]
+  baseOff = memb.regPoint
+  img = memb.image.duplicate()
+  repeat with n = 2 to memberList.count()
+    memb = memberList[n]
+    off = point(0, 0) + baseOff - memb.regPoint
+    img.copyPixels(memb.image, memb.image.rect + rect(off, off), memb.image.rect, [#ink: 36])
+  end repeat
+  m_tempMember.image = img
+  m_faceObj = m_faceObj.kill()
+  sprite(me.spriteNum).member = m_tempMember
+  if stringp(m_castName) and objectp(gDir) then
+    gDir.m_actorCasts.returnCast(me, m_castName)
+  end if
+  m_castName = 0
+end
+
+on getPropertyDescriptionList me
+  return [#m_personString: [#comment: "Person (empty = use member name)", #format: #string, #default: EMPTY], #m_mood: [#comment: "Mood", #format: #symbol, #range: [#normal, #Angry, #Happy], #default: #normal], #m_soundName: [#comment: "Sound name", #format: #string, #default: EMPTY]]
+end

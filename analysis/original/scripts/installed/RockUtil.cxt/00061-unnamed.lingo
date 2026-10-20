@@ -1,0 +1,125 @@
+on rDlgCreateScrollItemInfo argObj_r, argID, argMode, argInactive, argOptions
+  global gRock
+  if voidp(argMode) then
+    argMode = argObj_r.className
+  end if
+  if not listp(argOptions) then
+    argOptions = [:]
+  end if
+  if argMode = #Action then
+    tmpGfx = argObj_r.Gfx
+    scrollData = [#BG: [#type: #Pic, #Pic: member("ColorPic").image, #rect: rect(0, 0, 280, 34)], #icon: [#type: #Pic, #Pic: member(tmpGfx), #loc: point(20, 13)], #name: [#type: #text, #text: rGetStr(argObj_r.name), #textMember: member("ScrollItemField"), #loc: point(50, 5), #shadow: 1], #price: [#type: #text, #text: EMPTY, #textMember: member("ScrollItemField"), #loc: point(208, 5), #shadow: 1]]
+    if argObj_r.price <= 0 then
+      scrollData.deleteProp(#price)
+    else
+      scrollData[#price][#text] = rCurrency(argObj_r.price, 0, 1)
+    end if
+  else
+    if argMode = #Mission then
+      tmpGfx = argObj_r.Gfx
+      if tmpGfx.length = 0 then
+        tmpGfx = "live01_environment01"
+      end if
+      scrollData = [#BG: [#type: #Pic, #Pic: member("ColorPic").image, #rect: rect(0, 0, 380, 80)], #icon: [#type: #Pic, #Pic: member(tmpGfx), #loc: point(49, 41)], #Info: [#type: #Pic, #Pic: rFormatText([argObj_r.name, argObj_r.comment], "MissionScrollFormat"), #loc: point(100, 2), #shadow: 1], #points: [#type: #text, #text: argOptions[#points], #textMember: member("ScrollItemRightField"), #loc: point(318, 2), #shadow: 1]]
+    else
+      if argMode = #ActionCategory then
+        tmpGfx = argObj_r.Gfx
+        if argObj_r.className = #Action then
+          if offset("0", tmpGfx) = 0 then
+            tmpGfx = tmpGfx & "01"
+          end if
+        end if
+        tmpTextMemb = member("ScrollItemCategoryField")
+        tmpTextMemb.text = EMPTY
+        tmpTextMemb.fontStyle = [#plain]
+        tmpStr = rGetStr(argObj_r.name)
+        if argObj_r.comment.length > 0 then
+          tmpStr = tmpStr & RETURN & rGetStr(argObj_r.comment)
+        end if
+        tmpTextMemb.text = tmpStr
+        tmpTextMemb.line[1].fontStyle = [#bold]
+        tmpTotHeight = 42
+        tmpTextLocV = ((tmpTotHeight - tmpTextMemb.height) / 2) - 2
+        scrollData = [#BG: [#type: #Pic, #Pic: member("ColorPic").image, #rect: rect(0, 0, 290, tmpTotHeight), #color: rgb(0, 0, 0)], #icon: [#type: #Pic, #Pic: member(tmpGfx), #loc: point(23, tmpTotHeight / 2)], #name: [#type: #Pic, #Pic: tmpTextMemb.image.duplicate(), #loc: point(50, tmpTextLocV)]]
+      else
+        if argMode = #MusicianActionCategory then
+          tmpGfx = argObj_r.Gfx
+          if argObj_r.className = #Action then
+            if offset("0", tmpGfx) = 0 then
+              tmpGfx = tmpGfx & "01"
+            end if
+          end if
+          tmpTextMemb = member("ScrollItemCategoryThinField")
+          tmpTextMemb.text = EMPTY
+          tmpTextMemb.fontStyle = [#plain]
+          tmpStr = rGetStr(argObj_r.name)
+          if argObj_r.comment.length > 0 then
+            tmpStr = tmpStr & RETURN & rGetStr(argObj_r.comment)
+          end if
+          tmpTextMemb.text = tmpStr
+          tmpTextMemb.line[1].fontStyle = [#bold]
+          tmpTotHeight = 54
+          tmpTextLocV = ((tmpTotHeight - tmpTextMemb.height) / 2) - 2
+          scrollData = [#BG: [#type: #Pic, #Pic: member("ColorPic").image, #rect: rect(0, 0, 230, tmpTotHeight), #color: rgb(0, 0, 0)], #icon: [#type: #Pic, #Pic: member(tmpGfx), #loc: point(23, tmpTotHeight / 2)], #name: [#type: #Pic, #Pic: tmpTextMemb.image.duplicate(), #loc: point(50, tmpTextLocV)]]
+        else
+          if argMode = #category then
+            infoList = argObj_r
+            tmpTextMemb = member("ScrollItemCategoryField")
+            tmpTextMemb.text = EMPTY
+            tmpTextMemb.fontStyle = [#plain]
+            tmpStr = rGetStr(infoList[#name])
+            if infoList[#comment].length > 0 then
+              tmpStr = tmpStr & RETURN & rGetStr(infoList[#comment])
+            end if
+            tmpTextMemb.text = tmpStr
+            tmpTextMemb.line[1].fontStyle = [#bold]
+            tmpTotHeight = 42
+            tmpTextLocV = ((tmpTotHeight - tmpTextMemb.height) / 2) - 2
+            scrollData = [#BG: [#type: #Pic, #Pic: member("ColorPic").image, #rect: rect(0, 0, 290, tmpTotHeight), #color: rgb(0, 0, 0)], #icon: [#type: #Pic, #Pic: member(infoList[#icon]), #loc: point(23, tmpTotHeight / 2)], #name: [#type: #Pic, #Pic: tmpTextMemb.image.duplicate(), #loc: point(50, tmpTextLocV)]]
+          else
+            if argMode = #RealMusician then
+              icon = member(getContextOKFileName(#PortraitSmall, argObj_r.Gfx))
+              if listp(argOptions) then
+                tmpInstrID = argOptions[#instrumentID]
+              end if
+              if not symbolp(tmpInstrID) then
+                tmpInstrID = #Guitar
+              end if
+              instr_r = gRock.m_classManager.getObjByIDAndClass(tmpInstrID, #InstrumentInfo)
+              instrGfx = instr_r.Gfx & "02"
+              scrollData = [#BG: [#type: #Pic, #Pic: member("ColorPic").image, #rect: rect(0, 0, 290, 34), #color: rgb(0, 0, 0)], #icon: [#type: #Pic, #Pic: icon, #loc: point(27, 26)], #Instrument: [#type: #Pic, #Pic: member(instrGfx), #loc: point(53, 16)], #name: [#type: #text, #text: argObj_r.name, #textMember: member("ScrollItemField"), #loc: point(76, 9), #shadow: 1], #Salary: [#type: #text, #text: rCurrency(argObj_r.WantedSalary, 0, 1), #textMember: member("ScrollItemRightField"), #loc: point(200, 9), #shadow: 1]]
+            else
+              if argMode = #NoRealMusician then
+                scrollData = [#BG: [#type: #Pic, #Pic: member("ColorPic").image, #rect: rect(0, 0, 290, 34), #color: rgb(0, 0, 0)], #name: [#type: #text, #text: rGetStr(#szidNoMusiciansAvailable), #textMember: member("ScrollItemField"), #loc: point(88, 9), #shadow: 1]]
+              else
+                if argMode = #Song then
+                  scrollData = [#BG: [#type: #Pic, #Pic: member("ColorPic").image, #rect: rect(0, 0, 400, 34), #color: rgb(0, 0, 0)], #icon: [#type: #Pic, #Pic: member("icon_note02"), #loc: point(22, 14)], #name: [#type: #text, #text: argObj_r.name, #textMember: member("ScrollItemField"), #loc: point(40, 5), #shadow: 1], #price: [#type: #text, #text: rCurrency(argObj_r.PriceModel.BasePrice, 0, 1), #textMember: member("ScrollItemField"), #loc: point(278, 5), #shadow: 1], #Royalty: [#type: #text, #text: convFloatToPercent(argObj_r.PriceModel.Royalty, 1) & "%", #textMember: member("ScrollItemRightField"), #loc: point(338, 5), #shadow: 1]]
+                else
+                  if argMode = #NoSong then
+                    scrollData = [#BG: [#type: #Pic, #Pic: member("ColorPic").image, #rect: rect(0, 0, 400, 34), #color: rgb(0, 0, 0)], #name: [#type: #text, #text: rGetStr(#szidNoSongsAvailable), #textMember: member("ScrollItemField"), #loc: point(40, 5), #shadow: 1]]
+                  else
+                    if argMode = #Mixer then
+                      if argObj_r.className = #StudioMusician then
+                        tmpGfx = "portrait_actor00_small"
+                        tmpCostStr = rCurrency(argObj_r.WantedSalary, 0, 1)
+                      else
+                        tmpGfx = getContextOKFileName(#PortraitSmall, argObj_r.Gfx)
+                        tmpCostStr = "-"
+                      end if
+                      scrollData = [#BG: [#type: #Pic, #Pic: member("ColorPic").image, #rect: rect(0, 0, 240, 32), #color: rgb(0, 0, 0)], #icon: [#type: #Pic, #Pic: member(tmpGfx), #loc: point(27, 26)], #name: [#type: #text, #text: argObj_r.name, #textMember: member("ScrollItemField"), #loc: point(50, 5), #shadow: 1], #price: [#type: #text, #text: tmpCostStr, #textMember: member("ScrollItemRightField"), #loc: point(155, 5), #shadow: 1]]
+                    end if
+                  end if
+                end if
+              end if
+            end if
+          end if
+        end if
+      end if
+    end if
+  end if
+  retLst = [#ID: argID, #items: scrollData]
+  if argInactive = 1 then
+    retLst.addProp(#Grayed, 1)
+  end if
+  return retLst
+end

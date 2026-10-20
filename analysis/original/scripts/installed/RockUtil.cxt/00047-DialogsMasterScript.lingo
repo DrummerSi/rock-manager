@@ -1,0 +1,232 @@
+property m_dlgObjList, m_objProtectMouse, m_inCity, m_baseSPNum, m_noExitToCity, m_noExitDialog
+global gDir, gRock, gUseful
+
+on new me, argBaseSPNum
+  m_dlgObjList = []
+  if offset("Main", the movieName) and objectp(gDir) then
+    m_inCity = 1
+  else
+    m_inCity = 0
+  end if
+  m_baseSPNum = argBaseSPNum
+  return me
+end
+
+on kill me
+  gUseful.frameTimer.deleteObject(me)
+  if objectp(m_objProtectMouse) then
+    m_objProtectMouse = m_objProtectMouse.kill()
+  end if
+  me.closeAllDialogs()
+  return 0
+end
+
+on closeAllDialogs me
+  repeat with n = m_dlgObjList.count down to 1
+    m_dlgObjList[n].kill()
+  end repeat
+  m_dlgObjList = []
+end
+
+on closeDialogsOnTopOf me, argObj
+  Pos = m_dlgObjList.getPos(argObj)
+  if Pos then
+    lst = m_dlgObjList.duplicate()
+    repeat with n = lst.count down to Pos + 1
+      dlg = lst[n]
+      dlg.kill()
+    end repeat
+  end if
+end
+
+on getDialogsUnder me, argObj
+  Pos = m_dlgObjList.getPos(argObj)
+  if Pos = 0 then
+    return []
+  end if
+  lst = m_dlgObjList.duplicate()
+  repeat with n = lst.count down to Pos
+    lst.deleteAt(Pos)
+  end repeat
+  return lst
+end
+
+on getDialogUnder me, argObj
+  lst = me.getDialogsUnder(argObj)
+  if lst.count then
+    return lst[lst.count]
+  end if
+  return VOID
+end
+
+on getDialogsOver me, argObj
+  Pos = m_dlgObjList.getPos(argObj)
+  if Pos = 0 then
+    return []
+  end if
+  lst = m_dlgObjList.duplicate()
+  repeat with n = 1 to Pos
+    lst.deleteAt(n)
+  end repeat
+  return lst
+end
+
+on getNumOpen me
+  return m_dlgObjList.count
+end
+
+on refresh me
+  repeat with dlgObj in m_dlgObjList
+    if dlgObj.handler(#refresh) then
+      dlgObj.refresh()
+    end if
+  end repeat
+end
+
+on mouse me, argObj, argWhat
+  if argWhat = #click then
+    if argObj = m_objProtectMouse then
+    end if
+  end if
+end
+
+on Split me, argStr
+  tmp = []
+  last = 1
+  repeat with n = 1 to argStr.length
+    if charToNum(argStr.char[n]) < 65 then
+      tmp.add(argStr.char[last..n - 1])
+      tmp.add(argStr.char[n..n + 1])
+      n = n + 1
+      last = n + 1
+    end if
+  end repeat
+  if last < argStr.length then
+    tmp.add(argStr.char[last..argStr.length])
+  end if
+  return tmp
+end
+
+on timeTick me
+  gUseful.mouseObjects.block(0)
+  gUseful.frameTimer.deleteObject(me)
+end
+
+on openDialog me, argDlgID, argOptions
+  waitCursor(1)
+  if m_inCity then
+    gDir.pause(1)
+  end if
+  gRock.m_gameTimer.activate(0)
+  repeat with obj in m_dlgObjList
+    obj.m_objDlg.activate(0)
+    obj.focusChange(0)
+  end repeat
+  dlgIDStr = string(argDlgID)
+  splitList = me.Split(dlgIDStr)
+  splitList = splitList.duplicate()
+  Info = [:]
+  dlgName = dlgIDStr
+  scriptName = "Dlg" & dlgIDStr & "Script"
+  if member(scriptName).number < 1 then
+    cnt = splitList.count() - (splitList.count() mod 2)
+    repeat with n = cnt down to 1
+      splitList.deleteAt(n)
+      dlgName = EMPTY
+      repeat with m = 1 to splitList.count()
+        dlgName = dlgName & splitList[m]
+      end repeat
+      scriptName = "Dlg" & dlgName & "Script"
+      if member(scriptName).number > 0 then
+        exit repeat
+      end if
+      n = n - 1
+    end repeat
+  end if
+  if member(scriptName).number < 1 then
+    scriptName = "DlgInfoScript"
+  end if
+  if m_dlgObjList.count then
+    topObj = m_dlgObjList[m_dlgObjList.count]
+    SPNum = topObj.m_SP.spriteNum
+    if rGotHandler(topObj, #GetSPNeed) then
+      SPNum = SPNum + topObj.GetSPNeed()
+    else
+      SPNum = SPNum + 1
+    end if
+  else
+    SPNum = m_baseSPNum
+  end if
+  sprite(SPNum).member = "BlackOut"
+  sprite(SPNum).rect = rect(0, 0, 800, 600)
+  sprite(SPNum).blend = 30
+  SPNum = SPNum + 1
+  options = [#infoList: Info, #dlg: symbol(dlgName), #ID: argDlgID, #SPNum: SPNum, #renderMemberName: "DialogAssembly" & string(m_dlgObjList.count + 1), #OffsetLoc: point(50, 50) * m_dlgObjList.count, #DlgNr: m_dlgObjList.count + 1]
+  if voidp(argOptions) then
+    argOptions = [:]
+  end if
+  repeat with n = 1 to argOptions.count()
+    options.setaProp(argOptions.getPropAt(n), argOptions[n])
+  end repeat
+  obj = script(scriptName).new(options)
+  if objectp(m_objProtectMouse) then
+    m_objProtectMouse = m_objProtectMouse.kill()
+  end if
+  m_objProtectMouse = script("MouseObject").new(me, rect(-1000, -1000, 2000, 2000), [#layer: (1000 * SPNum) - 1, #noPassRoll: 1, #cursorRoll: #NoClick])
+  m_dlgObjList.add(obj)
+  obj.focusChange(1)
+  if objectp(rgetProp(obj, #m_place_r)) then
+    gRock.m_context.setFocus(#place, rgetProp(obj, #m_place_r))
+  end if
+  gRock.m_msgManager.msg(#EnterDialog, obj)
+  return obj
+end
+
+on closedDialog me, argObj
+  itsPlace_r = rgetProp(argObj, #m_place_r)
+  Pos = m_dlgObjList.getPos(argObj)
+  if (Pos = m_dlgObjList.count) and (Pos > 1) then
+    m_dlgObjList[Pos - 1].m_objDlg.activate(1)
+    m_dlgObjList[Pos - 1].focusChange(1)
+  end if
+  m_dlgObjList.deleteOne(argObj)
+  SPNum = argObj.m_SP.spriteNum - 1
+  sprite(SPNum).member = "Dummy"
+  sprite(SPNum).ink = 0
+  sprite(SPNum).blend = 100
+  sprite(SPNum).stretch = 0
+  SPNum = SPNum + 1
+  if objectp(m_objProtectMouse) then
+    m_objProtectMouse = m_objProtectMouse.kill()
+  end if
+  if m_dlgObjList.count > 0 then
+    topObj = m_dlgObjList[m_dlgObjList.count]
+    SPNum = topObj.m_SP.spriteNum - 1
+    m_objProtectMouse = script("MouseObject").new(me, rect(-1000, -1000, 2000, 2000), [#layer: (1000 * SPNum) - 1, #noPassRoll: 1, #cursorRoll: #NoClick])
+  else
+    if m_inCity then
+      gRock.m_context.setContext(#City)
+      if m_noExitToCity <> 1 then
+        m_noExitToCity = 0
+        gDir.pause(0)
+        gRock.m_msgManager.msg(#ExitToCity)
+        gRock.m_gameTimer.activate(1)
+      end if
+    end if
+  end if
+  if m_noExitDialog <> 1 then
+    if objectp(itsPlace_r) then
+      gRock.m_msgManager.msg(#ExitPlace, itsPlace_r)
+    end if
+    gRock.m_msgManager.msg(#ExitDialog, argObj)
+  end if
+  m_noExitDialog = 0
+end
+
+on ImNOTExitingToCity me
+  m_noExitToCity = 1
+end
+
+on ImNOTExitingDialog me
+  m_noExitDialog = 1
+end

@@ -1,0 +1,79 @@
+property m_checkCDObj
+
+on start me
+  [  0] getglobal 51 ............................ <gSystem>
+  [  3] pusharglist 1 ........................... <gSystem>
+  [  5] extcall 50 .............................. <objectp(gSystem)>
+  [  8] jmpifz [ 38] ............................ if objectp(gSystem) then / else
+  [ 11] getglobal 51 ............................ <gSystem>
+  [ 14] getobjprop 330 .......................... <gSystem.m_prefs>
+  [ 17] pushsymb 377 ............................ <#Language>
+  [ 20] pusharglist 2 ........................... <gSystem.m_prefs, #Language>
+  [ 22] objcall 332 ............................. <gSystem.m_prefs.getaProp(#Language)>
+  [ 25] setlocal 0 .............................. tmpLanguage = gSystem.m_prefs.getaProp(#Language)
+  [ 27] getglobal 51 ............................ <gSystem>
+  [ 30] getobjprop 373 .......................... <gSystem.m_CDPath>
+  [ 33] setlocal 8 .............................. tmpCDPath = gSystem.m_CDPath
+  [ 35] jmp [ 46]
+  [ 38] pushcons 0 .............................. <"Swedish">
+  [ 40] setlocal 0 .............................. tmpLanguage = "Swedish"
+  [ 42] pushcons 8 .............................. <"E:\\">
+  [ 44] setlocal 8 .............................. tmpCDPath = "E:\\"
+  [ 46] pushcons 16 ............................. <"CheckCD">
+  [ 48] pusharglistnoret 1 ...................... <"CheckCD">
+  [ 50] extcall 41 .............................. go("CheckCD")
+  [ 53] getlocal 0 .............................. <tmpLanguage>
+  [ 55] pusharglist 1 ........................... <tmpLanguage>
+  [ 57] extcall 223 ............................. <voidp(tmpLanguage)>
+  [ 60] jmpifz [ 71] ............................ if voidp(tmpLanguage) then
+  [ 63] pushcons 24 ............................. <"Leave">
+  [ 65] pusharglistnoret 1 ...................... <"Leave">
+  [ 67] extcall 41 .............................. go("Leave")
+  [ 70] ret ..................................... exit
+  [ 71] pushcons 32 ............................. <"CheckForCorrectCDScript">
+  [ 73] pusharglist 1 ........................... <"CheckForCorrectCDScript">
+  [ 75] extcall 16 .............................. <script("CheckForCorrectCDScript")>
+  [ 77] getlocal 8 .............................. <tmpCDPath>
+  [ 79] pushcons 40 ............................. <"RockCD.INF">
+  [ 81] pushsymb 376 ............................ <#settings>
+  [ 84] pushsymb 377 ............................ <#Language>
+  [ 87] pusharglist 2 ........................... <[#settings, #Language]>
+  [ 89] pushlist ................................ <[#settings, #Language]>
+  [ 90] getlocal 0 .............................. <tmpLanguage>
+  [ 92] pusharglist 2 ........................... <[[#settings, #Language], tmpLanguage]>
+  [ 94] pushlist ................................ <[[#settings, #Language], tmpLanguage]>
+  [ 95] pushsymb 363 ............................ <#object>
+  [ 98] getparam 0 .............................. <me>
+  [100] pushsymb 364 ............................ <#handler>
+  [103] pushsymb 469 ............................ <#Report>
+  [106] pusharglist 4 ........................... <[#object: me, #handler: #Report]>
+  [108] pushproplist ............................ <[#object: me, #handler: #Report]>
+  [109] pusharglist 5 ........................... <script("CheckForCorrectCDScript"), tmpCDPath, "RockCD.INF", [[#settings, #Language], tmpLanguage], [#object: me, #handler: #Report]>
+  [111] objcall 37 .............................. <script("CheckForCorrectCDScript").new(tmpCDPath, "RockCD.INF", [[#settings, #Language], tmpLanguage], [#object: me, #handler: #Report])>
+  [114] setlocal 16 ............................. checkCD = script("CheckForCorrectCDScript").new(tmpCDPath, "RockCD.INF", [[#settings, #Language], tmpLanguage], [#object: me, #handler: #Report])
+  [116] getlocal 16 ............................. <checkCD>
+  [118] setprop 470 ............................. m_checkCDObj = checkCD
+  [121] getlocal 16 ............................. <checkCD>
+  [123] pusharglistnoret 1 ...................... <checkCD>
+  [125] objcall 385 ............................. checkCD.startChecking()
+  [128] ret
+end
+
+on Report me, argWhat
+  [  0] getparam 8 .............................. <argWhat>
+  [  2] pushsymb 471 ............................ <#Ok>
+  [  5] eq ...................................... <argWhat = #Ok>
+  [  6] jmpifz [ 38] ............................ if argWhat = #Ok then
+  [  9] getprop 470 ............................. <m_checkCDObj>
+  [ 12] pusharglist 1 ........................... <m_checkCDObj>
+  [ 14] extcall 50 .............................. <objectp(m_checkCDObj)>
+  [ 17] jmpifz [ 31] ............................ if objectp(m_checkCDObj) then
+  [ 20] getprop 470 ............................. <m_checkCDObj>
+  [ 23] pusharglist 1 ........................... <m_checkCDObj>
+  [ 25] objcall 210 ............................. <m_checkCDObj.kill()>
+  [ 28] setprop 470 ............................. m_checkCDObj = m_checkCDObj.kill()
+  [ 31] pushcons 48 ............................. <"Leave">
+  [ 33] pusharglistnoret 1 ...................... <"Leave">
+  [ 35] extcall 41 .............................. go("Leave")
+  [ 38] ret
+end

@@ -1,0 +1,100 @@
+property m_exportPropsInClass, m_classInfoObj
+global gRock, gClassManager
+
+on new me
+  return me
+end
+
+on export me, argClassInfoObj, argWhichClasses, argOutFilename
+  m_classInfoObj = argClassInfoObj
+  if objectp(gRock) then
+    gClassManager = gRock.m_classManager
+  end if
+  if voidp(argWhichClasses) then
+    argWhichClasses = []
+    repeat with classNr = 1 to gClassManager.m_objsByClass.count
+      argWhichClasses.add(gClassManager.m_objsByClass.getPropAt(classNr))
+    end repeat
+    argWhichClasses = [#RealMusician]
+  end if
+  if voidp(argOutFilename) then
+    argOutFilename = the moviePath & "TestOut2.txt"
+  end if
+  str = EMPTY
+  axis = [1, 2]
+  numTabsBeforeDataStart = 6
+  repeat with classNr = 1 to argWhichClasses.count
+    className = argWhichClasses[classNr]
+    instances = gClassManager.getObjsOfClass(className)
+    if not listp(instances) then
+      next repeat
+    end if
+    if instances.count = 0 then
+      next repeat
+    end if
+    propsToExport = m_classInfoObj.getPropsWithInfoCriteria([className])
+    if voidp(propsToExport.getaProp(#ID)) then
+      tmp = [#ID: 0]
+      mergeLists(tmp, propsToExport)
+      propsToExport = tmp
+    end if
+    arrayPtr = []
+    setValInMultiDimensionArray(arrayPtr, point(1, 1), className)
+    me.xportSub(propsToExport, arrayPtr, point(2, 2), axis)
+    repeat with instNr = 1 to instances.count
+      instance = instances[instNr]
+      tmpStartLoc = point(0, 0)
+      tmpStartLoc[axis[1]] = instNr + numTabsBeforeDataStart
+      tmpStartLoc[axis[2]] = 2
+      me.xportSubInstance(instance, propsToExport, arrayPtr, tmpStartLoc, axis)
+    end repeat
+    str = str & TwoDArrayToStr(arrayPtr) & RETURN & RETURN & RETURN
+    put className, "OK"
+  end repeat
+  str = assertPCNewLine(str)
+  put "Insert LF"
+  writeFile(argOutFilename, str)
+  put "Done"
+end
+
+on xportSub me, argProps, argArrayPtr, argLoc, argAxis
+  repeat with propNr = 1 to argProps.count
+    prop = argProps.getPropAt(propNr)
+    subProps = argProps[propNr]
+    if listp(subProps) then
+      setValInMultiDimensionArray(argArrayPtr, argLoc, prop)
+      argLoc[argAxis[2]] = argLoc[argAxis[2]] + 1
+      argLoc[argAxis[1]] = argLoc[argAxis[1]] + 1
+      me.xportSub(subProps, argArrayPtr, argLoc, argAxis)
+      argLoc[argAxis[1]] = argLoc[argAxis[1]] - 1
+      next repeat
+    end if
+    if stringp(prop) then
+      repeat while 1
+        tmpOff = offset(RETURN, prop)
+        if tmpOff then
+          put "\n" into propNr.char[tmpOff]
+          next repeat
+        end if
+        exit repeat
+      end repeat
+    end if
+    setValInMultiDimensionArray(argArrayPtr, argLoc, prop)
+    argLoc[argAxis[2]] = argLoc[argAxis[2]] + 1
+  end repeat
+end
+
+on xportSubInstance me, argObj, argProps, argArrayPtr, argLoc, argAxis
+  repeat with propNr = 1 to argProps.count
+    prop = argProps.getPropAt(propNr)
+    subProps = argProps[propNr]
+    val = getPropFromObjOrAncestor(argObj, prop)
+    if listp(subProps) then
+      argLoc[argAxis[2]] = argLoc[argAxis[2]] + 1
+      me.xportSubInstance(val, subProps, argArrayPtr, argLoc, argAxis)
+      next repeat
+    end if
+    setValInMultiDimensionArray(argArrayPtr, argLoc, string(val))
+    argLoc[argAxis[2]] = argLoc[argAxis[2]] + 1
+  end repeat
+end

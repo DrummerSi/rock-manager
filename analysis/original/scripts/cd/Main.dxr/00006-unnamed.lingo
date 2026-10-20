@@ -1,0 +1,229 @@
+on xConvNrToID argNrList
+  global gRock
+  IDList = []
+  objs = gRock.m_classManager.getObjsOfClass(#RealMusician)
+  repeat with Nr in argNrList
+    repeat with obj in objs
+      if Nr = obj.RefNr then
+        IDList.add(obj.ID)
+      end if
+    end repeat
+  end repeat
+  return IDList
+end
+
+on xExtraQuotes
+  str = member("XPXPXP").text
+  repeat with n = str.length down to 1
+    if str.char[n] = QUOTE then
+      put QUOTE & "&QUOTE&" & QUOTE into str.char[n]
+    end if
+  end repeat
+  member("YPYPYP").text = QUOTE & str & QUOTE
+end
+
+on xFindFont
+  membs = findMembers("*", [#Types: #text], #members)
+  foundFonts = []
+  put membs.count
+  repeat with membNr = 1 to membs.count
+    foundFontsInMember = []
+    memb = membs[membNr]
+    len = memb.text.length
+    repeat with chNr = 1 to len
+      tmpFont = memb.char[1].font
+      if foundFontsInMember.getPos(tmpFont) = 0 then
+        foundFontsInMember.add(tmpFont)
+      end if
+      if foundFonts.getPos(tmpFont) = 0 then
+        foundFonts.add(tmpFont)
+      end if
+      if memb.char[1].font = "Verdana" then
+      end if
+    end repeat
+  end repeat
+  put foundFonts
+end
+
+on xxConvCode argWhichWay
+  a = script("CodeStructureParserScript").new()
+  if argWhichWay = #ToList then
+    put a.codeToList(member("XPXPXP").text)
+  else
+    if argWhichWay = #ToCode then
+      put a.listToCode(member("XPXPXP").text.value)
+    end if
+  end if
+end
+
+on xxFindBadStuff
+  global gRock
+  checkThese = [#Trigger: [#ExecuteThis: 0], #Action: [#PreExecuteThis: 0, #ExecuteThis: 0], #Mission: [#StartTriggers: 0], #EventCard: [#comment: 0, #Gfx: 0, #ButtonOK: [#ExecuteThis: 0], #ButtonCancel: [#ExecuteThis: 0], #Button3: [#ExecuteThis: 0], #PreExecuteThis: 0, #ExecuteThis: 0]]
+  checkThese = flattenPropListStructure(checkThese)
+  findStrs = [["eventCard", ["("], ["#"]], ["Û", ["#", "C"]], [" ."]]
+  repeat with checkNr = 1 to checkThese.count
+    checkThis = checkThese[checkNr]
+    objs = gRock.m_classManager.getObjsWithBaseClass(checkThis[1])
+    checkThis.deleteAt(1)
+    repeat with obj in objs
+      str = rgetProp(obj, checkThis)
+      if voidp(str) then
+        next repeat
+      end if
+      str = string(str)
+      len = str.length
+      repeat with findNr = 1 to findStrs.count
+        searchInfo = findStrs[findNr]
+        searchStr = searchInfo[1]
+        tmpOff = offset(searchStr, str)
+        if tmpOff then
+          tmpOK = 0
+          repeat with n = 2 to searchInfo.count
+            alternatives = searchInfo[n]
+            repeat with alt in alternatives
+              if str.char[tmpOff + searchStr.length + n - 2] = alt then
+                tmpOK = 1
+                exit repeat
+              end if
+            end repeat
+          end repeat
+          if tmpOK = 0 then
+            pott(obj.ID, searchStr, str.char[tmpOff + searchStr.length..tmpOff + searchStr.length + 3])
+          end if
+        end if
+      end repeat
+    end repeat
+  end repeat
+end
+
+on xxFindNonExistentIDs
+  global gRock
+  checkThese = [#Trigger: [#ExecuteThis: 0], #Action: [#PreExecuteThis: 0, #ExecuteThis: 0], #Mission: [#StartTriggers: 0], #EventCard: [#comment: 0, #Gfx: 0, #ButtonOK: [#ExecuteThis: 0], #ButtonCancel: [#ExecuteThis: 0], #Button3: [#ExecuteThis: 0], #PreExecuteThis: 0, #ExecuteThis: 0]]
+  checkThese = flattenPropListStructure(checkThese)
+  allIDs = [:]
+  allIDs.sort()
+  repeat with checkNr = 1 to checkThese.count
+    checkThis = checkThese[checkNr]
+    objs = gRock.m_classManager.getObjsWithBaseClass(checkThis[1])
+    checkThis.deleteAt(1)
+    repeat with obj in objs
+      str = rgetProp(obj, checkThis)
+      if voidp(str) then
+        next repeat
+      end if
+      str = string(str)
+      len = str.length
+      repeat with chNr = 1 to len
+        ch = str.char[chNr]
+        if ch = "#" then
+          tmpEnd = xxFindNextDelim(str, chNr + 1)
+          ID = str.char[chNr + 1..tmpEnd]
+          if ID = "if" then
+            next repeat
+          end if
+          tmpEarlier = allIDs.getaProp(symbol(ID))
+          if voidp(tmpEarlier) then
+            allIDs.addProp(symbol(ID), [obj.ID])
+            next repeat
+          end if
+          tmpEarlier.add(obj.ID)
+        end if
+      end repeat
+    end repeat
+  end repeat
+  repeat with n = allIDs.count down to 1
+    ID = allIDs.getPropAt(n)
+    if not objectp(gRock.m_classManager.getObjByID(ID)) then
+      next repeat
+    end if
+    allIDs.deleteAt(n)
+  end repeat
+  member("YPYPYP").text = string(allIDs)
+end
+
+on xxFindNextDelim argStr, argChNr
+  repeat with chNr = argChNr to argStr.length
+    ch = argStr.char[chNr]
+    if (ch = " ") or (ch = ",") or (ch = ")") or (ch = RETURN) or (ch = QUOTE) or (ch = ">") or (ch = ".") then
+      return chNr
+    end if
+  end repeat
+  return 0
+end
+
+on xxFindUnusedIDs
+  global gRock
+  allIDs = []
+  allIDs.sort()
+  unusedIDs = []
+  unusedIDs.sort()
+  checkThese = [#Trigger, #EventCard]
+  repeat with className in checkThese
+    objs = gRock.m_classManager.getObjsWithBaseClass(className)
+    repeat with obj in objs
+      allIDs.add(obj.ID)
+      unusedIDs.add("#" & string(obj.ID))
+    end repeat
+  end repeat
+  checkThese = [#Trigger: [#ExecuteThis: 0], #Action: [#PreExecuteThis: 0, #ExecuteThis: 0], #Mission: [#StartTriggers: 0], #EventCard: [#comment: 0, #Gfx: 0, #ButtonOK: [#ExecuteThis: 0], #ButtonCancel: [#ExecuteThis: 0], #Button3: [#ExecuteThis: 0], #PreExecuteThis: 0, #ExecuteThis: 0]]
+  checkThese = flattenPropListStructure(checkThese)
+  removeThese = ["*ECOCMis?Failed*", "*ECOCMedia*Review*", "*EC*Media??Rq*", "*EC*Media??Fb*", "*ECOCArtistNeed*", "*TRRecordAdvance*", "*ECOCRecordAdvance*", "*ECOCTourAngry*", "*ECOCTraining*Done*"]
+  repeat with wild in removeThese
+    tmp = wildCardSearch(wild, unusedIDs, #Strings)
+    repeat with n = 1 to tmp.count
+      unusedIDs.deleteOne(tmp[n])
+    end repeat
+  end repeat
+  repeat with checkNr = 1 to checkThese.count
+    checkThis = checkThese[checkNr]
+    objs = gRock.m_classManager.getObjsWithBaseClass(checkThis[1])
+    checkThis.deleteAt(1)
+    pott(checkThis)
+    repeat with obj in objs
+      str = rgetProp(obj, checkThis)
+      if voidp(str) then
+        next repeat
+      end if
+      str = string(str)
+      repeat with n = unusedIDs.count down to 1
+        IDStr = unusedIDs[n]
+        tmpOff = offset(IDStr, str)
+        if tmpOff then
+          unusedIDs.deleteAt(n)
+        end if
+      end repeat
+    end repeat
+  end repeat
+  removeThese = ["*ECOCMis*", "*ECMMis*", "*TRMis*"]
+  tmpCheck = unusedIDs.duplicate()
+  repeat with wild in removeThese
+    tmp = wildCardSearch(wild, tmpCheck, #Strings)
+    repeat with n = 1 to tmp.count
+      tmpCheck.deleteOne(tmp[n])
+    end repeat
+  end repeat
+  allScripts = findMembers("*", [#Types: [#script], #Casts: ["Internal", "RockMaterial", "RockUtil", "RockGeneral"]], #members)
+  repeat with n = tmpCheck.count down to 1
+    IDStr = tmpCheck[n]
+    found = xxxFindStringInMembers(IDStr, allScripts)
+    if found.count > 0 then
+      pott(IDStr, found)
+      unusedIDs.deleteOne(IDStr)
+    end if
+  end repeat
+  member("YPYPYP").text = string(unusedIDs)
+end
+
+on cpListToLines argList
+  str = EMPTY
+  if ilk(argList) = #propList then
+    repeat with n = 1 to argList.count
+      str = str & argList.getPropAt(n) & numToChar(9) & argList[n] & RETURN
+    end repeat
+  else
+    repeat with tmpItem in argList
+      str = str & tmpItem & RETURN
+    end repeat
+  end if
+  member("XPXPXP").text = str
+end

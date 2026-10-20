@@ -1,0 +1,285 @@
+property frameList, allList, firstFrame, animating, frameCounter, holdThisFrameCount, currentFrame, frameListLength, SP, currentAction, autoForking, allFrameLists, reportObject, sndId, waitForWhat, playDirection, timerObj, currentMember
+global gSound, gUseful
+
+on new me, argReportObject, argSP, argTimerObj
+  reportObject = argReportObject
+  SP = argSP
+  holdThisFrameCount = 0
+  animating = 0
+  autoForking = 1
+  sndId = 0
+  waitForWhat = #anim
+  timerObj = argTimerObj
+  if voidp(timerObj) then
+    addObject(gUseful.animationTimer, me)
+  end if
+  playDirection = 1
+  return me
+end
+
+on beginSprite me
+  SP = me.spriteNum
+  init(me)
+end
+
+on kill me
+  animating = 0
+  if voidp(timerObj) then
+    deleteObject(gUseful.animationTimer, me)
+  end if
+  stop(gSound, sndId)
+  set the member of sprite SP to member("Dummy")
+  reportObject = 0
+  return 0
+end
+
+on init me
+  holdThisFrameCount = 0
+  animating = 0
+  autoForking = 1
+  animStartAction(me, #Still)
+end
+
+on animSetLoc me, argLoc
+  set the loc of sprite SP to argLoc
+  set the loc of sprite (SP + 1) to argLoc
+end
+
+on AnimsetChart me, argStr
+  if getMemberNum(argStr & "AnimChart") < 1 then
+    put "AnimChart " & argStr & " not found!"
+    exit
+  end if
+  tmpList = value(member(argStr & "AnimChart").text)
+  if not listp(tmpList) then
+    put "AnimChart " & argStr & " not a correct list!"
+  end if
+  allList = duplicate(tmpList)
+  tmpList = getaProp(allList, #Actions)
+  if not listp(tmpList) then
+    put "No actions in chart " & argStr
+  else
+    allFrameLists = duplicate(tmpList)
+  end if
+end
+
+on animSetFirstFrame me, argStr
+  if integerp(argStr) then
+    firstFrame = argStr - 1
+  else
+    tmp = getMemberNum(argStr)
+    if tmp > 0 then
+      firstFrame = tmp - 1
+    else
+      put "No member " & argStr
+    end if
+  end if
+end
+
+on animWaitFor me, argForWhat
+  waitForWhat = argForWhat
+end
+
+on animPauseAtFrame me, argNr
+  animating = 0
+  currentFrame = argNr
+  set the member of sprite SP to member(firstFrame + currentFrame)
+end
+
+on animSetForking me, argIsTRUE
+  autoForking = argIsTRUE
+end
+
+on animGetAction me
+  return [animating, currentAction]
+end
+
+on animStartAction me, argAction, argDirection
+  tmpList = getaProp(allFrameLists, argAction)
+  if voidp(tmpList) then
+    put "AnimAction " & argAction & " not found!"
+    exit
+  end if
+  currentAction = argAction
+  frameList = duplicate(tmpList)
+  frameListLength = count(frameList)
+  frameCounter = 0
+  animating = 1
+  holdThisFrameCount = 0
+  playDirection = argDirection
+  if voidp(playDirection) then
+    playDirection = 1
+  end if
+  if playDirection = -1 then
+    tmpList = []
+    repeat with n = frameListLength down to 1
+      add(tmpList, getAt(frameList, n))
+    end repeat
+    frameList = tmpList
+  end if
+  showMember(me)
+end
+
+on enterFrame me
+  showMember(me)
+end
+
+on timeTick me
+  showMember(me)
+end
+
+on animTalk me, argSound, argAction
+  if voidp(argAction) then
+    argAction = #Talk01
+  end if
+  stop(gSound, sndId)
+  sndId = play(gSound, argSound, #EFFECT)
+  animating = 1
+  waitForWhat = #sound
+  animStartAction(me, argAction)
+end
+
+on animStopSound me
+  stop(gSound, sndId)
+end
+
+on animNormal me, argAction, argDir
+  waitForWhat = #anim
+  animStartAction(me, argAction, argDir)
+end
+
+on animHide me
+  animating = 0
+  set the member of sprite SP to member("Dummy")
+end
+
+on animIsAnimDone me
+  return frameCounter >= frameListLength
+end
+
+on showMember me
+  if animating then
+    tmpDone = 0
+    if waitForWhat = #sound then
+      if finished(gSound, sndId) then
+        tmpDone = 1
+        sndId = 0
+      end if
+    else
+      if waitForWhat = #anim then
+        if frameCounter >= frameListLength then
+          tmpDone = 1
+        end if
+      end if
+    end if
+    if tmpDone then
+      animating = 0
+      if objectp(reportObject) then
+        AnimStopped(reportObject, currentAction, me)
+      else
+        sendSprite(SP, #AnimStopped, currentAction, me)
+      end if
+      exit
+    end if
+    if holdThisFrameCount then
+      holdThisFrameCount = holdThisFrameCount - 1
+      exit
+    end if
+    frameCounter = frameCounter + 1
+    currentFrame = getAt(frameList, frameCounter)
+    if listp(currentFrame) then
+      if specialFrame(me) = 0 then
+        exit
+      end if
+    end if
+    if waitForWhat = #repeat then
+      if frameCounter = frameListLength then
+        frameCounter = 0
+      end if
+    end if
+    if currentFrame = #dummy then
+      currentMember = member("Dummy")
+    else
+      currentMember = member(firstFrame + currentFrame)
+    end if
+    set the member of sprite SP to currentMember
+  end if
+end
+
+on getCurrentMember me
+  return currentMember
+end
+
+on specialFrame me
+  tmpType = getAt(currentFrame, 1)
+  if tmpType = #RndFrame then
+    tmpRndFrameList = getAt(currentFrame, 2)
+    holdThisFrameCount = 0
+    if count(currentFrame) > 2 then
+      holdThisFrameCount = getAt(currentFrame, 3)
+      if count(currentFrame) > 3 then
+        tmpMaxHold = getAt(currentFrame, 4)
+        holdThisFrameCount = random(tmpMaxHold - holdThisFrameCount + 1) - 1 + holdThisFrameCount
+      end if
+    end if
+    currentFrame = getAt(tmpRndFrameList, random(count(tmpRndFrameList)))
+    return 1
+  else
+    if tmpType = #sound then
+      tmpSndList = getAt(currentFrame, 2)
+      tmpSnd = getAt(tmpSndList, random(count(tmpSndList)))
+      puppetSound(tmpSnd)
+      showMember(me)
+    else
+      if tmpType = #Fork then
+        if autoForking then
+          tmpForks = getAt(currentFrame, 2)
+          tmpFork = getAt(tmpForks, random(count(tmpForks)))
+          animStartAction(me, tmpFork)
+          return 0
+        else
+          showMember(me)
+        end if
+      else
+        if tmpType = #tell then
+          if objectp(reportObject) then
+            AnimStopped(reportObject, #tell, me)
+          end if
+          showMember(me)
+          return 0
+        else
+          if tmpType = #firstFrame then
+            animSetFirstFrame(me, getAt(currentFrame, 2))
+            showMember(me)
+            return 0
+          else
+            if tmpType = #range then
+              tmpStart = getAt(currentFrame, 2)
+              tmpEnd = getAt(currentFrame, 3)
+              tmpLengthPerFrame = 1
+              if count(currentFrame) > 3 then
+                tmpLengthPerFrame = getAt(currentFrame, 4)
+              end if
+              deleteAt(frameList, frameCounter)
+              tmpDiff = abs(tmpStart - tmpEnd)
+              tmpStep = 1
+              if tmpStart > tmpEnd then
+                tmpStep = -1
+              end if
+              tmpVal = tmpEnd + tmpStep
+              repeat with n = 0 to tmpDiff
+                tmpVal = tmpVal - tmpStep
+                repeat with m = 1 to tmpLengthPerFrame
+                  addAt(frameList, frameCounter, tmpVal)
+                end repeat
+              end repeat
+              frameListLength = count(frameList)
+              currentFrame = getAt(frameList, frameCounter)
+              return 1
+            end if
+          end if
+        end if
+      end if
+    end if
+  end if
+end

@@ -1,0 +1,93 @@
+on xxxfixPalettes
+  [  0] pushcons 0 .............................. <"Actor">
+  [  2] setlocal 0 .............................. Prefix = "Actor"
+  [  4] pushint8 32 ............................. <32>
+  [  7] setlocal 8 .............................. maxNr = 32
+  [  9] pushint8 1 .............................. <1>
+  [ 12] setlocal 16
+  [ 14] getlocal 16
+  [ 16] getlocal 8 .............................. <maxNr>
+  [ 18] lteq
+  [ 19] jmpifz [203] ............................ repeat with tmpCast = 1 to maxNr
+  [ 22] getlocal 0 .............................. <Prefix>
+  [ 24] getlocal 16 ............................. <tmpCast>
+  [ 26] pushint8 2 .............................. <2>
+  [ 29] pusharglist 2 ........................... <tmpCast, 2>
+  [ 31] extcall 65 .............................. <convItoS(tmpCast, 2)>
+  [ 34] joinstr ................................. <Prefix & convItoS(tmpCast, 2)>
+  [ 35] setlocal 24 ............................. tmpCastFileName = Prefix & convItoS(tmpCast, 2)
+  [ 37] getlocal 24 ............................. <tmpCastFileName>
+  [ 39] pusharglist 1 ........................... <tmpCastFileName>
+  [ 41] extcall 66 .............................. <CPgetActorInfo(tmpCastFileName)>
+  [ 44] setlocal 32 ............................. tmpInfo = CPgetActorInfo(tmpCastFileName)
+  [ 46] getlocal 32 ............................. <tmpInfo>
+  [ 48] getobjprop 67 ........................... <tmpInfo.count>
+  [ 51] jmpifz [183] ............................ if tmpInfo.count then
+  [ 54] pushzero ................................ <0>
+  [ 55] setlocal 40 ............................. tmpChanged = 0
+  [ 57] pushint8 1 .............................. <1>
+  [ 60] setlocal 48
+  [ 62] getlocal 48
+  [ 64] pushcons 8 .............................. <"Actor">
+  [ 66] pushint8 2 .............................. <2>
+  [ 69] get 8 ................................... <the number of castMembers of castLib "Actor">
+  [ 71] lteq
+  [ 72] jmpifz [133] ............................ repeat with n = 1 to the number of castMembers of castLib "Actor"
+  [ 75] getlocal 48 ............................. <n>
+  [ 77] pushcons 16 ............................. <"Actor">
+  [ 79] pusharglist 2 ........................... <n, "Actor">
+  [ 81] extcall 6 ............................... <member(n, "Actor")>
+  [ 83] setlocal 56 ............................. memb = member(n, "Actor")
+  [ 85] getlocal 56 ............................. <memb>
+  [ 87] getobjprop 68 ........................... <memb.type>
+  [ 90] pushsymb 69 ............................. <#bitmap>
+  [ 93] eq ...................................... <memb.type = #bitmap>
+  [ 94] jmpifz [122] ............................ if memb.type = #bitmap then
+  [ 97] getlocal 56 ............................. <memb>
+  [ 99] getobjprop 70 ........................... <memb.paletteRef>
+  [102] pushsymb 71 ............................. <#systemWin>
+  [105] nteq .................................... <memb.paletteRef <> #systemWin>
+  [106] jmpifz [122] ............................ if memb.paletteRef <> #systemWin then
+  [109] getlocal 56 ............................. <memb>
+  [111] pushsymb 71 ............................. <#systemWin>
+  [114] setobjprop 70 ........................... memb.paletteRef = #systemWin
+  [117] pushint8 1 .............................. <1>
+  [120] setlocal 40 ............................. tmpChanged = 1
+  [122] pushint8 1
+  [125] getlocal 48
+  [127] add
+  [128] setlocal 48
+  [130] endrepeat [ 62]
+  [133] getlocal 40 ............................. <tmpChanged>
+  [135] jmpifz [171] ............................ if tmpChanged then / else
+  [138] pushcons 24 ............................. <"Actor">
+  [140] pusharglist 1 ........................... <"Actor">
+  [142] extcall 72 .............................. <castLib("Actor")>
+  [145] getmovieprop 73 ......................... <the moviePath>
+  [148] getlocal 24 ............................. <tmpCastFileName>
+  [150] joinstr ................................. <the moviePath & tmpCastFileName>
+  [151] pushcons 32 ............................. <".cst">
+  [153] joinstr ................................. <the moviePath & tmpCastFileName & ".cst">
+  [154] pusharglistnoret 2 ...................... <castLib("Actor"), the moviePath & tmpCastFileName & ".cst">
+  [156] objcall 74 .............................. castLib("Actor").save(the moviePath & tmpCastFileName & ".cst")
+  [159] getlocal 24 ............................. <tmpCastFileName>
+  [161] pushcons 40 ............................. <"Saved!">
+  [163] pusharglistnoret 2 ...................... <tmpCastFileName, "Saved!">
+  [165] extcall 75 .............................. put tmpCastFileName, "Saved!"
+  [168] jmp [180]
+  [171] getlocal 24 ............................. <tmpCastFileName>
+  [173] pushcons 48 ............................. <"no change">
+  [175] pusharglistnoret 2 ...................... <tmpCastFileName, "no change">
+  [177] extcall 75 .............................. put tmpCastFileName, "no change"
+  [180] jmp [192] ............................... next repeat
+  [183] getlocal 24 ............................. <tmpCastFileName>
+  [185] pushcons 56 ............................. <"error loading!">
+  [187] pusharglistnoret 2 ...................... <tmpCastFileName, "error loading!">
+  [189] extcall 75 .............................. put tmpCastFileName, "error loading!"
+  [192] pushint8 1
+  [195] getlocal 16
+  [197] add
+  [198] setlocal 16
+  [200] endrepeat [ 14]
+  [203] ret
+end

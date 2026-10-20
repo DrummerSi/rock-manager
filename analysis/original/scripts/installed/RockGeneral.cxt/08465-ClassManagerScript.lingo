@@ -1,0 +1,604 @@
+property m_hierarchy, m_fastHierarchy, m_objsByClass, m_classesVars, m_scriptNameAffix, m_stdTypes, m_dataFilePath, m_recentlyCreatedObjs, m_objsCreatedFromFile, m_objsCreatedFromGame, m_loadingDone, m_objsCreatedFromInit, m_initDone, m_IDPrefixPerClass
+
+on new me, argPath
+  global gRock
+  m_dataFilePath = argPath
+  m_stdTypes = [#float: [#default: 0.0, #defaultStr: "0.0"], #string: [#default: EMPTY, #defaultStr: QUOTE & QUOTE], #int: [#default: 0, #defaultStr: "0"], #integer: [#default: 0, #defaultStr: "0"], #list: [#default: [], #defaultStr: "[]"], #propList: [#default: [:], #defaultStr: "[:]"], #symbol: [#default: #none, #defaultStr: "#None"], #point: [#default: point(0, 0), #defaultStr: "point(0,0)"], #rect: [#default: rect(0, 0, 0, 0), #defaultStr: "rect(0,0,0,0)"], #boolean: [#default: 0, #defaultStr: "0"]]
+  tmpDeclarationsFile = "ClassDeclarations.txt"
+  if objectp(gRock) then
+    tmpPath = gRock.m_paths.findFileInOneOfPaths(tmpDeclarationsFile, #data)
+  else
+    tmpPath = argPath
+  end if
+  m_scriptNameAffix = ["Class", "Script"]
+  tmpObj = script("AllClassesReaderScript").new(tmpPath & tmpDeclarationsFile, m_scriptNameAffix, m_stdTypes)
+  m_hierarchy = tmpObj.m_hierarchy
+  m_fastHierarchy = [:]
+  me.recursiveMakeFastHierarchy(m_hierarchy, [])
+  m_IDPrefixPerClass = [:]
+  m_classesVars = tmpObj.m_classesVars
+  m_recentlyCreatedObjs = []
+  return me
+end
+
+on kill me
+  global gRock
+  if objectp(gRock) then
+    gRock.m_gameTimer.deleteObject(me)
+  end if
+  return 0
+end
+
+on timeTick me
+  m_recentlyCreatedObjs = []
+end
+
+on instantiate me, argExceptions, argFileWildcards
+  global gRock
+  X = the milliSeconds
+  if objectp(gRock) then
+    gRock.m_gameTimer.addObject(me)
+  end if
+  if not objectp(gRock) then
+    if the runMode = "Author" then
+      filesToRead = getLatestDataFiles(m_dataFilePath, #convert)
+    else
+      filesToRead = getLatestDataFiles(m_dataFilePath)
+    end if
+  else
+    if the runMode = "Author" then
+      filesToRead = getLatestDataFilesInFolders(gRock.m_paths.getAllAlternativePaths(#data), m_dataFilePath)
+    else
+      filesToRead = getRealDataFiles()
+    end if
+  end if
+  if not listp(argFileWildcards) then
+    argFileWildcards = ["*"]
+  end if
+  tmpOrgFilesToRead = filesToRead.duplicate()
+  filesToRead = []
+  repeat with wildCard in argFileWildcards
+    mergeLists(filesToRead, wildCardSearch(wildCard, tmpOrgFilesToRead))
+  end repeat
+  m_initDone = 0
+  m_loadingDone = 0
+  m_objsByClass = [:]
+  me.loadDataSheets(filesToRead, argExceptions)
+  m_loadingDone = 1
+  m_objsCreatedFromGame = []
+  m_objsCreatedFromInit = []
+  pott("Instantiate!", the milliSeconds - X)
+  m_IDPrefixPerClass = [#Ba: [#Band], #Al: [#album]]
+  repeat with n = 1 to m_objsByClass.count
+    className = m_objsByClass.getPropAt(n)
+    lst = m_objsByClass[n]
+    if not listp(lst) then
+      next repeat
+    end if
+    if lst.count = 0 then
+      next repeat
+    end if
+    ID = rgetProp(lst[1], #ID)
+    if not symbolp(ID) then
+      next repeat
+    end if
+    IDStr = string(ID)
+    Prefix = symbol(IDStr.char[1..2])
+    otherWithSamePrefix = m_IDPrefixPerClass.getaProp(className)
+    if voidp(otherWithSamePrefix) then
+      otherWithSamePrefix = []
+      m_IDPrefixPerClass.setaProp(Prefix, otherWithSamePrefix)
+    end if
+    otherWithSamePrefix.add(className)
+  end repeat
+end
+
+on callObjects me, argHandler
+  repeat with n = 1 to m_objsByClass.count
+    objsInClass = m_objsByClass[n]
+    repeat with obj in objsInClass
+      if obj.handler(argHandler) then
+        call(argHandler, obj)
+      end if
+    end repeat
+  end repeat
+end
+
+on callInit me
+  repeat with n = 1 to m_objsByClass.count
+    objsInClass = m_objsByClass[n]
+    repeat with obj in objsInClass
+      if obj.handler(#init) then
+        obj.init()
+      end if
+    end repeat
+  end repeat
+  m_initDone = 1
+end
+
+on zzinit me, argInitInstances, argExceptions
+  me.instantiate(argExceptions)
+  if argInitInstances = #InitInstances then
+    me.callInit()
+  end if
+end
+
+on loadDataSheets me, argFiles, argExceptions
+  m_objsCreatedFromFile = []
+  tmpObj = script("AllInstancesInitializer").new(argFiles, m_classesVars, me, argExceptions)
+  tmpObjsByClass = tmpObj.m_objsByClass
+  repeat with n = 1 to tmpObjsByClass.count
+    className = tmpObjsByClass.getPropAt(n)
+    newLst = tmpObjsByClass[n]
+    oldLst = m_objsByClass.getaProp(className)
+    if voidp(oldLst) then
+      oldLst = []
+      m_objsByClass.addProp(className, oldLst)
+    end if
+    repeat with newObj in newLst
+      if objectp(me.getObjByIDAndClass(newObj.ID, className)) then
+        pott(newObj.ID, "used ID!", newObj.className)
+        next repeat
+      end if
+      oldLst.add(newObj)
+    end repeat
+  end repeat
+end
+
+on getPropInfo me, argPropPath, argInfoProp
+  global gSwitches
+  return gSwitches.getPropInfo(argPropPath, argInfoProp)
+end
+
+on isSaveProp me, argPropPath
+  return me.getPropInfo(argPropPath, #save)
+end
+
+on getObjsOfClass me, argClassName
+  tmp = m_objsByClass[argClassName]
+  if not listp(tmp) then
+    return []
+  end if
+  return tmp
+end
+
+on getObjsWithBaseClass me, argClassName
+  allClassesWithThisBase = me.getClassesWithBaseClass(argClassName)
+  if not listp(allClassesWithThisBase) then
+    allClassesWithThisBase = []
+  end if
+  allClassesWithThisBase.add(argClassName)
+  allObjs = []
+  repeat with tmpClassName in allClassesWithThisBase
+    objs = m_objsByClass[tmpClassName]
+    if listp(objs) then
+      mergeLists(allObjs, objs)
+    end if
+  end repeat
+  return allObjs
+end
+
+on getClassesWithBaseClass me, argClassName, argUnderList, argAllList
+  if voidp(argUnderList) then
+    argUnderList = m_fastHierarchy[argClassName]
+  end if
+  if not listp(argUnderList) then
+    return 0
+  end if
+  if argUnderList.count() = 0 then
+    return 0
+  end if
+  if voidp(argAllList) then
+    argAllList = []
+  end if
+  argUnderList = argUnderList[#Under]
+  repeat with n = 1 to argUnderList.count()
+    argAllList.add(argUnderList.getPropAt(n))
+    me.getClassesWithBaseClass(argUnderList.getPropAt(n), VOID, argAllList)
+  end repeat
+  return argAllList
+end
+
+on getObjByID me, argID
+  Prefix = symbol(string(argID).char[1..2])
+  possibleClasses = m_IDPrefixPerClass.getaProp(Prefix)
+  if listp(possibleClasses) then
+    repeat with className in possibleClasses
+      obj = me.getObjByIDAndClass(argID, className)
+      if objectp(obj) then
+        return obj
+      end if
+    end repeat
+  end if
+  repeat with lst in m_objsByClass
+    repeat with obj in lst
+      if obj.ID = argID then
+        return obj
+      end if
+    end repeat
+  end repeat
+end
+
+on getObjByIDAndClass me, argID, argClass
+  lst = m_objsByClass[argClass]
+  if listp(lst) then
+    repeat with obj in lst
+      if obj.ID = argID then
+        return obj
+      end if
+    end repeat
+  end if
+  tmpUnderList = m_fastHierarchy[argClass]
+  if voidp(tmpUnderList) then
+    return VOID
+  end if
+  tmpUnderList = tmpUnderList[#Under]
+  repeat with n = 1 to tmpUnderList.count()
+    obj = me.getObjByIDAndClass(argID, tmpUnderList.getPropAt(n))
+    if objectp(obj) then
+      return obj
+    end if
+  end repeat
+  return VOID
+end
+
+on createObj me, argClassName, argArgs
+  obj = script(m_scriptNameAffix[1] & string(argClassName) & m_scriptNameAffix[2]).new()
+  me.registerObj(obj, argClassName, 1)
+  return obj
+end
+
+on createUnregObj me, argClassName, argArgs
+  obj = script(m_scriptNameAffix[1] & string(argClassName) & m_scriptNameAffix[2]).new()
+  me.registerObj(obj, argClassName, 0)
+  return obj
+end
+
+on registerObj me, argObj, argClassName, argAlsoRegisterInObjsByClass, argOnlyRegisterInObjsByClass
+  if not objectp(argObj) then
+    exit
+  end if
+  if argAlsoRegisterInObjsByClass = 1 then
+    if voidp(argClassName) then
+      argClassName = argObj.className
+    end if
+    former = m_objsByClass.getaProp(argClassName)
+    if voidp(former) then
+      former = []
+      m_objsByClass.setaProp(argClassName, former)
+    end if
+    former.add(argObj)
+    if argOnlyRegisterInObjsByClass = 1 then
+      exit
+    end if
+  end if
+  m_recentlyCreatedObjs.add(argObj)
+  if m_initDone then
+    m_objsCreatedFromGame.add(argObj)
+  else
+    if m_loadingDone then
+      m_objsCreatedFromInit.add(argObj)
+    else
+      m_objsCreatedFromFile.add(argObj)
+    end if
+  end if
+end
+
+on genUniqueID me, argObj
+  str = string(argObj.className)
+  objs = me.getObjsOfClass(argObj.className)
+  isOK = 0
+  Nr = objs.count()
+  repeat with n = 1 to 100
+    tmpID = symbol(str & string(Nr))
+    if voidp(me.getObjByIDAndClass(tmpID, argObj.className)) then
+      isOK = 1
+      exit repeat
+    end if
+    Nr = Nr + 1
+  end repeat
+  if not isOK then
+    tmpID = VOID
+  end if
+  return tmpID
+end
+
+on removeObj me, argObj, argKillAsWell
+  if not objectp(argObj) then
+    exit
+  end if
+  className = argObj.className
+  tmp = m_objsByClass.getaProp(className)
+  if listp(tmp) then
+    tmp.deleteOne(argObj)
+  end if
+  if argKillAsWell = #kill then
+    argObj.kill()
+  end if
+  m_objsCreatedFromGame.deleteOne(argObj)
+  m_objsCreatedFromInit.deleteOne(argObj)
+  m_objsCreatedFromFile.deleteOne(argObj)
+end
+
+on removeAllRegisteredObjs me, argExceptions
+  if voidp(argExceptions) then
+    argExceptions = [:]
+  end if
+  tmpExceptClassList = argExceptions[#class]
+  if voidp(tmpExceptClassList) then
+    tmpExceptClassList = []
+  end if
+  repeat with n = 1 to m_objsByClass.count
+    className = m_objsByClass.getPropAt(n)
+    if tmpExceptClassList.getPos(className) then
+      next repeat
+    end if
+    objs = m_objsByClass[n].duplicate()
+    repeat with obj in objs
+      me.removeObj(obj, #kill)
+    end repeat
+  end repeat
+end
+
+on removeAllObjs me
+  tmpAll = [m_objsCreatedFromGame, m_objsCreatedFromInit, m_objsCreatedFromFile]
+  repeat with tmpOrg in tmpAll
+    tmp = tmpOrg.duplicate()
+    repeat with obj in tmp
+      me.removeObj(obj, #kill)
+    end repeat
+  end repeat
+end
+
+on isStdType me, argType
+  tmp = m_stdTypes.getaProp(argType)
+  return listp(tmp)
+  return m_stdTypes.getPos(argType)
+end
+
+on getVarType me, argClassName, argVarName
+  tmp = me.getVarInfo(argClassName, argVarName)
+  if listp(tmp) then
+    return tmp[1]
+  end if
+  return VOID
+end
+
+on getVarTypeByPath me, argClassName, argPath
+  if voidp(argPath) then
+    argPath = argClassName
+    argClassName = argPath[1]
+    argPath.deleteAt(1)
+  end if
+  repeat with n = 1 to argPath.count
+    argClassName = me.getVarType(argClassName, argPath[n])
+  end repeat
+  return argClassName
+end
+
+on getPropsInClass me, argClassName
+  return m_classesVars[argClassName]
+end
+
+on getPropsInClassIncludingAncestors me, argClassName
+  lst = m_fastHierarchy[argClassName]
+  if not listp(lst) then
+    return me.getPropsInClass(argClassName)
+  end if
+  lst = lst[#Over]
+  allProps = [:]
+  mergeLists(allProps, m_classesVars[argClassName])
+  repeat with tmpClassName in lst
+    mergeLists(allProps, m_classesVars[tmpClassName])
+  end repeat
+  return allProps
+end
+
+on getSubProps me, argClassName
+  lst = m_classesVars[argClassName]
+  tmpList = []
+  repeat with n = 1 to lst.count()
+    tmpSubClassName = lst[n][1]
+    if me.isStdType(tmpSubClassName) then
+      tmpList.add(lst.getPropAt(n))
+      next repeat
+    end if
+    tmpList.add(me.getSubProps(tmpSubClassName))
+  end repeat
+  return tmpList
+end
+
+on getBaseClassesOfClass me, argClassName
+  tmp = m_fastHierarchy[argClassName]
+  if not listp(tmp) then
+    return []
+  end if
+  return tmp[#Over]
+end
+
+on hasBaseClass me, argObj, argClassName
+  tmp = me.getBaseClassesOfClass(argObj.className)
+  if tmp.getPos(argClassName) then
+    return 1
+  end if
+  return 0
+end
+
+on getAllObjInstancesInObj me, argObj, argIncludeAncestorsObjs, argList
+  if voidp(argList) then
+    argList = []
+  end if
+  lst = me.getPropsInClass(argObj.className)
+  repeat with n = 1 to lst.count()
+    tmpSubClassName = lst[n][1]
+    if not me.isStdType(tmpSubClassName) then
+      tmpObj = argObj.getaProp(lst.getPropAt(n))
+      argList.add(tmpObj)
+      me.getAllObjInstancesInObj(tmpObj, argIncludeAncestorsObjs, argList)
+    end if
+  end repeat
+  if (argIncludeAncestorsObjs = 1) and objectp(argObj.getaProp(#ancestor)) then
+    me.getAllObjInstancesInObj(argObj.getaProp(#ancestor), argIncludeAncestorsObjs, argList)
+  end if
+  return argList
+end
+
+on getVarInfo me, argClassName, argVarName
+  tmpClassVars = m_classesVars[argClassName]
+  if not listp(tmpClassVars) then
+    return VOID
+  end if
+  tmpVarInfo = tmpClassVars[argVarName]
+  if not voidp(tmpVarInfo) then
+    return [tmpVarInfo[1], argClassName, []]
+  end if
+  tmp = m_fastHierarchy[argClassName]
+  if not listp(tmp) then
+    return VOID
+  end if
+  tmp = tmp[#Over]
+  repeat with n = tmp.count() down to 1
+    tmpClass = tmp[n]
+    tmpClassVars = m_classesVars[tmpClass]
+    if listp(tmpClassVars) then
+      tmpVarInfo = tmpClassVars[argVarName]
+      if not voidp(tmpVarInfo) then
+        return [tmpVarInfo[1], tmpClass, tmp]
+      end if
+    end if
+  end repeat
+  return VOID
+end
+
+on recursiveMakeFastHierarchy me, argList, argOverList
+  repeat with n = 1 to argList.count()
+    className = argList.getPropAt(n)
+    tmpList = argList[n]
+    tmp = m_fastHierarchy.getaProp(className)
+    if voidp(tmp) then
+      tmp = [#Over: [], #Under: []]
+      m_fastHierarchy.addProp(className, tmp)
+    end if
+    tmp[#Over] = argOverList
+    tmp[#Under] = tmpList
+    if tmpList.count() then
+      tmpOverList = argOverList.duplicate()
+      tmpOverList.add(className)
+      me.recursiveMakeFastHierarchy(tmpList, tmpOverList)
+    end if
+  end repeat
+end
+
+on copy me, argFromObj, argToObj
+  if argFromObj.className <> argToObj.className then
+    return 0
+  end if
+  allVars = m_classesVars[argFromObj.className]
+  repeat with n = 1 to allVars.count()
+    Info = allVars[n]
+    type = Info[1]
+    varName = allVars.getPropAt(n)
+    if me.isStdType(type) then
+      argToObj.setaProp(varName, argFromObj.getaProp(varName))
+      next repeat
+    end if
+    me.copy(argFromObj.getaProp(varName), argToObj.getaProp(varName))
+  end repeat
+  if objectp(argFromObj.ancestor) then
+    me.copy(argFromObj.ancestor, argToObj.ancestor)
+  end if
+end
+
+on diff me, argObj1, argObj2
+  if argObj1.className <> argObj2.className then
+    return 0
+  end if
+  allVars = m_classesVars[argObj1.className]
+  repeat with n = 1 to allVars.count()
+    Info = allVars[n]
+    type = Info[1]
+    varName = allVars.getPropAt(n)
+    if me.isStdType(type) then
+      argObj1.setaProp(varName, argObj1.getaProp(varName) - argObj2.getaProp(varName))
+      next repeat
+    end if
+    me.diff(argObj1.getaProp(varName), argObj2.getaProp(varName))
+  end repeat
+end
+
+on add me, argObj1, argObj2OrNumber
+  if objectp(argObj2OrNumber) then
+    if argObj1.className <> argObj2OrNumber.className then
+      return 0
+    end if
+  end if
+  allVars = me.getPropsInClassIncludingAncestors(argObj1.className)
+  repeat with n = 1 to allVars.count()
+    Info = allVars[n]
+    type = Info[1]
+    varName = allVars.getPropAt(n)
+    if (type = #int) or (type = #float) or (type = #integer) then
+      if objectp(argObj2OrNumber) then
+        argObj1.setaProp(varName, argObj1.getaProp(varName) + argObj2OrNumber.getaProp(varName))
+      else
+        argObj1.setaProp(varName, argObj1.getaProp(varName) + argObj2OrNumber)
+      end if
+      next repeat
+    end if
+    if objectp(argObj2OrNumber) then
+      me.add(argObj1.getaProp(varName), argObj2OrNumber.getaProp(varName))
+      next repeat
+    end if
+    me.add(argObj1.getaProp(varName), argObj2OrNumber)
+  end repeat
+end
+
+on multiply me, argObj1, argFactor
+  allVars = me.getPropsInClassIncludingAncestors(argObj1.className)
+  repeat with n = 1 to allVars.count()
+    Info = allVars[n]
+    type = Info[1]
+    varName = allVars.getPropAt(n)
+    if (type = #int) or (type = #float) or (type = #integer) then
+      argObj1.setaProp(varName, argObj1.getaProp(varName) * argFactor)
+      next repeat
+    end if
+    tmp = argObj1.getaProp(varName)
+    if ilk(tmp) = #instance then
+      me.multiply(tmp, argFactor)
+    end if
+  end repeat
+end
+
+on getAncestorWithVariable me, argObj, argVar
+  class = argObj.className
+  Info = me.getVarInfo(class, argVar)
+  if Info[3].count() = 0 then
+    return argObj
+  end if
+  obj = argObj
+  repeat with n = Info[3].count() down to 1
+    obj = obj.ancestor
+    if Info[3][n] = Info[2] then
+      return obj
+    end if
+  end repeat
+  return 0
+end
+
+on getVariable me, argObj, argVar
+  obj = me.getAncestorWithVariable(argObj, argVar)
+  if objectp(obj) then
+    return obj.getaProp(argVar)
+  end if
+  return VOID
+end
+
+on setVariable me, argObj, argVar, argVal
+  obj = me.getAncestorWithVariable(argObj, argVar)
+  if objectp(obj) then
+    obj.setaProp(argVar, argVal)
+  else
+    pott("Var not found!", argVar)
+  end if
+end

@@ -1,0 +1,180 @@
+property addMouseObjectList, deleteMouseObjectList, mouseObjects, latestMouseButton, busyRepeating, dismissingClicks, cursorChanged, Active, mouseLoc, lastMouseLoc, mouseWasOnStage, stageRect
+global gUseful
+
+on new me
+  addMouseObjectList = [:]
+  deleteMouseObjectList = []
+  mouseObjects = [:]
+  sort(mouseObjects)
+  latestMouseButton = #none
+  busyRepeating = 0
+  dismissingClicks = 0
+  mouseLoc = point(0, 0)
+  lastMouseLoc = mouseLoc
+  stageRect = rect(0, 0, 640, 480)
+  Active = 1
+  return me
+end
+
+on kill me
+  addMouseObjectList = [:]
+  deleteMouseObjectList = []
+  mouseObjects = [:]
+  return 0
+end
+
+on activate me, argIsTRUE
+  Active = argIsTRUE
+end
+
+on addObject me, argObj, argPrio
+  if voidp(argPrio) then
+    argPrio = 50
+  end if
+  if busyRepeating then
+    addProp(addMouseObjectList, argPrio, argObj)
+  else
+    if getPos(mouseObjects, argObj) = 0 then
+      addProp(mouseObjects, argPrio, argObj)
+    end if
+  end if
+end
+
+on addObjects me
+  repeat with n = 1 to count(addMouseObjectList)
+    tmpObj = getAt(addMouseObjectList, n)
+    if getPos(mouseObjects, tmpObj) = 0 then
+      addProp(mouseObjects, getPropAt(addMouseObjectList, n), tmpObj)
+    end if
+  end repeat
+  addMouseObjectList = [:]
+end
+
+on deleteObject me, argObj
+  activate(argObj, 0)
+  if busyRepeating then
+    add(deleteMouseObjectList, argObj)
+  else
+    deleteOne(mouseObjects, argObj)
+  end if
+end
+
+on deleteObjects me
+  repeat with tmpObj in deleteMouseObjectList
+    deleteOne(mouseObjects, tmpObj)
+  end repeat
+  deleteMouseObjectList = []
+end
+
+on deleteMouseObjectsConnectedTo me, argObj
+  tmpBusyRepeating = busyRepeating
+  busyRepeating = 1
+  repeat with tmpObj in mouseObjects
+    if tmpObj.reportObject = argObj then
+      deleteObject(me, tmpObj)
+    end if
+  end repeat
+  busyRepeating = tmpBusyRepeating
+end
+
+on activateMouseObjectsOfType me, argType, YesNo
+  tmpBusyRepeating = busyRepeating
+  busyRepeating = 1
+  repeat with tmpObj in mouseObjects
+    if tmpObj.type = argType then
+      activate(tmpObj, YesNo)
+    end if
+  end repeat
+  busyRepeating = tmpBusyRepeating
+end
+
+on timeTick me
+  if Active = 0 then
+    exit
+  end if
+  if dismissingClicks > 0 then
+    dismissingClicks = dismissingClicks - 1
+  end if
+  busyRepeating = 1
+  mouseLoc = point(the mouseH, the mouseV)
+  tmpIsOnStage = inside(mouseLoc, stageRect)
+  if tmpIsOnStage and not mouseWasOnStage then
+    display(gUseful.cursors)
+  end if
+  mouseWasOnStage = tmpIsOnStage
+  cursorChanged = VOID
+  repeat with n = count(mouseObjects) down to 1
+    tmpObj = getAt(mouseObjects, n)
+    tmpCheck = check(tmpObj, mouseLoc)
+    if tmpCheck then
+      exit repeat
+    end if
+  end repeat
+  if objectp(gUseful) then
+    setCursor(gUseful.cursors, cursorChanged)
+  end if
+  addObjects(me)
+  deleteObjects(me)
+  busyRepeating = 0
+  lastMouseLoc = mouseLoc
+end
+
+on mouseDown me, argPoint
+  mouseLoc = argPoint
+  if Active = 0 then
+    exit
+  end if
+  if dismissingClicks then
+    exit
+  end if
+  busyRepeating = 1
+  if latestMouseButton = #down then
+    exit
+  end if
+  latestMouseButton = #down
+  repeat with n = count(mouseObjects) down to 1
+    tmpObj = getAt(mouseObjects, n)
+    if checkDown(tmpObj, mouseLoc) then
+      exit
+    end if
+  end repeat
+  addObjects(me)
+  deleteObjects(me)
+  busyRepeating = 0
+end
+
+on mouseUp me, argPoint
+  mouseLoc = argPoint
+  if Active = 0 then
+    exit
+  end if
+  busyRepeating = 1
+  if latestMouseButton = #up then
+    exit
+  end if
+  latestMouseButton = #up
+  tmpOKToClick = 1
+  repeat with n = count(mouseObjects) down to 1
+    tmpObj = getAt(mouseObjects, n)
+    if checkUp(tmpObj, mouseLoc, tmpOKToClick) then
+      tmpOKToClick = 0
+    end if
+  end repeat
+  addObjects(me)
+  deleteObjects(me)
+  busyRepeating = 0
+end
+
+on dismissClicks me, argIsTRUE
+  dismissingClicks = argIsTRUE
+end
+
+on cursorChange me, argWhich
+  if voidp(cursorChanged) then
+    cursorChanged = argWhich
+  end if
+end
+
+on getMouseLoc me
+  return mouseLoc
+end

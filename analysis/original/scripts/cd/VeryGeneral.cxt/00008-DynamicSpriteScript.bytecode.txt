@@ -1,0 +1,454 @@
+property spriteNums, startSPNum, endSPNum, maxNumSPs, autoShuffleSprites, layers, oldLayers, currentID, SPInfoCache, order
+
+on new me, argStartSPNum, argNumSPs
+  [  0] getparam 16 ............................. <argNumSPs>
+  [  2] setprop 372 ............................. maxNumSPs = argNumSPs
+  [  5] getparam 0 .............................. <me>
+  [  7] getparam 8 .............................. <argStartSPNum>
+  [  9] pusharglistnoret 2 ...................... <me, argStartSPNum>
+  [ 11] objcall 371 ............................. me.setStartSPNum(argStartSPNum)
+  [ 14] getparam 0 .............................. <me>
+  [ 16] pusharglistnoret 1 ...................... <me>
+  [ 18] objcall 360 ............................. me.clear()
+  [ 21] pushint8 1 .............................. <1>
+  [ 24] setprop 373 ............................. order = 1
+  [ 27] pushzero ................................ <0>
+  [ 28] setprop 374 ............................. autoShuffleSprites = 0
+  [ 31] getparam 0 .............................. <me>
+  [ 33] pusharglistnoret 1 ...................... <me>
+  [ 35] extcall 32 .............................. return me
+  [ 38] ret
+end
+
+on kill me
+  [  0] pushzero ................................ <0>
+  [  1] pusharglistnoret 1 ...................... <0>
+  [  3] extcall 32 .............................. return 0
+  [  6] ret
+end
+
+on clear me, argClearSprites
+  [  0] getparam 8 .............................. <argClearSprites>
+  [  2] pushint8 1 .............................. <1>
+  [  5] eq ...................................... <argClearSprites = 1>
+  [  6] jmpifz [ 51] ............................ if argClearSprites = 1 then
+  [  9] getprop 377 ............................. <startSPNum>
+  [ 12] setlocal 0
+  [ 14] getlocal 0
+  [ 16] getprop 378 ............................. <endSPNum>
+  [ 19] lteq
+  [ 20] jmpifz [ 51] ............................ repeat with tmpSPNum = startSPNum to endSPNum
+  [ 23] getlocal 0 .............................. <tmpSPNum>
+  [ 25] pusharglist 1 ........................... <tmpSPNum>
+  [ 27] extcall 379 ............................. <sprite(tmpSPNum)>
+  [ 30] pushcons 0 .............................. <"Dummy">
+  [ 32] pusharglist 1 ........................... <"Dummy">
+  [ 34] extcall 307 ............................. <member("Dummy")>
+  [ 37] setobjprop 307 .......................... sprite(tmpSPNum).member = member("Dummy")
+  [ 40] pushint8 1
+  [ 43] getlocal 0
+  [ 45] add
+  [ 46] setlocal 0
+  [ 48] endrepeat [ 14]
+  [ 51] pusharglist 0 ........................... <[:]>
+  [ 53] pushproplist ............................ <[:]>
+  [ 54] setprop 380 ............................. layers = [:]
+  [ 57] getprop 380 ............................. <layers>
+  [ 60] pusharglistnoret 1 ...................... <layers>
+  [ 62] objcall 197 ............................. layers.sort()
+  [ 65] pushint8 1 .............................. <1>
+  [ 68] setprop 381 ............................. currentID = 1
+  [ 71] pusharglist 0 ........................... <[:]>
+  [ 73] pushproplist ............................ <[:]>
+  [ 74] setprop 382 ............................. SPInfoCache = [:]
+  [ 77] ret
+end
+
+on hideUnused me
+  [  0] getprop 373 ............................. <order>
+  [  3] pushint8 1 .............................. <1>
+  [  6] eq ...................................... <order = 1>
+  [  7] jmpifz [ 72] ............................ if order = 1 then / else
+  [ 10] getprop 380 ............................. <layers>
+  [ 13] pusharglist 1 ........................... <layers>
+  [ 15] objcall 175 ............................. <layers.count()>
+  [ 18] pushint8 1 .............................. <1>
+  [ 21] add ..................................... <layers.count() + 1>
+  [ 22] setlocal 0
+  [ 24] getlocal 0
+  [ 26] getprop 372 ............................. <maxNumSPs>
+  [ 29] lteq
+  [ 30] jmpifz [ 69] ............................ repeat with n = layers.count() + 1 to maxNumSPs
+  [ 33] getlocal 0 .............................. <n>
+  [ 35] getprop 377 ............................. <startSPNum>
+  [ 38] add ..................................... <n + startSPNum>
+  [ 39] pushint8 1 .............................. <1>
+  [ 42] sub ..................................... <n + startSPNum - 1>
+  [ 43] pusharglist 1 ........................... <n + startSPNum - 1>
+  [ 45] extcall 379 ............................. <sprite(n + startSPNum - 1)>
+  [ 48] pushcons 8 .............................. <"Dummy">
+  [ 50] pusharglist 1 ........................... <"Dummy">
+  [ 52] extcall 307 ............................. <member("Dummy")>
+  [ 55] setobjprop 307 .......................... sprite(n + startSPNum - 1).member = member("Dummy")
+  [ 58] pushint8 1
+  [ 61] getlocal 0
+  [ 63] add
+  [ 64] setlocal 0
+  [ 66] endrepeat [ 24]
+  [ 69] jmp [135]
+  [ 72] pushint8 1 .............................. <1>
+  [ 75] setlocal 0
+  [ 77] getlocal 0
+  [ 79] getprop 372 ............................. <maxNumSPs>
+  [ 82] getprop 380 ............................. <layers>
+  [ 85] pusharglist 1 ........................... <layers>
+  [ 87] objcall 175 ............................. <layers.count()>
+  [ 90] sub ..................................... <maxNumSPs - layers.count()>
+  [ 91] lteq
+  [ 92] jmpifz [135] ............................ repeat with n = 1 to maxNumSPs - layers.count()
+  [ 95] getlocal 0 .............................. <n>
+  [ 97] getprop 377 ............................. <startSPNum>
+  [100] add ..................................... <n + startSPNum>
+  [101] pushint8 1 .............................. <1>
+  [104] sub ..................................... <n + startSPNum - 1>
+  [105] pusharglist 1 ........................... <n + startSPNum - 1>
+  [107] extcall 379 ............................. <sprite(n + startSPNum - 1)>
+  [110] setlocal 8 .............................. tmpSP = sprite(n + startSPNum - 1)
+  [112] getlocal 8 .............................. <tmpSP>
+  [114] pushcons 16 ............................. <"Dummy">
+  [116] pusharglist 1 ........................... <"Dummy">
+  [118] extcall 307 ............................. <member("Dummy")>
+  [121] setobjprop 307 .......................... tmpSP.member = member("Dummy")
+  [124] pushint8 1
+  [127] getlocal 0
+  [129] add
+  [130] setlocal 0
+  [132] endrepeat [ 77]
+  [135] ret
+end
+
+on cacheSPInfo me
+  [  0] getprop 374 ............................. <autoShuffleSprites>
+  [  3] jmpifz [128] ............................ if autoShuffleSprites then
+  [  6] pusharglist 0 ........................... <[:]>
+  [  8] pushproplist ............................ <[:]>
+  [  9] setprop 382 ............................. SPInfoCache = [:]
+  [ 12] pushint8 1 .............................. <1>
+  [ 15] setlocal 0
+  [ 17] getlocal 0
+  [ 19] getprop 380 ............................. <layers>
+  [ 22] pusharglist 1 ........................... <layers>
+  [ 24] objcall 175 ............................. <layers.count()>
+  [ 27] lteq
+  [ 28] jmpifz [128] ............................ repeat with n = 1 to layers.count()
+  [ 31] pusharglist 0 ........................... <[:]>
+  [ 33] pushproplist ............................ <[:]>
+  [ 34] setlocal 8 .............................. tmpList = [:]
+  [ 36] getlocal 0 .............................. <n>
+  [ 38] getprop 377 ............................. <startSPNum>
+  [ 41] add ..................................... <n + startSPNum>
+  [ 42] pushint8 1 .............................. <1>
+  [ 45] sub ..................................... <n + startSPNum - 1>
+  [ 46] pusharglist 1 ........................... <n + startSPNum - 1>
+  [ 48] extcall 379 ............................. <sprite(n + startSPNum - 1)>
+  [ 51] setlocal 16 ............................. tmpSP = sprite(n + startSPNum - 1)
+  [ 53] getlocal 8 .............................. <tmpList>
+  [ 55] pushsymb 307 ............................ <#member>
+  [ 58] getlocal 16 ............................. <tmpSP>
+  [ 60] getobjprop 307 .......................... <tmpSP.member>
+  [ 63] pusharglistnoret 3 ...................... <tmpList, #member, tmpSP.member>
+  [ 65] objcall 45 .............................. tmpList.addProp(#member, tmpSP.member)
+  [ 68] getlocal 8 .............................. <tmpList>
+  [ 70] pushsymb 105 ............................ <#rect>
+  [ 73] getlocal 16 ............................. <tmpSP>
+  [ 75] getobjprop 105 .......................... <tmpSP.rect>
+  [ 78] pusharglistnoret 3 ...................... <tmpList, #rect, tmpSP.rect>
+  [ 80] objcall 45 .............................. tmpList.addProp(#rect, tmpSP.rect)
+  [ 83] getlocal 8 .............................. <tmpList>
+  [ 85] pushsymb 386 ............................ <#ink>
+  [ 88] getlocal 16 ............................. <tmpSP>
+  [ 90] getobjprop 386 .......................... <tmpSP.ink>
+  [ 93] pusharglistnoret 3 ...................... <tmpList, #ink, tmpSP.ink>
+  [ 95] objcall 45 .............................. tmpList.addProp(#ink, tmpSP.ink)
+  [ 98] getprop 382 ............................. <SPInfoCache>
+  [101] getprop 380 ............................. <layers>
+  [104] getlocal 0 .............................. <n>
+  [106] pusharglist 2 ........................... <layers, n>
+  [108] objcall 23 .............................. <layers[n]>
+  [110] getlocal 8 .............................. <tmpList>
+  [112] pusharglistnoret 3 ...................... <SPInfoCache, layers[n], tmpList>
+  [114] objcall 45 .............................. SPInfoCache.addProp(layers[n], tmpList)
+  [117] pushint8 1
+  [120] getlocal 0
+  [122] add
+  [123] setlocal 0
+  [125] endrepeat [ 17]
+  [128] ret
+end
+
+on moveToNewLayer me, argID, argLayer
+  [  0] getparam 0 .............................. <me>
+  [  2] pusharglistnoret 1 ...................... <me>
+  [  4] objcall 362 ............................. me.cacheSPInfo()
+  [  7] getprop 380 ............................. <layers>
+  [ 10] getparam 8 .............................. <argID>
+  [ 12] pusharglist 2 ........................... <layers, argID>
+  [ 14] objcall 181 ............................. <layers.getPos(argID)>
+  [ 17] setlocal 0 .............................. tmpPos = layers.getPos(argID)
+  [ 19] getprop 380 ............................. <layers>
+  [ 22] getlocal 0 .............................. <tmpPos>
+  [ 24] pusharglistnoret 2 ...................... <layers, tmpPos>
+  [ 26] objcall 344 ............................. layers.deleteAt(tmpPos)
+  [ 29] getprop 380 ............................. <layers>
+  [ 32] getparam 16 ............................. <argLayer>
+  [ 34] getparam 8 .............................. <argID>
+  [ 36] pusharglistnoret 3 ...................... <layers, argLayer, argID>
+  [ 38] objcall 45 .............................. layers.addProp(argLayer, argID)
+  [ 41] getprop 380 ............................. <layers>
+  [ 44] getparam 8 .............................. <argID>
+  [ 46] pusharglist 2 ........................... <layers, argID>
+  [ 48] objcall 181 ............................. <layers.getPos(argID)>
+  [ 51] setlocal 8 .............................. tmpNewPos = layers.getPos(argID)
+  [ 53] getlocal 8 .............................. <tmpNewPos>
+  [ 55] setlocal 16 ............................. tmpFirstPos = tmpNewPos
+  [ 57] getlocal 0 .............................. <tmpPos>
+  [ 59] getlocal 16 ............................. <tmpFirstPos>
+  [ 61] lt ...................................... <tmpPos < tmpFirstPos>
+  [ 62] jmpifz [ 69] ............................ if tmpPos < tmpFirstPos then
+  [ 65] getlocal 0 .............................. <tmpPos>
+  [ 67] setlocal 16 ............................. tmpFirstPos = tmpPos
+  [ 69] getparam 0 .............................. <me>
+  [ 71] getlocal 16 ............................. <tmpFirstPos>
+  [ 73] pusharglistnoret 2 ...................... <me, tmpFirstPos>
+  [ 75] objcall 367 ............................. me.orderChanged(tmpFirstPos)
+  [ 78] ret
+end
+
+on reserveSprite me, argLayer
+  [  0] getparam 0 .............................. <me>
+  [  2] pusharglistnoret 1 ...................... <me>
+  [  4] objcall 362 ............................. me.cacheSPInfo()
+  [  7] getprop 380 ............................. <layers>
+  [ 10] getparam 8 .............................. <argLayer>
+  [ 12] getprop 381 ............................. <currentID>
+  [ 15] pusharglistnoret 3 ...................... <layers, argLayer, currentID>
+  [ 17] objcall 45 .............................. layers.addProp(argLayer, currentID)
+  [ 20] getprop 381 ............................. <currentID>
+  [ 23] pushint8 1 .............................. <1>
+  [ 26] add ..................................... <currentID + 1>
+  [ 27] setprop 381 ............................. currentID = currentID + 1
+  [ 30] getparam 0 .............................. <me>
+  [ 32] getprop 380 ............................. <layers>
+  [ 35] getprop 381 ............................. <currentID>
+  [ 38] pusharglist 2 ........................... <layers, currentID>
+  [ 40] objcall 181 ............................. <layers.getPos(currentID)>
+  [ 43] pusharglistnoret 2 ...................... <me, layers.getPos(currentID)>
+  [ 45] objcall 367 ............................. me.orderChanged(layers.getPos(currentID))
+  [ 48] getprop 381 ............................. <currentID>
+  [ 51] pushint8 1 .............................. <1>
+  [ 54] sub ..................................... <currentID - 1>
+  [ 55] pusharglistnoret 1 ...................... <currentID - 1>
+  [ 57] extcall 32 .............................. return currentID - 1
+  [ 60] ret
+end
+
+on getSprite me, argID
+  [  0] getprop 380 ............................. <layers>
+  [  3] getparam 8 .............................. <argID>
+  [  5] pusharglist 2 ........................... <layers, argID>
+  [  7] objcall 181 ............................. <layers.getPos(argID)>
+  [ 10] setlocal 0 .............................. tmpPos = layers.getPos(argID)
+  [ 12] getprop 373 ............................. <order>
+  [ 15] pushint8 1 .............................. <1>
+  [ 18] eq ...................................... <order = 1>
+  [ 19] jmpifz [ 40] ............................ if order = 1 then / else
+  [ 22] getlocal 0 .............................. <tmpPos>
+  [ 24] getprop 377 ............................. <startSPNum>
+  [ 27] add ..................................... <tmpPos + startSPNum>
+  [ 28] pushint8 1 .............................. <1>
+  [ 31] sub ..................................... <tmpPos + startSPNum - 1>
+  [ 32] pusharglistnoret 1 ...................... <tmpPos + startSPNum - 1>
+  [ 34] extcall 32 .............................. return tmpPos + startSPNum - 1
+  [ 37] jmp [ 55]
+  [ 40] getprop 372 ............................. <maxNumSPs>
+  [ 43] getlocal 0 .............................. <tmpPos>
+  [ 45] sub ..................................... <maxNumSPs - tmpPos>
+  [ 46] getprop 377 ............................. <startSPNum>
+  [ 49] add ..................................... <maxNumSPs - tmpPos + startSPNum>
+  [ 50] pusharglistnoret 1 ...................... <maxNumSPs - tmpPos + startSPNum>
+  [ 52] extcall 32 .............................. return maxNumSPs - tmpPos + startSPNum
+  [ 55] ret
+end
+
+on returnSprite me, argID
+  [  0] getparam 0 .............................. <me>
+  [  2] pusharglistnoret 1 ...................... <me>
+  [  4] objcall 362 ............................. me.cacheSPInfo()
+  [  7] getprop 380 ............................. <layers>
+  [ 10] getparam 8 .............................. <argID>
+  [ 12] pusharglist 2 ........................... <layers, argID>
+  [ 14] objcall 181 ............................. <layers.getPos(argID)>
+  [ 17] setlocal 0 .............................. tmpPos = layers.getPos(argID)
+  [ 19] getprop 380 ............................. <layers>
+  [ 22] getlocal 0 .............................. <tmpPos>
+  [ 24] pusharglistnoret 2 ...................... <layers, tmpPos>
+  [ 26] objcall 344 ............................. layers.deleteAt(tmpPos)
+  [ 29] getparam 0 .............................. <me>
+  [ 31] getlocal 0 .............................. <tmpPos>
+  [ 33] pusharglistnoret 2 ...................... <me, tmpPos>
+  [ 35] objcall 367 ............................. me.orderChanged(tmpPos)
+  [ 38] pushzero ................................ <0>
+  [ 39] pusharglistnoret 1 ...................... <0>
+  [ 41] extcall 32 .............................. return 0
+  [ 44] ret
+end
+
+on orderChanged me, argStartPos, argNewSPStart
+  [  0] getprop 374 ............................. <autoShuffleSprites>
+  [  3] jmpifz [ 17] ............................ if autoShuffleSprites then
+  [  6] getparam 0 .............................. <me>
+  [  8] getparam 8 .............................. <argStartPos>
+  [ 10] getparam 16 ............................. <argNewSPStart>
+  [ 12] pusharglistnoret 3 ...................... <me, argStartPos, argNewSPStart>
+  [ 14] objcall 369 ............................. me.shuffleSprites(argStartPos, argNewSPStart)
+  [ 17] ret
+end
+
+on tellObjsAboutChange me, argStartPos
+  [  0] ret
+end
+
+on shuffleSprites me, argStart, argNewSPStart
+  [  0] getparam 16 ............................. <argNewSPStart>
+  [  2] pusharglist 1 ........................... <argNewSPStart>
+  [  4] extcall 104 ............................. <voidp(argNewSPStart)>
+  [  7] jmpifz [141] ............................ if voidp(argNewSPStart) then / else
+  [ 10] pushint8 1 .............................. <1>
+  [ 13] setlocal 0
+  [ 15] getlocal 0
+  [ 17] getprop 380 ............................. <layers>
+  [ 20] pusharglist 1 ........................... <layers>
+  [ 22] objcall 175 ............................. <layers.count()>
+  [ 25] lteq
+  [ 26] jmpifz [138] ............................ repeat with n = 1 to layers.count()
+  [ 29] getprop 380 ............................. <layers>
+  [ 32] getlocal 0 .............................. <n>
+  [ 34] pusharglist 2 ........................... <layers, n>
+  [ 36] objcall 23 .............................. <layers[n]>
+  [ 38] setlocal 8 .............................. tmpID = layers[n]
+  [ 40] getprop 382 ............................. <SPInfoCache>
+  [ 43] getlocal 8 .............................. <tmpID>
+  [ 45] pusharglist 2 ........................... <SPInfoCache, tmpID>
+  [ 47] objcall 152 ............................. <SPInfoCache.getaProp(tmpID)>
+  [ 50] setlocal 16 ............................. tmpInfo = SPInfoCache.getaProp(tmpID)
+  [ 52] getlocal 16 ............................. <tmpInfo>
+  [ 54] pusharglist 1 ........................... <tmpInfo>
+  [ 56] extcall 128 ............................. <listp(tmpInfo)>
+  [ 59] jmpifz [127] ............................ if listp(tmpInfo) then
+  [ 62] getlocal 0 .............................. <n>
+  [ 64] getprop 377 ............................. <startSPNum>
+  [ 67] add ..................................... <n + startSPNum>
+  [ 68] pushint8 1 .............................. <1>
+  [ 71] sub ..................................... <n + startSPNum - 1>
+  [ 72] pusharglist 1 ........................... <n + startSPNum - 1>
+  [ 74] extcall 379 ............................. <sprite(n + startSPNum - 1)>
+  [ 77] setlocal 24 ............................. tmpSP = sprite(n + startSPNum - 1)
+  [ 79] getlocal 24 ............................. <tmpSP>
+  [ 81] getlocal 16 ............................. <tmpInfo>
+  [ 83] pushsymb 307 ............................ <#member>
+  [ 86] pusharglist 2 ........................... <tmpInfo, #member>
+  [ 88] objcall 23 .............................. <tmpInfo[#member]>
+  [ 90] setobjprop 307 .......................... tmpSP.member = tmpInfo[#member]
+  [ 93] getlocal 24 ............................. <tmpSP>
+  [ 95] getlocal 16 ............................. <tmpInfo>
+  [ 97] pushsymb 105 ............................ <#rect>
+  [100] pusharglist 2 ........................... <tmpInfo, #rect>
+  [102] objcall 23 .............................. <tmpInfo[#rect]>
+  [104] setobjprop 105 .......................... tmpSP.rect = tmpInfo[#rect]
+  [107] getlocal 24 ............................. <tmpSP>
+  [109] getlocal 16 ............................. <tmpInfo>
+  [111] pushsymb 386 ............................ <#ink>
+  [114] pusharglist 2 ........................... <tmpInfo, #ink>
+  [116] objcall 23 .............................. <tmpInfo[#ink]>
+  [118] setobjprop 386 .......................... tmpSP.ink = tmpInfo[#ink]
+  [121] getlocal 24 ............................. <tmpSP>
+  [123] pushzero ................................ <0>
+  [124] setobjprop 392 .......................... tmpSP.stretch = 0
+  [127] pushint8 1
+  [130] getlocal 0
+  [132] add
+  [133] setlocal 0
+  [135] endrepeat [ 15]
+  [138] jmp [214]
+  [141] getparam 8 .............................. <argStart>
+  [143] setlocal 0
+  [145] getlocal 0
+  [147] getprop 380 ............................. <layers>
+  [150] pusharglist 1 ........................... <layers>
+  [152] objcall 175 ............................. <layers.count()>
+  [155] lteq
+  [156] jmpifz [214] ............................ repeat with n = argStart to layers.count()
+  [159] getlocal 0 .............................. <n>
+  [161] pusharglist 1 ........................... <n>
+  [163] extcall 379 ............................. <sprite(n)>
+  [166] getprop 377 ............................. <startSPNum>
+  [169] add ..................................... <sprite(n) + startSPNum>
+  [170] pushint8 1 .............................. <1>
+  [173] sub ..................................... <sprite(n) + startSPNum - 1>
+  [174] setlocal 32 ............................. tmpOldSP = sprite(n) + startSPNum - 1
+  [176] getlocal 0 .............................. <n>
+  [178] pusharglist 1 ........................... <n>
+  [180] extcall 379 ............................. <sprite(n)>
+  [183] getparam 16 ............................. <argNewSPStart>
+  [185] add ..................................... <sprite(n) + argNewSPStart>
+  [186] pushint8 1 .............................. <1>
+  [189] sub ..................................... <sprite(n) + argNewSPStart - 1>
+  [190] setlocal 40 ............................. tmpNewSP = sprite(n) + argNewSPStart - 1
+  [192] getparam 0 .............................. <me>
+  [194] getlocal 32 ............................. <tmpOldSP>
+  [196] getlocal 40 ............................. <tmpNewSP>
+  [198] pusharglistnoret 3 ...................... <me, tmpOldSP, tmpNewSP>
+  [200] objcall 370 ............................. me.copySPContent(tmpOldSP, tmpNewSP)
+  [203] pushint8 1
+  [206] getlocal 0
+  [208] add
+  [209] setlocal 0
+  [211] endrepeat [145]
+  [214] ret
+end
+
+on copySPContent me, argFromSP, argToSP
+  [  0] getparam 16 ............................. <argToSP>
+  [  2] getparam 8 .............................. <argFromSP>
+  [  4] getobjprop 307 .......................... <argFromSP.member>
+  [  7] setobjprop 307 .......................... argToSP.member = argFromSP.member
+  [ 10] getparam 16 ............................. <argToSP>
+  [ 12] getparam 8 .............................. <argFromSP>
+  [ 14] getobjprop 105 .......................... <argFromSP.rect>
+  [ 17] setobjprop 105 .......................... argToSP.rect = argFromSP.rect
+  [ 20] getparam 16 ............................. <argToSP>
+  [ 22] getparam 8 .............................. <argFromSP>
+  [ 24] getobjprop 386 .......................... <argFromSP.ink>
+  [ 27] setobjprop 386 .......................... argToSP.ink = argFromSP.ink
+  [ 30] ret
+end
+
+on setStartSPNum me, argSPNum
+  [  0] getparam 0 .............................. <me>
+  [  2] pusharglistnoret 1 ...................... <me>
+  [  4] objcall 362 ............................. me.cacheSPInfo()
+  [  7] getparam 0 .............................. <me>
+  [  9] pushint8 1 .............................. <1>
+  [ 12] getparam 8 .............................. <argSPNum>
+  [ 14] pusharglistnoret 3 ...................... <me, 1, argSPNum>
+  [ 16] objcall 367 ............................. me.orderChanged(1, argSPNum)
+  [ 19] getparam 8 .............................. <argSPNum>
+  [ 21] setprop 377 ............................. startSPNum = argSPNum
+  [ 24] getparam 8 .............................. <argSPNum>
+  [ 26] getprop 372 ............................. <maxNumSPs>
+  [ 29] add ..................................... <argSPNum + maxNumSPs>
+  [ 30] pushint8 1 .............................. <1>
+  [ 33] sub ..................................... <argSPNum + maxNumSPs - 1>
+  [ 34] setprop 378 ............................. endSPNum = argSPNum + maxNumSPs - 1
+  [ 37] ret
+end

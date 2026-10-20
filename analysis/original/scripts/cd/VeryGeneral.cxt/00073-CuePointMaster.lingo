@@ -1,0 +1,86 @@
+property Active, addObjects, deleteObjects, objects
+global gUseful
+
+on new me
+  Active = 1
+  addObjects = [:]
+  deleteObjects = []
+  objects = [:]
+  return me
+end
+
+on kill me
+  addObjects = [:]
+  deleteObjects = []
+  objects = [:]
+  return 0
+end
+
+on cuePassed me, whichChannel, cuePointNumber, cuePointName
+  if Active then
+    refreshLists(me)
+    tmpList = getaProp(objects, whichChannel)
+    if listp(tmpList) then
+      repeat with tmpObj in tmpList
+        if getProp(tmpObj, #cuesItIsOKToSend) then
+          cuePassed(tmpObj, whichChannel, cuePointName, cuePointNumber)
+        end if
+      end repeat
+    end if
+    tmpList = getaProp(objects, #All)
+    if listp(tmpList) then
+      repeat with tmpObj in tmpList
+        if getProp(tmpObj, #cuesItIsOKToSend) then
+          cuePassed(tmpObj, whichChannel, cuePointName, cuePointNumber)
+        end if
+      end repeat
+    end if
+    refreshLists(me)
+  end if
+end
+
+on activate me, YesNo
+  Active = YesNo
+end
+
+on addObject me, argObj, argChannel
+  setaProp(argObj, #cuesItIsOKToSend, 1)
+  if voidp(argChannel) then
+    argChannel = #All
+  end if
+  addProp(addObjects, argChannel, argObj)
+end
+
+on deleteObject me, argObj
+  setaProp(argObj, #cuesItIsOKToSend, 0)
+  add(deleteObjects, argObj)
+end
+
+on timeTick me
+end
+
+on refreshLists me
+  tmpCnt = count(addObjects)
+  if tmpCnt then
+    repeat with n = 1 to count(addObjects)
+      tmpChannel = getPropAt(addObjects, n)
+      tmpList = getaProp(objects, tmpChannel)
+      tmpObj = getAt(addObjects, n)
+      if listp(tmpList) then
+        add(tmpList, tmpObj)
+        next repeat
+      end if
+      setaProp(objects, tmpChannel, [tmpObj])
+    end repeat
+    addObjects = [:]
+  end if
+  tmpCnt = count(deleteObjects)
+  if tmpCnt then
+    repeat with tmpObj in deleteObjects
+      repeat with tmpList in objects
+        deleteOne(tmpList, tmpObj)
+      end repeat
+    end repeat
+    deleteObjects = []
+  end if
+end

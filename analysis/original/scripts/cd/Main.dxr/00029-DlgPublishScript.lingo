@@ -1,0 +1,162 @@
+property ancestor, m_place_r, m_songs_r, m_song_r, m_scroller, m_snd, m_protectMouseObj, m_sndObj
+global gDir, gRock
+
+on new me, argOptions
+  ID = argOptions[#ID]
+  m_place_r = gRock.m_classManager.getObjByID(ID, #player)
+  argOptions.setaProp(#ReportTo, me)
+  argOptions.setaProp(#child, me)
+  dialog_r = gRock.m_classManager.getObjByIDAndClass(#DlgPublish, #Dialog)
+  argOptions[#DlgInfoObj] = dialog_r
+  ancestor = script("DlgRockAncestorScript").new(argOptions)
+  mission_r = gRock.m_context.getFocus(#Mission)
+  if mission_r.AvailableSongs.count = 0 then
+    m_songs_r = gRock.m_classManager.getObjsOfClass(#Song)
+    m_songs_r = m_songs_r.duplicate()
+  else
+    m_songs_r = []
+    repeat with SongID in mission_r.AvailableSongs
+      m_songs_r.add(gRock.m_classManager.getObjByIDAndClass(SongID, #Song))
+    end repeat
+  end if
+  repeat with n = m_songs_r.count down to 1
+    if m_place_r.Songs.getPos(m_songs_r[n].ID) = 0 then
+      m_songs_r.deleteAt(n)
+    end if
+  end repeat
+  repeat with n = m_songs_r.count down to 1
+    if gRock.m_player.OwnedSongs.getPos(m_songs_r[n].ID) then
+      m_songs_r.deleteAt(n)
+    end if
+  end repeat
+  itemObj = ancestor.m_objDlg.getItemByPath([#ScrollView, #Head1, #Info])
+  if objectp(itemObj) then
+    itemObj.setOneProp(#editData, rGetStr(#szidSongTitle))
+  end if
+  itemObj = ancestor.m_objDlg.getItemByPath([#ScrollView, #Head2, #Info])
+  if objectp(itemObj) then
+    itemObj.setOneProp(#editData, rGetStr(#szidPrice))
+  end if
+  itemObj = ancestor.m_objDlg.getItemByPath([#ScrollView, #Head3, #Info])
+  if objectp(itemObj) then
+    itemObj.setOneProp(#editData, rGetStr(#szidRoyalty))
+  end if
+  allScrollItems = []
+  if m_songs_r.count > 0 then
+    repeat with song_r in m_songs_r
+      allScrollItems.add(rDlgCreateScrollItemInfo(song_r, song_r))
+    end repeat
+  else
+    allScrollItems.add(rDlgCreateScrollItemInfo(VOID, VOID, #NoSong, 1))
+  end if
+  ancestor.m_objDlg.recalc(#DontPaint)
+  itemObj = ancestor.m_objDlg.getItemByPath([#ScrollView, #Frame2])
+  rct = itemObj.getOnStageRect()
+  rct = rct + rect(3, 3, -3, -3)
+  m_scroller = script("CPScrollerScript").new(me, ancestor.getSPOverDlg(), allScrollItems, rct, ancestor.m_objDlg.highestMouseLayer)
+  me.setPlace()
+  ancestor.render()
+  gRock.m_eventCardsManager.allowEventCardsWithProp(#ShowInPublish, 1, 1)
+  return me
+end
+
+on kill me
+  gRock.m_eventCardsManager.allowEventCardsWithProp(#ShowInPublish, 0, 0)
+  if objectp(m_sndObj) then
+    m_sndObj = m_sndObj.kill()
+  end if
+  if objectp(m_scroller) then
+    m_scroller = m_scroller.kill()
+  end if
+  ancestor.kill()
+  return 0
+end
+
+on Report me, argObj, argWhat, argOption
+  if argObj = m_scroller then
+    if argWhat = #select then
+      song_r = argOption.m_ID
+      me.setSong(song_r)
+      me.playSong()
+    end if
+  end if
+end
+
+on mouse me, argObj, argWhat, argOption
+  if objectp(argOption) then
+    if argWhat = #click then
+      ID = argOption.getOneProp(#ID)
+      IDStr = string(ID)
+      if ID = #ButtonOK then
+        if objectp(m_song_r) then
+          player_r = gRock.m_classManager.getObjByIDAndClass(#player, #player)
+          if player_r.hasThisMoney(m_song_r.PriceModel.BasePrice) = 0 then
+            rWarnMoney()
+            exit
+          end if
+          player_r.transactMoney(-m_song_r.PriceModel.BasePrice, [#Publish, #Licenses])
+          player_r.OwnedSongs.add(m_song_r.ID)
+          gRock.m_context.setFocus(#Song, m_song_r)
+        end if
+        ancestor.mouse(argObj, argWhat, argOption)
+      else
+        ancestor.mouse(argObj, argWhat, argOption)
+      end if
+    end if
+  end if
+end
+
+on setPlace me
+  dlgObj = ancestor.m_objDlg
+  itemObj = ancestor.m_objDlg.addItem([#ID: #Meter1, #type: #Dialog, #inOffsetRect: rect(90, 27, 0, 0), #rel: [[#Info2, 1], [#Info2, 2], #Auto, #Auto], #usingMouse: 0])
+  rNewGenerateMeter(itemObj)
+  itemObj = ancestor.m_objDlg.addItem([#ID: #Meter2, #type: #Dialog, #inOffsetRect: rect(90, 44, 0, 0), #rel: [[#Info2, 1], [#Info2, 2], #Auto, #Auto], #usingMouse: 0])
+  rNewGenerateMeter(itemObj)
+  me.setSong()
+end
+
+on setSong me, argObj
+  dlgObj = ancestor.m_objDlg
+  m_song_r = argObj
+  gRock.m_context.setFocus(#Song, m_song_r, 1)
+  if objectp(m_song_r) then
+    tmpName = m_song_r.name
+    tmpComment = m_song_r.comment
+    tmpSongType = m_song_r.SongType
+    tmpQuality = m_song_r.quality
+    tmpGenre = m_song_r.Genre
+    tmpPrice = rCurrency(m_song_r.PriceModel.BasePrice, 0, 1)
+    tmpRoyalty = convFloatToPercent(m_song_r.PriceModel.Royalty, 1) & "%"
+    itemObj = ancestor.m_objDlg.getItem(#ButtonOK)
+    itemObj.send(#dimButton, 0)
+  else
+    tmpName = EMPTY
+    tmpComment = #szidChooseSong
+    tmpSongType = 0
+    tmpQuality = 0
+    tmpGenre = #szidNA
+    tmpPrice = #szidNA
+    tmpRoyalty = #szidNA
+    itemObj = ancestor.m_objDlg.getItem(#ButtonOK)
+    itemObj.send(#dimButton, 1)
+  end if
+  itemObj = dlgObj.getItem(#Info)
+  itemObj.setOneProp(#Pic, rFormatText([tmpName, #szidDescription, tmpComment], "PublishFormatting"))
+  itemObj = ancestor.m_objDlg.getItem(#Meter1)
+  itemObj.send(#setMeter, tmpSongType)
+  itemObj = ancestor.m_objDlg.getItem(#Meter2)
+  itemObj.send(#setMeter, tmpQuality)
+  itemObj = dlgObj.getItem(#Info2)
+  itemObj.setOneProp(#Pic, rFormatText([#szidStyle, tmpGenre, #szidHitFactor, #szidPrice, tmpPrice, #szidQuality, #szidRoyalty, tmpRoyalty], "Publish2Formatting"))
+end
+
+on playSong me
+  fileName = string(m_song_r.ID)
+  fileName = fileName.char[fileName.length - 1..fileName.length]
+  fileName = fileName & "pre.wav"
+  fileName = gRock.m_paths.m_paths[#music] & fileName
+  if objectp(m_sndObj) then
+    m_sndObj = m_sndObj.kill()
+  end if
+  m_sndObj = script("SoundScript").new(fileName, [#vol: #PreviewMusicVol])
+end

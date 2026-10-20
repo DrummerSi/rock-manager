@@ -1,0 +1,697 @@
+property addMouseObjectList, deleteMouseObjectList, mouseObjects, latestMouseButton, busyRepeating, dismissingClicks, cursorChanged, Active, mouseLoc, lastMouseLoc, mouseWasOnStage, stageRect, insideObjs, downOnObj, changeLayerObjs, lastMouseUpInfo
+global gUseful
+
+on new me
+  [  0] pusharglist 0 ........................... <[:]>
+  [  2] pushproplist ............................ <[:]>
+  [  3] setprop 808 ............................. addMouseObjectList = [:]
+  [  6] pusharglist 0 ........................... <[]>
+  [  8] pushlist ................................ <[]>
+  [  9] setprop 809 ............................. deleteMouseObjectList = []
+  [ 12] pusharglist 0 ........................... <[:]>
+  [ 14] pushproplist ............................ <[:]>
+  [ 15] setprop 806 ............................. changeLayerObjs = [:]
+  [ 18] pusharglist 0 ........................... <[]>
+  [ 20] pushlist ................................ <[]>
+  [ 21] setprop 810 ............................. insideObjs = []
+  [ 24] pusharglist 0 ........................... <[:]>
+  [ 26] pushproplist ............................ <[:]>
+  [ 27] setprop 609 ............................. mouseObjects = [:]
+  [ 30] getprop 609 ............................. <mouseObjects>
+  [ 33] pusharglistnoret 1 ...................... <mouseObjects>
+  [ 35] extcall 325 ............................. sort(mouseObjects)
+  [ 38] pushsymb 812 ............................ <#none>
+  [ 41] setprop 811 ............................. latestMouseButton = #none
+  [ 44] pushzero ................................ <0>
+  [ 45] setprop 813 ............................. busyRepeating = 0
+  [ 48] pushzero ................................ <0>
+  [ 49] setprop 814 ............................. dismissingClicks = 0
+  [ 52] pushzero ................................ <0>
+  [ 53] pushzero ................................ <0>
+  [ 54] pusharglist 2 ........................... <0, 0>
+  [ 56] extcall 568 ............................. <point(0, 0)>
+  [ 59] setprop 815 ............................. mouseLoc = point(0, 0)
+  [ 62] getprop 815 ............................. <mouseLoc>
+  [ 65] setprop 816 ............................. lastMouseLoc = mouseLoc
+  [ 68] pushzero ................................ <0>
+  [ 69] pushzero ................................ <0>
+  [ 70] pushint8 640 ............................ <640>
+  [ 73] pushint8 480 ............................ <480>
+  [ 76] pusharglist 4 ........................... <0, 0, 640, 480>
+  [ 78] extcall 555 ............................. <rect(0, 0, 640, 480)>
+  [ 81] setprop 817 ............................. stageRect = rect(0, 0, 640, 480)
+  [ 84] pushint8 1 .............................. <1>
+  [ 87] setprop 541 ............................. Active = 1
+  [ 90] getparam 0 .............................. <me>
+  [ 92] pusharglistnoret 1 ...................... <me>
+  [ 94] extcall 21 .............................. return me
+  [ 96] ret
+end
+
+on kill me
+  [  0] pusharglist 0 ........................... <[:]>
+  [  2] pushproplist ............................ <[:]>
+  [  3] setprop 808 ............................. addMouseObjectList = [:]
+  [  6] pusharglist 0 ........................... <[]>
+  [  8] pushlist ................................ <[]>
+  [  9] setprop 809 ............................. deleteMouseObjectList = []
+  [ 12] pusharglist 0 ........................... <[:]>
+  [ 14] pushproplist ............................ <[:]>
+  [ 15] setprop 609 ............................. mouseObjects = [:]
+  [ 18] pusharglist 0 ........................... <[]>
+  [ 20] pushlist ................................ <[]>
+  [ 21] setprop 810 ............................. insideObjs = []
+  [ 24] pushzero ................................ <0>
+  [ 25] pusharglistnoret 1 ...................... <0>
+  [ 27] extcall 21 .............................. return 0
+  [ 29] ret
+end
+
+on init me
+  [  0] ret
+end
+
+on mouse me
+  [  0] ret
+end
+
+on block me, argIsTRUE
+  [  0] ret
+end
+
+on activate me, argIsTRUE
+  [  0] getparam 8 .............................. <argIsTRUE>
+  [  2] setprop 541 ............................. Active = argIsTRUE
+  [  5] ret
+end
+
+on addObject me, argObj, argPrio
+  [  0] getparam 16 ............................. <argPrio>
+  [  2] pusharglist 1 ........................... <argPrio>
+  [  4] extcall 68 .............................. <voidp(argPrio)>
+  [  7] jmpifz [ 15] ............................ if voidp(argPrio) then
+  [ 10] pushint8 50 ............................. <50>
+  [ 13] setparam 16 ............................. argPrio = 50
+  [ 15] getprop 813 ............................. <busyRepeating>
+  [ 18] jmpifz [ 54] ............................ if busyRepeating then / else
+  [ 21] getprop 809 ............................. <deleteMouseObjectList>
+  [ 24] getparam 8 .............................. <argObj>
+  [ 26] pusharglist 2 ........................... <deleteMouseObjectList, argObj>
+  [ 28] objcall 92 .............................. <deleteMouseObjectList.getPos(argObj)>
+  [ 31] pushzero ................................ <0>
+  [ 32] eq ...................................... <deleteMouseObjectList.getPos(argObj) = 0>
+  [ 33] jmpifz [ 51] ............................ if deleteMouseObjectList.getPos(argObj) = 0 then / else
+  [ 36] getprop 808 ............................. <addMouseObjectList>
+  [ 39] getparam 16 ............................. <argPrio>
+  [ 41] getparam 8 .............................. <argObj>
+  [ 43] pusharglistnoret 3 ...................... <addMouseObjectList, argPrio, argObj>
+  [ 45] objcall 307 ............................. addMouseObjectList.addProp(argPrio, argObj)
+  [ 48] jmp [ 51]
+  [ 51] jmp [ 81]
+  [ 54] getprop 609 ............................. <mouseObjects>
+  [ 57] getparam 8 .............................. <argObj>
+  [ 59] pusharglist 2 ........................... <mouseObjects, argObj>
+  [ 61] objcall 92 .............................. <mouseObjects.getPos(argObj)>
+  [ 64] pushzero ................................ <0>
+  [ 65] eq ...................................... <mouseObjects.getPos(argObj) = 0>
+  [ 66] jmpifz [ 81] ............................ if mouseObjects.getPos(argObj) = 0 then
+  [ 69] getprop 609 ............................. <mouseObjects>
+  [ 72] getparam 16 ............................. <argPrio>
+  [ 74] getparam 8 .............................. <argObj>
+  [ 76] pusharglistnoret 3 ...................... <mouseObjects, argPrio, argObj>
+  [ 78] objcall 307 ............................. mouseObjects.addProp(argPrio, argObj)
+  [ 81] ret
+end
+
+on addObjects me
+  [  0] pushint8 1 .............................. <1>
+  [  3] setlocal 0
+  [  5] getlocal 0
+  [  7] getprop 808 ............................. <addMouseObjectList>
+  [ 10] pusharglist 1 ........................... <addMouseObjectList>
+  [ 12] objcall 32 .............................. <addMouseObjectList.count()>
+  [ 15] lteq
+  [ 16] jmpifz [ 77] ............................ repeat with n = 1 to addMouseObjectList.count()
+  [ 19] getprop 808 ............................. <addMouseObjectList>
+  [ 22] getlocal 0 .............................. <n>
+  [ 24] pusharglist 2 ........................... <addMouseObjectList, n>
+  [ 26] objcall 34 .............................. <addMouseObjectList[n]>
+  [ 29] setlocal 8 .............................. tmpObj = addMouseObjectList[n]
+  [ 31] getprop 609 ............................. <mouseObjects>
+  [ 34] getlocal 8 .............................. <tmpObj>
+  [ 36] pusharglist 2 ........................... <mouseObjects, tmpObj>
+  [ 38] objcall 92 .............................. <mouseObjects.getPos(tmpObj)>
+  [ 41] pushzero ................................ <0>
+  [ 42] eq ...................................... <mouseObjects.getPos(tmpObj) = 0>
+  [ 43] jmpifz [ 66] ............................ if mouseObjects.getPos(tmpObj) = 0 then
+  [ 46] getprop 609 ............................. <mouseObjects>
+  [ 49] getprop 808 ............................. <addMouseObjectList>
+  [ 52] getlocal 0 .............................. <n>
+  [ 54] pusharglist 2 ........................... <addMouseObjectList, n>
+  [ 56] objcall 33 .............................. <addMouseObjectList.getPropAt(n)>
+  [ 59] getlocal 8 .............................. <tmpObj>
+  [ 61] pusharglistnoret 3 ...................... <mouseObjects, addMouseObjectList.getPropAt(n), tmpObj>
+  [ 63] objcall 307 ............................. mouseObjects.addProp(addMouseObjectList.getPropAt(n), tmpObj)
+  [ 66] pushint8 1
+  [ 69] getlocal 0
+  [ 71] add
+  [ 72] setlocal 0
+  [ 74] endrepeat [  5]
+  [ 77] pusharglist 0 ........................... <[:]>
+  [ 79] pushproplist ............................ <[:]>
+  [ 80] setprop 808 ............................. addMouseObjectList = [:]
+  [ 83] ret
+end
+
+on deleteObject me, argObj
+  [  0] getparam 8 .............................. <argObj>
+  [  2] pushzero ................................ <0>
+  [  3] pusharglistnoret 2 ...................... <argObj, 0>
+  [  5] objcall 779 ............................. argObj.activate(0)
+  [  8] getprop 813 ............................. <busyRepeating>
+  [ 11] jmpifz [ 45] ............................ if busyRepeating then / else
+  [ 14] getprop 808 ............................. <addMouseObjectList>
+  [ 17] getparam 8 .............................. <argObj>
+  [ 19] pusharglist 2 ........................... <addMouseObjectList, argObj>
+  [ 21] objcall 92 .............................. <addMouseObjectList.getPos(argObj)>
+  [ 24] pushzero ................................ <0>
+  [ 25] eq ...................................... <addMouseObjectList.getPos(argObj) = 0>
+  [ 26] jmpifz [ 42] ............................ if addMouseObjectList.getPos(argObj) = 0 then / else
+  [ 29] getprop 809 ............................. <deleteMouseObjectList>
+  [ 32] getparam 8 .............................. <argObj>
+  [ 34] pusharglistnoret 2 ...................... <deleteMouseObjectList, argObj>
+  [ 36] objcall 50 .............................. deleteMouseObjectList.add(argObj)
+  [ 39] jmp [ 42]
+  [ 42] jmp [ 55]
+  [ 45] getprop 609 ............................. <mouseObjects>
+  [ 48] getparam 8 .............................. <argObj>
+  [ 50] pusharglistnoret 2 ...................... <mouseObjects, argObj>
+  [ 52] objcall 104 ............................. mouseObjects.deleteOne(argObj)
+  [ 55] ret
+end
+
+on deleteObjects me
+  [  0] getprop 809 ............................. <deleteMouseObjectList>
+  [  3] peek 0
+  [  5] pusharglist 1
+  [  7] extcall 32
+  [ 10] pushint8 1
+  [ 12] peek 0
+  [ 14] peek 2
+  [ 16] lteq
+  [ 17] jmpifz [ 47] ............................ repeat with tmpObj in deleteMouseObjectList
+  [ 20] peek 2
+  [ 22] peek 1
+  [ 24] pusharglist 2
+  [ 26] extcall 34
+  [ 29] setlocal 0
+  [ 31] getprop 609 ............................. <mouseObjects>
+  [ 34] getlocal 0 .............................. <tmpObj>
+  [ 36] pusharglistnoret 2 ...................... <mouseObjects, tmpObj>
+  [ 38] objcall 104 ............................. mouseObjects.deleteOne(tmpObj)
+  [ 41] pushint8 1
+  [ 43] add
+  [ 44] endrepeat [ 12]
+  [ 47] pop 3
+  [ 49] pusharglist 0 ........................... <[]>
+  [ 51] pushlist ................................ <[]>
+  [ 52] setprop 809 ............................. deleteMouseObjectList = []
+  [ 55] ret
+end
+
+on deleteMouseObjectsConnectedTo me, argObj
+  [  0] getprop 813 ............................. <busyRepeating>
+  [  3] setlocal 0 .............................. tmpBusyRepeating = busyRepeating
+  [  5] pushint8 1 .............................. <1>
+  [  8] setprop 813 ............................. busyRepeating = 1
+  [ 11] getprop 609 ............................. <mouseObjects>
+  [ 14] peek 0
+  [ 16] pusharglist 1
+  [ 18] extcall 32
+  [ 21] pushint8 1
+  [ 23] peek 0
+  [ 25] peek 2
+  [ 27] lteq
+  [ 28] jmpifz [ 67] ............................ repeat with tmpObj in mouseObjects
+  [ 31] peek 2
+  [ 33] peek 1
+  [ 35] pusharglist 2
+  [ 37] extcall 34
+  [ 40] setlocal 8
+  [ 42] getlocal 8 .............................. <tmpObj>
+  [ 44] getobjprop 818 .......................... <tmpObj.reportObject>
+  [ 47] getparam 8 .............................. <argObj>
+  [ 49] eq ...................................... <tmpObj.reportObject = argObj>
+  [ 50] jmpifz [ 61] ............................ if tmpObj.reportObject = argObj then
+  [ 53] getparam 0 .............................. <me>
+  [ 55] getlocal 8 .............................. <tmpObj>
+  [ 57] pusharglistnoret 2 ...................... <me, tmpObj>
+  [ 59] objcall 25 .............................. me.deleteObject(tmpObj)
+  [ 61] pushint8 1
+  [ 63] add
+  [ 64] endrepeat [ 23]
+  [ 67] pop 3
+  [ 69] getlocal 0 .............................. <tmpBusyRepeating>
+  [ 71] setprop 813 ............................. busyRepeating = tmpBusyRepeating
+  [ 74] ret
+end
+
+on activateMouseObjectsOfType me, argType, YesNo
+  [  0] getprop 813 ............................. <busyRepeating>
+  [  3] setlocal 0 .............................. tmpBusyRepeating = busyRepeating
+  [  5] pushint8 1 .............................. <1>
+  [  8] setprop 813 ............................. busyRepeating = 1
+  [ 11] getprop 609 ............................. <mouseObjects>
+  [ 14] peek 0
+  [ 16] pusharglist 1
+  [ 18] extcall 32
+  [ 21] pushint8 1
+  [ 23] peek 0
+  [ 25] peek 2
+  [ 27] lteq
+  [ 28] jmpifz [ 68] ............................ repeat with tmpObj in mouseObjects
+  [ 31] peek 2
+  [ 33] peek 1
+  [ 35] pusharglist 2
+  [ 37] extcall 34
+  [ 40] setlocal 8
+  [ 42] getlocal 8 .............................. <tmpObj>
+  [ 44] getobjprop 738 .......................... <tmpObj.type>
+  [ 47] getparam 8 .............................. <argType>
+  [ 49] eq ...................................... <tmpObj.type = argType>
+  [ 50] jmpifz [ 62] ............................ if tmpObj.type = argType then
+  [ 53] getlocal 8 .............................. <tmpObj>
+  [ 55] getparam 16 ............................. <YesNo>
+  [ 57] pusharglistnoret 2 ...................... <tmpObj, YesNo>
+  [ 59] objcall 779 ............................. tmpObj.activate(YesNo)
+  [ 62] pushint8 1
+  [ 64] add
+  [ 65] endrepeat [ 23]
+  [ 68] pop 3
+  [ 70] getlocal 0 .............................. <tmpBusyRepeating>
+  [ 72] setprop 813 ............................. busyRepeating = tmpBusyRepeating
+  [ 75] ret
+end
+
+on timeTick me
+  [  0] getprop 541 ............................. <Active>
+  [  3] pushzero ................................ <0>
+  [  4] eq ...................................... <Active = 0>
+  [  5] jmpifz [  9] ............................ if Active = 0 then
+  [  8] ret ..................................... exit
+  [  9] getprop 814 ............................. <dismissingClicks>
+  [ 12] pushzero ................................ <0>
+  [ 13] gt ...................................... <dismissingClicks > 0>
+  [ 14] jmpifz [ 27] ............................ if dismissingClicks > 0 then
+  [ 17] getprop 814 ............................. <dismissingClicks>
+  [ 20] pushint8 1 .............................. <1>
+  [ 23] sub ..................................... <dismissingClicks - 1>
+  [ 24] setprop 814 ............................. dismissingClicks = dismissingClicks - 1
+  [ 27] pushint8 1 .............................. <1>
+  [ 30] setprop 813 ............................. busyRepeating = 1
+  [ 33] pusharglist 0 ........................... <>
+  [ 35] thebuiltin 820 .......................... <the mouseH>
+  [ 38] pusharglist 0 ........................... <>
+  [ 40] thebuiltin 821 .......................... <the mouseV>
+  [ 43] pusharglist 2 ........................... <the mouseH, the mouseV>
+  [ 45] extcall 568 ............................. <point(the mouseH, the mouseV)>
+  [ 48] setprop 815 ............................. mouseLoc = point(the mouseH, the mouseV)
+  [ 51] getprop 815 ............................. <mouseLoc>
+  [ 54] getprop 817 ............................. <stageRect>
+  [ 57] pusharglist 2 ........................... <mouseLoc, stageRect>
+  [ 59] extcall 822 ............................. <inside(mouseLoc, stageRect)>
+  [ 62] setlocal 0 .............................. tmpIsOnStage = inside(mouseLoc, stageRect)
+  [ 64] getlocal 0 .............................. <tmpIsOnStage>
+  [ 66] getprop 823 ............................. <mouseWasOnStage>
+  [ 69] not ..................................... <not mouseWasOnStage>
+  [ 70] and ..................................... <tmpIsOnStage and not mouseWasOnStage>
+  [ 71] jmpifz [ 84] ............................ if tmpIsOnStage and not mouseWasOnStage then
+  [ 74] getglobal 23 ............................ <gUseful>
+  [ 76] getobjprop 614 .......................... <gUseful.cursors>
+  [ 79] pusharglistnoret 1 ...................... <gUseful.cursors>
+  [ 81] objcall 824 ............................. gUseful.cursors.display()
+  [ 84] getlocal 0 .............................. <tmpIsOnStage>
+  [ 86] setprop 823 ............................. mouseWasOnStage = tmpIsOnStage
+  [ 89] pusharglist 0 ........................... <>
+  [ 91] extcall 190 ............................. <VOID>
+  [ 94] setprop 825 ............................. cursorChanged = VOID
+  [ 97] pushint8 1 .............................. <1>
+  [100] setlocal 8 .............................. tmpOKToEnter = 1
+  [102] getprop 609 ............................. <mouseObjects>
+  [105] pusharglist 1 ........................... <mouseObjects>
+  [107] objcall 32 .............................. <mouseObjects.count()>
+  [110] setlocal 16
+  [112] getlocal 16
+  [114] pushint8 1 .............................. <1>
+  [117] gteq
+  [118] jmpifz [173] ............................ repeat with n = mouseObjects.count() down to 1
+  [121] getprop 541 ............................. <Active>
+  [124] pushzero ................................ <0>
+  [125] eq ...................................... <Active = 0>
+  [126] jmpifz [132] ............................ if Active = 0 then
+  [129] jmp [162] ............................... next repeat
+  [132] getprop 609 ............................. <mouseObjects>
+  [135] getlocal 16 ............................. <n>
+  [137] pusharglist 2 ........................... <mouseObjects, n>
+  [139] objcall 34 .............................. <mouseObjects[n]>
+  [142] getprop 815 ............................. <mouseLoc>
+  [145] getlocal 8 .............................. <tmpOKToEnter>
+  [147] pusharglist 3 ........................... <mouseObjects[n], mouseLoc, tmpOKToEnter>
+  [149] objcall 826 ............................. <mouseObjects[n].check(mouseLoc, tmpOKToEnter)>
+  [152] setlocal 24 ............................. tmpCheck = mouseObjects[n].check(mouseLoc, tmpOKToEnter)
+  [154] getlocal 24 ............................. <tmpCheck>
+  [156] jmpifz [162] ............................ if tmpCheck then
+  [159] pushzero ................................ <0>
+  [160] setlocal 8 .............................. tmpOKToEnter = 0
+  [162] pushint8 -1
+  [165] getlocal 16
+  [167] add
+  [168] setlocal 16
+  [170] endrepeat [112]
+  [173] getglobal 23 ............................ <gUseful>
+  [175] pusharglist 1 ........................... <gUseful>
+  [177] extcall 71 .............................. <objectp(gUseful)>
+  [180] jmpifz [196] ............................ if objectp(gUseful) then
+  [183] getglobal 23 ............................ <gUseful>
+  [185] getobjprop 614 .......................... <gUseful.cursors>
+  [188] getprop 825 ............................. <cursorChanged>
+  [191] pusharglistnoret 2 ...................... <gUseful.cursors, cursorChanged>
+  [193] objcall 827 ............................. gUseful.cursors.setCursor(cursorChanged)
+  [196] getparam 0 .............................. <me>
+  [198] pusharglistnoret 1 ...................... <me>
+  [200] objcall 784 ............................. me.addObjects()
+  [203] getparam 0 .............................. <me>
+  [205] pusharglistnoret 1 ...................... <me>
+  [207] objcall 785 ............................. me.deleteObjects()
+  [210] getparam 0 .............................. <me>
+  [212] pusharglistnoret 1 ...................... <me>
+  [214] objcall 806 ............................. me.changeLayerObjs()
+  [217] pushzero ................................ <0>
+  [218] setprop 813 ............................. busyRepeating = 0
+  [221] getprop 815 ............................. <mouseLoc>
+  [224] setprop 816 ............................. lastMouseLoc = mouseLoc
+  [227] ret
+end
+
+on mouseDown me, argPoint
+  [  0] getparam 8 .............................. <argPoint>
+  [  2] setprop 815 ............................. mouseLoc = argPoint
+  [  5] getprop 541 ............................. <Active>
+  [  8] pushzero ................................ <0>
+  [  9] eq ...................................... <Active = 0>
+  [ 10] jmpifz [ 14] ............................ if Active = 0 then
+  [ 13] ret ..................................... exit
+  [ 14] getprop 814 ............................. <dismissingClicks>
+  [ 17] jmpifz [ 21] ............................ if dismissingClicks then
+  [ 20] ret ..................................... exit
+  [ 21] pushint8 1 .............................. <1>
+  [ 24] setprop 813 ............................. busyRepeating = 1
+  [ 27] getprop 811 ............................. <latestMouseButton>
+  [ 30] pushsymb 416 ............................ <#down>
+  [ 33] eq ...................................... <latestMouseButton = #down>
+  [ 34] jmpifz [ 38] ............................ if latestMouseButton = #down then
+  [ 37] ret ..................................... exit
+  [ 38] pushsymb 416 ............................ <#down>
+  [ 41] setprop 811 ............................. latestMouseButton = #down
+  [ 44] pushzero ................................ <0>
+  [ 45] setlocal 0 .............................. tmpDownOnNr = 0
+  [ 47] getprop 609 ............................. <mouseObjects>
+  [ 50] getobjprop 32 ........................... <mouseObjects.count>
+  [ 53] setlocal 8
+  [ 55] getlocal 8
+  [ 57] pushint8 1 .............................. <1>
+  [ 60] gteq
+  [ 61] jmpifz [127] ............................ repeat with n = mouseObjects.count down to 1
+  [ 64] getprop 541 ............................. <Active>
+  [ 67] pushzero ................................ <0>
+  [ 68] eq ...................................... <Active = 0>
+  [ 69] jmpifz [ 75] ............................ if Active = 0 then
+  [ 72] jmp [116] ............................... next repeat
+  [ 75] getprop 609 ............................. <mouseObjects>
+  [ 78] getlocal 8 .............................. <n>
+  [ 80] pusharglist 2 ........................... <mouseObjects, n>
+  [ 82] objcall 34 .............................. <mouseObjects[n]>
+  [ 85] getprop 815 ............................. <mouseLoc>
+  [ 88] pusharglist 2 ........................... <mouseObjects[n], mouseLoc>
+  [ 90] objcall 831 ............................. <mouseObjects[n].checkDown(mouseLoc)>
+  [ 93] jmpifz [116] ............................ if mouseObjects[n].checkDown(mouseLoc) then
+  [ 96] getlocal 8 .............................. <n>
+  [ 98] setlocal 0 .............................. tmpDownOnNr = n
+  [100] getprop 609 ............................. <mouseObjects>
+  [103] getlocal 8 .............................. <n>
+  [105] pusharglist 2 ........................... <mouseObjects, n>
+  [107] objcall 34 .............................. <mouseObjects[n]>
+  [110] setprop 832 ............................. downOnObj = mouseObjects[n]
+  [113] jmp [127] ............................... exit repeat
+  [116] pushint8 -1
+  [119] getlocal 8
+  [121] add
+  [122] setlocal 8
+  [124] endrepeat [ 55]
+  [127] pushzero ................................ <0>
+  [128] setlocal 16 ............................. tmpDownOnObj = 0
+  [130] getlocal 0 .............................. <tmpDownOnNr>
+  [132] jmpifz [147] ............................ if tmpDownOnNr then
+  [135] getprop 609 ............................. <mouseObjects>
+  [138] getlocal 0 .............................. <tmpDownOnNr>
+  [140] pusharglist 2 ........................... <mouseObjects, tmpDownOnNr>
+  [142] objcall 34 .............................. <mouseObjects[tmpDownOnNr]>
+  [145] setlocal 16 ............................. tmpDownOnObj = mouseObjects[tmpDownOnNr]
+  [147] getprop 609 ............................. <mouseObjects>
+  [150] pusharglist 1 ........................... <mouseObjects>
+  [152] objcall 32 .............................. <mouseObjects.count()>
+  [155] setlocal 8
+  [157] getlocal 8
+  [159] pushint8 1 .............................. <1>
+  [162] gteq
+  [163] jmpifz [206] ............................ repeat with n = mouseObjects.count() down to 1
+  [166] getlocal 8 .............................. <n>
+  [168] getlocal 0 .............................. <tmpDownOnNr>
+  [170] nteq .................................... <n <> tmpDownOnNr>
+  [171] jmpifz [195] ............................ if n <> tmpDownOnNr then
+  [174] getprop 609 ............................. <mouseObjects>
+  [177] getlocal 8 .............................. <n>
+  [179] pusharglist 2 ........................... <mouseObjects, n>
+  [181] objcall 34 .............................. <mouseObjects[n]>
+  [184] pushsymb 833 ............................ <#DownOnOther>
+  [187] pushsymb 833 ............................ <#DownOnOther>
+  [190] pusharglistnoret 3 ...................... <mouseObjects[n], #DownOnOther, #DownOnOther>
+  [192] objcall 834 ............................. mouseObjects[n].otherReacted(#DownOnOther, #DownOnOther)
+  [195] pushint8 -1
+  [198] getlocal 8
+  [200] add
+  [201] setlocal 8
+  [203] endrepeat [157]
+  [206] getparam 0 .............................. <me>
+  [208] pusharglistnoret 1 ...................... <me>
+  [210] objcall 784 ............................. me.addObjects()
+  [213] getparam 0 .............................. <me>
+  [215] pusharglistnoret 1 ...................... <me>
+  [217] objcall 785 ............................. me.deleteObjects()
+  [220] getparam 0 .............................. <me>
+  [222] pusharglistnoret 1 ...................... <me>
+  [224] objcall 806 ............................. me.changeLayerObjs()
+  [227] pushzero ................................ <0>
+  [228] setprop 813 ............................. busyRepeating = 0
+  [231] ret
+end
+
+on mouseUp me, argPoint
+  [  0] getparam 8 .............................. <argPoint>
+  [  2] setprop 815 ............................. mouseLoc = argPoint
+  [  5] getprop 541 ............................. <Active>
+  [  8] pushzero ................................ <0>
+  [  9] eq ...................................... <Active = 0>
+  [ 10] jmpifz [ 14] ............................ if Active = 0 then
+  [ 13] ret ..................................... exit
+  [ 14] pushint8 1 .............................. <1>
+  [ 17] setprop 813 ............................. busyRepeating = 1
+  [ 20] getprop 811 ............................. <latestMouseButton>
+  [ 23] pushsymb 417 ............................ <#up>
+  [ 26] eq ...................................... <latestMouseButton = #up>
+  [ 27] jmpifz [ 31] ............................ if latestMouseButton = #up then
+  [ 30] ret ..................................... exit
+  [ 31] pushsymb 417 ............................ <#up>
+  [ 34] setprop 811 ............................. latestMouseButton = #up
+  [ 37] pushint8 1 .............................. <1>
+  [ 40] setlocal 0 .............................. tmpOKToClick = 1
+  [ 42] getprop 609 ............................. <mouseObjects>
+  [ 45] pusharglist 1 ........................... <mouseObjects>
+  [ 47] objcall 32 .............................. <mouseObjects.count()>
+  [ 50] setlocal 8
+  [ 52] getlocal 8
+  [ 54] pushint8 1 .............................. <1>
+  [ 57] gteq
+  [ 58] jmpifz [109] ............................ repeat with n = mouseObjects.count() down to 1
+  [ 61] getprop 541 ............................. <Active>
+  [ 64] pushzero ................................ <0>
+  [ 65] eq ...................................... <Active = 0>
+  [ 66] jmpifz [ 72] ............................ if Active = 0 then
+  [ 69] jmp [ 98] ............................... next repeat
+  [ 72] getprop 609 ............................. <mouseObjects>
+  [ 75] getlocal 8 .............................. <n>
+  [ 77] pusharglist 2 ........................... <mouseObjects, n>
+  [ 79] objcall 34 .............................. <mouseObjects[n]>
+  [ 82] getprop 815 ............................. <mouseLoc>
+  [ 85] getlocal 0 .............................. <tmpOKToClick>
+  [ 87] pusharglist 3 ........................... <mouseObjects[n], mouseLoc, tmpOKToClick>
+  [ 89] extcall 838 ............................. <checkUp(mouseObjects[n], mouseLoc, tmpOKToClick)>
+  [ 92] jmpifz [ 98] ............................ if checkUp(mouseObjects[n], mouseLoc, tmpOKToClick) then
+  [ 95] pushzero ................................ <0>
+  [ 96] setlocal 0 .............................. tmpOKToClick = 0
+  [ 98] pushint8 -1
+  [101] getlocal 8
+  [103] add
+  [104] setlocal 8
+  [106] endrepeat [ 52]
+  [109] getparam 0 .............................. <me>
+  [111] pusharglistnoret 1 ...................... <me>
+  [113] objcall 784 ............................. me.addObjects()
+  [116] getparam 0 .............................. <me>
+  [118] pusharglistnoret 1 ...................... <me>
+  [120] objcall 785 ............................. me.deleteObjects()
+  [123] pushzero ................................ <0>
+  [124] setprop 813 ............................. busyRepeating = 0
+  [127] ret
+end
+
+on setIsInside me, argObj, argIsTRUE
+  [  0] getparam 16 ............................. <argIsTRUE>
+  [  2] jmpifz [ 33] ............................ if argIsTRUE then / else
+  [  5] getprop 810 ............................. <insideObjs>
+  [  8] getparam 8 .............................. <argObj>
+  [ 10] pusharglist 2 ........................... <insideObjs, argObj>
+  [ 12] objcall 92 .............................. <insideObjs.getPos(argObj)>
+  [ 15] pushzero ................................ <0>
+  [ 16] eq ...................................... <insideObjs.getPos(argObj) = 0>
+  [ 17] jmpifz [ 30] ............................ if insideObjs.getPos(argObj) = 0 then
+  [ 20] getprop 810 ............................. <insideObjs>
+  [ 23] getparam 8 .............................. <argObj>
+  [ 25] pusharglistnoret 2 ...................... <insideObjs, argObj>
+  [ 27] objcall 50 .............................. insideObjs.add(argObj)
+  [ 30] jmp [ 43]
+  [ 33] getprop 810 ............................. <insideObjs>
+  [ 36] getparam 8 .............................. <argObj>
+  [ 38] pusharglistnoret 2 ...................... <insideObjs, argObj>
+  [ 40] objcall 104 ............................. insideObjs.deleteOne(argObj)
+  [ 43] ret
+end
+
+on dismissClicks me, argIsTRUE
+  [  0] getparam 8 .............................. <argIsTRUE>
+  [  2] setprop 814 ............................. dismissingClicks = argIsTRUE
+  [  5] ret
+end
+
+on cursorChange me, argWhich
+  [  0] getprop 825 ............................. <cursorChanged>
+  [  3] pusharglist 1 ........................... <cursorChanged>
+  [  5] extcall 68 .............................. <voidp(cursorChanged)>
+  [  8] jmpifz [ 16] ............................ if voidp(cursorChanged) then
+  [ 11] getparam 8 .............................. <argWhich>
+  [ 13] setprop 825 ............................. cursorChanged = argWhich
+  [ 16] ret
+end
+
+on getMouseLoc me
+  [  0] getprop 815 ............................. <mouseLoc>
+  [  3] pusharglistnoret 1 ...................... <mouseLoc>
+  [  5] extcall 21 .............................. return mouseLoc
+  [  7] ret
+end
+
+on changeLayer me, argObj, argLayer
+  [  0] getprop 808 ............................. <addMouseObjectList>
+  [  3] getparam 8 .............................. <argObj>
+  [  5] pusharglist 2 ........................... <addMouseObjectList, argObj>
+  [  7] objcall 92 .............................. <addMouseObjectList.getPos(argObj)>
+  [ 10] jmpifz [ 23] ............................ if addMouseObjectList.getPos(argObj) then
+  [ 13] getprop 808 ............................. <addMouseObjectList>
+  [ 16] getparam 8 .............................. <argObj>
+  [ 18] pusharglistnoret 2 ...................... <addMouseObjectList, argObj>
+  [ 20] objcall 104 ............................. addMouseObjectList.deleteOne(argObj)
+  [ 23] getprop 806 ............................. <changeLayerObjs>
+  [ 26] getparam 16 ............................. <argLayer>
+  [ 28] getparam 8 .............................. <argObj>
+  [ 30] pusharglistnoret 3 ...................... <changeLayerObjs, argLayer, argObj>
+  [ 32] objcall 307 ............................. changeLayerObjs.addProp(argLayer, argObj)
+  [ 35] ret
+end
+
+on changeLayerObjs me
+  [  0] pushint8 1 .............................. <1>
+  [  3] setlocal 0
+  [  5] getlocal 0
+  [  7] getprop 806 ............................. <changeLayerObjs>
+  [ 10] pusharglist 1 ........................... <changeLayerObjs>
+  [ 12] objcall 32 .............................. <changeLayerObjs.count()>
+  [ 15] lteq
+  [ 16] jmpifz [ 72] ............................ repeat with n = 1 to changeLayerObjs.count()
+  [ 19] getprop 806 ............................. <changeLayerObjs>
+  [ 22] getlocal 0 .............................. <n>
+  [ 24] pusharglist 2 ........................... <changeLayerObjs, n>
+  [ 26] objcall 34 .............................. <changeLayerObjs[n]>
+  [ 29] setlocal 8 .............................. tmpObj = changeLayerObjs[n]
+  [ 31] getprop 609 ............................. <mouseObjects>
+  [ 34] getlocal 8 .............................. <tmpObj>
+  [ 36] pusharglistnoret 2 ...................... <mouseObjects, tmpObj>
+  [ 38] objcall 104 ............................. mouseObjects.deleteOne(tmpObj)
+  [ 41] getprop 609 ............................. <mouseObjects>
+  [ 44] getprop 806 ............................. <changeLayerObjs>
+  [ 47] getlocal 0 .............................. <n>
+  [ 49] pusharglist 2 ........................... <changeLayerObjs, n>
+  [ 51] objcall 33 .............................. <changeLayerObjs.getPropAt(n)>
+  [ 54] getlocal 8 .............................. <tmpObj>
+  [ 56] pusharglistnoret 3 ...................... <mouseObjects, changeLayerObjs.getPropAt(n), tmpObj>
+  [ 58] objcall 307 ............................. mouseObjects.addProp(changeLayerObjs.getPropAt(n), tmpObj)
+  [ 61] pushint8 1
+  [ 64] getlocal 0
+  [ 66] add
+  [ 67] setlocal 0
+  [ 69] endrepeat [  5]
+  [ 72] getprop 806 ............................. <changeLayerObjs>
+  [ 75] pusharglist 1 ........................... <changeLayerObjs>
+  [ 77] objcall 32 .............................. <changeLayerObjs.count()>
+  [ 80] jmpifz [ 83] ............................ if changeLayerObjs.count() then
+  [ 83] pusharglist 0 ........................... <[:]>
+  [ 85] pushproplist ............................ <[:]>
+  [ 86] setprop 806 ............................. changeLayerObjs = [:]
+  [ 89] ret
+end
+
+on getCurrentlyInside me
+  [  0] pusharglist 0 ........................... <[]>
+  [  2] pushlist ................................ <[]>
+  [  3] setlocal 0 .............................. lst = []
+  [  5] getprop 609 ............................. <mouseObjects>
+  [  8] pusharglist 1 ........................... <mouseObjects>
+  [ 10] objcall 32 .............................. <mouseObjects.count()>
+  [ 13] setlocal 8
+  [ 15] getlocal 8
+  [ 17] pushint8 1 .............................. <1>
+  [ 20] gteq
+  [ 21] jmpifz [ 71] ............................ repeat with n = mouseObjects.count() down to 1
+  [ 24] getprop 609 ............................. <mouseObjects>
+  [ 27] getlocal 8 .............................. <n>
+  [ 29] pusharglist 2 ........................... <mouseObjects, n>
+  [ 31] objcall 34 .............................. <mouseObjects[n]>
+  [ 34] getobjprop 841 .......................... <mouseObjects[n].isInside>
+  [ 37] jmpifz [ 60] ............................ if mouseObjects[n].isInside then
+  [ 40] getlocal 0 .............................. <lst>
+  [ 42] pushint8 1 .............................. <1>
+  [ 45] getprop 609 ............................. <mouseObjects>
+  [ 48] getlocal 8 .............................. <n>
+  [ 50] pusharglist 2 ........................... <mouseObjects, n>
+  [ 52] objcall 34 .............................. <mouseObjects[n]>
+  [ 55] pusharglistnoret 3 ...................... <lst, 1, mouseObjects[n]>
+  [ 57] objcall 439 ............................. lst.addAt(1, mouseObjects[n])
+  [ 60] pushint8 -1
+  [ 63] getlocal 8
+  [ 65] add
+  [ 66] setlocal 8
+  [ 68] endrepeat [ 15]
+  [ 71] getlocal 0 .............................. <lst>
+  [ 73] pusharglistnoret 1 ...................... <lst>
+  [ 75] extcall 21 .............................. return lst
+  [ 77] ret
+end

@@ -1,0 +1,38 @@
+property m_SP, m_finalRect
+
+on new me
+  m_SP = sprite(2)
+  return me
+end
+
+on xfer me
+  global gSystem
+  if not objectp(gSystem) then
+    exit
+  end if
+  tmpPluginsPath = gSystem.m_projectPath & "Plugins\"
+  tmpNewPlugs = checkForPlugins(tmpPluginsPath)
+  if tmpNewPlugs.count then
+    xferToCast = gSystem.m_prefs.getaProp(#xfer)
+    if not stringp(xferToCast) then
+    else
+      castLib("Destination").fileName = xferToCast
+      tmpStrip1 = fileStripName(castLib("Destination").fileName)
+      tmpStrip2 = xferToCast
+      if tmpStrip1 <> tmpStrip2 then
+      else
+        go("Xfer")
+        m_finalRect = sprite(1).rect
+        xferPlugins(tmpPluginsPath, tmpNewPlugs, "Destination", [#updateGraphics, me])
+        castLib("Destination").fileName = "Empty"
+      end if
+    end if
+  end if
+end
+
+on updateGraphics me, argWhat, argPartCopied
+  if argWhat = #XferMember then
+    m_SP.rect = rect(m_finalRect[1], m_finalRect[2], m_finalRect[1] + (argPartCopied * (m_finalRect[3] - m_finalRect[1])), m_finalRect[4])
+  end if
+  updateStage()
+end

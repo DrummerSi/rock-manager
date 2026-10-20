@@ -1,0 +1,98 @@
+property ancestor, child, className, belongsTo, _killed, Age, Education, Economy, StyleMix, StyleMixTolerance, SongType, SongTypeTolerance, MinQuality, MinLiveReputation
+global gRock
+
+on new me, argChild, argBelongsTo
+  if objectp(argChild) then
+    child = argChild
+  else
+    child = me
+  end if
+  belongsTo = argBelongsTo
+  ancestor = script("ClassConcreteScript").new(child)
+  className = #MediaTarget
+  Age = script("ClassrangeScript").new(VOID, me)
+  Education = script("ClassrangeScript").new(VOID, me)
+  Economy = script("ClassrangeScript").new(VOID, me)
+  StyleMix = script("ClassStyleMixScript").new(VOID, me)
+  StyleMixTolerance = script("ClassStyleMixScript").new(VOID, me)
+  SongType = 0.0
+  SongTypeTolerance = 0.0
+  MinQuality = 0.0
+  MinLiveReputation = 0.0
+  return me
+end
+
+on kill me
+  _killed = 1
+  if objectp(Age) then
+    Age = Age.kill()
+  end if
+  if objectp(Education) then
+    Education = Education.kill()
+  end if
+  if objectp(Economy) then
+    Economy = Economy.kill()
+  end if
+  if objectp(StyleMix) then
+    StyleMix = StyleMix.kill()
+  end if
+  if objectp(StyleMixTolerance) then
+    StyleMixTolerance = StyleMixTolerance.kill()
+  end if
+  if objectp(ancestor) then
+    ancestor = ancestor.kill()
+  end if
+  child = 0
+  belongsTo = 0
+  return 0
+end
+
+on calcReach me
+  ReachesGroups = [:]
+  lst = gRock.m_classManager.getObjsOfClass(#Group)
+  repeat with group_r in lst
+    tmpFractionCovered = 0
+    tmpTargetID = ancestor.ID
+    if (group_r.AgeRange.min < Age.max) and (group_r.AgeRange.max > Age.min) then
+      tmpMaxDiff = group_r.AgeRange.max - group_r.AgeRange.min
+      tmpDiff = tmpMaxDiff
+      tmpMin = Age.min - group_r.AgeRange.min
+      if tmpMin < 0 then
+        tmpMin = 0
+      end if
+      tmpDiff = tmpDiff - tmpMin
+      tmpMax = Age.max - group_r.AgeRange.max
+      if tmpMax > 0 then
+        tmpMax = 0
+      end if
+      tmpDiff = tmpDiff + tmpMax
+      tmpFractionCovered = float(tmpDiff) / tmpMaxDiff
+      tmpWeightedList = [:]
+      tmpTol = (Education.max - Education.min) / 2
+      tmpMid = Education.min + tmpTol
+      tmpLike = checkWithinToleranceVals(tmpMid, tmpTol, group_r.Education)
+      if tmpLike <> #ignore then
+        tmpWeightedList.addProp(1, tmpLike)
+      end if
+      tmpTol = (Economy.max - Economy.min) / 2
+      tmpMid = Economy.min + tmpTol
+      tmpLike = checkWithinToleranceVals(tmpMid, tmpTol, group_r.Economy)
+      if tmpLike <> #ignore then
+        tmpWeightedList.addProp(1, tmpLike)
+      end if
+      tmpLike = checkWithinTolerance(StyleMix, StyleMixTolerance, group_r.StyleMix)
+      tmpWeightedList.addProp(1, tmpLike)
+      tmpLike = checkWithinTolerance(SongType, SongTypeTolerance, group_r.SongType)
+      if tmpLike <> #ignore then
+        tmpWeightedList.addProp(1, tmpLike)
+      end if
+      tmpLike = calcAverage(tmpWeightedList)
+      if tmpLike < 0 then
+        tmpLike = 0
+      end if
+      tmpFractionCovered = tmpFractionCovered * tmpLike
+      ReachesGroups[group_r.ID] = tmpFractionCovered
+    end if
+  end repeat
+  return ReachesGroups
+end

@@ -1,0 +1,90 @@
+property ancestor, m_Xplace_r
+global gDir, gRock, gUseful
+
+on new me, argOptions
+  ID = argOptions[#ID]
+  human_r = gRock.m_context.getFocus(#Human)
+  m_Xplace_r = gRock.m_context.getFocus(#place)
+  argOptions.setaProp(#ReportTo, me)
+  argOptions.setaProp(#child, me)
+  dialog_r = gRock.m_classManager.getObjByIDAndClass(#DlgRecordRefuse, #Dialog)
+  dialog_r.dataMemberName = "DlgRecordRefuseData"
+  argOptions[#DlgInfoObj] = dialog_r
+  ancestor = script("DlgRockAncestorScript").new(argOptions)
+  me.setPlace(argOptions[#RefuseText])
+  ancestor.m_objDlg.recalc(#DontPaint)
+  itemObj = ancestor.m_objDlg.getItem(#Pic)
+  portraitRect = itemObj.getOnStageRect()
+  loc = point(portraitRect[1], portraitRect[2])
+  ancestor.showFace(1, m_Xplace_r.ID, loc, #LeftTop)
+  ancestor.render()
+  Snd = "cb0200z"
+  if not voidp(argOptions[#WorstReason]) then
+    if listp(argOptions[#WorstReason]) then
+      reason = argOptions[#WorstReason][1]
+      if reason = #quality then
+        Snd = "cb0300x"
+      else
+        if reason = #LiveReputation then
+          Snd = "cb0400x"
+        else
+          if reason = #SongType then
+            Snd = "cb0500x"
+          else
+            if reason = #StyleMix then
+              Snd = "cb0600x"
+            end if
+          end if
+        end if
+      end if
+    end if
+  end if
+  if argOptions[#AlreadyGotContract] = 1 then
+    tmpFile = getSpeechFile(human_r, [#NextContract, #Angry])
+    speakAndSetFace(tmpFile, #Angry)
+  else
+    speakAndSetFace("rÛÛ" & Snd, #Angry)
+  end if
+  return me
+end
+
+on kill me
+  ancestor.kill()
+  return 0
+end
+
+on Report me, argObj, argWhat, argOption
+end
+
+on mouse me, argObj, argWhat, argOption
+  if objectp(argOption) then
+    if argWhat = #click then
+      ID = argOption.getOneProp(#ID)
+      IDStr = string(ID)
+      if ID = #ButtonOK then
+        gDir.m_objDialogsMaster.closeAllDialogs()
+      end if
+    end if
+  end if
+end
+
+on setPlace me, argRefuseText
+  dlgObj = ancestor.m_objDlg
+  itemObj = dlgObj.getItem(#Pic)
+  tmpInfo = CPgetActorInfo(string(m_Xplace_r.ID))
+  if objectp(tmpInfo[#BGMember]) then
+    itemObj.setOneProp(#Pic, tmpInfo[#BGMember])
+    tmpSize = getRectSize(tmpInfo[#BGMember].rect)
+  else
+    itemObj.setOneProp(#Pic, "Studio01_environment01")
+  end if
+  itemObj = dlgObj.getItemByPath([#InfoDlg, #Head, #icon])
+  itemObj.setOneProp(#Pic, "icon_cd02")
+  itemObj = dlgObj.getItemByPath([#InfoDlg, #Head, #Info])
+  itemObj.setOneProp(#editData, rGetStr(#szidRecordRefuseFrameText))
+  itemObj = dlgObj.getItemByPath([#InfoDlg, #dlg, #Pic])
+  if voidp(argRefuseText) then
+    argRefuseText = "No thanx"
+  end if
+  itemObj.setOneProp(#Pic, rFormatText([argRefuseText], "RecordFormatting"))
+end

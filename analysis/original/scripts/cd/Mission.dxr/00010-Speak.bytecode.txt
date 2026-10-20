@@ -1,0 +1,365 @@
+property m_faceObj, m_soundName, m_castName, m_tempMember, m_personString, m_mood, m_firstEnter
+global gDir
+
+on beginSprite me
+  [  0] getprop 110 ............................. <m_personString>
+  [  3] getobjprop 111 .......................... <m_personString.length>
+  [  6] pushzero ................................ <0>
+  [  7] eq ...................................... <m_personString.length = 0>
+  [  8] jmpifz [ 28] ............................ if m_personString.length = 0 then
+  [ 11] getparam 0 .............................. <me>
+  [ 13] getobjprop 112 .......................... <me.spriteNum>
+  [ 16] pusharglist 1 ........................... <me.spriteNum>
+  [ 18] extcall 21 .............................. <sprite(me.spriteNum)>
+  [ 20] getobjprop 6 ............................ <sprite(me.spriteNum).member>
+  [ 22] getobjprop 90 ........................... <sprite(me.spriteNum).member.name>
+  [ 25] setprop 110 ............................. m_personString = sprite(me.spriteNum).member.name
+  [ 28] getglobal 63 ............................ <gDir>
+  [ 31] getobjprop 20 ........................... <gDir.m_actorCasts>
+  [ 33] getparam 0 .............................. <me>
+  [ 35] getprop 110 ............................. <m_personString>
+  [ 38] pusharglist 3 ........................... <gDir.m_actorCasts, me, m_personString>
+  [ 40] objcall 85 .............................. <gDir.m_actorCasts.linkCast(me, m_personString)>
+  [ 43] setprop 106 ............................. m_castName = gDir.m_actorCasts.linkCast(me, m_personString)
+  [ 46] getprop 106 ............................. <m_castName>
+  [ 49] pusharglist 1 ........................... <m_castName>
+  [ 51] extcall 107 ............................. <stringp(m_castName)>
+  [ 54] not ..................................... <not stringp(m_castName)>
+  [ 55] jmpifz [ 80] ............................ if not stringp(m_castName) then
+  [ 58] pushcons 0 .............................. <"No cast available!">
+  [ 60] pusharglistnoret 1 ...................... <"No cast available!">
+  [ 62] extcall 75 .............................. put "No cast available!"
+  [ 65] pushzero ................................ <0>
+  [ 66] pushsymb 102 ............................ <#Report>
+  [ 69] getparam 0 .............................. <me>
+  [ 71] pushsymb 109 ............................ <#talkFinished>
+  [ 74] pusharglistnoret 4 ...................... <0, #Report, me, #talkFinished>
+  [ 76] extcall 108 ............................. sendSprite(0, #Report, me, #talkFinished)
+  [ 79] ret ..................................... exit
+  [ 80] getprop 110 ............................. <m_personString>
+  [ 83] getprop 106 ............................. <m_castName>
+  [ 86] pusharglist 2 ........................... <m_personString, m_castName>
+  [ 88] extcall 66 .............................. <CPgetActorInfo(m_personString, m_castName)>
+  [ 91] setlocal 0 .............................. tmp = CPgetActorInfo(m_personString, m_castName)
+  [ 93] getlocal 0 .............................. <tmp>
+  [ 95] getobjprop 67 ........................... <tmp.count>
+  [ 98] pushzero ................................ <0>
+  [ 99] eq ...................................... <tmp.count = 0>
+  [100] jmpifz [130] ............................ if tmp.count = 0 then / else
+  [103] pushcons 8 .............................. <"Couldn't load cast">
+  [105] getprop 110 ............................. <m_personString>
+  [108] pusharglistnoret 2 ...................... <"Couldn't load cast", m_personString>
+  [110] extcall 75 .............................. put "Couldn't load cast", m_personString
+  [113] pushzero ................................ <0>
+  [114] pushsymb 102 ............................ <#Report>
+  [117] getparam 0 .............................. <me>
+  [119] pushsymb 109 ............................ <#talkFinished>
+  [122] pusharglistnoret 4 ...................... <0, #Report, me, #talkFinished>
+  [124] extcall 108 ............................. sendSprite(0, #Report, me, #talkFinished)
+  [127] jmp [169]
+  [130] getprop 110 ............................. <m_personString>
+  [133] getparam 0 .............................. <me>
+  [135] getobjprop 112 .......................... <me.spriteNum>
+  [138] pusharglist 1 ........................... <me.spriteNum>
+  [140] extcall 21 .............................. <sprite(me.spriteNum)>
+  [142] getobjprop 115 .......................... <sprite(me.spriteNum).loc>
+  [145] getprop 116 ............................. <m_mood>
+  [148] pusharglist 0 ........................... <>
+  [150] extcall 117 ............................. <VOID>
+  [153] getparam 0 .............................. <me>
+  [155] getobjprop 112 .......................... <me.spriteNum>
+  [158] getprop 106 ............................. <m_castName>
+  [161] pusharglist 6 ........................... <m_personString, sprite(me.spriteNum).loc, m_mood, VOID, me.spriteNum, m_castName>
+  [163] extcall 114 ............................. <CPshowFace(m_personString, sprite(me.spriteNum).loc, m_mood, VOID, me.spriteNum, m_castName)>
+  [166] setprop 113 ............................. m_faceObj = CPshowFace(m_personString, sprite(me.spriteNum).loc, m_mood, VOID, me.spriteNum, m_castName)
+  [169] pushint8 1 .............................. <1>
+  [172] setprop 168 ............................. m_firstEnter = 1
+  [175] ret
+end
+
+on enterFrame me
+  [  0] getprop 168 ............................. <m_firstEnter>
+  [  3] jmpifz [ 42] ............................ if m_firstEnter then
+  [  6] pushzero ................................ <0>
+  [  7] setprop 168 ............................. m_firstEnter = 0
+  [ 10] getprop 113 ............................. <m_faceObj>
+  [ 13] pusharglist 1 ........................... <m_faceObj>
+  [ 15] extcall 37 .............................. <objectp(m_faceObj)>
+  [ 18] jmpifz [ 42] ............................ if objectp(m_faceObj) then
+  [ 21] getprop 118 ............................. <m_soundName>
+  [ 24] getobjprop 111 .......................... <m_soundName.length>
+  [ 27] pushzero ................................ <0>
+  [ 28] gt ...................................... <m_soundName.length > 0>
+  [ 29] jmpifz [ 42] ............................ if m_soundName.length > 0 then
+  [ 32] getparam 0 .............................. <me>
+  [ 34] getprop 118 ............................. <m_soundName>
+  [ 37] pusharglistnoret 2 ...................... <me, m_soundName>
+  [ 39] objcall 166 ............................. me.Speak(m_soundName)
+  [ 42] ret
+end
+
+on exitFrame me
+  [  0] ret
+end
+
+on stopSound me
+  [  0] getprop 113 ............................. <m_faceObj>
+  [  3] pusharglist 1 ........................... <m_faceObj>
+  [  5] extcall 37 .............................. <objectp(m_faceObj)>
+  [  8] jmpifz [ 21] ............................ if objectp(m_faceObj) then
+  [ 11] getprop 113 ............................. <m_faceObj>
+  [ 14] pusharglist 1 ........................... <m_faceObj>
+  [ 16] objcall 3 ............................... <m_faceObj.kill()>
+  [ 18] setprop 113 ............................. m_faceObj = m_faceObj.kill()
+  [ 21] ret
+end
+
+on endSprite me
+  [  0] getprop 106 ............................. <m_castName>
+  [  3] pusharglist 1 ........................... <m_castName>
+  [  5] extcall 107 ............................. <stringp(m_castName)>
+  [  8] getglobal 63 ............................ <gDir>
+  [ 11] pusharglist 1 ........................... <gDir>
+  [ 13] extcall 37 .............................. <objectp(gDir)>
+  [ 16] and ..................................... <stringp(m_castName) and objectp(gDir)>
+  [ 17] jmpifz [ 35] ............................ if stringp(m_castName) and objectp(gDir) then
+  [ 20] getglobal 63 ............................ <gDir>
+  [ 23] getobjprop 20 ........................... <gDir.m_actorCasts>
+  [ 25] getparam 0 .............................. <me>
+  [ 27] getprop 106 ............................. <m_castName>
+  [ 30] pusharglistnoret 3 ...................... <gDir.m_actorCasts, me, m_castName>
+  [ 32] objcall 84 .............................. gDir.m_actorCasts.returnCast(me, m_castName)
+  [ 35] getprop 113 ............................. <m_faceObj>
+  [ 38] pusharglist 1 ........................... <m_faceObj>
+  [ 40] extcall 37 .............................. <objectp(m_faceObj)>
+  [ 43] jmpifz [ 56] ............................ if objectp(m_faceObj) then
+  [ 46] getprop 113 ............................. <m_faceObj>
+  [ 49] pusharglist 1 ........................... <m_faceObj>
+  [ 51] objcall 3 ............................... <m_faceObj.kill()>
+  [ 53] setprop 113 ............................. m_faceObj = m_faceObj.kill()
+  [ 56] getprop 123 ............................. <m_tempMember>
+  [ 59] pusharglist 1 ........................... <m_tempMember>
+  [ 61] extcall 122 ............................. <voidp(m_tempMember)>
+  [ 64] not ..................................... <not voidp(m_tempMember)>
+  [ 65] jmpifz [ 76] ............................ if not voidp(m_tempMember) then
+  [ 68] getprop 123 ............................. <m_tempMember>
+  [ 71] pusharglistnoret 1 ...................... <m_tempMember>
+  [ 73] objcall 124 ............................. m_tempMember.erase()
+  [ 76] ret
+end
+
+on Speak me, argSnd, argMood
+  [  0] getprop 113 ............................. <m_faceObj>
+  [  3] pusharglist 1 ........................... <m_faceObj>
+  [  5] extcall 37 .............................. <objectp(m_faceObj)>
+  [  8] not ..................................... <not objectp(m_faceObj)>
+  [  9] jmpifz [ 13] ............................ if not objectp(m_faceObj) then
+  [ 12] ret ..................................... exit
+  [ 13] getparam 16 ............................. <argMood>
+  [ 15] pusharglist 1 ........................... <argMood>
+  [ 17] extcall 122 ............................. <voidp(argMood)>
+  [ 20] not ..................................... <not voidp(argMood)>
+  [ 21] getparam 16 ............................. <argMood>
+  [ 23] pushsymb 169 ............................ <#Same>
+  [ 26] nteq .................................... <argMood <> #Same>
+  [ 27] and ..................................... <not voidp(argMood) and (argMood <> #Same)>
+  [ 28] jmpifz [ 41] ............................ if not voidp(argMood) and (argMood <> #Same) then
+  [ 31] getprop 113 ............................. <m_faceObj>
+  [ 34] getparam 16 ............................. <argMood>
+  [ 36] pusharglistnoret 2 ...................... <m_faceObj, argMood>
+  [ 38] objcall 170 ............................. m_faceObj.setMood(argMood)
+  [ 41] getparam 8 .............................. <argSnd>
+  [ 43] getobjprop 111 .......................... <argSnd.length>
+  [ 46] pushzero ................................ <0>
+  [ 47] gt ...................................... <argSnd.length > 0>
+  [ 48] jmpifz [ 66] ............................ if argSnd.length > 0 then
+  [ 51] getprop 113 ............................. <m_faceObj>
+  [ 54] getparam 8 .............................. <argSnd>
+  [ 56] pushsymb 119 ............................ <#Mp3>
+  [ 59] getparam 0 .............................. <me>
+  [ 61] pusharglistnoret 4 ...................... <m_faceObj, argSnd, #Mp3, me>
+  [ 63] objcall 120 ............................. m_faceObj.say(argSnd, #Mp3, me)
+  [ 66] ret
+end
+
+on getPerson me
+  [  0] getprop 110 ............................. <m_personString>
+  [  3] pusharglistnoret 1 ...................... <m_personString>
+  [  5] extcall 12 .............................. return m_personString
+  [  7] ret
+end
+
+on Report me, argObj, argWhat
+  [  0] getparam 16 ............................. <argWhat>
+  [  2] pushsymb 125 ............................ <#finished>
+  [  5] eq ...................................... <argWhat = #finished>
+  [  6] jmpifz [ 23] ............................ if argWhat = #finished then
+  [  9] pushzero ................................ <0>
+  [ 10] pushsymb 102 ............................ <#Report>
+  [ 13] getparam 0 .............................. <me>
+  [ 15] pushsymb 109 ............................ <#talkFinished>
+  [ 18] pusharglistnoret 4 ...................... <0, #Report, me, #talkFinished>
+  [ 20] extcall 108 ............................. sendSprite(0, #Report, me, #talkFinished)
+  [ 23] ret
+end
+
+on freeze me
+  [  0] getprop 113 ............................. <m_faceObj>
+  [  3] pusharglist 1 ........................... <m_faceObj>
+  [  5] extcall 37 .............................. <objectp(m_faceObj)>
+  [  8] jmpifz [ 19] ............................ if objectp(m_faceObj) then
+  [ 11] getprop 113 ............................. <m_faceObj>
+  [ 14] pusharglistnoret 1 ...................... <m_faceObj>
+  [ 16] objcall 103 ............................. m_faceObj.freeze()
+  [ 19] ret
+end
+
+on render me
+  [  0] getprop 113 ............................. <m_faceObj>
+  [  3] pusharglist 1 ........................... <m_faceObj>
+  [  5] extcall 37 .............................. <objectp(m_faceObj)>
+  [  8] not ..................................... <not objectp(m_faceObj)>
+  [  9] jmpifz [ 13] ............................ if not objectp(m_faceObj) then
+  [ 12] ret ..................................... exit
+  [ 13] getprop 113 ............................. <m_faceObj>
+  [ 16] pusharglist 1 ........................... <m_faceObj>
+  [ 18] objcall 126 ............................. <m_faceObj.getDisplayMembers()>
+  [ 21] setlocal 0 .............................. memberList = m_faceObj.getDisplayMembers()
+  [ 23] pushsymb 69 ............................. <#bitmap>
+  [ 26] pushcons 16 ............................. <"_TEMP">
+  [ 28] pusharglist 2 ........................... <#bitmap, "_TEMP">
+  [ 30] extcall 127 ............................. <newMember(#bitmap, "_TEMP")>
+  [ 33] setprop 123 ............................. m_tempMember = newMember(#bitmap, "_TEMP")
+  [ 36] getlocal 0 .............................. <memberList>
+  [ 38] pushint8 1 .............................. <1>
+  [ 41] pusharglist 2 ........................... <memberList, 1>
+  [ 43] objcall 19 .............................. <memberList[1]>
+  [ 45] setlocal 8 .............................. memb = memberList[1]
+  [ 47] getlocal 8 .............................. <memb>
+  [ 49] getobjprop 128 .......................... <memb.regPoint>
+  [ 52] setlocal 16 ............................. baseOff = memb.regPoint
+  [ 54] getlocal 8 .............................. <memb>
+  [ 56] getobjprop 129 .......................... <memb.image>
+  [ 59] pusharglist 1 ........................... <memb.image>
+  [ 61] objcall 92 .............................. <memb.image.duplicate()>
+  [ 64] setlocal 24 ............................. img = memb.image.duplicate()
+  [ 66] pushint8 2 .............................. <2>
+  [ 69] setlocal 32
+  [ 71] getlocal 32
+  [ 73] getlocal 0 .............................. <memberList>
+  [ 75] pusharglist 1 ........................... <memberList>
+  [ 77] objcall 67 .............................. <memberList.count()>
+  [ 80] lteq
+  [ 81] jmpifz [170] ............................ repeat with n = 2 to memberList.count()
+  [ 84] getlocal 0 .............................. <memberList>
+  [ 86] getlocal 32 ............................. <n>
+  [ 88] pusharglist 2 ........................... <memberList, n>
+  [ 90] objcall 19 .............................. <memberList[n]>
+  [ 92] setlocal 8 .............................. memb = memberList[n]
+  [ 94] pushzero ................................ <0>
+  [ 95] pushzero ................................ <0>
+  [ 96] pusharglist 2 ........................... <0, 0>
+  [ 98] extcall 130 ............................. <point(0, 0)>
+  [101] getlocal 16 ............................. <baseOff>
+  [103] add ..................................... <point(0, 0) + baseOff>
+  [104] getlocal 8 .............................. <memb>
+  [106] getobjprop 128 .......................... <memb.regPoint>
+  [109] sub ..................................... <point(0, 0) + baseOff - memb.regPoint>
+  [110] setlocal 40 ............................. off = point(0, 0) + baseOff - memb.regPoint
+  [112] getlocal 24 ............................. <img>
+  [114] getlocal 8 .............................. <memb>
+  [116] getobjprop 129 .......................... <memb.image>
+  [119] getlocal 8 .............................. <memb>
+  [121] getobjprop 129 .......................... <memb.image>
+  [124] getobjprop 131 .......................... <memb.image.rect>
+  [127] getlocal 40 ............................. <off>
+  [129] getlocal 40 ............................. <off>
+  [131] pusharglist 2 ........................... <off, off>
+  [133] extcall 131 ............................. <rect(off, off)>
+  [136] add ..................................... <memb.image.rect + rect(off, off)>
+  [137] getlocal 8 .............................. <memb>
+  [139] getobjprop 129 .......................... <memb.image>
+  [142] getobjprop 131 .......................... <memb.image.rect>
+  [145] pushsymb 132 ............................ <#ink>
+  [148] pushint8 36 ............................. <36>
+  [151] pusharglist 2 ........................... <[#ink: 36]>
+  [153] pushproplist ............................ <[#ink: 36]>
+  [154] pusharglistnoret 5 ...................... <img, memb.image, memb.image.rect + rect(off, off), memb.image.rect, [#ink: 36]>
+  [156] objcall 133 ............................. img.copyPixels(memb.image, memb.image.rect + rect(off, off), memb.image.rect, [#ink: 36])
+  [159] pushint8 1
+  [162] getlocal 32
+  [164] add
+  [165] setlocal 32
+  [167] endrepeat [ 71]
+  [170] getprop 123 ............................. <m_tempMember>
+  [173] getlocal 24 ............................. <img>
+  [175] setobjprop 129 .......................... m_tempMember.image = img
+  [178] getprop 113 ............................. <m_faceObj>
+  [181] pusharglist 1 ........................... <m_faceObj>
+  [183] objcall 3 ............................... <m_faceObj.kill()>
+  [185] setprop 113 ............................. m_faceObj = m_faceObj.kill()
+  [188] getparam 0 .............................. <me>
+  [190] getobjprop 112 .......................... <me.spriteNum>
+  [193] pusharglist 1 ........................... <me.spriteNum>
+  [195] extcall 21 .............................. <sprite(me.spriteNum)>
+  [197] getprop 123 ............................. <m_tempMember>
+  [200] setobjprop 6 ............................ sprite(me.spriteNum).member = m_tempMember
+  [202] getprop 106 ............................. <m_castName>
+  [205] pusharglist 1 ........................... <m_castName>
+  [207] extcall 107 ............................. <stringp(m_castName)>
+  [210] getglobal 63 ............................ <gDir>
+  [213] pusharglist 1 ........................... <gDir>
+  [215] extcall 37 .............................. <objectp(gDir)>
+  [218] and ..................................... <stringp(m_castName) and objectp(gDir)>
+  [219] jmpifz [237] ............................ if stringp(m_castName) and objectp(gDir) then
+  [222] getglobal 63 ............................ <gDir>
+  [225] getobjprop 20 ........................... <gDir.m_actorCasts>
+  [227] getparam 0 .............................. <me>
+  [229] getprop 106 ............................. <m_castName>
+  [232] pusharglistnoret 3 ...................... <gDir.m_actorCasts, me, m_castName>
+  [234] objcall 84 .............................. gDir.m_actorCasts.returnCast(me, m_castName)
+  [237] pushzero ................................ <0>
+  [238] setprop 106 ............................. m_castName = 0
+  [241] ret
+end
+
+on getPropertyDescriptionList me
+  [  0] pushsymb 110 ............................ <#m_personString>
+  [  3] pushsymb 138 ............................ <#comment>
+  [  6] pushcons 24 ............................. <"Person (empty = use member name)">
+  [  8] pushsymb 139 ............................ <#format>
+  [ 11] pushsymb 39 ............................. <#string>
+  [ 14] pushsymb 140 ............................ <#default>
+  [ 17] pushcons 32 ............................. <EMPTY>
+  [ 19] pusharglist 6 ........................... <[#comment: "Person (empty = use member name)", #format: #string, #default: EMPTY]>
+  [ 21] pushproplist ............................ <[#comment: "Person (empty = use member name)", #format: #string, #default: EMPTY]>
+  [ 22] pushsymb 116 ............................ <#m_mood>
+  [ 25] pushsymb 138 ............................ <#comment>
+  [ 28] pushcons 40 ............................. <"Mood">
+  [ 30] pushsymb 139 ............................ <#format>
+  [ 33] pushsymb 33 ............................. <#symbol>
+  [ 36] pushsymb 141 ............................ <#range>
+  [ 39] pushsymb 142 ............................ <#normal>
+  [ 42] pushsymb 143 ............................ <#Angry>
+  [ 45] pushsymb 144 ............................ <#Happy>
+  [ 48] pusharglist 3 ........................... <[#normal, #Angry, #Happy]>
+  [ 50] pushlist ................................ <[#normal, #Angry, #Happy]>
+  [ 51] pushsymb 140 ............................ <#default>
+  [ 54] pushsymb 142 ............................ <#normal>
+  [ 57] pusharglist 8 ........................... <[#comment: "Mood", #format: #symbol, #range: [#normal, #Angry, #Happy], #default: #normal]>
+  [ 59] pushproplist ............................ <[#comment: "Mood", #format: #symbol, #range: [#normal, #Angry, #Happy], #default: #normal]>
+  [ 60] pushsymb 118 ............................ <#m_soundName>
+  [ 63] pushsymb 138 ............................ <#comment>
+  [ 66] pushcons 48 ............................. <"Sound name">
+  [ 68] pushsymb 139 ............................ <#format>
+  [ 71] pushsymb 39 ............................. <#string>
+  [ 74] pushsymb 140 ............................ <#default>
+  [ 77] pushcons 56 ............................. <EMPTY>
+  [ 79] pusharglist 6 ........................... <[#comment: "Sound name", #format: #string, #default: EMPTY]>
+  [ 81] pushproplist ............................ <[#comment: "Sound name", #format: #string, #default: EMPTY]>
+  [ 82] pusharglist 6 ........................... <[#m_personString: [#comment: "Person (empty = use member name)", #format: #string, #default: EMPTY], #m_mood: [#comment: "Mood", #format: #symbol, #range: [#normal, #Angry, #Happy], #default: #normal], #m_soundName: [#comment: "Sound name", #format: #string, #default: EMPTY]]>
+  [ 84] pushproplist ............................ <[#m_personString: [#comment: "Person (empty = use member name)", #format: #string, #default: EMPTY], #m_mood: [#comment: "Mood", #format: #symbol, #range: [#normal, #Angry, #Happy], #default: #normal], #m_soundName: [#comment: "Sound name", #format: #string, #default: EMPTY]]>
+  [ 85] pusharglistnoret 1 ...................... <[#m_personString: [#comment: "Person (empty = use member name)", #format: #string, #default: EMPTY], #m_mood: [#comment: "Mood", #format: #symbol, #range: [#normal, #Angry, #Happy], #default: #normal], #m_soundName: [#comment: "Sound name", #format: #string, #default: EMPTY]]>
+  [ 87] extcall 12 .............................. return [#m_personString: [#comment: "Person (empty = use member name)", #format: #string, #default: EMPTY], #m_mood: [#comment: "Mood", #format: #symbol, #range: [#normal, #Angry, #Happy], #default: #normal], #m_soundName: [#comment: "Sound name", #format: #string, #default: EMPTY]]
+  [ 89] ret
+end

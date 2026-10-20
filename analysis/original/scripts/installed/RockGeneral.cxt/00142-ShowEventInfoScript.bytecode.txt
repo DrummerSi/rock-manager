@@ -1,0 +1,598 @@
+property m_SP, m_nowOverList, m_nowOverXList, m_waitUntil, m_active, m_dlgRoll
+global gRock, gUseful
+
+on new me
+  [  0] getglobal 24 ............................ <gDir>
+  [  2] pushsymb 1676 ........................... <#m_spriteList>
+  [  5] pushsymb 3122 ........................... <#rollover>
+  [  8] pusharglist 3 ........................... <gDir, #m_spriteList, #rollover>
+  [ 10] objcall 113 ............................. <gDir.m_spriteList[#rollover]>
+  [ 13] pusharglist 1 ........................... <gDir.m_spriteList[#rollover]>
+  [ 15] extcall 1678 ............................ <sprite(gDir.m_spriteList[#rollover])>
+  [ 18] setprop 3089 ............................ m_SP = sprite(gDir.m_spriteList[#rollover])
+  [ 21] pusharglist 0 ........................... <[]>
+  [ 23] pushlist ................................ <[]>
+  [ 24] setprop 3123 ............................ m_nowOverList = []
+  [ 27] pusharglist 0 ........................... <[]>
+  [ 29] pushlist ................................ <[]>
+  [ 30] setprop 3124 ............................ m_nowOverXList = []
+  [ 33] getglobal 12 ............................ <gUseful>
+  [ 35] getobjprop 65 ........................... <gUseful.frameTimer>
+  [ 38] getparam 0 .............................. <me>
+  [ 40] pusharglistnoret 2 ...................... <gUseful.frameTimer, me>
+  [ 42] objcall 282 ............................. gUseful.frameTimer.addObject(me)
+  [ 45] pushzero ................................ <0>
+  [ 46] setprop 3125 ............................ m_waitUntil = 0
+  [ 49] pushint8 1 .............................. <1>
+  [ 52] setprop 1958 ............................ m_active = 1
+  [ 55] getparam 0 .............................. <me>
+  [ 57] pusharglistnoret 1 ...................... <me>
+  [ 59] extcall 69 .............................. return me
+  [ 62] ret
+end
+
+on kill me
+  [  0] getprop 3126 ............................ <m_dlgRoll>
+  [  3] pusharglist 1 ........................... <m_dlgRoll>
+  [  5] extcall 8 ............................... <objectp(m_dlgRoll)>
+  [  7] jmpifz [ 20] ............................ if objectp(m_dlgRoll) then
+  [ 10] getprop 3126 ............................ <m_dlgRoll>
+  [ 13] pusharglist 1 ........................... <m_dlgRoll>
+  [ 15] objcall 31 .............................. <m_dlgRoll.kill()>
+  [ 17] setprop 3126 ............................ m_dlgRoll = m_dlgRoll.kill()
+  [ 20] getglobal 12 ............................ <gUseful>
+  [ 22] getobjprop 65 ........................... <gUseful.frameTimer>
+  [ 25] getparam 0 .............................. <me>
+  [ 27] pusharglistnoret 2 ...................... <gUseful.frameTimer, me>
+  [ 29] objcall 280 ............................. gUseful.frameTimer.deleteObject(me)
+  [ 32] getparam 0 .............................. <me>
+  [ 34] pushzero ................................ <0>
+  [ 35] pusharglistnoret 2 ...................... <me, 0>
+  [ 37] objcall 1263 ............................ me.show(0)
+  [ 40] pusharglist 0 ........................... <[]>
+  [ 42] pushlist ................................ <[]>
+  [ 43] setprop 3124 ............................ m_nowOverXList = []
+  [ 46] pusharglist 0 ........................... <[]>
+  [ 48] pushlist ................................ <[]>
+  [ 49] setprop 3123 ............................ m_nowOverList = []
+  [ 52] pushzero ................................ <0>
+  [ 53] setprop 1958 ............................ m_active = 0
+  [ 56] pushzero ................................ <0>
+  [ 57] pusharglistnoret 1 ...................... <0>
+  [ 59] extcall 69 .............................. return 0
+  [ 62] ret
+end
+
+on getInfoStr me, argObj_r, argFormat_r
+  [  0] getparam 16 ............................. <argFormat_r>
+  [  2] getobjprop 57 ........................... <argFormat_r.name>
+  [  5] setlocal 0 .............................. nameStr = argFormat_r.name
+  [  7] getparam 8 .............................. <argObj_r>
+  [  9] getobjprop 216 .......................... <argObj_r.StartDate>
+  [ 12] pusharglist 1 ........................... <argObj_r.StartDate>
+  [ 14] extcall 1789 ............................ <rGetDateStr(argObj_r.StartDate)>
+  [ 17] setlocal 8 .............................. dateStr = rGetDateStr(argObj_r.StartDate)
+  [ 19] getparam 8 .............................. <argObj_r>
+  [ 21] getobjprop 1484 ......................... <argObj_r.duration>
+  [ 24] pushint8 1 .............................. <1>
+  [ 27] gt ...................................... <argObj_r.duration > 1>
+  [ 28] jmpifz [ 66] ............................ if argObj_r.duration > 1 then
+  [ 31] getlocal 8 .............................. <dateStr>
+  [ 33] pushcons 0 .............................. <", ">
+  [ 35] joinstr ................................. <dateStr & ", ">
+  [ 36] getparam 8 .............................. <argObj_r>
+  [ 38] getobjprop 1484 ......................... <argObj_r.duration>
+  [ 41] pusharglist 1 ........................... <argObj_r.duration>
+  [ 43] extcall 114 ............................. <string(argObj_r.duration)>
+  [ 46] joinstr ................................. <dateStr & ", " & string(argObj_r.duration)>
+  [ 47] pushcons 8 .............................. <" ">
+  [ 49] joinstr ................................. <dateStr & ", " & string(argObj_r.duration) & " ">
+  [ 50] getglobal 23 ............................ <gRock>
+  [ 52] getobjprop 83 ........................... <gRock.m_languageManager>
+  [ 55] pushsymb 3127 ........................... <#szidDay_P>
+  [ 58] pusharglist 2 ........................... <gRock.m_languageManager, #szidDay_P>
+  [ 60] objcall 174 ............................. <gRock.m_languageManager.getStr(#szidDay_P)>
+  [ 63] joinstr ................................. <dateStr & ", " & string(argObj_r.duration) & " " & gRock.m_languageManager.getStr(#szidDay_P)>
+  [ 64] setlocal 8 .............................. dateStr = dateStr & ", " & string(argObj_r.duration) & " " & gRock.m_languageManager.getStr(#szidDay_P)
+  [ 66] getlocal 0 .............................. <nameStr>
+  [ 68] pushcons 16 ............................. <", ">
+  [ 70] joinstr ................................. <nameStr & ", ">
+  [ 71] getlocal 8 .............................. <dateStr>
+  [ 73] joinstr ................................. <nameStr & ", " & dateStr>
+  [ 74] pusharglist 1 ........................... <[nameStr & ", " & dateStr]>
+  [ 76] pushlist ................................ <[nameStr & ", " & dateStr]>
+  [ 77] setlocal 16 ............................. strList = [nameStr & ", " & dateStr]
+  [ 79] pushsymb 3128 ........................... <#DebugAgendaExpo>
+  [ 82] pusharglist 1 ........................... <#DebugAgendaExpo>
+  [ 84] extcall 14 .............................. <getSystemPref(#DebugAgendaExpo)>
+  [ 86] pushint8 1 .............................. <1>
+  [ 89] eq ...................................... <getSystemPref(#DebugAgendaExpo) = 1>
+  [ 90] jmpifz [379] ............................ if getSystemPref(#DebugAgendaExpo) = 1 then
+  [ 93] pushsymb 1216 ........................... <#ExpoAd>
+  [ 96] pushsymb 876 ............................ <#ExpoMediaActivity>
+  [ 99] pushsymb 817 ............................ <#AudienceExposure>
+  [102] pushsymb 822 ............................ <#ExpoRotation>
+  [105] pusharglist 4 ........................... <[#ExpoAd, #ExpoMediaActivity, #AudienceExposure, #ExpoRotation]>
+  [107] pushlist ................................ <[#ExpoAd, #ExpoMediaActivity, #AudienceExposure, #ExpoRotation]>
+  [108] setlocal 24 ............................. tmpExpoClasses = [#ExpoAd, #ExpoMediaActivity, #AudienceExposure, #ExpoRotation]
+  [110] getlocal 24 ............................. <tmpExpoClasses>
+  [112] getparam 8 .............................. <argObj_r>
+  [114] getobjprop 224 .......................... <argObj_r.className>
+  [117] pusharglist 2 ........................... <tmpExpoClasses, argObj_r.className>
+  [119] objcall 337 ............................. <tmpExpoClasses.getPos(argObj_r.className)>
+  [122] jmpifz [379] ............................ if tmpExpoClasses.getPos(argObj_r.className) then
+  [125] getparam 8 .............................. <argObj_r>
+  [127] getobjprop 224 .......................... <argObj_r.className>
+  [130] pushsymb 822 ............................ <#ExpoRotation>
+  [133] eq ...................................... <argObj_r.className = #ExpoRotation>
+  [134] jmpifz [263] ............................ if argObj_r.className = #ExpoRotation then / else
+  [137] getlocal 16 ............................. <strList>
+  [139] pushint8 1 .............................. <1>
+  [142] getparam 8 .............................. <argObj_r>
+  [144] getobjprop 216 .......................... <argObj_r.StartDate>
+  [147] pusharglist 1 ........................... <argObj_r.StartDate>
+  [149] extcall 114 ............................. <string(argObj_r.StartDate)>
+  [152] pushcons 24 ............................. <" Rot Q:">
+  [154] joinstr ................................. <string(argObj_r.StartDate) & " Rot Q:">
+  [155] getparam 8 .............................. <argObj_r>
+  [157] getobjprop 724 .......................... <argObj_r.quality>
+  [160] pusharglist 1 ........................... <argObj_r.quality>
+  [162] extcall 114 ............................. <string(argObj_r.quality)>
+  [165] joinstr ................................. <string(argObj_r.StartDate) & " Rot Q:" & string(argObj_r.quality)>
+  [166] pushcons 32 ............................. <", I:">
+  [168] joinstr ................................. <string(argObj_r.StartDate) & " Rot Q:" & string(argObj_r.quality) & ", I:">
+  [169] getparam 8 .............................. <argObj_r>
+  [171] getobjprop 826 .......................... <argObj_r.Intensity>
+  [174] pusharglist 1 ........................... <argObj_r.Intensity>
+  [176] extcall 114 ............................. <string(argObj_r.Intensity)>
+  [179] joinstr ................................. <string(argObj_r.StartDate) & " Rot Q:" & string(argObj_r.quality) & ", I:" & string(argObj_r.Intensity)>
+  [180] pusharglistnoret 3 ...................... <strList, 1, string(argObj_r.StartDate) & " Rot Q:" & string(argObj_r.quality) & ", I:" & string(argObj_r.Intensity)>
+  [182] objcall 353 ............................. strList[1] = string(argObj_r.StartDate) & " Rot Q:" & string(argObj_r.quality) & ", I:" & string(argObj_r.Intensity)
+  [185] getlocal 16 ............................. <strList>
+  [187] pushint8 2 .............................. <2>
+  [190] pushcons 40 ............................. <"Avg Q:">
+  [192] getparam 8 .............................. <argObj_r>
+  [194] pusharglist 1 ........................... <argObj_r>
+  [196] objcall 1601 ............................ <argObj_r.getAverageIntensity()>
+  [199] pusharglist 1 ........................... <argObj_r.getAverageIntensity()>
+  [201] extcall 114 ............................. <string(argObj_r.getAverageIntensity())>
+  [204] joinstr ................................. <"Avg Q:" & string(argObj_r.getAverageIntensity())>
+  [205] pushcons 48 ............................. <", I:">
+  [207] joinstr ................................. <"Avg Q:" & string(argObj_r.getAverageIntensity()) & ", I:">
+  [208] getparam 8 .............................. <argObj_r>
+  [210] pusharglist 1 ........................... <argObj_r>
+  [212] objcall 1602 ............................ <argObj_r.getAverageQuality()>
+  [215] pusharglist 1 ........................... <argObj_r.getAverageQuality()>
+  [217] extcall 114 ............................. <string(argObj_r.getAverageQuality())>
+  [220] joinstr ................................. <"Avg Q:" & string(argObj_r.getAverageIntensity()) & ", I:" & string(argObj_r.getAverageQuality())>
+  [221] pusharglistnoret 3 ...................... <strList, 2, "Avg Q:" & string(argObj_r.getAverageIntensity()) & ", I:" & string(argObj_r.getAverageQuality())>
+  [223] objcall 353 ............................. strList[2] = "Avg Q:" & string(argObj_r.getAverageIntensity()) & ", I:" & string(argObj_r.getAverageQuality())
+  [226] getlocal 16 ............................. <strList>
+  [228] pushint8 3 .............................. <3>
+  [231] getparam 8 .............................. <argObj_r>
+  [233] getobjprop 812 .......................... <argObj_r.MediaID>
+  [236] pusharglist 1 ........................... <argObj_r.MediaID>
+  [238] extcall 114 ............................. <string(argObj_r.MediaID)>
+  [241] pushcons 56 ............................. <", ">
+  [243] joinstr ................................. <string(argObj_r.MediaID) & ", ">
+  [244] getparam 8 .............................. <argObj_r>
+  [246] getobjprop 823 .......................... <argObj_r.RotationOfClass>
+  [249] pusharglist 1 ........................... <argObj_r.RotationOfClass>
+  [251] extcall 114 ............................. <string(argObj_r.RotationOfClass)>
+  [254] joinstr ................................. <string(argObj_r.MediaID) & ", " & string(argObj_r.RotationOfClass)>
+  [255] pusharglistnoret 3 ...................... <strList, 3, string(argObj_r.MediaID) & ", " & string(argObj_r.RotationOfClass)>
+  [257] objcall 353 ............................. strList[3] = string(argObj_r.MediaID) & ", " & string(argObj_r.RotationOfClass)
+  [260] jmp [372]
+  [263] getlocal 16 ............................. <strList>
+  [265] pushint8 1 .............................. <1>
+  [268] getparam 8 .............................. <argObj_r>
+  [270] getobjprop 216 .......................... <argObj_r.StartDate>
+  [273] pusharglist 1 ........................... <argObj_r.StartDate>
+  [275] extcall 114 ............................. <string(argObj_r.StartDate)>
+  [278] pushcons 64 ............................. <" Expo Q:">
+  [280] joinstr ................................. <string(argObj_r.StartDate) & " Expo Q:">
+  [281] getparam 8 .............................. <argObj_r>
+  [283] getobjprop 724 .......................... <argObj_r.quality>
+  [286] pusharglist 1 ........................... <argObj_r.quality>
+  [288] extcall 114 ............................. <string(argObj_r.quality)>
+  [291] joinstr ................................. <string(argObj_r.StartDate) & " Expo Q:" & string(argObj_r.quality)>
+  [292] pushcons 72 ............................. <", I:">
+  [294] joinstr ................................. <string(argObj_r.StartDate) & " Expo Q:" & string(argObj_r.quality) & ", I:">
+  [295] getparam 8 .............................. <argObj_r>
+  [297] getobjprop 826 .......................... <argObj_r.Intensity>
+  [300] pusharglist 1 ........................... <argObj_r.Intensity>
+  [302] extcall 114 ............................. <string(argObj_r.Intensity)>
+  [305] joinstr ................................. <string(argObj_r.StartDate) & " Expo Q:" & string(argObj_r.quality) & ", I:" & string(argObj_r.Intensity)>
+  [306] pusharglistnoret 3 ...................... <strList, 1, string(argObj_r.StartDate) & " Expo Q:" & string(argObj_r.quality) & ", I:" & string(argObj_r.Intensity)>
+  [308] objcall 353 ............................. strList[1] = string(argObj_r.StartDate) & " Expo Q:" & string(argObj_r.quality) & ", I:" & string(argObj_r.Intensity)
+  [311] getlocal 16 ............................. <strList>
+  [313] pushint8 2 .............................. <2>
+  [316] pushcons 80 ............................. <"Avg Q:">
+  [318] getparam 8 .............................. <argObj_r>
+  [320] pusharglist 1 ........................... <argObj_r>
+  [322] objcall 1601 ............................ <argObj_r.getAverageIntensity()>
+  [325] pusharglist 1 ........................... <argObj_r.getAverageIntensity()>
+  [327] extcall 114 ............................. <string(argObj_r.getAverageIntensity())>
+  [330] joinstr ................................. <"Avg Q:" & string(argObj_r.getAverageIntensity())>
+  [331] pushcons 88 ............................. <", I:">
+  [333] joinstr ................................. <"Avg Q:" & string(argObj_r.getAverageIntensity()) & ", I:">
+  [334] getparam 8 .............................. <argObj_r>
+  [336] pusharglist 1 ........................... <argObj_r>
+  [338] objcall 1602 ............................ <argObj_r.getAverageQuality()>
+  [341] pusharglist 1 ........................... <argObj_r.getAverageQuality()>
+  [343] extcall 114 ............................. <string(argObj_r.getAverageQuality())>
+  [346] joinstr ................................. <"Avg Q:" & string(argObj_r.getAverageIntensity()) & ", I:" & string(argObj_r.getAverageQuality())>
+  [347] pusharglistnoret 3 ...................... <strList, 2, "Avg Q:" & string(argObj_r.getAverageIntensity()) & ", I:" & string(argObj_r.getAverageQuality())>
+  [349] objcall 353 ............................. strList[2] = "Avg Q:" & string(argObj_r.getAverageIntensity()) & ", I:" & string(argObj_r.getAverageQuality())
+  [352] getlocal 16 ............................. <strList>
+  [354] pushint8 3 .............................. <3>
+  [357] getparam 8 .............................. <argObj_r>
+  [359] getobjprop 812 .......................... <argObj_r.MediaID>
+  [362] pusharglist 1 ........................... <argObj_r.MediaID>
+  [364] extcall 114 ............................. <string(argObj_r.MediaID)>
+  [367] pusharglistnoret 3 ...................... <strList, 3, string(argObj_r.MediaID)>
+  [369] objcall 353 ............................. strList[3] = string(argObj_r.MediaID)
+  [372] getlocal 16 ............................. <strList>
+  [374] pusharglistnoret 1 ...................... <strList>
+  [376] extcall 69 .............................. return strList
+  [379] getparam 8 .............................. <argObj_r>
+  [381] getobjprop 224 .......................... <argObj_r.className>
+  [384] pushsymb 1455 ........................... <#Concert>
+  [387] eq ...................................... <argObj_r.className = #Concert>
+  [388] jmpifz [429] ............................ if argObj_r.className = #Concert then / else
+  [391] getglobal 23 ............................ <gRock>
+  [393] getobjprop 82 ........................... <gRock.m_classManager>
+  [396] getparam 8 .............................. <argObj_r>
+  [398] getobjprop 1456 ......................... <argObj_r.Venue>
+  [401] pushsymb 1088 ........................... <#Live>
+  [404] pusharglist 3 ........................... <gRock.m_classManager, argObj_r.Venue, #Live>
+  [406] objcall 149 ............................. <gRock.m_classManager.getObjByIDAndClass(argObj_r.Venue, #Live)>
+  [409] setlocal 32 ............................. place_r = gRock.m_classManager.getObjByIDAndClass(argObj_r.Venue, #Live)
+  [411] getlocal 16 ............................. <strList>
+  [413] pushint8 2 .............................. <2>
+  [416] getlocal 32 ............................. <place_r>
+  [418] getobjprop 57 ........................... <place_r.name>
+  [421] pusharglistnoret 3 ...................... <strList, 2, place_r.name>
+  [423] objcall 353 ............................. strList[2] = place_r.name
+  [426] jmp [705]
+  [429] getparam 8 .............................. <argObj_r>
+  [431] getobjprop 224 .......................... <argObj_r.className>
+  [434] pushsymb 1216 ........................... <#ExpoAd>
+  [437] eq ...................................... <argObj_r.className = #ExpoAd>
+  [438] jmpifz [488] ............................ if argObj_r.className = #ExpoAd then / else
+  [441] getglobal 23 ............................ <gRock>
+  [443] getobjprop 82 ........................... <gRock.m_classManager>
+  [446] getparam 8 .............................. <argObj_r>
+  [448] getobjprop 812 .......................... <argObj_r.MediaID>
+  [451] pushsymb 815 ............................ <#media>
+  [454] pusharglist 3 ........................... <gRock.m_classManager, argObj_r.MediaID, #media>
+  [456] objcall 149 ............................. <gRock.m_classManager.getObjByIDAndClass(argObj_r.MediaID, #media)>
+  [459] setlocal 32 ............................. place_r = gRock.m_classManager.getObjByIDAndClass(argObj_r.MediaID, #media)
+  [461] getlocal 16 ............................. <strList>
+  [463] pushint8 2 .............................. <2>
+  [466] getlocal 32 ............................. <place_r>
+  [468] getobjprop 57 ........................... <place_r.name>
+  [471] pushcons 96 ............................. <", ">
+  [473] joinstr ................................. <place_r.name & ", ">
+  [474] getparam 8 .............................. <argObj_r>
+  [476] getobjprop 57 ........................... <argObj_r.name>
+  [479] joinstr ................................. <place_r.name & ", " & argObj_r.name>
+  [480] pusharglistnoret 3 ...................... <strList, 2, place_r.name & ", " & argObj_r.name>
+  [482] objcall 353 ............................. strList[2] = place_r.name & ", " & argObj_r.name
+  [485] jmp [705]
+  [488] getparam 8 .............................. <argObj_r>
+  [490] getobjprop 224 .......................... <argObj_r.className>
+  [493] pushsymb 876 ............................ <#ExpoMediaActivity>
+  [496] eq ...................................... <argObj_r.className = #ExpoMediaActivity>
+  [497] jmpifz [538] ............................ if argObj_r.className = #ExpoMediaActivity then / else
+  [500] getglobal 23 ............................ <gRock>
+  [502] getobjprop 82 ........................... <gRock.m_classManager>
+  [505] getparam 8 .............................. <argObj_r>
+  [507] getobjprop 812 .......................... <argObj_r.MediaID>
+  [510] pushsymb 815 ............................ <#media>
+  [513] pusharglist 3 ........................... <gRock.m_classManager, argObj_r.MediaID, #media>
+  [515] objcall 149 ............................. <gRock.m_classManager.getObjByIDAndClass(argObj_r.MediaID, #media)>
+  [518] setlocal 32 ............................. place_r = gRock.m_classManager.getObjByIDAndClass(argObj_r.MediaID, #media)
+  [520] getlocal 16 ............................. <strList>
+  [522] pushint8 2 .............................. <2>
+  [525] getlocal 32 ............................. <place_r>
+  [527] getobjprop 57 ........................... <place_r.name>
+  [530] pusharglistnoret 3 ...................... <strList, 2, place_r.name>
+  [532] objcall 353 ............................. strList[2] = place_r.name
+  [535] jmp [705]
+  [538] getparam 8 .............................. <argObj_r>
+  [540] getobjprop 224 .......................... <argObj_r.className>
+  [543] pushsymb 661 ............................ <#AlbumRelease>
+  [546] eq ...................................... <argObj_r.className = #AlbumRelease>
+  [547] jmpifz [553] ............................ if argObj_r.className = #AlbumRelease then / else
+  [550] jmp [705]
+  [553] getparam 8 .............................. <argObj_r>
+  [555] getobjprop 224 .......................... <argObj_r.className>
+  [558] pushsymb 1037 ........................... <#VideoProduction>
+  [561] eq ...................................... <argObj_r.className = #VideoProduction>
+  [562] jmpifz [568] ............................ if argObj_r.className = #VideoProduction then / else
+  [565] jmp [705]
+  [568] getparam 8 .............................. <argObj_r>
+  [570] getobjprop 224 .......................... <argObj_r.className>
+  [573] pushsymb 638 ............................ <#BandTour>
+  [576] eq ...................................... <argObj_r.className = #BandTour>
+  [577] jmpifz [583] ............................ if argObj_r.className = #BandTour then / else
+  [580] jmp [705]
+  [583] getparam 8 .............................. <argObj_r>
+  [585] getobjprop 224 .......................... <argObj_r.className>
+  [588] pushsymb 1024 ........................... <#Training>
+  [591] eq ...................................... <argObj_r.className = #Training>
+  [592] jmpifz [651] ............................ if argObj_r.className = #Training then / else
+  [595] getparam 8 .............................. <argObj_r>
+  [597] pushsymb 1016 ........................... <#neededIDs>
+  [600] pusharglist 2 ........................... <argObj_r, #neededIDs>
+  [602] objcall 156 ............................. <argObj_r.neededIDs.count>
+  [605] jmpifz [648] ............................ if argObj_r.neededIDs.count then
+  [608] getglobal 23 ............................ <gRock>
+  [610] getobjprop 82 ........................... <gRock.m_classManager>
+  [613] getparam 8 .............................. <argObj_r>
+  [615] pushsymb 1016 ........................... <#neededIDs>
+  [618] pushint8 1 .............................. <1>
+  [621] pusharglist 3 ........................... <argObj_r, #neededIDs, 1>
+  [623] objcall 113 ............................. <argObj_r.neededIDs[1]>
+  [626] pusharglist 2 ........................... <gRock.m_classManager, argObj_r.neededIDs[1]>
+  [628] objcall 238 ............................. <gRock.m_classManager.getObjByID(argObj_r.neededIDs[1])>
+  [631] setlocal 40 ............................. obj_r = gRock.m_classManager.getObjByID(argObj_r.neededIDs[1])
+  [633] getlocal 16 ............................. <strList>
+  [635] pushint8 2 .............................. <2>
+  [638] getlocal 40 ............................. <obj_r>
+  [640] getobjprop 57 ........................... <obj_r.name>
+  [643] pusharglistnoret 3 ...................... <strList, 2, obj_r.name>
+  [645] objcall 353 ............................. strList[2] = obj_r.name
+  [648] jmp [705]
+  [651] getparam 8 .............................. <argObj_r>
+  [653] getobjprop 224 .......................... <argObj_r.className>
+  [656] pushsymb 817 ............................ <#AudienceExposure>
+  [659] eq ...................................... <argObj_r.className = #AudienceExposure>
+  [660] jmpifz [666] ............................ if argObj_r.className = #AudienceExposure then / else
+  [663] jmp [705]
+  [666] getparam 8 .............................. <argObj_r>
+  [668] getobjprop 224 .......................... <argObj_r.className>
+  [671] pushsymb 822 ............................ <#ExpoRotation>
+  [674] eq ...................................... <argObj_r.className = #ExpoRotation>
+  [675] jmpifz [681] ............................ if argObj_r.className = #ExpoRotation then / else
+  [678] jmp [705]
+  [681] getparam 8 .............................. <argObj_r>
+  [683] getobjprop 224 .......................... <argObj_r.className>
+  [686] pushsymb 215 ............................ <#Event>
+  [689] eq ...................................... <argObj_r.className = #Event>
+  [690] jmpifz [705] ............................ if argObj_r.className = #Event then
+  [693] pushcons 104 ............................ <"Unknown roll">
+  [695] getparam 8 .............................. <argObj_r>
+  [697] getobjprop 224 .......................... <argObj_r.className>
+  [700] pusharglistnoret 2 ...................... <"Unknown roll", argObj_r.className>
+  [702] extcall 122 ............................. pott("Unknown roll", argObj_r.className)
+  [705] getlocal 16 ............................. <strList>
+  [707] pusharglistnoret 1 ...................... <strList>
+  [709] extcall 69 .............................. return strList
+  [712] ret
+end
+
+on activate me, argIsTRUE
+  [  0] getparam 8 .............................. <argIsTRUE>
+  [  2] setprop 1958 ............................ m_active = argIsTRUE
+  [  5] getprop 1958 ............................ <m_active>
+  [  8] pushzero ................................ <0>
+  [  9] eq ...................................... <m_active = 0>
+  [ 10] jmpifz [ 31] ............................ if m_active = 0 then
+  [ 13] getparam 0 .............................. <me>
+  [ 15] pushzero ................................ <0>
+  [ 16] pusharglistnoret 2 ...................... <me, 0>
+  [ 18] objcall 1263 ............................ me.show(0)
+  [ 21] pushzero ................................ <0>
+  [ 22] setprop 3125 ............................ m_waitUntil = 0
+  [ 25] pusharglist 0 ........................... <[]>
+  [ 27] pushlist ................................ <[]>
+  [ 28] setprop 3124 ............................ m_nowOverXList = []
+  [ 31] ret
+end
+
+on Report me, argObj, argWhat, argOptions, argPlannedItem
+  [  0] getparam 16 ............................. <argWhat>
+  [  2] pushsymb 2956 ........................... <#enter>
+  [  5] eq ...................................... <argWhat = #enter>
+  [  6] jmpifz [ 43] ............................ if argWhat = #enter then / else
+  [  9] getprop 1958 ............................ <m_active>
+  [ 12] not ..................................... <not m_active>
+  [ 13] jmpifz [ 17] ............................ if not m_active then
+  [ 16] ret ..................................... exit
+  [ 17] getprop 3124 ............................ <m_nowOverXList>
+  [ 20] getparam 32 ............................. <argPlannedItem>
+  [ 22] pusharglistnoret 2 ...................... <m_nowOverXList, argPlannedItem>
+  [ 24] objcall 229 ............................. m_nowOverXList.add(argPlannedItem)
+  [ 27] getmovieprop 281 ........................ <the milliSeconds>
+  [ 30] pushcons 112 ............................ <0.59999999999999998>
+  [ 32] pushint8 1000 ........................... <1000>
+  [ 35] mul ..................................... <0.59999999999999998 * 1000>
+  [ 36] add ..................................... <the milliSeconds + (0.59999999999999998 * 1000)>
+  [ 37] setprop 3125 ............................ m_waitUntil = the milliSeconds + (0.59999999999999998 * 1000)
+  [ 40] jmp [109]
+  [ 43] getparam 16 ............................. <argWhat>
+  [ 45] pushsymb 3084 ........................... <#Leave>
+  [ 48] eq ...................................... <argWhat = #Leave>
+  [ 49] jmpifz [109] ............................ if argWhat = #Leave then
+  [ 52] getprop 1958 ............................ <m_active>
+  [ 55] not ..................................... <not m_active>
+  [ 56] jmpifz [ 60] ............................ if not m_active then
+  [ 59] ret ..................................... exit
+  [ 60] getprop 3124 ............................ <m_nowOverXList>
+  [ 63] getparam 32 ............................. <argPlannedItem>
+  [ 65] pusharglistnoret 2 ...................... <m_nowOverXList, argPlannedItem>
+  [ 67] objcall 335 ............................. m_nowOverXList.deleteOne(argPlannedItem)
+  [ 70] getprop 3124 ............................ <m_nowOverXList>
+  [ 73] getobjprop 156 .......................... <m_nowOverXList.count>
+  [ 76] pushzero ................................ <0>
+  [ 77] gt ...................................... <m_nowOverXList.count > 0>
+  [ 78] jmpifz [ 97] ............................ if m_nowOverXList.count > 0 then / else
+  [ 81] getmovieprop 281 ........................ <the milliSeconds>
+  [ 84] pushcons 120 ............................ <0.59999999999999998>
+  [ 86] pushint8 1000 ........................... <1000>
+  [ 89] mul ..................................... <0.59999999999999998 * 1000>
+  [ 90] add ..................................... <the milliSeconds + (0.59999999999999998 * 1000)>
+  [ 91] setprop 3125 ............................ m_waitUntil = the milliSeconds + (0.59999999999999998 * 1000)
+  [ 94] jmp [101]
+  [ 97] pushzero ................................ <0>
+  [ 98] setprop 3125 ............................ m_waitUntil = 0
+  [101] getparam 0 .............................. <me>
+  [103] pushzero ................................ <0>
+  [104] pusharglistnoret 2 ...................... <me, 0>
+  [106] objcall 1263 ............................ me.show(0)
+  [109] ret
+end
+
+on timeTick me
+  [  0] getprop 3125 ............................ <m_waitUntil>
+  [  3] pushzero ................................ <0>
+  [  4] gt ...................................... <m_waitUntil > 0>
+  [  5] getmovieprop 281 ........................ <the milliSeconds>
+  [  8] getprop 3125 ............................ <m_waitUntil>
+  [ 11] gt ...................................... <the milliSeconds > m_waitUntil>
+  [ 12] and ..................................... <(m_waitUntil > 0) and (the milliSeconds > m_waitUntil)>
+  [ 13] jmpifz [ 41] ............................ if (m_waitUntil > 0) and (the milliSeconds > m_waitUntil) then
+  [ 16] pushzero ................................ <0>
+  [ 17] setprop 3125 ............................ m_waitUntil = 0
+  [ 20] getparam 0 .............................. <me>
+  [ 22] getprop 3124 ............................ <m_nowOverXList>
+  [ 25] getprop 3124 ............................ <m_nowOverXList>
+  [ 28] getobjprop 156 .......................... <m_nowOverXList.count>
+  [ 31] pusharglist 2 ........................... <m_nowOverXList, m_nowOverXList.count>
+  [ 33] objcall 119 ............................. <m_nowOverXList[m_nowOverXList.count]>
+  [ 36] pusharglistnoret 2 ...................... <me, m_nowOverXList[m_nowOverXList.count]>
+  [ 38] objcall 1263 ............................ me.show(m_nowOverXList[m_nowOverXList.count])
+  [ 41] ret
+end
+
+on show me, argObj
+  [  0] getparam 8 .............................. <argObj>
+  [  2] pusharglist 1 ........................... <argObj>
+  [  4] extcall 8 ............................... <objectp(argObj)>
+  [  6] jmpifz [262] ............................ if objectp(argObj) then / else
+  [  9] getparam 0 .............................. <me>
+  [ 11] getparam 8 .............................. <argObj>
+  [ 13] getobjprop 3003 ......................... <argObj.m_event_r>
+  [ 16] getparam 8 .............................. <argObj>
+  [ 18] getobjprop 3061 ......................... <argObj.m_format_r>
+  [ 21] pusharglist 3 ........................... <me, argObj.m_event_r, argObj.m_format_r>
+  [ 23] objcall 3121 ............................ <me.getInfoStr(argObj.m_event_r, argObj.m_format_r)>
+  [ 26] setlocal 0 .............................. strList = me.getInfoStr(argObj.m_event_r, argObj.m_format_r)
+  [ 28] getprop 3126 ............................ <m_dlgRoll>
+  [ 31] pusharglist 1 ........................... <m_dlgRoll>
+  [ 33] extcall 8 ............................... <objectp(m_dlgRoll)>
+  [ 35] jmpifz [ 48] ............................ if objectp(m_dlgRoll) then
+  [ 38] getprop 3126 ............................ <m_dlgRoll>
+  [ 41] pusharglist 1 ........................... <m_dlgRoll>
+  [ 43] objcall 31 .............................. <m_dlgRoll.kill()>
+  [ 45] setprop 3126 ............................ m_dlgRoll = m_dlgRoll.kill()
+  [ 48] pushcons 128 ............................ <"Dialog">
+  [ 50] pusharglist 1 ........................... <"Dialog">
+  [ 52] extcall 10 .............................. <script("Dialog")>
+  [ 54] pushsymb 1681 ........................... <#AttachImageToMember>
+  [ 57] pushsymb 1682 ........................... <#temp>
+  [ 60] pushsymb 1683 ........................... <#StartSpriteNum>
+  [ 63] getprop 3089 ............................ <m_SP>
+  [ 66] getobjprop 3133 ......................... <m_SP.spriteNum>
+  [ 69] pushsymb 1684 ........................... <#NumSprites>
+  [ 72] pushint8 1 .............................. <1>
+  [ 75] pusharglist 6 ........................... <[#AttachImageToMember: #temp, #StartSpriteNum: m_SP.spriteNum, #NumSprites: 1]>
+  [ 77] pushproplist ............................ <[#AttachImageToMember: #temp, #StartSpriteNum: m_SP.spriteNum, #NumSprites: 1]>
+  [ 78] pusharglist 2 ........................... <script("Dialog"), [#AttachImageToMember: #temp, #StartSpriteNum: m_SP.spriteNum, #NumSprites: 1]>
+  [ 80] objcall 11 .............................. <script("Dialog").new([#AttachImageToMember: #temp, #StartSpriteNum: m_SP.spriteNum, #NumSprites: 1])>
+  [ 82] setprop 3126 ............................ m_dlgRoll = script("Dialog").new([#AttachImageToMember: #temp, #StartSpriteNum: m_SP.spriteNum, #NumSprites: 1])
+  [ 85] getprop 3126 ............................ <m_dlgRoll>
+  [ 88] pushcons 136 ............................ <"DlgChartRollOverData">
+  [ 90] pusharglist 1 ........................... <"DlgChartRollOverData">
+  [ 92] extcall 56 .............................. <member("DlgChartRollOverData")>
+  [ 95] getobjprop 414 .......................... <member("DlgChartRollOverData").text>
+  [ 98] getobjprop 116 .......................... <member("DlgChartRollOverData").text.value>
+  [101] pusharglistnoret 2 ...................... <m_dlgRoll, member("DlgChartRollOverData").text.value>
+  [103] objcall 2092 ............................ m_dlgRoll.rawCreate(member("DlgChartRollOverData").text.value)
+  [106] getlocal 0 .............................. <strList>
+  [108] getobjprop 156 .......................... <strList.count>
+  [111] pushint8 1 .............................. <1>
+  [114] add ..................................... <strList.count + 1>
+  [115] setlocal 8
+  [117] getlocal 8
+  [119] pushint8 3 .............................. <3>
+  [122] lteq
+  [123] jmpifz [145] ............................ repeat with n = strList.count + 1 to 3
+  [126] getlocal 0 .............................. <strList>
+  [128] pushcons 144 ............................ <EMPTY>
+  [130] pusharglistnoret 2 ...................... <strList, EMPTY>
+  [132] objcall 229 ............................. strList.add(EMPTY)
+  [135] pushint8 1
+  [138] getlocal 8
+  [140] add
+  [141] setlocal 8
+  [143] endrepeat [117]
+  [145] getlocal 0 .............................. <strList>
+  [147] pushint8 1 .............................. <1>
+  [150] pusharglist 2 ........................... <strList, 1>
+  [152] objcall 119 ............................. <strList[1]>
+  [155] getlocal 0 .............................. <strList>
+  [157] pushint8 2 .............................. <2>
+  [160] pusharglist 2 ........................... <strList, 2>
+  [162] objcall 119 ............................. <strList[2]>
+  [165] getlocal 0 .............................. <strList>
+  [167] pushint8 3 .............................. <3>
+  [170] pusharglist 2 ........................... <strList, 3>
+  [172] objcall 119 ............................. <strList[3]>
+  [175] pusharglist 3 ........................... <[strList[1], strList[2], strList[3]]>
+  [177] pushlist ................................ <[strList[1], strList[2], strList[3]]>
+  [178] pushcons 152 ............................ <"AgendaRollFormatting">
+  [180] pushsymb 1840 ........................... <#shadow>
+  [183] pushint8 1 .............................. <1>
+  [186] pusharglist 2 ........................... <[#shadow: 1]>
+  [188] pushproplist ............................ <[#shadow: 1]>
+  [189] pusharglist 3 ........................... <[strList[1], strList[2], strList[3]], "AgendaRollFormatting", [#shadow: 1]>
+  [191] extcall 1839 ............................ <rFormatText([strList[1], strList[2], strList[3]], "AgendaRollFormatting", [#shadow: 1])>
+  [194] setlocal 16 ............................. memb = rFormatText([strList[1], strList[2], strList[3]], "AgendaRollFormatting", [#shadow: 1])
+  [196] getprop 3126 ............................ <m_dlgRoll>
+  [199] pushsymb 358 ............................ <#Info>
+  [202] pusharglist 2 ........................... <m_dlgRoll, #Info>
+  [204] objcall 2093 ............................ <m_dlgRoll.getItem(#Info)>
+  [207] setlocal 24 ............................. itemObj = m_dlgRoll.getItem(#Info)
+  [209] getlocal 24 ............................. <itemObj>
+  [211] pushsymb 880 ............................ <#Pic>
+  [214] getlocal 16 ............................. <memb>
+  [216] pusharglistnoret 3 ...................... <itemObj, #Pic, memb>
+  [218] objcall 494 ............................. itemObj.setOneProp(#Pic, memb)
+  [221] getprop 3089 ............................ <m_SP>
+  [224] pushzero ................................ <0>
+  [225] setobjprop 2972 ......................... m_SP.stretch = 0
+  [228] getprop 3126 ............................ <m_dlgRoll>
+  [231] getmovieprop 3083 ....................... <the mouseLoc>
+  [234] pushint8 15 ............................. <15>
+  [237] pushint8 20 ............................. <20>
+  [240] inv ..................................... <-20>
+  [241] pusharglist 2 ........................... <15, -20>
+  [243] extcall 269 ............................. <point(15, -20)>
+  [246] add ..................................... <the mouseLoc + point(15, -20)>
+  [247] pusharglistnoret 2 ...................... <m_dlgRoll, the mouseLoc + point(15, -20)>
+  [249] objcall 1694 ............................ m_dlgRoll.renderAtLoc(the mouseLoc + point(15, -20))
+  [252] getprop 3089 ............................ <m_SP>
+  [255] pushzero ................................ <0>
+  [256] setobjprop 1679 ......................... m_SP.ink = 0
+  [259] jmp [304]
+  [262] getprop 3126 ............................ <m_dlgRoll>
+  [265] pusharglist 1 ........................... <m_dlgRoll>
+  [267] extcall 8 ............................... <objectp(m_dlgRoll)>
+  [269] jmpifz [282] ............................ if objectp(m_dlgRoll) then
+  [272] getprop 3126 ............................ <m_dlgRoll>
+  [275] pusharglist 1 ........................... <m_dlgRoll>
+  [277] objcall 31 .............................. <m_dlgRoll.kill()>
+  [279] setprop 3126 ............................ m_dlgRoll = m_dlgRoll.kill()
+  [282] getprop 3089 ............................ <m_SP>
+  [285] pushcons 160 ............................ <"Dummy">
+  [287] pusharglist 1 ........................... <"Dummy">
+  [289] extcall 56 .............................. <member("Dummy")>
+  [292] setobjprop 56 ........................... m_SP.member = member("Dummy")
+  [295] getprop 3089 ............................ <m_SP>
+  [298] pushint8 36 ............................. <36>
+  [301] setobjprop 1679 ......................... m_SP.ink = 36
+  [304] ret
+end

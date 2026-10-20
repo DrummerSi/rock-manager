@@ -1,0 +1,26 @@
+on xExportTranslation
+  script("ExportTranslationScript").new()
+end
+
+on xExportAll argLanguage
+  if voidp(argLanguage) then
+    argLanguage = "Svenska"
+  end if
+  tmpBasePath = "\\resurs\Monsterland\_Projects\Rockmanager\"
+  m_translationPath = tmpBasePath & "Translation\"
+  m_dataPath = tmpBasePath & "Data\"
+  m_editClassMaster = script("ImportSwitchesScript").new(m_dataPath)
+  gClassManager = script("ClassManagerScript").new(m_dataPath)
+  gClassManager.instantiate(VOID, ["*"])
+  m_languageManager = script("LanguageScript").new(m_dataPath, argLanguage)
+  m_languageManager.setClassManager(gClassManager)
+  m_languageManager.readMultiReplaceStrings(m_translationPath, argLanguage)
+  allExporter = script("AllExportScript").new(m_dataPath, m_editClassMaster, gClassManager)
+  tmpTargetPath = tmpBasePath & "Translation\" & argLanguage & "\"
+  allExporter.generateDataFiles(tmpTargetPath)
+  Files = getFilesInFolder(tmpTargetPath)
+  Files = wildCardSearch("Data*.txt", Files)
+  repeat with tmpFile in Files
+    convDataFileToVListFile(tmpTargetPath & tmpFile)
+  end repeat
+end

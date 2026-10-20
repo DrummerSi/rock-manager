@@ -1,0 +1,188 @@
+property ancestor, child, className, belongsTo, _killed, IntroText, SucceedText, FailText, StartValues, SucceedCriteria, FailCriteria, CriteriaText, status, StartTriggers, Vars, AvailableMusicians, NeverAvailableMusicians, AvailablePlaces, NeverAvailablePlaces, UsedUpIDs, AvailableSongs, StartMoney, NextMissions, autoLoad, StartDateAsList, MaxNumMusicians
+global gRock
+
+on new me, argChild, argBelongsTo
+  if objectp(argChild) then
+    child = argChild
+  else
+    child = me
+  end if
+  belongsTo = argBelongsTo
+  ancestor = script("ClassConcreteScript").new(child)
+  className = #Mission
+  IntroText = EMPTY
+  SucceedText = EMPTY
+  FailText = EMPTY
+  StartValues = []
+  SucceedCriteria = []
+  FailCriteria = []
+  CriteriaText = EMPTY
+  status = #NotStarted
+  StartTriggers = []
+  Vars = [:]
+  AvailableMusicians = []
+  NeverAvailableMusicians = []
+  AvailablePlaces = []
+  NeverAvailablePlaces = []
+  UsedUpIDs = []
+  AvailableSongs = []
+  StartMoney = 0
+  NextMissions = [:]
+  autoLoad = EMPTY
+  StartDateAsList = [:]
+  MaxNumMusicians = 0
+  return me
+end
+
+on kill me
+  _killed = 1
+  if objectp(gRock) then
+    gRock.m_gameTimer.deleteObject(me)
+  end if
+  if objectp(ancestor) then
+    ancestor = ancestor.kill()
+  end if
+  child = 0
+  belongsTo = 0
+  return 0
+end
+
+on init me
+end
+
+on start me
+  StartDateAsList = gRock.m_date.getDateAsList()
+  gRock.m_date.setDayZeroDate(StartDateAsList)
+  Vars[#StartDate] = gRock.m_date.getDateInt()
+  Vars[#date] = Vars[#StartDate]
+  Vars[#TotalTime] = 0
+  Vars[#Dates] = [:]
+  pott("Start new mission", ancestor.ID, gRock.m_date.getDateInt())
+  me.activate(1)
+  repeat with tmpID in StartTriggers
+    obj = gRock.m_classManager.getObjByIDAndClass(tmpID, #Trigger)
+    if objectp(obj) then
+      obj.activate(1)
+    end if
+  end repeat
+  startEvent_r = gRock.m_classManager.createObj(#DivEvent)
+  startEvent_r.ID = gRock.m_classManager.genUniqueID(startEvent_r)
+  startEvent_r.AgendaFormat = #AgFmStartMission
+  startEvent_r.visible = 1
+  startEvent_r.setDates(Vars[#StartDate], 1)
+  places_r = gRock.m_classManager.getObjsWithBaseClass(#place)
+  if AvailablePlaces.count > 0 then
+    repeat with place_r in places_r
+      if AvailablePlaces.getPos(place_r.ID) then
+        place_r.makeAvailable(1)
+        next repeat
+      end if
+      place_r.makeAvailable(0)
+    end repeat
+  end if
+end
+
+on activate me, argIsTRUE
+  if not objectp(gRock) then
+    exit
+  end if
+  if (argIsTRUE = 1) or voidp(argIsTRUE) then
+    pott("Mission activated", ancestor.ID)
+    gRock.m_context.setFocus(#Mission, me)
+    if me.getIsMissionOver() then
+      pott("This mission is over")
+    else
+      status = #Active
+    end if
+    gRock.m_gameTimer.addObject(me)
+  else
+    status = #InActive
+    gRock.m_gameTimer.deleteObject(me)
+  end if
+end
+
+on timeTick me
+  obj = gRock.m_context.getFocus(#album)
+  if objectp(obj) then
+    Vars[#soldAlbums] = obj.Sales
+  end if
+  Vars[#date] = gRock.m_date.getDateInt()
+  Vars[#TotalTime] = Vars[#date] - Vars[#StartDate]
+end
+
+on succeeded me
+  if me.getIsMissionOver() then
+    exit
+  end if
+  status = #succeeded
+  gRock.m_eventCardsManager.tryNewShowEventCard(VOID, [#DlgScript: #MissionOutro, #prio: 1])
+end
+
+on failed me, argReason
+  if me.getIsMissionOver() then
+    exit
+  end if
+  status = #failed
+  gRock.m_eventCardsManager.tryNewShowEventCard(VOID, [#DlgScript: #MissionOutro, #prio: 1, #MissionFailedReason: argReason])
+end
+
+on getIsMissionOver me
+  return (status = #succeeded) or (status = #failed)
+end
+
+on criteriumFulfilled me, argTrigger
+  tmpID = argTrigger.ID
+  if SucceedCriteria.getPos(tmpID) then
+    SucceedCriteria.deleteOne(tmpID)
+    if SucceedCriteria.count = 0 then
+      me.succeeded()
+    end if
+  else
+    if FailCriteria.getPos(tmpID) then
+      FailCriteria.deleteOne(tmpID)
+      if FailCriteria.count = 0 then
+        me.failed()
+      end if
+    end if
+  end if
+end
+
+on postponeDates me, argNumDays
+  repeat with n = 1 to Vars.count
+    tmp = Vars[n]
+    if integerp(tmp) or floatp(tmp) then
+      Vars[n] = tmp + argNumDays
+    end if
+  end repeat
+end
+
+on getAlbumsSold me
+  tot = 0
+  albums_r = gRock.m_classManager.getObjsOfClass(#album)
+  repeat with album_r in albums_r
+    tot = tot + album_r.Sales
+  end repeat
+  return tot
+end
+
+on getIsDiscarded me, argID
+  return UsedUpIDs.getPos(argID) > 0
+end
+
+on getNumDaysSinceStart me
+  return gRock.m_date.getDateInt()
+end
+
+on save me
+  return [#Vars: saveSpecial(Vars, #ID)]
+end
+
+on load me, argList
+  if voidp(argList) then
+    exit
+  end if
+  tmp = argList[#Vars]
+  if listp(tmp) then
+    Vars = loadSpecial(tmp)
+  end if
+end

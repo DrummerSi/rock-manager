@@ -1,0 +1,57 @@
+property outMin, outMax, outDiff, outStep, inMin, inMax, inDiff
+
+on new me, argOutMin, argOutMax, argOutStep, argInMin, argInMax
+  if voidp(argInMin) then
+    argInMin = 0
+  end if
+  if voidp(argInMax) then
+    argInMax = 1
+  end if
+  me.setParams(argOutMin, argOutMax, argOutStep, argInMin, argInMax)
+  return me
+end
+
+on kill me
+  return 0
+end
+
+on setParams me, argOutMin, argOutMax, argOutStep, argInMin, argInMax
+  if not voidp(argInMin) then
+    inMin = argInMin
+  end if
+  if not voidp(argInMax) then
+    inMax = argInMax
+  end if
+  inDiff = float(inMax - inMin)
+  if not voidp(argOutStep) then
+    outStep = argOutStep
+  end if
+  if not voidp(argOutMin) then
+    outMin = argOutMin
+  end if
+  if not voidp(argOutMax) then
+    outMax = argOutMax
+  end if
+  outDiff = outMax - outMin
+end
+
+on conv me, argVal
+  argVal = (argVal - inMin) / inDiff
+  if argVal < 0 then
+    argVal = 0
+  end if
+  if argVal > 1 then
+    argVal = 1
+  end if
+  argVal = argVal * outDiff
+  if outStep then
+    tmp = argVal / float(outStep)
+    tmp = integer(tmp)
+    tmp = tmp * outStep
+  end if
+  tmp = argVal + outMin
+  if integerp(outMin) then
+    tmp = integer(tmp)
+  end if
+  return tmp
+end

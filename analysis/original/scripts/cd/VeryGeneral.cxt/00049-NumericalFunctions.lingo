@@ -1,0 +1,265 @@
+on getDoubleGamma argX, argFact
+  if argX > 0.5 then
+    return 0.5 + (getGamma((argX - 0.5) * 2, 2.0 - argFact) / 2)
+  end if
+  return getGamma(argX * 2, argFact) / 2
+end
+
+on getGamma argX, argFact
+  if argFact = 1 then
+    return argX
+  else
+    if argFact > 1 then
+      argFact = 2.0 - argFact
+      argX = 1 - argX
+      tmp = (1.0 / argFact) - argFact
+      return ((1.0 / ((argX * tmp) + argFact)) - argFact) / tmp
+    else
+      tmp = (1.0 / argFact) - argFact
+      return 1 - (((1.0 / ((argX * tmp) + argFact)) - argFact) / tmp)
+    end if
+  end if
+end
+
+on funcNeverReach1 argVal, argFact, argInverse
+  if voidp(argFact) then
+    argFact = 0.40000000000000002
+  end if
+  if argInverse = #Inv then
+    if argVal < 1 then
+      return (argFact / (1.0 - argVal)) - argFact
+    end if
+    put "funcNeverReach1 (Inverse) with argVal >= 1!"
+    return 0
+  end if
+  if (argVal + argFact) > 0 then
+    return 1.0 - (argFact / (argVal + argFact))
+  end if
+  put "funcNeverReach1"
+  return 0
+end
+
+on getFloatInfo argFloat
+  sign = getSign(argFloat)
+  argFloat = abs(argFloat)
+  exponent = log(argFloat) / log(10)
+  exponent = realInteger(exponent)
+  mantissa = argFloat / power(10, exponent)
+  return [#sign: sign, #mantissa: mantissa, #exponent: exponent]
+end
+
+on normalizeVector argDiff, argToVal
+  tmpHypo = calcHypo(argDiff)
+  if tmpHypo = 0 then
+    return point(0, 0)
+  else
+    return argToVal * argDiff / tmpHypo
+  end if
+end
+
+on calcHypo argLoc1, argLoc2
+  diff = -(argLoc1 - argLoc2)
+  return sqrt((diff[1] * diff[1]) + (diff[2] * diff[2]))
+  if voidp(argLoc2) then
+    tmpDiff = argLoc1
+  else
+    tmpDiff = argLoc2 - argLoc1
+  end if
+  return sqrt((getAt(tmpDiff, 1) * getAt(tmpDiff, 1)) + (getAt(tmpDiff, 2) * getAt(tmpDiff, 2)))
+end
+
+on convAngle argDir, argMaxDirs, argMaxDirs2
+  return argMaxDirs2 * argDir / argMaxDirs
+end
+
+on calcDirection2 argVector, argDegreesPerCircle
+  tmp = atan(argVector[1], argVector[2])
+  if tmp <= 0 then
+    tmp = (2 * PI) + tmp
+  end if
+  return tmp
+end
+
+on calcDirection argStart, argEnd, argDegreesPerCircle
+  if not listp(argEnd) then
+    argDegreesPerCircle = argEnd
+    diffX = argStart[1]
+    diffY = argStart[2]
+  else
+    diffX = getAt(argEnd, 1) - getAt(argStart, 1)
+    diffY = getAt(argStart, 2) - getAt(argEnd, 2)
+  end if
+  if diffY = 0 then
+    if diffX < 0 then
+      tempDirection = 3.0 * PI / 2
+    else
+      tempDirection = PI / 2
+    end if
+  else
+    tempDirection = atan(diffX / float(diffY))
+    if diffX > 0 then
+      if diffY > 0 then
+        nothing()
+      else
+        tempDirection = tempDirection + PI
+      end if
+    else
+      if diffY > 0 then
+        tempDirection = tempDirection + (2.0 * PI)
+      else
+        tempDirection = tempDirection + PI
+      end if
+    end if
+  end if
+  if voidp(argDegreesPerCircle) then
+    argDegreesPerCircle = 360
+  else
+    if argDegreesPerCircle = #radians then
+      return tempDirection
+    end if
+  end if
+  tempDirection = integer(argDegreesPerCircle * tempDirection / PI / 2)
+  return tempDirection
+end
+
+on roundToNearest argVal, argStep
+  if voidp(argStep) then
+    argStep = 1
+  end if
+  return integer(float(argVal) / argStep) * argStep
+end
+
+on realInteger argVal
+  tmpInt = integer(argVal)
+  tmpFloat = tmpInt - argVal
+  if argVal < 0 then
+    if tmpFloat < 0.0 then
+      tmpInt = tmpInt + 1
+    end if
+  else
+    if tmpFloat > 0.0 then
+      tmpInt = tmpInt - 1
+    end if
+  end if
+  return tmpInt
+end
+
+on getSign argVal
+  if argVal = 0 then
+    return 0
+  else
+    if argVal < 0 then
+      return -1
+    end if
+  end if
+  return 1
+end
+
+on getSign2 argVal
+  if argVal = 0 then
+    return 0
+  end if
+  return abs(argVal) / argVal
+end
+
+on bitwise argTerm1, argOp, argTerm2
+  if integerp(argTerm1) then
+    argTerm1 = convItoBits(argTerm1)
+  end if
+  if integerp(argTerm2) then
+    argTerm2 = convItoBits(argTerm2)
+  end if
+  if argTerm1.length > argTerm2.length then
+    zeroes = EMPTY
+    repeat with n = argTerm2.length to argTerm1.length - 1
+      zeroes = zeroes & "0"
+    end repeat
+    argTerm2 = zeroes & argTerm2
+  else
+    if argTerm2.length > argTerm1.length then
+      zeroes = EMPTY
+      repeat with n = argTerm1.length to argTerm2.length - 1
+        zeroes = zeroes & "0"
+      end repeat
+      argTerm1 = zeroes & argTerm1
+    end if
+  end if
+  result = EMPTY
+  if argOp = "&" then
+    repeat with n = 1 to argTerm1.length
+      if (argTerm1.char[n] = "1") and (argTerm2.char[n] = "1") then
+        result = result & "1"
+        next repeat
+      end if
+      result = result & "0"
+    end repeat
+  else
+    if argOp = "|" then
+      repeat with n = 1 to argTerm1.length
+        if (argTerm1.char[n] = "1") or (argTerm2.char[n] = "1") then
+          result = result & "1"
+          next repeat
+        end if
+        result = result & "0"
+      end repeat
+    end if
+  end if
+  return convBitStoI(result)
+end
+
+on drawFunction argFuncInfo, argRangeX, argRangeY, argSize, argOutput
+  if voidp(argFuncInfo) then
+    argFuncInfo = "funcNeverReach1(insertXHere, 0.7)"
+  end if
+  if voidp(argRangeX) then
+    argRangeX = [0, 4]
+  end if
+  if voidp(argRangeY) then
+    argRangeY = [0, 1]
+  end if
+  if voidp(argSize) then
+    argSize = point(400, 100)
+  end if
+  if voidp(argOutput) then
+    argOutput = member("DrawFuncOut")
+  end if
+  img = image(argSize[1], argSize[2], 8)
+  if stringp(argFuncInfo) then
+    insertXPos = offset("insertXHere", argFuncInfo)
+    put " " into argFuncInfo.char[insertXPos..insertXPos + length("insertXHere") - 1]
+  end if
+  StartX = argRangeX[1]
+  totX = float(argRangeX[2]) - argRangeX[1]
+  totY = float(argRangeY[2]) - argRangeY[1]
+  stepX = float(totX) / float(argSize[1])
+  stepY = float(totY) / float(argSize[2])
+  repeat with n = 1 to argSize[1]
+    X = StartX + (n * stepX)
+    if listp(argFuncInfo) then
+      Y = call(argFuncInfo[1], argFuncInfo[2], X, argFuncInfo[3])
+    else
+      if insertXPos > 0 then
+        str = argFuncInfo
+        put string(X) into insertXPos.char[insertXPos]
+        do(str)
+        Y = the result
+      end if
+    end if
+    visualY = (Y - argRangeY[1]) / stepY
+    img.setPixel(n, argSize[2] - visualY, rgb(0, 0, 0))
+  end repeat
+  if ilk(argOutput) = #member then
+    argOutput.image = img
+  end if
+end
+
+on makeRandomBetween argMin, argMax
+  tmpDiff = argMax - argMin
+  if floatp(tmpDiff) then
+    rnd = float(random(the maxinteger) - 1) / (the maxinteger - 1)
+    rnd = rnd * tmpDiff
+  else
+    rnd = random(tmpDiff + 1) - 1
+  end if
+  return argMin + rnd
+end

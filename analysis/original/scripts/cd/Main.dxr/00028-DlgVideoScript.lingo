@@ -1,0 +1,139 @@
+property ancestor, m_place_r, m_videos_r, m_video_r, m_eventToBook_r
+global gDir, gRock
+
+on new me, argOptions
+  ID = argOptions[#ID]
+  m_place_r = gRock.m_classManager.getObjByIDAndClass(ID, #place)
+  argOptions.setaProp(#ReportTo, me)
+  argOptions.setaProp(#child, me)
+  dialog_r = gRock.m_classManager.getObjByIDAndClass(#DlgVideo, #Dialog)
+  dialog_r.dataMemberName = "DlgVideoData"
+  argOptions[#DlgInfoObj] = dialog_r
+  ancestor = script("DlgRockAncestorScript").new(argOptions)
+  m_videos_r = gRock.m_classManager.getObjsOfClass(#VideoConcept)
+  itemObj = ancestor.m_objDlg.getItemByPath([#InfoFrame, #Head, #icon])
+  itemObj.setOneProp(#Pic, "icon_film02")
+  itemObj = ancestor.m_objDlg.getItemByPath([#InfoFrame, #Head, #Info])
+  itemObj.setOneProp(#editData, rGetStr(#szidInfo))
+  ancestor.m_objDlg.recalc(#DontPaint)
+  if m_videos_r.count then
+    me.setVideo(1)
+  end if
+  ancestor.render()
+  return me
+end
+
+on kill me
+  m_eventToBook_r = 0
+  ancestor.kill()
+  return 0
+end
+
+on Report me, argObj, argWhat
+  if argWhat = #BookedOK then
+    gRock.m_player.transactMoney(-m_video_r.price, [#video])
+    me.kill()
+  end if
+end
+
+on mouse me, argObj, argWhat, argOption
+  if objectp(argOption) then
+    if argWhat = #click then
+      ID = argOption.getOneProp(#ID)
+      IDStr = string(ID)
+      if (ID = #ArrowLeft) or (ID = #ArrowRight) then
+        if ID = #ArrowRight then
+          me.setVideo(1)
+        else
+          if ID = #ArrowLeft then
+            me.setVideo(-1)
+          end if
+        end if
+        exit
+      else
+        if ID = #ButtonOK then
+          cheat = rOKCheatPass()
+          ecardID = 0
+          album_r = gRock.m_context.getFocus(#album)
+          if ecardID = 0 then
+            if not objectp(album_r) then
+              ecardID = #ECOCVideoNoAlbum
+            else
+              if album_r.SignedToRecord = #none then
+                ecardID = #ECOCVideoNoAlbum
+              end if
+            end if
+          end if
+          if ecardID = 0 then
+            if album_r.video <> #none then
+              ecardID = #ECOCVideoTwo
+            end if
+          end if
+          if ecardID = 0 then
+            if not gRock.m_player.hasThisMoney(m_video_r.price) then
+              rWarnMoney()
+              exit
+            end if
+          end if
+          if ecardID = 0 then
+            objs = gRock.m_classManager.getObjsOfClass(#VideoProduction)
+            if listp(objs) then
+              repeat with obj_r in objs
+                if obj_r.album = album_r.ID then
+                  ecardID = #ECOCVideoTwo
+                end if
+              end repeat
+            end if
+          end if
+          if not cheat and (ecardID <> 0) then
+            if symbolp(ecardID) then
+              gRock.m_eventCardsManager.tryNewShowEventCard(ecardID, [#prio: 0])
+            end if
+            exit
+          end if
+          m_eventToBook_r = gRock.m_classManager.createObj(#VideoProduction)
+          newID = gRock.m_classManager.genUniqueID(m_eventToBook_r)
+          rsetProp(m_eventToBook_r, #ID, newID)
+          lst = rgetProp(m_eventToBook_r, #neededIDs)
+          lst.add(#Band)
+          m_eventToBook_r.video = m_video_r.ID
+          if objectp(album_r) then
+            m_eventToBook_r.album = album_r.ID
+          end if
+          m_eventToBook_r.setDates(4 + gRock.m_date.getDateInt(), m_video_r.ProductionTime)
+          infoImg = rFormatText([#szidProductionTime, m_video_r.ProductionTime, #szidDay_P, #szidCost, rCurrency(m_video_r.price, 0, 1)], "Video2Formatting", [#shadow: 1])
+          dlg = gDir.m_objDialogsMaster.openDialog(#Book, [#UseDlgID: #DlgVideoBook, #bookOptions: [#InfoImage: infoImg, #PicImage: member("image_video01_small01").image, #EventToBook: m_eventToBook_r]])
+          dlg.m_objReportTo = me
+          exit
+        end if
+      end if
+      ancestor.mouse(argObj, argWhat, argOption)
+    end if
+  end if
+end
+
+on setVideo me, argDir
+  if not objectp(m_video_r) then
+    tmpPos = 0
+  else
+    tmpPos = m_videos_r.getPos(m_video_r)
+  end if
+  tmpPos = rDlgCheckDimArrows(ancestor.m_objDlg, tmpPos + argDir, m_videos_r.count)
+  m_video_r = m_videos_r[tmpPos]
+  me.setVideoX(m_video_r)
+end
+
+on setVideoX me, argObj
+  m_video_r = argObj
+  dlgObj = ancestor.m_objDlg
+  itemObj = dlgObj.getItem(#Pic)
+  membName = m_video_r.Gfx
+  if (membName = EMPTY) or (member(membName).number < 1) then
+    membName = "VideoPic"
+  end if
+  itemObj.setOneProp(#Pic, membName)
+  itemObj = dlgObj.getItem(#Info)
+  itemObj.setOneProp(#Pic, rFormatText([#szidConcept, m_video_r.name, m_video_r.comment], "VideoFormatting", [#shadow: 1]))
+  itemObj = dlgObj.getItemByPath([#InfoFrame, #dlg, #Pic])
+  itemObj.setOneProp(#Pic, rFormatText([#szidProductionTime, m_video_r.ProductionTime, #szidDay_P, #szidCost, rCurrency(m_video_r.price, 0, 1)], "Video2Formatting"))
+end

@@ -1,0 +1,53 @@
+property m_ctrlVals, m_ctrlRanges, m_fxName, m_textMemberName
+
+on new me
+  m_fxName = #reverb
+  m_ctrlRanges = [#Mix: [#range: [#min: 0.0, #max: 1.0]]]
+  m_textMemberName = "NoteText"
+  m_ctrlVals = [#Active: 0, #Mix: 0.5]
+  return me
+end
+
+on kill me
+  return 0
+end
+
+on getGFX me
+  defs = [#BG: [#type: #Pic, #Pic: "background_mixer_effect_delay01", #loc: point(0, 0)], #Active: [#type: #button, #loc: point(60, 36)], #Mix: [#type: #Knob, #loc: point(161, 0)]]
+  return defs
+end
+
+on openedDlg me, argDlg
+end
+
+on Report me, argObj, argWhat, argOption
+  ID = argWhat
+  m_ctrlVals[ID] = argOption
+end
+
+on getGfxVal me, argID
+  val = m_ctrlVals[argID]
+  return val
+end
+
+on getCtrlSetting me, argID
+  val = m_ctrlVals[argID]
+  tmpRangeInfo = m_ctrlRanges.getaProp(argID)
+  if listp(tmpRangeInfo) then
+    rng = tmpRangeInfo[#range]
+    diff = rng[#max] - rng[#min]
+    val = (val * diff) + rng[#min]
+  end if
+  return val
+end
+
+on getSettings me
+  global gRock
+  lst = [:]
+  repeat with n = 1 to m_ctrlVals.count
+    ID = m_ctrlVals.getPropAt(n)
+    lst.addProp(ID, me.getCtrlSetting(ID))
+  end repeat
+  lst.addProp(#wave, gRock.m_paths.getPath(#music) & "IRHallway2.wav")
+  return lst
+end

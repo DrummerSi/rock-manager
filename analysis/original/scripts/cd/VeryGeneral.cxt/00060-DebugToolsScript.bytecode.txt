@@ -1,0 +1,230 @@
+property m_str, m_mode, m_msecStart, m_options, m_active, m_password, m_msecLast
+
+on new me
+  [  0] pushcons 0 .............................. <EMPTY>
+  [  2] setprop 1443 ............................ m_str = EMPTY
+  [  5] pusharglist 0 ........................... <[:]>
+  [  7] pushproplist ............................ <[:]>
+  [  8] setprop 1444 ............................ m_options = [:]
+  [ 11] getparam 0 .............................. <me>
+  [ 13] pusharglistnoret 1 ...................... <me>
+  [ 15] objcall 1438 ............................ me.setTimerToZero()
+  [ 18] getprop 1444 ............................ <m_options>
+  [ 21] pushsymb 1445 ........................... <#IncludeTimer>
+  [ 24] pushint8 1 .............................. <1>
+  [ 27] pusharglistnoret 3 ...................... <m_options, #IncludeTimer, 1>
+  [ 29] objcall 77 .............................. m_options[#IncludeTimer] = 1
+  [ 32] pushzero ................................ <0>
+  [ 33] setprop 1446 ............................ m_active = 0
+  [ 36] getparam 0 .............................. <me>
+  [ 38] pusharglistnoret 1 ...................... <me>
+  [ 40] extcall 32 .............................. return me
+  [ 43] ret
+end
+
+on kill me
+  [  0] pushzero ................................ <0>
+  [  1] pusharglistnoret 1 ...................... <0>
+  [  3] extcall 32 .............................. return 0
+  [  6] ret
+end
+
+on start me, argPassword
+  [  0] getparam 0 .............................. <me>
+  [  2] pusharglistnoret 1 ...................... <me>
+  [  4] objcall 1439 ............................ me.clearBuffer()
+  [  7] getparam 0 .............................. <me>
+  [  9] pushint8 1 .............................. <1>
+  [ 12] pusharglistnoret 2 ...................... <me, 1>
+  [ 14] objcall 158 ............................. me.activate(1)
+  [ 17] getparam 0 .............................. <me>
+  [ 19] getparam 8 .............................. <argPassword>
+  [ 21] pusharglistnoret 2 ...................... <me, argPassword>
+  [ 23] objcall 1440 ............................ me.setPassword(argPassword)
+  [ 26] getparam 0 .............................. <me>
+  [ 28] pusharglistnoret 1 ...................... <me>
+  [ 30] objcall 1438 ............................ me.setTimerToZero()
+  [ 33] ret
+end
+
+on setTimerToZero me
+  [  0] getmovieprop 896 ........................ <the milliSeconds>
+  [  3] setprop 1448 ............................ m_msecStart = the milliSeconds
+  [  6] getprop 1448 ............................ <m_msecStart>
+  [  9] setprop 1449 ............................ m_msecLast = m_msecStart
+  [ 12] ret
+end
+
+on activate me, argIsTRUE
+  [  0] getparam 8 .............................. <argIsTRUE>
+  [  2] pusharglist 1 ........................... <argIsTRUE>
+  [  4] extcall 104 ............................. <voidp(argIsTRUE)>
+  [  7] jmpifz [ 15] ............................ if voidp(argIsTRUE) then
+  [ 10] pushint8 1 .............................. <1>
+  [ 13] setparam 8 .............................. argIsTRUE = 1
+  [ 15] getparam 8 .............................. <argIsTRUE>
+  [ 17] setprop 1446 ............................ m_active = argIsTRUE
+  [ 20] ret
+end
+
+on clearBuffer me
+  [  0] pushcons 8 .............................. <EMPTY>
+  [  2] setprop 1443 ............................ m_str = EMPTY
+  [  5] ret
+end
+
+on setPassword me, argPwd
+  [  0] getparam 8 .............................. <argPwd>
+  [  2] setprop 1450 ............................ m_password = argPwd
+  [  5] ret
+end
+
+on debugOut me, argPwd, arg1, arg2, arg3, arg4, arg5, arg6, arg7
+  [  0] getprop 1446 ............................ <m_active>
+  [  3] not ..................................... <not m_active>
+  [  4] jmpifz [  8] ............................ if not m_active then
+  [  7] ret ..................................... exit
+  [  8] getprop 1450 ............................ <m_password>
+  [ 11] pusharglist 1 ........................... <m_password>
+  [ 13] extcall 104 ............................. <voidp(m_password)>
+  [ 16] not ..................................... <not voidp(m_password)>
+  [ 17] jmpifz [ 60] ............................ if not voidp(m_password) then
+  [ 20] getprop 1450 ............................ <m_password>
+  [ 23] pusharglist 1 ........................... <m_password>
+  [ 25] extcall 128 ............................. <listp(m_password)>
+  [ 28] jmpifz [ 50] ............................ if listp(m_password) then / else
+  [ 31] getprop 1450 ............................ <m_password>
+  [ 34] getparam 8 .............................. <argPwd>
+  [ 36] pusharglist 2 ........................... <m_password, argPwd>
+  [ 38] objcall 181 ............................. <m_password.getPos(argPwd)>
+  [ 41] pushzero ................................ <0>
+  [ 42] eq ...................................... <m_password.getPos(argPwd) = 0>
+  [ 43] jmpifz [ 47] ............................ if m_password.getPos(argPwd) = 0 then
+  [ 46] ret ..................................... exit
+  [ 47] jmp [ 60]
+  [ 50] getparam 8 .............................. <argPwd>
+  [ 52] getprop 1450 ............................ <m_password>
+  [ 55] nteq .................................... <argPwd <> m_password>
+  [ 56] jmpifz [ 60] ............................ if argPwd <> m_password then
+  [ 59] ret ..................................... exit
+  [ 60] getparam 16 ............................. <arg1>
+  [ 62] getparam 24 ............................. <arg2>
+  [ 64] getparam 32 ............................. <arg3>
+  [ 66] getparam 40 ............................. <arg4>
+  [ 68] getparam 48 ............................. <arg5>
+  [ 70] getparam 56 ............................. <arg6>
+  [ 72] getparam 64 ............................. <arg7>
+  [ 74] pusharglist 7 ........................... <[arg1, arg2, arg3, arg4, arg5, arg6, arg7]>
+  [ 76] pushlist ................................ <[arg1, arg2, arg3, arg4, arg5, arg6, arg7]>
+  [ 77] setlocal 0 .............................. X = [arg1, arg2, arg3, arg4, arg5, arg6, arg7]
+  [ 79] pushcons 16 ............................. <EMPTY>
+  [ 81] setlocal 8 .............................. str = EMPTY
+  [ 83] pushint8 1 .............................. <1>
+  [ 86] setlocal 16
+  [ 88] getlocal 16
+  [ 90] getlocal 0 .............................. <X>
+  [ 92] pusharglist 1 ........................... <X>
+  [ 94] objcall 175 ............................. <X.count()>
+  [ 97] lteq
+  [ 98] jmpifz [150] ............................ repeat with n = 1 to X.count()
+  [101] getlocal 0 .............................. <X>
+  [103] getlocal 16 ............................. <n>
+  [105] pusharglist 2 ........................... <X, n>
+  [107] objcall 23 .............................. <X[n]>
+  [109] setlocal 24 ............................. tmp = X[n]
+  [111] getlocal 24 ............................. <tmp>
+  [113] pusharglist 1 ........................... <tmp>
+  [115] extcall 104 ............................. <voidp(tmp)>
+  [118] jmpifz [124] ............................ if voidp(tmp) then
+  [121] jmp [150] ............................... exit repeat
+  [124] getlocal 8 .............................. <str>
+  [126] getlocal 24 ............................. <tmp>
+  [128] pusharglist 1 ........................... <tmp>
+  [130] extcall 68 .............................. <string(tmp)>
+  [133] joinstr ................................. <str & string(tmp)>
+  [134] pushcons 24 ............................. <", ">
+  [136] joinstr ................................. <str & string(tmp) & ", ">
+  [137] setlocal 8 .............................. str = str & string(tmp) & ", "
+  [139] pushint8 1
+  [142] getlocal 16
+  [144] add
+  [145] setlocal 16
+  [147] endrepeat [ 88]
+  [150] getlocal 8 .............................. <str>
+  [152] pushsymb 119 ............................ <#char>
+  [155] pushint8 1 .............................. <1>
+  [158] getlocal 8 .............................. <str>
+  [160] getobjprop 556 .......................... <str.length>
+  [163] pushint8 2 .............................. <2>
+  [166] sub ..................................... <str.length - 2>
+  [167] pusharglist 4 ........................... <str, #char, 1, str.length - 2>
+  [169] objcall 124 ............................. <str.char[1..str.length - 2]>
+  [172] setlocal 8 .............................. str = str.char[1..str.length - 2]
+  [174] getmovieprop 896 ........................ <the milliSeconds>
+  [177] setlocal 32 ............................. tmpMsec = the milliSeconds
+  [179] getprop 1444 ............................ <m_options>
+  [182] pushsymb 1445 ........................... <#IncludeTimer>
+  [185] pusharglist 2 ........................... <m_options, #IncludeTimer>
+  [187] objcall 23 .............................. <m_options[#IncludeTimer]>
+  [189] pushint8 1 .............................. <1>
+  [192] eq ...................................... <m_options[#IncludeTimer] = 1>
+  [193] jmpifz [237] ............................ if m_options[#IncludeTimer] = 1 then
+  [196] getlocal 32 ............................. <tmpMsec>
+  [198] getprop 1448 ............................ <m_msecStart>
+  [201] sub ..................................... <tmpMsec - m_msecStart>
+  [202] setlocal 24 ............................. tmp = tmpMsec - m_msecStart
+  [204] getlocal 32 ............................. <tmpMsec>
+  [206] getprop 1449 ............................ <m_msecLast>
+  [209] sub ..................................... <tmpMsec - m_msecLast>
+  [210] pushint8 2 .............................. <2>
+  [213] pusharglist 2 ........................... <tmpMsec - m_msecLast, 2>
+  [215] extcall 600 ............................. <convItoS(tmpMsec - m_msecLast, 2)>
+  [218] pushcons 32 ............................. <" ">
+  [220] joinstr ................................. <convItoS(tmpMsec - m_msecLast, 2) & " ">
+  [221] getlocal 24 ............................. <tmp>
+  [223] pusharglist 1 ........................... <tmp>
+  [225] extcall 68 .............................. <string(tmp)>
+  [228] joinstr ................................. <convItoS(tmpMsec - m_msecLast, 2) & " " & string(tmp)>
+  [229] pushcons 40 ............................. <" ">
+  [231] joinstr ................................. <convItoS(tmpMsec - m_msecLast, 2) & " " & string(tmp) & " ">
+  [232] getlocal 8 .............................. <str>
+  [234] joinstr ................................. <convItoS(tmpMsec - m_msecLast, 2) & " " & string(tmp) & " " & str>
+  [235] setlocal 8 .............................. str = convItoS(tmpMsec - m_msecLast, 2) & " " & string(tmp) & " " & str
+  [237] getlocal 32 ............................. <tmpMsec>
+  [239] setprop 1449 ............................ m_msecLast = tmpMsec
+  [242] getprop 1444 ............................ <m_options>
+  [245] pushsymb 1452 ........................... <#TimerAutoReset>
+  [248] pusharglist 2 ........................... <m_options, #TimerAutoReset>
+  [250] objcall 23 .............................. <m_options[#TimerAutoReset]>
+  [252] pushint8 1 .............................. <1>
+  [255] eq ...................................... <m_options[#TimerAutoReset] = 1>
+  [256] jmpifz [265] ............................ if m_options[#TimerAutoReset] = 1 then
+  [259] getmovieprop 896 ........................ <the milliSeconds>
+  [262] setprop 1448 ............................ m_msecStart = the milliSeconds
+  [265] getprop 1443 ............................ <m_str>
+  [268] getlocal 8 .............................. <str>
+  [270] joinstr ................................. <m_str & str>
+  [271] setprop 1443 ............................ m_str = m_str & str
+  [274] getprop 1453 ............................ <m_mode>
+  [277] pushsymb 1454 ........................... <#Autoflush>
+  [280] eq ...................................... <m_mode = #Autoflush>
+  [281] jmpifz [294] ............................ if m_mode = #Autoflush then / else
+  [284] getparam 0 .............................. <me>
+  [286] pusharglistnoret 1 ...................... <me>
+  [288] objcall 1442 ............................ me.flush()
+  [291] jmp [303]
+  [294] getprop 1443 ............................ <m_str>
+  [297] pushcons 48 ............................. <RETURN>
+  [299] joinstr ................................. <m_str & RETURN>
+  [300] setprop 1443 ............................ m_str = m_str & RETURN
+  [303] ret
+end
+
+on flush me
+  [  0] getprop 1443 ............................ <m_str>
+  [  3] pusharglistnoret 1 ...................... <m_str>
+  [  5] extcall 142 ............................. put m_str
+  [  8] pushcons 56 ............................. <EMPTY>
+  [ 10] setprop 1443 ............................ m_str = EMPTY
+  [ 13] ret
+end

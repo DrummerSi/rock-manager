@@ -1,0 +1,63 @@
+property points, myRect, SP
+
+on beginSprite me
+  tmpInitLvl = 0.5
+  points = [:]
+  sort(points)
+  points.addProp(0, tmpInitLvl)
+  points.addProp(1, tmpInitLvl)
+  SP = sprite(me.spriteNum)
+  myRect = new(script("RectScript"), the rect of sprite SP)
+  me.render()
+end
+
+on mouseUp me
+  tmpLoc = point(the mouseH, the mouseV)
+  tmp = myRect.getWhereInRectFact(tmpLoc)
+  me.getValueAt(tmp[1])
+  points.addProp(tmp[1], tmp[2])
+  me.render()
+end
+
+on render me
+  SP.visible = 0
+  SP.visible = 1
+  tmpSP = sprite(20)
+  tmpSP.trails = 1
+  tmpSP2 = sprite(21)
+  tmpSP2.trails = 1
+  tmpLoc1 = [points.getPropAt(1), points[1]]
+  tmpPoint1 = myRect.getWhereInRectPix(tmpLoc1)
+  repeat with n = 2 to count(points)
+    tmpLoc2 = [points.getPropAt(n), points[n]]
+    tmpPoint2 = myRect.getWhereInRectPix(tmpLoc2)
+    drawALine(tmpPoint1, tmpPoint2, tmpSP)
+    tmpSP2.loc = tmpPoint1
+    updateStage()
+    tmpPoint1 = tmpPoint2
+  end repeat
+  tmpSP2.loc = tmpPoint1
+end
+
+on getValueAt me, argTime, argTotalTime
+  if voidp(argTotalTime) then
+    argTotalTime = 1.0
+  end if
+  tmpFact = argTime / float(argTotalTime)
+  points.addProp(tmpFact, -1)
+  tmpPos = points.getPos(-1)
+  points.deleteOne(-1)
+  if tmpPos = 1 then
+    tmpPos = 2
+  end if
+  tmpVal = me.interpolate(tmpFact, [points.getPropAt(tmpPos - 1), points[tmpPos - 1]], [points.getPropAt(tmpPos), points[tmpPos]])
+  return tmpVal
+end
+
+on interpolate me, argVal, argPair1, argPair2
+  tmpDiff = argPair2 - argPair1
+  tmpDiffY = tmpDiff[2]
+  argVal = argVal - argPair1[1]
+  tmpFact = argVal / tmpDiff[1]
+  return (tmpFact * tmpDiff[2]) + argPair1[2]
+end

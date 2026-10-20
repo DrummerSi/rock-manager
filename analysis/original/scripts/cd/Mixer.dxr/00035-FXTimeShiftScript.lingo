@@ -1,0 +1,70 @@
+property m_ctrlVals, m_ctrlRanges, m_fxName
+
+on new me
+  me.setMode(#Chorus)
+  m_ctrlVals = [#Active: 0, #mode: 0, #Mix: 0.5, #depth: 0.20000000000000001, #freq: 0.5]
+  return me
+end
+
+on kill me
+  return 0
+end
+
+on getGFX me
+  defs = [#BG: [#type: #Pic, #Pic: "background_mixer_effect_timeshift01", #loc: point(0, 0)], #Active: [#type: #button, #loc: point(60, 36)], #mode: [#type: #button, #Pic: "button_switch01", #loc: point(152, 26)], #Mix: [#type: #Knob, #loc: point(161, 0)], #depth: [#type: #Knob, #loc: point(238, 0)], #freq: [#type: #Knob, #loc: point(277, 0)]]
+  return defs
+end
+
+on getGfxVal me, argID
+  val = m_ctrlVals[argID]
+  return val
+end
+
+on openedGfx me, argObj
+end
+
+on Report me, argObj, argWhat, argOption
+  ID = argWhat
+  m_ctrlVals[ID] = argOption
+  if ID = #mode then
+    if argOption = 0 then
+      me.setMode(#Chorus)
+    else
+      me.setMode(#phaser)
+    end if
+  end if
+end
+
+on setMode me, argMode
+  m_fxName = argMode
+  if m_fxName = #Chorus then
+    m_ctrlRanges = [#Mix: [#range: [#min: 0.0, #max: 1.0]], #depth: [#range: [#min: 0, #max: 10]], #freq: [#range: [#min: 0.0, #max: 2.5]]]
+  else
+    if m_fxName = #phaser then
+      m_ctrlRanges = [#Mix: [#range: [#min: 0.0, #max: 1.0]], #depth: [#range: [#min: 0, #max: 10]], #freq: [#range: [#min: 0.0, #max: 2.5]]]
+    end if
+  end if
+end
+
+on getCtrlSetting me, argID
+  val = m_ctrlVals[argID]
+  if (m_fxName = #phaser) and (argID = #freq) then
+    val = 1.0 - val
+  end if
+  tmpRangeInfo = m_ctrlRanges.getaProp(argID)
+  if listp(tmpRangeInfo) then
+    rng = tmpRangeInfo[#range]
+    diff = rng[#max] - rng[#min]
+    val = (val * diff) + rng[#min]
+  end if
+  return val
+end
+
+on getSettings me
+  lst = [:]
+  repeat with n = 1 to m_ctrlVals.count
+    ID = m_ctrlVals.getPropAt(n)
+    lst.addProp(ID, me.getCtrlSetting(ID))
+  end repeat
+  return lst
+end

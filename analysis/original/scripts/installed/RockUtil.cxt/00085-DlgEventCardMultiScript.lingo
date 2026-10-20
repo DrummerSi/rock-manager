@@ -1,0 +1,98 @@
+property ancestor
+global gDir, gRock
+
+on new me, argOptions
+  argOptions[#child] = me
+  argOptions[#ReportTo] = me
+  ancestor = script("DlgEventCardAncestorScript").new(argOptions)
+  dialog_r = ancestor.m_dialogInfoObj_r
+  dialog_r.ButtonOK.name = ancestor.m_eventCard_r.ButtonOK.name
+  if dialog_r.ButtonOK.name.length <= 1 then
+    dialog_r.ButtonOK.name = "OK!!!"
+  end if
+  dialog_r.ButtonOK.Gfx = ancestor.m_eventCard_r.ButtonOK.Gfx
+  dialog_r.ButtonCancel.name = ancestor.m_eventCard_r.ButtonCancel.name
+  dialog_r.ButtonCancel.Gfx = ancestor.m_eventCard_r.ButtonCancel.Gfx
+  tmpButts = [#ButtonOK, #ButtonCancel, #Button3]
+  obj = ancestor.m_objDlg.getItem(#bottom)
+  obj.setOneProp(#inOffsetRect, rect(0, 7, 0, 0))
+  obj.setOneProp(#rel, [[#top, #Mid], [#top, 4], #Auto, #Auto])
+  obj.setOneProp(#topLeftMeansWhat, [#Mid, 0])
+  if 0 then
+    obj.attachDlg(VOID, member("Dlg3AlternativesData").text.value)
+    numButtons = 3
+  else
+    numButtons = 0
+    n = 1
+    repeat with tmpID in tmpButts
+      tmpButt = rgetProp(ancestor.m_eventCard_r, tmpID)
+      if tmpButt.name.length > 1 then
+        numButtons = numButtons + 1
+      else
+        if tmpButt.Gfx.length > 1 then
+          numButtons = numButtons + 1
+        end if
+      end if
+      n = 1 + n
+    end repeat
+    multiData = member("DlgMultiAlternativesData").text.value
+    multiData = multiData[#items]
+    itemData = multiData[1]
+    itemID = itemData[#ID]
+    repeat with n = 2 to numButtons
+      newItemData = itemData.duplicate()
+      newItemData[#ID] = symbol("Item" & string(n - 1))
+      newItemData[#rel] = [0, [itemID, 4], #Auto, #Auto]
+      itemID = newItemData[#ID]
+      multiData.add(newItemData)
+    end repeat
+    obj.attachDlg(VOID, multiData)
+  end if
+  multidlg = obj.dialogObj
+  repeat with n = 0 to numButtons - 1
+    dlg = multidlg.getItem(symbol("Item" & string(n)))
+    obj = dlg.dialogObj.getItem(#text)
+    tmpTextProp = symbol("altText" & string(n + 1))
+    tmpText = rgetProp(ancestor.m_eventCard_r, tmpTextProp)
+    if voidp(tmpText) then
+      tmpText = "Alternative " & string(n + 1)
+    end if
+    obj.setOneProp(#editData, tmpText)
+    obj = dlg.dialogObj.getItem(#button)
+    tmpInfo = rgetProp(ancestor.m_eventCard_r, tmpButts[n + 1])
+    if objectp(tmpInfo) then
+      ancestor.prepareButton(obj, me, tmpInfo.Gfx, tmpInfo.name)
+    end if
+  end repeat
+  ancestor.finishUp(#title)
+  return me
+end
+
+on kill me
+  dialog_r = ancestor.m_dialogInfoObj_r
+  ancestor.kill()
+  return 0
+end
+
+on Report me, argObj, argWhat
+end
+
+on mouse me, argObj, argWhat, argOption
+  if objectp(argOption) then
+    if argWhat = #click then
+      ID = argOption.getOneProp(#ID)
+      IDStr = string(ID)
+      tmpList = argOption.masterObj.getOverIDs()
+      if tmpList.count then
+        tmpID = tmpList[tmpList.count]
+        tmpX = [#Item0: #ButtonOK, #Item1: #ButtonCancel, #Item2: #Button3]
+        tmpRef = tmpX[tmpID]
+        tmpInfo = rgetProp(ancestor.m_eventCard_r, tmpRef)
+        if objectp(tmpInfo) then
+          rExecuteActions(tmpInfo.ExecuteThis, [:], tmpInfo)
+        end if
+        me.kill()
+      end if
+    end if
+  end if
+end

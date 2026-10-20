@@ -1,0 +1,65 @@
+on new me, argFileName, argImagePtr, argOffset
+  me.X(argFileName, argImagePtr, argOffset)
+  return me
+end
+
+on kill me
+  return 0
+end
+
+on X me, argFileName, argFaceSettings, argImagePtr, argOffset
+  tmp = castLib("Actor").fileName
+  if voidp(argFileName) then
+    argFileName = "Actor01"
+  end if
+  if symbolp(argFaceSettings) then
+    argFaceSettings = [#Mood: argFaceSettings]
+  end if
+  if not listp(argFaceSettings) then
+    argFaceSettings = [#Mood: #Angry]
+  end if
+  if voidp(argOffset) then
+    argOffset = point(0, 0)
+  end if
+  if offset(argFileName, tmp) or fileExists(the moviePath & argFileName, ["cst", "cxt"]) then
+    castLib("Actor").fileName = the moviePath & argFileName
+    faceObj = new(script("FaceScript"))
+    faceObj.setMood(argFaceSettings[#Mood])
+    lst = faceObj.getDisplayMembers()
+    memb = lst[1]
+    baseOff = memb.regPoint
+    if not listp(argImagePtr) then
+      if ilk(argImagePtr) = #image then
+        img = argImagePtr
+      end if
+      argImagePtr = []
+    end if
+    if argImagePtr.count then
+      img = argImagePtr[1]
+    end if
+    if not objectp(img) then
+      img = image(memb.rect[3], memb.rect[4], 16)
+    end if
+    argImagePtr[1] = img
+    repeat with n = 1 to lst.count()
+      memb = lst[n]
+      off = argOffset + baseOff - memb.regPoint
+      img.copyPixels(memb.image, memb.image.rect + rect(off, off), memb.image.rect, [#ink: 36])
+    end repeat
+  end if
+end
+
+on test me
+  img = image(600, 100, 16)
+  X = the milliSeconds
+  repeat with n = 1 to 15
+    file = "Actor" & convItoS(n, 2)
+    tmp = CPgetActorInfo(file)
+    if tmp.count then
+      imgPtr = [img]
+      me.X(file, #normal, imgPtr, point(n * 20, 0))
+    end if
+  end repeat
+  pott(the milliSeconds - X)
+  member("CPCP").image = img
+end

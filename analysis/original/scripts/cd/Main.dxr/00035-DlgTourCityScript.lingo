@@ -1,0 +1,61 @@
+property ancestor, m_tourCity_r, m_doWhat
+global gDir, gRock
+
+on new me, argOptions
+  ID = argOptions[#ID]
+  argOptions.setaProp(#ReportTo, me)
+  argOptions.setaProp(#child, me)
+  m_doWhat = argOptions[#TourDoWhat]
+  if m_doWhat = #AddCity then
+    dialog_r = gRock.m_classManager.getObjByIDAndClass(#DlgTourAddCity, #Dialog)
+  else
+    if m_doWhat = #RemoveCity then
+      dialog_r = gRock.m_classManager.getObjByIDAndClass(#DlgTourRemoveCity, #Dialog)
+    end if
+  end if
+  dialog_r.dataMemberName = "DlgTourCityData"
+  argOptions[#DlgInfoObj] = dialog_r
+  ancestor = script("DlgRockAncestorScript").new(argOptions)
+  me.setPlace(argOptions[#TourCity])
+  ancestor.render()
+  return me
+end
+
+on kill me
+  ancestor.kill()
+  return 0
+end
+
+on Report me, argObj, argWhat
+end
+
+on mouse me, argObj, argWhat, argOption
+  if objectp(argOption) then
+    if argWhat = #click then
+      ID = argOption.getOneProp(#ID)
+      IDStr = string(ID)
+      if ID = #ButtonOK then
+        obj = gDir.m_objDialogsMaster.getDialogUnder(me)
+        ancestor.mouse(argObj, argWhat, argOption)
+        if objectp(obj) then
+          obj.Report(me, m_doWhat)
+        end if
+      else
+        ancestor.mouse(argObj, argWhat, argOption)
+      end if
+    end if
+  end if
+end
+
+on setPlace me, argCityObj
+  dlgObj = ancestor.m_objDlg
+  m_tourCity_r = argCityObj
+  itemObj = dlgObj.getItem(#Pic)
+  membName = m_tourCity_r.Gfx
+  if (membName = EMPTY) or (member(membName).number < 1) then
+    membName = "arena01"
+  end if
+  itemObj.setOneProp(#Pic, membName)
+  itemObj = dlgObj.getItem(#Info)
+  itemObj.setOneProp(#Pic, rFormatText([#szidTourCity, m_tourCity_r.name, #szidMaxAudience, m_tourCity_r.size, #szidTicketPrice, rCurrency(m_tourCity_r.PreferredPriceModel.UnitPrice, 0, 1), #szidRent, rCurrency(m_tourCity_r.PreferredPriceModel.BasePrice, 0, 1), #szidTripPrice, rCurrency(m_tourCity_r.totalCost - m_tourCity_r.PreferredPriceModel.BasePrice, 0, 1), #szidDescription, m_tourCity_r.comment], "TourCityFormatting", [#shadow: 1]))
+end

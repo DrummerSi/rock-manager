@@ -1,0 +1,241 @@
+property m_tracks, m_nextEventTime, m_ticksPerQuarternote, m_length, m_bpm, m_beatSignature, m_numBars, m_ticksPerMSec, m_msecsStart, m_lastTick, m_tick, m_totalMsecs, m_orgStartMSecs, m_loopObj, m_loopTracks, m_soundPath
+global gUseful
+
+on new me
+  global gRock
+  m_ticksPerQuarternote = 16
+  m_loopTracks = [:]
+  m_tracks = [:]
+  m_numBars = 1
+  m_beatSignature = [4, 4]
+  m_bpm = 120.0
+  if objectp(gRock) then
+    m_soundPath = gRock.m_paths.getPath(#RenderedMusic)
+  else
+    m_soundPath = the moviePath
+  end if
+  return me
+end
+
+on kill me
+  repeat with obj in m_tracks
+    obj.kill()
+  end repeat
+  m_tracks = [:]
+  repeat with obj in m_loopTracks
+    obj.kill()
+  end repeat
+  m_loopTracks = [:]
+  if objectp(m_loopObj) then
+    m_loopObj = m_loopObj.kill()
+  end if
+  gUseful.idleTimer.deleteObject(me)
+  the idleHandlerPeriod = 1
+  return 0
+end
+
+on setPaths me, argPaths
+  if stringp(argPaths) then
+    argPaths = [#sound: argPaths]
+  end if
+  if stringp(argPaths[#sound]) then
+    m_soundPath = argPaths[#sound]
+  end if
+end
+
+on setBPM me, argBPM
+end
+
+on getSequenceLength me, argFormat
+  quartersPerBar = m_beatSignature[1] * 4 / m_beatSignature[2]
+  totQuarters = m_numBars * quartersPerBar
+  totTicks = totQuarters * m_ticksPerQuarternote
+  if argFormat = #ticks then
+    return totTicks
+  else
+    if argFormat = #Secs then
+      return float(totQuarters) * (60.0 / m_bpm)
+    else
+      if argFormat = #Quarters then
+        return totQuarters
+      end if
+    end if
+  end if
+end
+
+on getSecsPerTick me
+  secsPerQuarterNote = 1.0 / (m_bpm / 60.0)
+  return secsPerQuarterNote / m_ticksPerQuarternote
+end
+
+on getElapsedTime me, argOption
+  tmpLengthSecs = me.getSequenceLength(#Secs)
+  tmpElapsedSecs = (the milliSeconds - m_msecsStart) / 1000.0
+  tmp = tmpElapsedSecs / tmpLengthSecs
+  tmpFract = tmp - integer(tmp - 0.5)
+  if argOption = #Fraction then
+    return tmpFract
+  end if
+  tmpSecs = tmpFract * tmpLengthSecs
+  return tmpSecs
+end
+
+on prepare me
+  totalLengthSecs = 0
+  if m_loopTracks.count then
+    obj = m_loopTracks[1]
+    totalLengthSecs = obj.getLength() / 1000.0
+    totalLengthSecs = m_numBars * totalLengthSecs
+  end if
+  numQuarterNotes = m_numBars * m_beatSignature[1] * m_beatSignature[2] / 4
+  if 0 and (totalLengthSecs > 0) then
+    secsPerQuarterNote = totalLengthSecs / numQuarterNotes
+    m_bpm = 60.0 / secsPerQuarterNote
+  else
+    secsPerQuarterNote = 1.0 / (m_bpm / 60.0)
+    totalLengthSecs = numQuarterNotes * secsPerQuarterNote
+  end if
+  m_totalMsecs = integer(totalLengthSecs * 1000)
+  secsPerTick = secsPerQuarterNote / m_ticksPerQuarternote
+  m_ticksPerMSec = 1.0 / (1000.0 * secsPerTick)
+end
+
+on play me
+  the idleHandlerPeriod = 0
+  m_nextEventTime = -1
+  me.restart()
+  gUseful.idleTimer.addObject(me)
+  m_msecsStart = the milliSeconds
+  m_orgStartMSecs = m_msecsStart
+  repeat with obj in m_loopTracks
+    obj.play()
+  end repeat
+  me.timeTick()
+end
+
+on stop me
+  the idleHandlerPeriod = 1
+  gUseful.idleTimer.deleteObject(me)
+  repeat with obj in m_loopTracks
+    obj.stop()
+  end repeat
+end
+
+on test me
+  obj = script("TrackLoopScript").new("D:\user\beat\11X.wav")
+  totalLengthSecs = obj.getLength() / 1000.0
+  me.addLoopTrack(obj, 1)
+  m_numBars = 2
+  me.prepare()
+  me.play()
+end
+
+on checkNextEvent me
+  m_nextEventTime = 999999
+  repeat with track in m_tracks
+    time = track.whenIsNextEvent(m_tick + 1)
+    if (time >= 0) and (time < m_nextEventTime) then
+      m_nextEventTime = time
+    end if
+  end repeat
+end
+
+on restart me
+  m_lastTick = -1
+  m_tick = 0
+  me.checkNextEvent()
+  m_tick = 1
+  m_msecsStart = the milliSeconds
+end
+
+on timeTick me
+  checkEvent = 0
+  tmpMsecs = the milliSeconds
+  msecs = tmpMsecs - m_msecsStart
+  if msecs >= m_totalMsecs then
+    msecs = msecs mod m_totalMsecs
+    m_msecsStart = tmpMsecs - msecs
+    m_lastTick = -1
+    m_tick = 0
+    me.checkNextEvent()
+  end if
+  m_tick = integer(1 + (m_ticksPerMSec * msecs))
+  if m_tick <> m_lastTick then
+    m_lastTick = m_tick
+  else
+    exit
+  end if
+  if m_tick >= m_nextEventTime then
+    if (m_tick - m_nextEventTime) > 0 then
+      if (m_tick - m_nextEventTime) < 3 then
+        m_lastTick = m_nextEventTime
+        m_tick = m_nextEventTime
+      else
+        me.checkNextEvent()
+        exit
+      end if
+    end if
+    repeat with track in m_tracks
+      events = track.getNextEvents(m_tick)
+      repeat with Event in events
+        track.playEvent(Event)
+      end repeat
+    end repeat
+    me.checkNextEvent()
+  end if
+end
+
+on load me, argList
+  if stringp(argList) then
+    argList = member(argList).text.value
+  end if
+  if voidp(argList) then
+    argList = member("Sequence2").text.value
+  end if
+  fileTicksPerQuarternote = argList[#TPQ]
+  if voidp(fileTicksPerQuarternote) then
+    fileTicksPerQuarternote = 4
+  end if
+  ticksMultiplier = m_ticksPerQuarternote / fileTicksPerQuarternote
+  m_bpm = argList[#tempo]
+  m_beatSignature = argList[#BeatSignature]
+  if voidp(m_beatSignature) then
+    m_beatSignature = [4, 4]
+  end if
+  m_numBars = argList[#numBars]
+  if voidp(m_numBars) then
+    m_numBars = 1
+  end if
+  m_length = m_ticksPerQuarternote * m_numBars * m_beatSignature[1] * m_beatSignature[2] / 4
+  tracks = argList[#tracks]
+  m_tracks = [:]
+  if listp(tracks) then
+    repeat with trackNr = 1 to tracks.count()
+      ID = tracks.getPropAt(trackNr)
+      obj = script("TrackScript").new(me)
+      obj.load(tracks[trackNr], ticksMultiplier)
+      me.addTrack(obj, ID)
+    end repeat
+  end if
+end
+
+on addTrack me, argObj, argID
+  m_tracks.addProp(argID, argObj)
+end
+
+on addLoopTrack me, argObj, argID
+  m_loopTracks.addProp(argID, argObj)
+end
+
+on getNumTracks me
+  return [#LoopTracks: m_loopTracks.count, #tracks: m_tracks.count]
+end
+
+on deleteTrack me, argObj
+  m_tracks.deleteOne(argObj)
+  m_loopTracks.deleteOne(argObj)
+end
+
+on getTrack me, argID
+  return m_tracks[argID]
+end

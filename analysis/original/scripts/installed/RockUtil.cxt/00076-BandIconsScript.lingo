@@ -1,0 +1,87 @@
+property m_objMouse, m_band_r, m_shortCutKeyObj, m_SPStart, m_active, m_portraitObjs, m_objMaster, m_SP
+global gDir, gRock
+
+on new me, argObjMaster, argActive
+  m_objMaster = argObjMaster
+  m_SPStart = argObjMaster.m_spriteList[#BandMemberIcons]
+  m_active = argActive
+  if m_active = 1 then
+    m_objMouse = script("MouseObject").new(me, rect(270, 19, 523, 99), [#layer: 10])
+    m_shortCutKeyObj = script("KeyObject").new(me, " ", [#ID: #Shortcut, #prio: 1])
+  end if
+  m_portraitObjs = []
+  repeat with n = 1 to 5
+    tmpLoc = point(294 + ((n - 1) * 50), 73)
+    tmpRect = rect(tmpLoc, tmpLoc) + getMemberRect(member("actor01_background_medium"))
+    m_portraitObjs.add(script("MusicianPortaitScript").new(m_SPStart + n - 1, tmpLoc, tmpRect))
+  end repeat
+  me.redraw()
+  tmpSP = argObjMaster.m_spriteList[#Rehearsal]
+  sprite(tmpSP).member = member("replokalsikon01")
+  sprite(tmpSP).loc = point(306, 40)
+  sprite(tmpSP).ink = 0
+  m_SP = sprite(argObjMaster.m_spriteList[#RehearsalText])
+  member("RehearsalNameText").text = rGetStr(#szidInterfaceRehearsal)
+  m_SP.member = member("RehearsalNameText")
+  m_SP.loc = point(401, 66) + point(-64, -33)
+  return me
+end
+
+on kill me
+  repeat with obj in m_portraitObjs
+    obj.kill()
+  end repeat
+  m_portraitObjs = []
+  if objectp(m_shortCutKeyObj) then
+    m_shortCutKeyObj = m_shortCutKeyObj.kill()
+  end if
+  if objectp(m_objMouse) then
+    m_objMouse = m_objMouse.kill()
+  end if
+  m_objMaster = 0
+  return 0
+end
+
+on key me, argObj, argWhat, argID
+  if argWhat = #down then
+    if argID = #Shortcut then
+      me.openIt()
+    end if
+  end if
+end
+
+on redraw me
+  m_band_r = gRock.m_context.getFocus(#Band)
+  if objectp(m_band_r) then
+    repeat with n = 1 to m_portraitObjs.count
+      if n > m_band_r.members.count then
+        musician_r = VOID
+      else
+        musician_r = gRock.m_classManager.getObjByIDAndClass(m_band_r.members[n], #RealMusician)
+      end if
+      m_portraitObjs[n].redraw(musician_r)
+    end repeat
+  else
+    alert("Xxx No band!")
+  end if
+end
+
+on mouse me, argObj, argWhat
+  if argWhat = #click then
+    me.openIt()
+  else
+    if argWhat = #enter then
+      m_SP.member.color = m_objMaster.m_clrTextHilite
+    else
+      if argWhat = #Leave then
+        m_SP.member.color = m_objMaster.m_clrTextNormal
+      end if
+    end if
+  end if
+end
+
+on openIt me
+  if gDir.m_objDialogsMaster.getNumOpen() = 0 then
+    gDir.m_objDialogsMaster.openDialog(#Rehearsal01)
+  end if
+end

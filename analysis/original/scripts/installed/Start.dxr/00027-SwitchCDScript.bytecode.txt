@@ -1,0 +1,417 @@
+property m_fxObj, m_neededFiles, m_CDDrivePath, m_callBackInfo, m_timerObj, m_isEjected, m_checking, m_mustBeRemovableRemovable, m_isRemovable, m_mustBeVolumeRoot
+
+on new me, argCDDrivePath, argOptions
+  [  0] getparam 8 .............................. <argCDDrivePath>
+  [  2] setprop 353 ............................. m_CDDrivePath = argCDDrivePath
+  [  5] getparam 16 ............................. <argOptions>
+  [  7] pusharglist 1 ........................... <argOptions>
+  [  9] extcall 223 ............................. <voidp(argOptions)>
+  [ 12] jmpifz [ 20] ............................ if voidp(argOptions) then
+  [ 15] pusharglist 0 ........................... <[:]>
+  [ 17] pushproplist ............................ <[:]>
+  [ 18] setparam 16 ............................. argOptions = [:]
+  [ 20] getparam 16 ............................. <argOptions>
+  [ 22] pushsymb 355 ............................ <#NeededFiles>
+  [ 25] pusharglist 2 ........................... <argOptions, #NeededFiles>
+  [ 27] objcall 63 .............................. <argOptions[#NeededFiles]>
+  [ 30] setprop 354 ............................. m_neededFiles = argOptions[#NeededFiles]
+  [ 33] getprop 354 ............................. <m_neededFiles>
+  [ 36] pusharglist 1 ........................... <m_neededFiles>
+  [ 38] extcall 223 ............................. <voidp(m_neededFiles)>
+  [ 41] jmpifz [ 50] ............................ if voidp(m_neededFiles) then
+  [ 44] pusharglist 0 ........................... <[]>
+  [ 46] pushlist ................................ <[]>
+  [ 47] setprop 354 ............................. m_neededFiles = []
+  [ 50] getparam 16 ............................. <argOptions>
+  [ 52] pushsymb 357 ............................ <#CallBackInfo>
+  [ 55] pusharglist 2 ........................... <argOptions, #CallBackInfo>
+  [ 57] objcall 63 .............................. <argOptions[#CallBackInfo]>
+  [ 60] setprop 356 ............................. m_callBackInfo = argOptions[#CallBackInfo]
+  [ 63] getprop 356 ............................. <m_callBackInfo>
+  [ 66] pusharglist 1 ........................... <m_callBackInfo>
+  [ 68] extcall 223 ............................. <voidp(m_callBackInfo)>
+  [ 71] jmpifz [ 80] ............................ if voidp(m_callBackInfo) then
+  [ 74] pusharglist 0 ........................... <[:]>
+  [ 76] pushproplist ............................ <[:]>
+  [ 77] setprop 356 ............................. m_callBackInfo = [:]
+  [ 80] getparam 16 ............................. <argOptions>
+  [ 82] pushsymb 474 ............................ <#MustBeRemovable>
+  [ 85] pusharglist 2 ........................... <argOptions, #MustBeRemovable>
+  [ 87] objcall 63 .............................. <argOptions[#MustBeRemovable]>
+  [ 90] setprop 473 ............................. m_mustBeRemovableRemovable = argOptions[#MustBeRemovable]
+  [ 93] getprop 473 ............................. <m_mustBeRemovableRemovable>
+  [ 96] pusharglist 1 ........................... <m_mustBeRemovableRemovable>
+  [ 98] extcall 223 ............................. <voidp(m_mustBeRemovableRemovable)>
+  [101] jmpifz [110] ............................ if voidp(m_mustBeRemovableRemovable) then
+  [104] pushint8 1 .............................. <1>
+  [107] setprop 473 ............................. m_mustBeRemovableRemovable = 1
+  [110] getparam 16 ............................. <argOptions>
+  [112] pushsymb 482 ............................ <#MustBeVolumeRoot>
+  [115] pusharglist 2 ........................... <argOptions, #MustBeVolumeRoot>
+  [117] objcall 63 .............................. <argOptions[#MustBeVolumeRoot]>
+  [120] setprop 481 ............................. m_mustBeVolumeRoot = argOptions[#MustBeVolumeRoot]
+  [123] getprop 481 ............................. <m_mustBeVolumeRoot>
+  [126] pusharglist 1 ........................... <m_mustBeVolumeRoot>
+  [128] extcall 223 ............................. <voidp(m_mustBeVolumeRoot)>
+  [131] jmpifz [140] ............................ if voidp(m_mustBeVolumeRoot) then
+  [134] pushint8 1 .............................. <1>
+  [137] setprop 481 ............................. m_mustBeVolumeRoot = 1
+  [140] pushcons 0 .............................. <"FileXtra3">
+  [142] pusharglist 1 ........................... <"FileXtra3">
+  [144] extcall 7 ............................... <xtra("FileXtra3")>
+  [146] pusharglist 1 ........................... <xtra("FileXtra3")>
+  [148] objcall 37 .............................. <xtra("FileXtra3").new()>
+  [151] setprop 358 ............................. m_fxObj = xtra("FileXtra3").new()
+  [154] getparam 0 .............................. <me>
+  [156] pusharglistnoret 1 ...................... <me>
+  [158] extcall 2 ............................... return me
+  [160] ret
+end
+
+on kill me
+  [  0] getparam 0 .............................. <me>
+  [  2] pusharglistnoret 1 ...................... <me>
+  [  4] objcall 397 ............................. me.stopChecking()
+  [  7] pushzero ................................ <0>
+  [  8] setprop 356 ............................. m_callBackInfo = 0
+  [ 11] pushzero ................................ <0>
+  [ 12] setprop 358 ............................. m_fxObj = 0
+  [ 15] pushzero ................................ <0>
+  [ 16] pusharglistnoret 1 ...................... <0>
+  [ 18] extcall 2 ............................... return 0
+  [ 20] ret
+end
+
+on firstCheck me
+  [  0] pushzero ................................ <0>
+  [  1] setlocal 0 .............................. volumeExists = 0
+  [  3] getprop 358 ............................. <m_fxObj>
+  [  6] pusharglist 1 ........................... <m_fxObj>
+  [  8] objcall 340 ............................. <m_fxObj.fx_VolumesToList()>
+  [ 11] setlocal 8 .............................. volumes = m_fxObj.fx_VolumesToList()
+  [ 13] pushint8 1 .............................. <1>
+  [ 16] setlocal 16
+  [ 18] getlocal 16
+  [ 20] getlocal 8 .............................. <volumes>
+  [ 22] getobjprop 62 ........................... <volumes.count>
+  [ 25] lteq
+  [ 26] jmpifz [ 64] ............................ repeat with n = 1 to volumes.count
+  [ 29] getlocal 8 .............................. <volumes>
+  [ 31] getlocal 16 ............................. <n>
+  [ 33] pusharglist 2 ........................... <volumes, n>
+  [ 35] objcall 63 .............................. <volumes[n]>
+  [ 38] getprop 353 ............................. <m_CDDrivePath>
+  [ 41] eq ...................................... <volumes[n] = m_CDDrivePath>
+  [ 42] jmpifz [ 53] ............................ if volumes[n] = m_CDDrivePath then
+  [ 45] pushint8 1 .............................. <1>
+  [ 48] setlocal 0 .............................. volumeExists = 1
+  [ 50] jmp [ 64] ............................... exit repeat
+  [ 53] pushint8 1
+  [ 56] getlocal 16
+  [ 58] add
+  [ 59] setlocal 16
+  [ 61] endrepeat [ 18]
+  [ 64] getprop 358 ............................. <m_fxObj>
+  [ 67] getprop 353 ............................. <m_CDDrivePath>
+  [ 70] pusharglist 2 ........................... <m_fxObj, m_CDDrivePath>
+  [ 72] objcall 341 ............................. <m_fxObj.fx_VolumeIsRemovable(m_CDDrivePath)>
+  [ 75] setprop 478 ............................. m_isRemovable = m_fxObj.fx_VolumeIsRemovable(m_CDDrivePath)
+  [ 78] getprop 481 ............................. <m_mustBeVolumeRoot>
+  [ 81] pushint8 1 .............................. <1>
+  [ 84] eq ...................................... <m_mustBeVolumeRoot = 1>
+  [ 85] getlocal 0 .............................. <volumeExists>
+  [ 87] pushzero ................................ <0>
+  [ 88] eq ...................................... <volumeExists = 0>
+  [ 89] and ..................................... <(m_mustBeVolumeRoot = 1) and (volumeExists = 0)>
+  [ 90] jmpifz [106] ............................ if (m_mustBeVolumeRoot = 1) and (volumeExists = 0) then / else
+  [ 93] getparam 0 .............................. <me>
+  [ 95] pushsymb 387 ............................ <#NoVolume>
+  [ 98] pusharglistnoret 2 ...................... <me, #NoVolume>
+  [100] objcall 350 ............................. me.makeCallBack(#NoVolume)
+  [103] jmp [169]
+  [106] getprop 473 ............................. <m_mustBeRemovableRemovable>
+  [109] pushint8 1 .............................. <1>
+  [112] eq ...................................... <m_mustBeRemovableRemovable = 1>
+  [113] getprop 478 ............................. <m_isRemovable>
+  [116] pushzero ................................ <0>
+  [117] eq ...................................... <m_isRemovable = 0>
+  [118] and ..................................... <(m_mustBeRemovableRemovable = 1) and (m_isRemovable = 0)>
+  [119] jmpifz [135] ............................ if (m_mustBeRemovableRemovable = 1) and (m_isRemovable = 0) then / else
+  [122] getparam 0 .............................. <me>
+  [124] pushsymb 388 ............................ <#NotRemovable>
+  [127] pusharglistnoret 2 ...................... <me, #NotRemovable>
+  [129] objcall 350 ............................. me.makeCallBack(#NotRemovable)
+  [132] jmp [169]
+  [135] getparam 0 .............................. <me>
+  [137] pusharglist 1 ........................... <me>
+  [139] objcall 400 ............................. <me.checkHasTheseFiles()>
+  [142] pushint8 1 .............................. <1>
+  [145] eq ...................................... <me.checkHasTheseFiles() = 1>
+  [146] jmpifz [162] ............................ if me.checkHasTheseFiles() = 1 then / else
+  [149] getparam 0 .............................. <me>
+  [151] pushsymb 383 ............................ <#RightMedia>
+  [154] pusharglistnoret 2 ...................... <me, #RightMedia>
+  [156] objcall 350 ............................. me.makeCallBack(#RightMedia)
+  [159] jmp [169]
+  [162] getparam 0 .............................. <me>
+  [164] pusharglistnoret 1 ...................... <me>
+  [166] objcall 385 ............................. me.startChecking()
+  [169] ret
+end
+
+on startChecking me
+  [  0] pushint8 1 .............................. <1>
+  [  3] setprop 401 ............................. m_checking = 1
+  [  6] pushint8 1 .............................. <1>
+  [  9] setlocal 0 .............................. m_checkFilesWhenInserted = 1
+  [ 11] getparam 0 .............................. <me>
+  [ 13] pusharglist 1 ........................... <me>
+  [ 15] objcall 398 ............................. <me.getIsEjected()>
+  [ 18] setprop 402 ............................. m_isEjected = me.getIsEjected()
+  [ 21] getprop 402 ............................. <m_isEjected>
+  [ 24] jmpifz [ 34] ............................ if m_isEjected then
+  [ 27] getparam 0 .............................. <me>
+  [ 29] pusharglistnoret 1 ...................... <me>
+  [ 31] objcall 390 ............................. me.Ejected()
+  [ 34] getparam 0 .............................. <me>
+  [ 36] pusharglistnoret 1 ...................... <me>
+  [ 38] objcall 399 ............................. me.eject()
+  [ 41] getparam 0 .............................. <me>
+  [ 43] pushsymb 385 ............................ <#startChecking>
+  [ 46] pusharglistnoret 2 ...................... <me, #startChecking>
+  [ 48] objcall 350 ............................. me.makeCallBack(#startChecking)
+  [ 51] pushcons 8 .............................. <"CDTimer">
+  [ 53] pusharglist 1 ........................... <"CDTimer">
+  [ 55] extcall 403 ............................. <timeout("CDTimer")>
+  [ 58] pushint8 500 ............................ <500>
+  [ 61] pushsymb 352 ............................ <#timeTick>
+  [ 64] getparam 0 .............................. <me>
+  [ 66] pusharglist 4 ........................... <timeout("CDTimer"), 500, #timeTick, me>
+  [ 68] objcall 37 .............................. <timeout("CDTimer").new(500, #timeTick, me)>
+  [ 71] setprop 361 ............................. m_timerObj = timeout("CDTimer").new(500, #timeTick, me)
+  [ 74] ret
+end
+
+on stopChecking me
+  [  0] pushzero ................................ <0>
+  [  1] setprop 401 ............................. m_checking = 0
+  [  4] getprop 361 ............................. <m_timerObj>
+  [  7] pusharglist 1 ........................... <m_timerObj>
+  [  9] extcall 50 .............................. <objectp(m_timerObj)>
+  [ 12] jmpifz [ 27] ............................ if objectp(m_timerObj) then
+  [ 15] getprop 361 ............................. <m_timerObj>
+  [ 18] pusharglistnoret 1 ...................... <m_timerObj>
+  [ 20] objcall 362 ............................. m_timerObj.forget()
+  [ 23] pushzero ................................ <0>
+  [ 24] setprop 361 ............................. m_timerObj = 0
+  [ 27] ret
+end
+
+on makeCallBack me, argInfo
+  [  0] getprop 356 ............................. <m_callBackInfo>
+  [  3] pushsymb 363 ............................ <#object>
+  [  6] pusharglist 2 ........................... <m_callBackInfo, #object>
+  [  8] objcall 63 .............................. <m_callBackInfo[#object]>
+  [ 11] pusharglist 1 ........................... <m_callBackInfo[#object]>
+  [ 13] extcall 50 .............................. <objectp(m_callBackInfo[#object])>
+  [ 16] jmpifz [ 48] ............................ if objectp(m_callBackInfo[#object]) then
+  [ 19] getprop 356 ............................. <m_callBackInfo>
+  [ 22] pushsymb 364 ............................ <#handler>
+  [ 25] pusharglist 2 ........................... <m_callBackInfo, #handler>
+  [ 27] objcall 63 .............................. <m_callBackInfo[#handler]>
+  [ 30] getprop 356 ............................. <m_callBackInfo>
+  [ 33] pushsymb 363 ............................ <#object>
+  [ 36] pusharglist 2 ........................... <m_callBackInfo, #object>
+  [ 38] objcall 63 .............................. <m_callBackInfo[#object]>
+  [ 41] getparam 8 .............................. <argInfo>
+  [ 43] pusharglistnoret 3 ...................... <m_callBackInfo[#handler], m_callBackInfo[#object], argInfo>
+  [ 45] extcall 291 ............................. call(m_callBackInfo[#handler], m_callBackInfo[#object], argInfo)
+  [ 48] ret
+end
+
+on userSaysSwitchIsDone me
+  [  0] ret
+end
+
+on getIsEjected me
+  [  0] getprop 358 ............................. <m_fxObj>
+  [  3] getprop 353 ............................. <m_CDDrivePath>
+  [  6] pusharglist 2 ........................... <m_fxObj, m_CDDrivePath>
+  [  8] objcall 342 ............................. <m_fxObj.fx_VolumeIsCDROM(m_CDDrivePath)>
+  [ 11] pushzero ................................ <0>
+  [ 12] eq ...................................... <m_fxObj.fx_VolumeIsCDROM(m_CDDrivePath) = 0>
+  [ 13] pusharglistnoret 1 ...................... <m_fxObj.fx_VolumeIsCDROM(m_CDDrivePath) = 0>
+  [ 15] extcall 2 ............................... return m_fxObj.fx_VolumeIsCDROM(m_CDDrivePath) = 0
+  [ 17] ret
+end
+
+on eject me
+  [  0] getparam 0 .............................. <me>
+  [  2] pusharglist 1 ........................... <me>
+  [  4] objcall 398 ............................. <me.getIsEjected()>
+  [  7] pushzero ................................ <0>
+  [  8] eq ...................................... <me.getIsEjected() = 0>
+  [  9] jmpifz [ 67] ............................ if me.getIsEjected() = 0 then
+  [ 12] getparam 0 .............................. <me>
+  [ 14] pushsymb 389 ............................ <#Ejecting>
+  [ 17] pusharglistnoret 2 ...................... <me, #Ejecting>
+  [ 19] objcall 350 ............................. me.makeCallBack(#Ejecting)
+  [ 22] getprop 358 ............................. <m_fxObj>
+  [ 25] getprop 353 ............................. <m_CDDrivePath>
+  [ 28] pusharglistnoret 2 ...................... <m_fxObj, m_CDDrivePath>
+  [ 30] objcall 344 ............................. m_fxObj.fx_VolumeEject(m_CDDrivePath)
+  [ 33] getparam 0 .............................. <me>
+  [ 35] pusharglist 1 ........................... <me>
+  [ 37] objcall 398 ............................. <me.getIsEjected()>
+  [ 40] pushzero ................................ <0>
+  [ 41] eq ...................................... <me.getIsEjected() = 0>
+  [ 42] jmpifz [ 60] ............................ if me.getIsEjected() = 0 then
+  [ 45] getparam 0 .............................. <me>
+  [ 47] pushsymb 391 ............................ <#EjectingFailed>
+  [ 50] pusharglistnoret 2 ...................... <me, #EjectingFailed>
+  [ 52] objcall 350 ............................. me.makeCallBack(#EjectingFailed)
+  [ 55] pushzero ................................ <0>
+  [ 56] pusharglistnoret 1 ...................... <0>
+  [ 58] extcall 2 ............................... return 0
+  [ 60] pushint8 1 .............................. <1>
+  [ 63] pusharglistnoret 1 ...................... <1>
+  [ 65] extcall 2 ............................... return 1
+  [ 67] pushint8 1 .............................. <1>
+  [ 70] pusharglistnoret 1 ...................... <1>
+  [ 72] extcall 2 ............................... return 1
+  [ 74] ret
+end
+
+on checkHasTheseFiles me, argFileList
+  [  0] getparam 8 .............................. <argFileList>
+  [  2] pusharglist 1 ........................... <argFileList>
+  [  4] extcall 223 ............................. <voidp(argFileList)>
+  [  7] jmpifz [ 15] ............................ if voidp(argFileList) then
+  [ 10] getprop 354 ............................. <m_neededFiles>
+  [ 13] setparam 8 .............................. argFileList = m_neededFiles
+  [ 15] pushint8 1 .............................. <1>
+  [ 18] setlocal 0 .............................. foundFiles = 1
+  [ 20] pushint8 1 .............................. <1>
+  [ 23] setlocal 8
+  [ 25] getlocal 8
+  [ 27] getparam 8 .............................. <argFileList>
+  [ 29] getobjprop 62 ........................... <argFileList.count>
+  [ 32] lteq
+  [ 33] jmpifz [ 79] ............................ repeat with n = 1 to argFileList.count
+  [ 36] getprop 358 ............................. <m_fxObj>
+  [ 39] getprop 353 ............................. <m_CDDrivePath>
+  [ 42] getparam 8 .............................. <argFileList>
+  [ 44] getlocal 8 .............................. <n>
+  [ 46] pusharglist 2 ........................... <argFileList, n>
+  [ 48] objcall 63 .............................. <argFileList[n]>
+  [ 51] joinstr ................................. <m_CDDrivePath & argFileList[n]>
+  [ 52] pusharglist 2 ........................... <m_fxObj, m_CDDrivePath & argFileList[n]>
+  [ 54] objcall 367 ............................. <m_fxObj.fx_FileExists(m_CDDrivePath & argFileList[n])>
+  [ 57] pushzero ................................ <0>
+  [ 58] eq ...................................... <m_fxObj.fx_FileExists(m_CDDrivePath & argFileList[n]) = 0>
+  [ 59] jmpifz [ 68] ............................ if m_fxObj.fx_FileExists(m_CDDrivePath & argFileList[n]) = 0 then
+  [ 62] pushzero ................................ <0>
+  [ 63] setlocal 0 .............................. foundFiles = 0
+  [ 65] jmp [ 79] ............................... exit repeat
+  [ 68] pushint8 1
+  [ 71] getlocal 8
+  [ 73] add
+  [ 74] setlocal 8
+  [ 76] endrepeat [ 25]
+  [ 79] getlocal 0 .............................. <foundFiles>
+  [ 81] pusharglistnoret 1 ...................... <foundFiles>
+  [ 83] extcall 2 ............................... return foundFiles
+  [ 85] ret
+end
+
+on Inserted me
+  [  0] pushzero ................................ <0>
+  [  1] setprop 401 ............................. m_checking = 0
+  [  4] getparam 0 .............................. <me>
+  [  6] pushsymb 392 ............................ <#Inserted>
+  [  9] pusharglistnoret 2 ...................... <me, #Inserted>
+  [ 11] objcall 350 ............................. me.makeCallBack(#Inserted)
+  [ 14] pushint8 1 .............................. <1>
+  [ 17] setlocal 0 .............................. m_checkFilesWhenInserted = 1
+  [ 19] getlocal 0 .............................. <m_checkFilesWhenInserted>
+  [ 21] pushint8 1 .............................. <1>
+  [ 24] eq ...................................... <m_checkFilesWhenInserted = 1>
+  [ 25] jmpifz [ 67] ............................ if m_checkFilesWhenInserted = 1 then
+  [ 28] getparam 0 .............................. <me>
+  [ 30] pusharglist 1 ........................... <me>
+  [ 32] objcall 400 ............................. <me.checkHasTheseFiles()>
+  [ 35] setlocal 8 .............................. foundFiles = me.checkHasTheseFiles()
+  [ 37] getlocal 8 .............................. <foundFiles>
+  [ 39] pushzero ................................ <0>
+  [ 40] eq ...................................... <foundFiles = 0>
+  [ 41] jmpifz [ 57] ............................ if foundFiles = 0 then / else
+  [ 44] getparam 0 .............................. <me>
+  [ 46] pushsymb 386 ............................ <#WrongMedia>
+  [ 49] pusharglistnoret 2 ...................... <me, #WrongMedia>
+  [ 51] objcall 350 ............................. me.makeCallBack(#WrongMedia)
+  [ 54] jmp [ 67]
+  [ 57] getparam 0 .............................. <me>
+  [ 59] pushsymb 383 ............................ <#RightMedia>
+  [ 62] pusharglistnoret 2 ...................... <me, #RightMedia>
+  [ 64] objcall 350 ............................. me.makeCallBack(#RightMedia)
+  [ 67] ret
+end
+
+on Ejected me
+  [  0] getparam 0 .............................. <me>
+  [  2] pushsymb 390 ............................ <#Ejected>
+  [  5] pusharglistnoret 2 ...................... <me, #Ejected>
+  [  7] objcall 350 ............................. me.makeCallBack(#Ejected)
+  [ 10] ret
+end
+
+on timeTick me
+  [  0] getprop 401 ............................. <m_checking>
+  [  3] not ..................................... <not m_checking>
+  [  4] jmpifz [  8] ............................ if not m_checking then
+  [  7] ret ..................................... exit
+  [  8] getprop 478 ............................. <m_isRemovable>
+  [ 11] jmpifz [ 72] ............................ if m_isRemovable then / else
+  [ 14] getparam 0 .............................. <me>
+  [ 16] pusharglist 1 ........................... <me>
+  [ 18] objcall 398 ............................. <me.getIsEjected()>
+  [ 21] setlocal 0 .............................. tmpEjected = me.getIsEjected()
+  [ 23] pushcons 16 ............................. <"CHECK">
+  [ 25] getlocal 0 .............................. <tmpEjected>
+  [ 27] pusharglistnoret 2 ...................... <"CHECK", tmpEjected>
+  [ 29] extcall 47 .............................. put "CHECK", tmpEjected
+  [ 32] getlocal 0 .............................. <tmpEjected>
+  [ 34] getprop 402 ............................. <m_isEjected>
+  [ 37] nteq .................................... <tmpEjected <> m_isEjected>
+  [ 38] jmpifz [ 69] ............................ if tmpEjected <> m_isEjected then
+  [ 41] getlocal 0 .............................. <tmpEjected>
+  [ 43] setprop 402 ............................. m_isEjected = tmpEjected
+  [ 46] getprop 402 ............................. <m_isEjected>
+  [ 49] jmpifz [ 62] ............................ if m_isEjected then / else
+  [ 52] getparam 0 .............................. <me>
+  [ 54] pusharglistnoret 1 ...................... <me>
+  [ 56] objcall 390 ............................. me.Ejected()
+  [ 59] jmp [ 69]
+  [ 62] getparam 0 .............................. <me>
+  [ 64] pusharglistnoret 1 ...................... <me>
+  [ 66] objcall 392 ............................. me.Inserted()
+  [ 69] jmp [111]
+  [ 72] getparam 0 .............................. <me>
+  [ 74] pusharglist 1 ........................... <me>
+  [ 76] objcall 400 ............................. <me.checkHasTheseFiles()>
+  [ 79] setlocal 8 .............................. foundFiles = me.checkHasTheseFiles()
+  [ 81] getlocal 8 .............................. <foundFiles>
+  [ 83] pushzero ................................ <0>
+  [ 84] eq ...................................... <foundFiles = 0>
+  [ 85] jmpifz [101] ............................ if foundFiles = 0 then / else
+  [ 88] getparam 0 .............................. <me>
+  [ 90] pushsymb 386 ............................ <#WrongMedia>
+  [ 93] pusharglistnoret 2 ...................... <me, #WrongMedia>
+  [ 95] objcall 350 ............................. me.makeCallBack(#WrongMedia)
+  [ 98] jmp [111]
+  [101] getparam 0 .............................. <me>
+  [103] pushsymb 383 ............................ <#RightMedia>
+  [106] pusharglistnoret 2 ...................... <me, #RightMedia>
+  [108] objcall 350 ............................. me.makeCallBack(#RightMedia)
+  [111] ret
+end

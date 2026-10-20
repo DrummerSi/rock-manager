@@ -1,0 +1,66 @@
+property ancestor, m_objDisplay, m_dateInt
+global gRock, gUseful
+
+on new me
+  ancestor = script("DateScript").new()
+  tmp = the systemDate
+  ancestor.setDate([#year: tmp.year, #month: tmp.month, #day: tmp.day])
+  gRock.m_gameTimer.addObject(me, 100, 1)
+  return me
+end
+
+on kill me
+  m_objDisplay = 0
+  gRock.m_gameTimer.deleteObject(me)
+  return 0
+end
+
+on timeTick me
+  ancestor.add(1)
+  m_dateInt = ancestor.getDaysSinceDayZero()
+  me.render(#NewDate)
+end
+
+on setDisplayObj me, argObj
+  m_objDisplay = argObj
+  me.render()
+end
+
+on render me, argNewDate
+  if objectp(m_objDisplay) then
+    m_objDisplay.render(rGetDateStr(), argNewDate)
+  end if
+end
+
+on save me
+  return [#date: ancestor.m_date, #Passed: m_dateInt]
+end
+
+on load me, argList
+  if voidp(argList) then
+    exit
+  end if
+  pott("LOAD DATE")
+  if integerp(argList[#Passed]) then
+    ancestor.m_date = argList[#date]
+    m_dateInt = argList[#Passed]
+    todayLingoDate = ancestor.getLingoDate()
+    dayZeroLingoDate = todayLingoDate - m_dateInt
+    me.setDayZeroDate([#year: dayZeroLingoDate.year, #month: dayZeroLingoDate.month, #day: dayZeroLingoDate.day])
+  else
+    ancestor.m_date = argList
+    m_dateInt = ancestor.getDaysSinceDayZero()
+  end if
+end
+
+on getDateInt me
+  if voidp(m_dateInt) then
+    m_dateInt = ancestor.getDaysSinceDayZero()
+  end if
+  return m_dateInt
+end
+
+on setDayZeroDate me, argList
+  ancestor.setDayZeroDate(argList)
+  m_dateInt = ancestor.getDaysSinceDayZero()
+end

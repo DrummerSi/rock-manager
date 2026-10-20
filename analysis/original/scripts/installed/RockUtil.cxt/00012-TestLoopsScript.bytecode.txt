@@ -1,0 +1,1130 @@
+property m_loopsPerSong, m_currentSongCnt, m_currentLoopCnt, m_sequencer, m_waveRenderer, m_rndErr
+global gRock
+
+on new me
+  [  0] getglobal 7 ............................. <gRock>
+  [  2] pusharglist 1 ........................... <gRock>
+  [  4] extcall 71 .............................. <objectp(gRock)>
+  [  7] not ..................................... <not objectp(gRock)>
+  [  8] jmpifz [ 16] ............................ if not objectp(gRock) then
+  [ 11] pusharglistnoret 0 ...................... <>
+  [ 13] extcall 482 ............................. testPrepareMovie()
+  [ 16] pushcons 0 .............................. <0.0>
+  [ 18] setprop 483 ............................. m_rndErr = 0.0
+  [ 21] getparam 0 .............................. <me>
+  [ 23] pusharglistnoret 1 ...................... <me>
+  [ 25] objcall 470 ............................. me.createList()
+  [ 28] getparam 0 .............................. <me>
+  [ 30] pusharglistnoret 1 ...................... <me>
+  [ 32] extcall 21 .............................. return me
+  [ 34] ret
+end
+
+on kill me
+  [  0] getparam 0 .............................. <me>
+  [  2] pusharglistnoret 1 ...................... <me>
+  [  4] objcall 238 ............................. me.stop()
+  [  7] pusharglist 0 ........................... <[:]>
+  [  9] pushproplist ............................ <[:]>
+  [ 10] setprop 484 ............................. m_loopsPerSong = [:]
+  [ 13] getprop 323 ............................. <m_sequencer>
+  [ 16] pusharglist 1 ........................... <m_sequencer>
+  [ 18] extcall 71 .............................. <objectp(m_sequencer)>
+  [ 21] jmpifz [ 34] ............................ if objectp(m_sequencer) then
+  [ 24] getprop 323 ............................. <m_sequencer>
+  [ 27] pusharglist 1 ........................... <m_sequencer>
+  [ 29] objcall 1 ............................... <m_sequencer.kill()>
+  [ 31] setprop 323 ............................. m_sequencer = m_sequencer.kill()
+  [ 34] getprop 485 ............................. <m_waveRenderer>
+  [ 37] pusharglist 1 ........................... <m_waveRenderer>
+  [ 39] extcall 71 .............................. <objectp(m_waveRenderer)>
+  [ 42] jmpifz [ 55] ............................ if objectp(m_waveRenderer) then
+  [ 45] getprop 485 ............................. <m_waveRenderer>
+  [ 48] pusharglist 1 ........................... <m_waveRenderer>
+  [ 50] objcall 1 ............................... <m_waveRenderer.kill()>
+  [ 52] setprop 485 ............................. m_waveRenderer = m_waveRenderer.kill()
+  [ 55] pushzero ................................ <0>
+  [ 56] pusharglistnoret 1 ...................... <0>
+  [ 58] extcall 21 .............................. return 0
+  [ 60] ret
+end
+
+on createList me
+  [  0] pusharglist 0 ........................... <[:]>
+  [  2] pushproplist ............................ <[:]>
+  [  3] setprop 484 ............................. m_loopsPerSong = [:]
+  [  6] pusharglist 0 ........................... <[:]>
+  [  8] pushproplist ............................ <[:]>
+  [  9] setlocal 0 .............................. sortedPerSong = [:]
+  [ 11] getlocal 0 .............................. <sortedPerSong>
+  [ 13] pusharglistnoret 1 ...................... <sortedPerSong>
+  [ 15] objcall 325 ............................. sortedPerSong.sort()
+  [ 18] getglobal 7 ............................. <gRock>
+  [ 20] getobjprop 486 .......................... <gRock.m_classManager>
+  [ 23] pushsymb 487 ............................ <#loop>
+  [ 26] pusharglist 2 ........................... <gRock.m_classManager, #loop>
+  [ 28] objcall 488 ............................. <gRock.m_classManager.getObjsOfClass(#loop)>
+  [ 31] setlocal 8 .............................. loops_r = gRock.m_classManager.getObjsOfClass(#loop)
+  [ 33] getlocal 8 .............................. <loops_r>
+  [ 35] peek 0
+  [ 37] pusharglist 1
+  [ 39] extcall 32
+  [ 42] pushint8 1
+  [ 44] peek 0
+  [ 46] peek 2
+  [ 48] lteq
+  [ 49] jmpifz [150] ............................ repeat with loop_r in loops_r
+  [ 52] peek 2
+  [ 54] peek 1
+  [ 56] pusharglist 2
+  [ 58] extcall 34
+  [ 61] setlocal 16
+  [ 63] getglobal 7 ............................. <gRock>
+  [ 65] getobjprop 486 .......................... <gRock.m_classManager>
+  [ 68] getlocal 16 ............................. <loop_r>
+  [ 70] getobjprop 489 .......................... <loop_r.BelongsToSong>
+  [ 73] pushsymb 490 ............................ <#Song>
+  [ 76] pusharglist 3 ........................... <gRock.m_classManager, loop_r.BelongsToSong, #Song>
+  [ 78] objcall 491 ............................. <gRock.m_classManager.getObjByIDAndClass(loop_r.BelongsToSong, #Song)>
+  [ 81] setlocal 24 ............................. song_r = gRock.m_classManager.getObjByIDAndClass(loop_r.BelongsToSong, #Song)
+  [ 83] getlocal 0 .............................. <sortedPerSong>
+  [ 85] getlocal 24 ............................. <song_r>
+  [ 87] getobjprop 60 ........................... <song_r.ID>
+  [ 90] pusharglist 2 ........................... <sortedPerSong, song_r.ID>
+  [ 92] objcall 67 .............................. <sortedPerSong.getaProp(song_r.ID)>
+  [ 95] setlocal 32 ............................. tmp = sortedPerSong.getaProp(song_r.ID)
+  [ 97] getlocal 32 ............................. <tmp>
+  [ 99] pusharglist 1 ........................... <tmp>
+  [101] extcall 68 .............................. <voidp(tmp)>
+  [104] jmpifz [132] ............................ if voidp(tmp) then
+  [107] pusharglist 0 ........................... <[]>
+  [109] pushlist ................................ <[]>
+  [110] setlocal 32 ............................. tmp = []
+  [112] getlocal 32 ............................. <tmp>
+  [114] pusharglistnoret 1 ...................... <tmp>
+  [116] objcall 325 ............................. tmp.sort()
+  [119] getlocal 0 .............................. <sortedPerSong>
+  [121] getlocal 24 ............................. <song_r>
+  [123] getobjprop 60 ........................... <song_r.ID>
+  [126] getlocal 32 ............................. <tmp>
+  [128] pusharglistnoret 3 ...................... <sortedPerSong, song_r.ID, tmp>
+  [130] objcall 28 .............................. sortedPerSong.setaProp(song_r.ID, tmp)
+  [132] getlocal 32 ............................. <tmp>
+  [134] getlocal 16 ............................. <loop_r>
+  [136] getobjprop 60 ........................... <loop_r.ID>
+  [139] pusharglistnoret 2 ...................... <tmp, loop_r.ID>
+  [141] objcall 50 .............................. tmp.add(loop_r.ID)
+  [144] pushint8 1
+  [146] add
+  [147] endrepeat [ 44]
+  [150] pop 3
+  [152] pushint8 1 .............................. <1>
+  [155] setlocal 40
+  [157] getlocal 40
+  [159] getlocal 0 .............................. <sortedPerSong>
+  [161] getobjprop 32 ........................... <sortedPerSong.count>
+  [164] lteq
+  [165] jmpifz [290] ............................ repeat with songNr = 1 to sortedPerSong.count
+  [168] getglobal 7 ............................. <gRock>
+  [170] getobjprop 486 .......................... <gRock.m_classManager>
+  [173] getlocal 0 .............................. <sortedPerSong>
+  [175] getlocal 40 ............................. <songNr>
+  [177] pusharglist 2 ........................... <sortedPerSong, songNr>
+  [179] objcall 33 .............................. <sortedPerSong.getPropAt(songNr)>
+  [182] pushsymb 490 ............................ <#Song>
+  [185] pusharglist 3 ........................... <gRock.m_classManager, sortedPerSong.getPropAt(songNr), #Song>
+  [187] objcall 491 ............................. <gRock.m_classManager.getObjByIDAndClass(sortedPerSong.getPropAt(songNr), #Song)>
+  [190] setlocal 24 ............................. song_r = gRock.m_classManager.getObjByIDAndClass(sortedPerSong.getPropAt(songNr), #Song)
+  [192] pusharglist 0 ........................... <[]>
+  [194] pushlist ................................ <[]>
+  [195] setlocal 32 ............................. tmp = []
+  [197] getprop 484 ............................. <m_loopsPerSong>
+  [200] getlocal 24 ............................. <song_r>
+  [202] getlocal 32 ............................. <tmp>
+  [204] pusharglistnoret 3 ...................... <m_loopsPerSong, song_r, tmp>
+  [206] objcall 28 .............................. m_loopsPerSong.setaProp(song_r, tmp)
+  [208] getlocal 0 .............................. <sortedPerSong>
+  [210] getlocal 40 ............................. <songNr>
+  [212] pusharglist 2 ........................... <sortedPerSong, songNr>
+  [214] objcall 34 .............................. <sortedPerSong[songNr]>
+  [217] setlocal 8 .............................. loops_r = sortedPerSong[songNr]
+  [219] getlocal 8 .............................. <loops_r>
+  [221] peek 0
+  [223] pusharglist 1
+  [225] extcall 32
+  [228] pushint8 1
+  [230] peek 0
+  [232] peek 2
+  [234] lteq
+  [235] jmpifz [277] ............................ repeat with LoopID in loops_r
+  [238] peek 2
+  [240] peek 1
+  [242] pusharglist 2
+  [244] extcall 34
+  [247] setlocal 48
+  [249] getlocal 32 ............................. <tmp>
+  [251] getglobal 7 ............................. <gRock>
+  [253] getobjprop 486 .......................... <gRock.m_classManager>
+  [256] getlocal 48 ............................. <LoopID>
+  [258] pushsymb 487 ............................ <#loop>
+  [261] pusharglist 3 ........................... <gRock.m_classManager, LoopID, #loop>
+  [263] objcall 491 ............................. <gRock.m_classManager.getObjByIDAndClass(LoopID, #loop)>
+  [266] pusharglistnoret 2 ...................... <tmp, gRock.m_classManager.getObjByIDAndClass(LoopID, #loop)>
+  [268] objcall 50 .............................. tmp.add(gRock.m_classManager.getObjByIDAndClass(LoopID, #loop))
+  [271] pushint8 1
+  [273] add
+  [274] endrepeat [230]
+  [277] pop 3
+  [279] pushint8 1
+  [282] getlocal 40
+  [284] add
+  [285] setlocal 40
+  [287] endrepeat [157]
+  [290] pushint8 1 .............................. <1>
+  [293] setprop 492 ............................. m_currentSongCnt = 1
+  [296] pushzero ................................ <0>
+  [297] setprop 493 ............................. m_currentLoopCnt = 0
+  [300] ret
+end
+
+on convIDsToCnts me, argSongID, argLoop
+  [  0] getglobal 7 ............................. <gRock>
+  [  2] getobjprop 486 .......................... <gRock.m_classManager>
+  [  5] getparam 8 .............................. <argSongID>
+  [  7] pushsymb 490 ............................ <#Song>
+  [ 10] pusharglist 3 ........................... <gRock.m_classManager, argSongID, #Song>
+  [ 12] objcall 491 ............................. <gRock.m_classManager.getObjByIDAndClass(argSongID, #Song)>
+  [ 15] setlocal 0 .............................. song_r = gRock.m_classManager.getObjByIDAndClass(argSongID, #Song)
+  [ 17] getprop 484 ............................. <m_loopsPerSong>
+  [ 20] getlocal 0 .............................. <song_r>
+  [ 22] pusharglist 2 ........................... <m_loopsPerSong, song_r>
+  [ 24] objcall 500 ............................. <m_loopsPerSong.findPos(song_r)>
+  [ 27] setprop 492 ............................. m_currentSongCnt = m_loopsPerSong.findPos(song_r)
+  [ 30] getprop 492 ............................. <m_currentSongCnt>
+  [ 33] pushzero ................................ <0>
+  [ 34] gt ...................................... <m_currentSongCnt > 0>
+  [ 35] not ..................................... <not (m_currentSongCnt > 0)>
+  [ 36] jmpifz [ 57] ............................ if not (m_currentSongCnt > 0) then
+  [ 39] pushcons 8 .............................. <"No song!">
+  [ 41] pusharglistnoret 1 ...................... <"No song!">
+  [ 43] extcall 36 .............................. pott("No song!")
+  [ 46] pushint8 1 .............................. <1>
+  [ 49] setprop 492 ............................. m_currentSongCnt = 1
+  [ 52] pushzero ................................ <0>
+  [ 53] setprop 493 ............................. m_currentLoopCnt = 0
+  [ 56] ret ..................................... exit
+  [ 57] getparam 16 ............................. <argLoop>
+  [ 59] pusharglist 1 ........................... <argLoop>
+  [ 61] extcall 68 .............................. <voidp(argLoop)>
+  [ 64] not ..................................... <not voidp(argLoop)>
+  [ 65] jmpifz [225] ............................ if not voidp(argLoop) then
+  [ 68] getprop 484 ............................. <m_loopsPerSong>
+  [ 71] getprop 492 ............................. <m_currentSongCnt>
+  [ 74] pusharglist 2 ........................... <m_loopsPerSong, m_currentSongCnt>
+  [ 76] objcall 34 .............................. <m_loopsPerSong[m_currentSongCnt]>
+  [ 79] setlocal 8 .............................. loops_r = m_loopsPerSong[m_currentSongCnt]
+  [ 81] getparam 16 ............................. <argLoop>
+  [ 83] pusharglist 1 ........................... <argLoop>
+  [ 85] extcall 148 ............................. <stringp(argLoop)>
+  [ 88] jmpifz [154] ............................ if stringp(argLoop) then / else
+  [ 91] pushint8 1 .............................. <1>
+  [ 94] setlocal 16
+  [ 96] getlocal 16
+  [ 98] getlocal 8 .............................. <loops_r>
+  [100] getobjprop 32 ........................... <loops_r.count>
+  [103] lteq
+  [104] jmpifz [151] ............................ repeat with n = 1 to loops_r.count
+  [107] getlocal 8 .............................. <loops_r>
+  [109] getlocal 16 ............................. <n>
+  [111] pusharglist 2 ........................... <loops_r, n>
+  [113] objcall 34 .............................. <loops_r[n]>
+  [116] setlocal 24 ............................. loop_r = loops_r[n]
+  [118] getlocal 24 ............................. <loop_r>
+  [120] getobjprop 26 ........................... <loop_r.file>
+  [122] getparam 16 ............................. <argLoop>
+  [124] eq ...................................... <loop_r.file = argLoop>
+  [125] jmpifz [140] ............................ if loop_r.file = argLoop then
+  [128] getlocal 16 ............................. <n>
+  [130] pushint8 1 .............................. <1>
+  [133] sub ..................................... <n - 1>
+  [134] setprop 493 ............................. m_currentLoopCnt = n - 1
+  [137] jmp [151] ............................... exit repeat
+  [140] pushint8 1
+  [143] getlocal 16
+  [145] add
+  [146] setlocal 16
+  [148] endrepeat [ 96]
+  [151] jmp [225]
+  [154] getparam 16 ............................. <argLoop>
+  [156] pusharglist 1 ........................... <argLoop>
+  [158] extcall 501 ............................. <symbolp(argLoop)>
+  [161] jmpifz [225] ............................ if symbolp(argLoop) then
+  [164] pushint8 1 .............................. <1>
+  [167] setlocal 16
+  [169] getlocal 16
+  [171] getlocal 8 .............................. <loops_r>
+  [173] getobjprop 32 ........................... <loops_r.count>
+  [176] lteq
+  [177] jmpifz [225] ............................ repeat with n = 1 to loops_r.count
+  [180] getlocal 8 .............................. <loops_r>
+  [182] getlocal 16 ............................. <n>
+  [184] pusharglist 2 ........................... <loops_r, n>
+  [186] objcall 34 .............................. <loops_r[n]>
+  [189] setlocal 24 ............................. loop_r = loops_r[n]
+  [191] getlocal 24 ............................. <loop_r>
+  [193] getobjprop 60 ........................... <loop_r.ID>
+  [196] getparam 16 ............................. <argLoop>
+  [198] eq ...................................... <loop_r.ID = argLoop>
+  [199] jmpifz [214] ............................ if loop_r.ID = argLoop then
+  [202] getlocal 16 ............................. <n>
+  [204] pushint8 1 .............................. <1>
+  [207] sub ..................................... <n - 1>
+  [208] setprop 493 ............................. m_currentLoopCnt = n - 1
+  [211] jmp [225] ............................... exit repeat
+  [214] pushint8 1
+  [217] getlocal 16
+  [219] add
+  [220] setlocal 16
+  [222] endrepeat [169]
+  [225] ret
+end
+
+on goto me, argSongID, argLoop
+  [  0] getparam 0 .............................. <me>
+  [  2] getparam 8 .............................. <argSongID>
+  [  4] getparam 16 ............................. <argLoop>
+  [  6] pusharglistnoret 3 ...................... <me, argSongID, argLoop>
+  [  8] objcall 471 ............................. me.convIDsToCnts(argSongID, argLoop)
+  [ 11] getparam 0 .............................. <me>
+  [ 13] pusharglistnoret 1 ...................... <me>
+  [ 15] objcall 473 ............................. me.playNext()
+  [ 18] ret
+end
+
+on playNext me
+  [  0] getprop 484 ............................. <m_loopsPerSong>
+  [  3] getprop 492 ............................. <m_currentSongCnt>
+  [  6] pusharglist 2 ........................... <m_loopsPerSong, m_currentSongCnt>
+  [  8] objcall 34 .............................. <m_loopsPerSong[m_currentSongCnt]>
+  [ 11] setlocal 0 .............................. loops_r = m_loopsPerSong[m_currentSongCnt]
+  [ 13] getprop 493 ............................. <m_currentLoopCnt>
+  [ 16] pushint8 1 .............................. <1>
+  [ 19] add ..................................... <m_currentLoopCnt + 1>
+  [ 20] setprop 493 ............................. m_currentLoopCnt = m_currentLoopCnt + 1
+  [ 23] getprop 493 ............................. <m_currentLoopCnt>
+  [ 26] getlocal 0 .............................. <loops_r>
+  [ 28] getobjprop 32 ........................... <loops_r.count>
+  [ 31] gt ...................................... <m_currentLoopCnt > loops_r.count>
+  [ 32] jmpifz [ 85] ............................ if m_currentLoopCnt > loops_r.count then
+  [ 35] getprop 492 ............................. <m_currentSongCnt>
+  [ 38] pushint8 1 .............................. <1>
+  [ 41] add ..................................... <m_currentSongCnt + 1>
+  [ 42] setprop 492 ............................. m_currentSongCnt = m_currentSongCnt + 1
+  [ 45] getprop 492 ............................. <m_currentSongCnt>
+  [ 48] getprop 484 ............................. <m_loopsPerSong>
+  [ 51] getobjprop 32 ........................... <m_loopsPerSong.count>
+  [ 54] gt ...................................... <m_currentSongCnt > m_loopsPerSong.count>
+  [ 55] jmpifz [ 66] ............................ if m_currentSongCnt > m_loopsPerSong.count then
+  [ 58] pushcons 16 ............................. <"No more files!">
+  [ 60] pusharglistnoret 1 ...................... <"No more files!">
+  [ 62] extcall 36 .............................. pott("No more files!")
+  [ 65] ret ..................................... exit
+  [ 66] getprop 484 ............................. <m_loopsPerSong>
+  [ 69] getprop 492 ............................. <m_currentSongCnt>
+  [ 72] pusharglist 2 ........................... <m_loopsPerSong, m_currentSongCnt>
+  [ 74] objcall 34 .............................. <m_loopsPerSong[m_currentSongCnt]>
+  [ 77] setlocal 0 .............................. loops_r = m_loopsPerSong[m_currentSongCnt]
+  [ 79] pushint8 1 .............................. <1>
+  [ 82] setprop 493 ............................. m_currentLoopCnt = 1
+  [ 85] getprop 484 ............................. <m_loopsPerSong>
+  [ 88] getprop 492 ............................. <m_currentSongCnt>
+  [ 91] pusharglist 2 ........................... <m_loopsPerSong, m_currentSongCnt>
+  [ 93] objcall 33 .............................. <m_loopsPerSong.getPropAt(m_currentSongCnt)>
+  [ 96] setlocal 8 .............................. song_r = m_loopsPerSong.getPropAt(m_currentSongCnt)
+  [ 98] getlocal 0 .............................. <loops_r>
+  [100] getprop 493 ............................. <m_currentLoopCnt>
+  [103] pusharglist 2 ........................... <loops_r, m_currentLoopCnt>
+  [105] objcall 34 .............................. <loops_r[m_currentLoopCnt]>
+  [108] setlocal 16 ............................. loop_r = loops_r[m_currentLoopCnt]
+  [110] getlocal 8 .............................. <song_r>
+  [112] getobjprop 60 ........................... <song_r.ID>
+  [115] getlocal 8 .............................. <song_r>
+  [117] getobjprop 504 .......................... <song_r.name>
+  [120] getlocal 16 ............................. <loop_r>
+  [122] getobjprop 26 ........................... <loop_r.file>
+  [124] getlocal 16 ............................. <loop_r>
+  [126] getobjprop 504 .......................... <loop_r.name>
+  [129] pusharglistnoret 4 ...................... <song_r.ID, song_r.name, loop_r.file, loop_r.name>
+  [131] extcall 36 .............................. pott(song_r.ID, song_r.name, loop_r.file, loop_r.name)
+  [134] getparam 0 .............................. <me>
+  [136] getlocal 16 ............................. <loop_r>
+  [138] pusharglistnoret 2 ...................... <me, loop_r>
+  [140] objcall 237 ............................. me.play(loop_r)
+  [143] ret
+end
+
+on playLoop me, argLoopID
+  [  0] ret
+end
+
+on play me, argLoop_r, argMaxRnd
+  [  0] pushint8 1 .............................. <1>
+  [  3] pusharglist 1 ........................... <1>
+  [  5] extcall 259 ............................. <sound(1)>
+  [  8] pusharglistnoret 1 ...................... <sound(1)>
+  [ 10] objcall 238 ............................. sound(1).stop()
+  [ 13] getglobal 23 ............................ <gUseful>
+  [ 15] pushsymb 506 ............................ <#Director>
+  [ 18] pusharglistnoret 2 ...................... <gUseful, #Director>
+  [ 20] objcall 507 ............................. gUseful.setSoundSystem(#Director)
+  [ 23] getparam 16 ............................. <argMaxRnd>
+  [ 25] pusharglist 1 ........................... <argMaxRnd>
+  [ 27] extcall 68 .............................. <voidp(argMaxRnd)>
+  [ 30] jmpifz [ 37] ............................ if voidp(argMaxRnd) then
+  [ 33] pushcons 24 ............................. <0.0>
+  [ 35] setparam 16 ............................. argMaxRnd = 0.0
+  [ 37] pushcons 32 ............................. <"D:\\decoded.wav">
+  [ 39] setlocal 0 .............................. decodedOutFile = "D:\\decoded.wav"
+  [ 41] pushsymb 45 ............................. <#in>
+  [ 44] getglobal 7 ............................. <gRock>
+  [ 46] getobjprop 8 ............................ <gRock.m_paths>
+  [ 48] pushsymb 82 ............................. <#CompressedMusic>
+  [ 51] pusharglist 2 ........................... <gRock.m_paths, #CompressedMusic>
+  [ 53] objcall 10 .............................. <gRock.m_paths.getPath(#CompressedMusic)>
+  [ 55] getparam 8 .............................. <argLoop_r>
+  [ 57] getobjprop 26 ........................... <argLoop_r.file>
+  [ 59] joinstr ................................. <gRock.m_paths.getPath(#CompressedMusic) & argLoop_r.file>
+  [ 60] pushcons 40 ............................. <".ogg">
+  [ 62] joinstr ................................. <gRock.m_paths.getPath(#CompressedMusic) & argLoop_r.file & ".ogg">
+  [ 63] pushsymb 47 ............................. <#Out>
+  [ 66] getlocal 0 .............................. <decodedOutFile>
+  [ 68] pusharglist 4 ........................... <[#in: gRock.m_paths.getPath(#CompressedMusic) & argLoop_r.file & ".ogg", #Out: decodedOutFile]>
+  [ 70] pushproplist ............................ <[#in: gRock.m_paths.getPath(#CompressedMusic) & argLoop_r.file & ".ogg", #Out: decodedOutFile]>
+  [ 71] pusharglist 1 ........................... <[[#in: gRock.m_paths.getPath(#CompressedMusic) & argLoop_r.file & ".ogg", #Out: decodedOutFile]]>
+  [ 73] pushlist ................................ <[[#in: gRock.m_paths.getPath(#CompressedMusic) & argLoop_r.file & ".ogg", #Out: decodedOutFile]]>
+  [ 74] pushcons 48 ............................. <"ogg">
+  [ 76] pusharglistnoret 2 ...................... <[[#in: gRock.m_paths.getPath(#CompressedMusic) & argLoop_r.file & ".ogg", #Out: decodedOutFile]], "ogg">
+  [ 78] extcall 95 .............................. mixDecodeFiles([[#in: gRock.m_paths.getPath(#CompressedMusic) & argLoop_r.file & ".ogg", #Out: decodedOutFile]], "ogg")
+  [ 81] getglobal 7 ............................. <gRock>
+  [ 83] getobjprop 486 .......................... <gRock.m_classManager>
+  [ 86] getparam 8 .............................. <argLoop_r>
+  [ 88] getobjprop 489 .......................... <argLoop_r.BelongsToSong>
+  [ 91] pushsymb 490 ............................ <#Song>
+  [ 94] pusharglist 3 ........................... <gRock.m_classManager, argLoop_r.BelongsToSong, #Song>
+  [ 96] objcall 491 ............................. <gRock.m_classManager.getObjByIDAndClass(argLoop_r.BelongsToSong, #Song)>
+  [ 99] setlocal 8 .............................. song_r = gRock.m_classManager.getObjByIDAndClass(argLoop_r.BelongsToSong, #Song)
+  [101] getlocal 0 .............................. <decodedOutFile>
+  [103] pushsymb 150 ............................ <#char>
+  [106] pushint8 1 .............................. <1>
+  [109] getlocal 0 .............................. <decodedOutFile>
+  [111] getobjprop 151 .......................... <decodedOutFile.length>
+  [114] pushint8 1 .............................. <1>
+  [117] sub ..................................... <decodedOutFile.length - 1>
+  [118] pusharglist 4 ........................... <decodedOutFile, #char, 1, decodedOutFile.length - 1>
+  [120] objcall 152 ............................. <decodedOutFile.char[1..decodedOutFile.length - 1]>
+  [123] pushcons 56 ............................. <"*">
+  [125] joinstr ................................. <decodedOutFile.char[1..decodedOutFile.length - 1] & "*">
+  [126] setlocal 0 .............................. decodedOutFile = decodedOutFile.char[1..decodedOutFile.length - 1] & "*"
+  [128] pushcons 64 ............................. <"D:\\1.wav">
+  [130] setlocal 16 ............................. finalOutFile = "D:\\1.wav"
+  [132] pushsymb 45 ............................. <#in>
+  [135] getlocal 0 .............................. <decodedOutFile>
+  [137] pushsymb 47 ............................. <#Out>
+  [140] getlocal 16 ............................. <finalOutFile>
+  [142] pushsymb 192 ............................ <#random>
+  [145] pushsymb 193 ............................ <#max>
+  [148] getparam 16 ............................. <argMaxRnd>
+  [150] pusharglist 2 ........................... <[#max: argMaxRnd]>
+  [152] pushproplist ............................ <[#max: argMaxRnd]>
+  [153] pushsymb 186 ............................ <#tempo>
+  [156] pushsymb 187 ............................ <#Bars>
+  [159] getparam 8 .............................. <argLoop_r>
+  [161] getobjprop 300 .......................... <argLoop_r.numBars>
+  [164] pushsymb 188 ............................ <#TimeSig>
+  [167] getlocal 8 .............................. <song_r>
+  [169] pushsymb 508 ............................ <#TimeSignature>
+  [172] pushint8 1 .............................. <1>
+  [175] pusharglist 3 ........................... <song_r, #TimeSignature, 1>
+  [177] objcall 152 ............................. <song_r.TimeSignature[1]>
+  [180] pusharglist 1 ........................... <song_r.TimeSignature[1]>
+  [182] extcall 38 .............................. <string(song_r.TimeSignature[1])>
+  [185] pushcons 72 ............................. <"/">
+  [187] joinstr ................................. <string(song_r.TimeSignature[1]) & "/">
+  [188] getlocal 8 .............................. <song_r>
+  [190] pushsymb 508 ............................ <#TimeSignature>
+  [193] pushint8 1 .............................. <1>
+  [196] pusharglist 3 ........................... <song_r, #TimeSignature, 1>
+  [198] objcall 152 ............................. <song_r.TimeSignature[1]>
+  [201] pusharglist 1 ........................... <song_r.TimeSignature[1]>
+  [203] extcall 38 .............................. <string(song_r.TimeSignature[1])>
+  [206] joinstr ................................. <string(song_r.TimeSignature[1]) & "/" & string(song_r.TimeSignature[1])>
+  [207] pushsymb 191 ............................ <#BPM>
+  [210] getlocal 8 .............................. <song_r>
+  [212] getobjprop 191 .......................... <song_r.BPM>
+  [215] pusharglist 6 ........................... <[#Bars: argLoop_r.numBars, #TimeSig: string(song_r.TimeSignature[1]) & "/" & string(song_r.TimeSignature[1]), #BPM: song_r.BPM]>
+  [217] pushproplist ............................ <[#Bars: argLoop_r.numBars, #TimeSig: string(song_r.TimeSignature[1]) & "/" & string(song_r.TimeSignature[1]), #BPM: song_r.BPM]>
+  [218] pusharglist 8 ........................... <[#in: decodedOutFile, #Out: finalOutFile, #random: [#max: argMaxRnd], #tempo: [#Bars: argLoop_r.numBars, #TimeSig: string(song_r.TimeSignature[1]) & "/" & string(song_r.TimeSignature[1]), #BPM: song_r.BPM]]>
+  [220] pushproplist ............................ <[#in: decodedOutFile, #Out: finalOutFile, #random: [#max: argMaxRnd], #tempo: [#Bars: argLoop_r.numBars, #TimeSig: string(song_r.TimeSignature[1]) & "/" & string(song_r.TimeSignature[1]), #BPM: song_r.BPM]]>
+  [221] pushsymb 49 ............................. <#dll>
+  [224] pusharglist 2 ........................... <[#in: decodedOutFile, #Out: finalOutFile, #random: [#max: argMaxRnd], #tempo: [#Bars: argLoop_r.numBars, #TimeSig: string(song_r.TimeSignature[1]) & "/" & string(song_r.TimeSignature[1]), #BPM: song_r.BPM]], #dll>
+  [226] extcall 48 .............................. <mixGenFXStr([#in: decodedOutFile, #Out: finalOutFile, #random: [#max: argMaxRnd], #tempo: [#Bars: argLoop_r.numBars, #TimeSig: string(song_r.TimeSignature[1]) & "/" & string(song_r.TimeSignature[1]), #BPM: song_r.BPM]], #dll)>
+  [229] setlocal 24 ............................. renderStr = mixGenFXStr([#in: decodedOutFile, #Out: finalOutFile, #random: [#max: argMaxRnd], #tempo: [#Bars: argLoop_r.numBars, #TimeSig: string(song_r.TimeSignature[1]) & "/" & string(song_r.TimeSignature[1]), #BPM: song_r.BPM]], #dll)
+  [231] pushcons 80 ............................. <"cues:">
+  [233] getglobal 7 ............................. <gRock>
+  [235] getobjprop 8 ............................ <gRock.m_paths>
+  [237] pushsymb 13 ............................. <#Sliced>
+  [239] pusharglist 2 ........................... <gRock.m_paths, #Sliced>
+  [241] objcall 10 .............................. <gRock.m_paths.getPath(#Sliced)>
+  [243] joinstr ................................. <"cues:" & gRock.m_paths.getPath(#Sliced)>
+  [244] getparam 8 .............................. <argLoop_r>
+  [246] getobjprop 26 ........................... <argLoop_r.file>
+  [248] joinstr ................................. <"cues:" & gRock.m_paths.getPath(#Sliced) & argLoop_r.file>
+  [249] pushcons 88 ............................. <".txt, ">
+  [251] joinstr ................................. <"cues:" & gRock.m_paths.getPath(#Sliced) & argLoop_r.file & ".txt, ">
+  [252] getlocal 24 ............................. <renderStr>
+  [254] joinstr ................................. <"cues:" & gRock.m_paths.getPath(#Sliced) & argLoop_r.file & ".txt, " & renderStr>
+  [255] setlocal 24 ............................. renderStr = "cues:" & gRock.m_paths.getPath(#Sliced) & argLoop_r.file & ".txt, " & renderStr
+  [257] getlocal 24 ............................. <renderStr>
+  [259] pusharglistnoret 1 ...................... <renderStr>
+  [261] extcall 51 .............................. mixCallRockWave(renderStr)
+  [264] pushsymb 509 ............................ <#playFile>
+  [267] pushint8 1 .............................. <1>
+  [270] getlocal 16 ............................. <finalOutFile>
+  [272] pusharglistnoret 3 ...................... <1, finalOutFile>
+  [274] extcall 259 ............................. sound playFile 1, finalOutFile
+  [277] ret
+end
+
+on stop me
+  [  0] getprop 323 ............................. <m_sequencer>
+  [  3] pusharglist 1 ........................... <m_sequencer>
+  [  5] extcall 71 .............................. <objectp(m_sequencer)>
+  [  8] jmpifz [ 24] ............................ if objectp(m_sequencer) then / else
+  [ 11] getprop 323 ............................. <m_sequencer>
+  [ 14] pusharglist 1 ........................... <m_sequencer>
+  [ 16] objcall 1 ............................... <m_sequencer.kill()>
+  [ 18] setprop 323 ............................. m_sequencer = m_sequencer.kill()
+  [ 21] jmp [ 37]
+  [ 24] pushint8 1 .............................. <1>
+  [ 27] pusharglist 1 ........................... <1>
+  [ 29] extcall 259 ............................. <sound(1)>
+  [ 32] pusharglistnoret 1 ...................... <sound(1)>
+  [ 34] objcall 238 ............................. sound(1).stop()
+  [ 37] ret
+end
+
+on testGoto me, argSongID, argLoop
+  [  0] getparam 0 .............................. <me>
+  [  2] getparam 8 .............................. <argSongID>
+  [  4] getparam 16 ............................. <argLoop>
+  [  6] pusharglistnoret 3 ...................... <me, argSongID, argLoop>
+  [  8] objcall 471 ............................. me.convIDsToCnts(argSongID, argLoop)
+  [ 11] getparam 0 .............................. <me>
+  [ 13] pusharglistnoret 1 ...................... <me>
+  [ 15] objcall 477 ............................. me.testNextLoop()
+  [ 18] ret
+end
+
+on testAllLoops me
+  [  0] pushint8 1 .............................. <1>
+  [  3] setprop 492 ............................. m_currentSongCnt = 1
+  [  6] pushzero ................................ <0>
+  [  7] setprop 493 ............................. m_currentLoopCnt = 0
+  [ 10] ret
+end
+
+on testNextLoop me
+  [  0] getprop 484 ............................. <m_loopsPerSong>
+  [  3] getprop 492 ............................. <m_currentSongCnt>
+  [  6] pusharglist 2 ........................... <m_loopsPerSong, m_currentSongCnt>
+  [  8] objcall 34 .............................. <m_loopsPerSong[m_currentSongCnt]>
+  [ 11] setlocal 0 .............................. loops_r = m_loopsPerSong[m_currentSongCnt]
+  [ 13] getprop 493 ............................. <m_currentLoopCnt>
+  [ 16] pushint8 1 .............................. <1>
+  [ 19] add ..................................... <m_currentLoopCnt + 1>
+  [ 20] setprop 493 ............................. m_currentLoopCnt = m_currentLoopCnt + 1
+  [ 23] getprop 493 ............................. <m_currentLoopCnt>
+  [ 26] getlocal 0 .............................. <loops_r>
+  [ 28] getobjprop 32 ........................... <loops_r.count>
+  [ 31] gt ...................................... <m_currentLoopCnt > loops_r.count>
+  [ 32] jmpifz [ 85] ............................ if m_currentLoopCnt > loops_r.count then
+  [ 35] getprop 492 ............................. <m_currentSongCnt>
+  [ 38] pushint8 1 .............................. <1>
+  [ 41] add ..................................... <m_currentSongCnt + 1>
+  [ 42] setprop 492 ............................. m_currentSongCnt = m_currentSongCnt + 1
+  [ 45] getprop 492 ............................. <m_currentSongCnt>
+  [ 48] getprop 484 ............................. <m_loopsPerSong>
+  [ 51] getobjprop 32 ........................... <m_loopsPerSong.count>
+  [ 54] gt ...................................... <m_currentSongCnt > m_loopsPerSong.count>
+  [ 55] jmpifz [ 66] ............................ if m_currentSongCnt > m_loopsPerSong.count then
+  [ 58] pushcons 96 ............................. <"No more files!">
+  [ 60] pusharglistnoret 1 ...................... <"No more files!">
+  [ 62] extcall 36 .............................. pott("No more files!")
+  [ 65] ret ..................................... exit
+  [ 66] getprop 484 ............................. <m_loopsPerSong>
+  [ 69] getprop 492 ............................. <m_currentSongCnt>
+  [ 72] pusharglist 2 ........................... <m_loopsPerSong, m_currentSongCnt>
+  [ 74] objcall 34 .............................. <m_loopsPerSong[m_currentSongCnt]>
+  [ 77] setlocal 0 .............................. loops_r = m_loopsPerSong[m_currentSongCnt]
+  [ 79] pushint8 1 .............................. <1>
+  [ 82] setprop 493 ............................. m_currentLoopCnt = 1
+  [ 85] getprop 484 ............................. <m_loopsPerSong>
+  [ 88] getprop 492 ............................. <m_currentSongCnt>
+  [ 91] pusharglist 2 ........................... <m_loopsPerSong, m_currentSongCnt>
+  [ 93] objcall 33 .............................. <m_loopsPerSong.getPropAt(m_currentSongCnt)>
+  [ 96] setlocal 8 .............................. song_r = m_loopsPerSong.getPropAt(m_currentSongCnt)
+  [ 98] pusharglist 0 ........................... <[:]>
+  [100] pushproplist ............................ <[:]>
+  [101] setlocal 16 ............................. presetLoops_r = [:]
+  [103] getlocal 0 .............................. <loops_r>
+  [105] peek 0
+  [107] pusharglist 1
+  [109] extcall 32
+  [112] pushint8 1
+  [114] peek 0
+  [116] peek 2
+  [118] lteq
+  [119] jmpifz [169] ............................ repeat with loop_r in loops_r
+  [122] peek 2
+  [124] peek 1
+  [126] pusharglist 2
+  [128] extcall 34
+  [131] setlocal 24
+  [133] pushcons 104 ............................ <"dr1">
+  [135] getlocal 24 ............................. <loop_r>
+  [137] getobjprop 26 ........................... <loop_r.file>
+  [139] pusharglist 2 ........................... <"dr1", loop_r.file>
+  [141] extcall 149 ............................. <offset("dr1", loop_r.file)>
+  [144] jmpifz [163] ............................ if offset("dr1", loop_r.file) then
+  [147] getlocal 16 ............................. <presetLoops_r>
+  [149] getlocal 24 ............................. <loop_r>
+  [151] getobjprop 514 .......................... <loop_r.Instrument>
+  [154] getlocal 24 ............................. <loop_r>
+  [156] pusharglistnoret 3 ...................... <presetLoops_r, loop_r.Instrument, loop_r>
+  [158] objcall 28 .............................. presetLoops_r.setaProp(loop_r.Instrument, loop_r)
+  [160] jmp [169] ............................... exit repeat
+  [163] pushint8 1
+  [165] add
+  [166] endrepeat [114]
+  [169] pop 3
+  [171] getlocal 0 .............................. <loops_r>
+  [173] peek 0
+  [175] pusharglist 1
+  [177] extcall 32
+  [180] pushint8 1
+  [182] peek 0
+  [184] peek 2
+  [186] lteq
+  [187] jmpifz [237] ............................ repeat with loop_r in loops_r
+  [190] peek 2
+  [192] peek 1
+  [194] pusharglist 2
+  [196] extcall 34
+  [199] setlocal 24
+  [201] pushcons 112 ............................ <"bs1">
+  [203] getlocal 24 ............................. <loop_r>
+  [205] getobjprop 26 ........................... <loop_r.file>
+  [207] pusharglist 2 ........................... <"bs1", loop_r.file>
+  [209] extcall 149 ............................. <offset("bs1", loop_r.file)>
+  [212] jmpifz [231] ............................ if offset("bs1", loop_r.file) then
+  [215] getlocal 16 ............................. <presetLoops_r>
+  [217] getlocal 24 ............................. <loop_r>
+  [219] getobjprop 514 .......................... <loop_r.Instrument>
+  [222] getlocal 24 ............................. <loop_r>
+  [224] pusharglistnoret 3 ...................... <presetLoops_r, loop_r.Instrument, loop_r>
+  [226] objcall 28 .............................. presetLoops_r.setaProp(loop_r.Instrument, loop_r)
+  [228] jmp [237] ............................... exit repeat
+  [231] pushint8 1
+  [233] add
+  [234] endrepeat [182]
+  [237] pop 3
+  [239] getlocal 0 .............................. <loops_r>
+  [241] getprop 493 ............................. <m_currentLoopCnt>
+  [244] pusharglist 2 ........................... <loops_r, m_currentLoopCnt>
+  [246] objcall 34 .............................. <loops_r[m_currentLoopCnt]>
+  [249] setlocal 24 ............................. loop_r = loops_r[m_currentLoopCnt]
+  [251] getlocal 16 ............................. <presetLoops_r>
+  [253] getlocal 24 ............................. <loop_r>
+  [255] getobjprop 514 .......................... <loop_r.Instrument>
+  [258] getlocal 24 ............................. <loop_r>
+  [260] pusharglistnoret 3 ...................... <presetLoops_r, loop_r.Instrument, loop_r>
+  [262] objcall 28 .............................. presetLoops_r.setaProp(loop_r.Instrument, loop_r)
+  [264] getlocal 8 .............................. <song_r>
+  [266] getobjprop 60 ........................... <song_r.ID>
+  [269] getlocal 8 .............................. <song_r>
+  [271] getobjprop 504 .......................... <song_r.name>
+  [274] getlocal 24 ............................. <loop_r>
+  [276] getobjprop 26 ........................... <loop_r.file>
+  [278] getlocal 24 ............................. <loop_r>
+  [280] getobjprop 504 .......................... <loop_r.name>
+  [283] pusharglistnoret 4 ...................... <song_r.ID, song_r.name, loop_r.file, loop_r.name>
+  [285] extcall 36 .............................. pott(song_r.ID, song_r.name, loop_r.file, loop_r.name)
+  [288] pusharglist 0 ........................... <[]>
+  [290] pushlist ................................ <[]>
+  [291] setlocal 32 ............................. playLoops = []
+  [293] getlocal 16 ............................. <presetLoops_r>
+  [295] peek 0
+  [297] pusharglist 1
+  [299] extcall 32
+  [302] pushint8 1
+  [304] peek 0
+  [306] peek 2
+  [308] lteq
+  [309] jmpifz [340] ............................ repeat with loop_r in presetLoops_r
+  [312] peek 2
+  [314] peek 1
+  [316] pusharglist 2
+  [318] extcall 34
+  [321] setlocal 24
+  [323] getlocal 32 ............................. <playLoops>
+  [325] getlocal 24 ............................. <loop_r>
+  [327] getobjprop 26 ........................... <loop_r.file>
+  [329] pusharglistnoret 2 ...................... <playLoops, loop_r.file>
+  [331] objcall 50 .............................. playLoops.add(loop_r.file)
+  [334] pushint8 1
+  [336] add
+  [337] endrepeat [304]
+  [340] pop 3
+  [342] getparam 0 .............................. <me>
+  [344] getlocal 8 .............................. <song_r>
+  [346] getobjprop 60 ........................... <song_r.ID>
+  [349] getlocal 32 ............................. <playLoops>
+  [351] pusharglistnoret 3 ...................... <me, song_r.ID, playLoops>
+  [353] objcall 478 ............................. me.testLoops(song_r.ID, playLoops)
+  [356] ret
+end
+
+on testLoops me, argSongID, argLoopFileNames
+  [  0] getparam 16 ............................. <argLoopFileNames>
+  [  2] pusharglist 1 ........................... <argLoopFileNames>
+  [  4] extcall 68 .............................. <voidp(argLoopFileNames)>
+  [  7] jmpifz [ 18] ............................ if voidp(argLoopFileNames) then / else
+  [ 10] pusharglist 0 ........................... <[]>
+  [ 12] pushlist ................................ <[]>
+  [ 13] setparam 16 ............................. argLoopFileNames = []
+  [ 15] jmp [ 35]
+  [ 18] getparam 16 ............................. <argLoopFileNames>
+  [ 20] pusharglist 1 ........................... <argLoopFileNames>
+  [ 22] extcall 148 ............................. <stringp(argLoopFileNames)>
+  [ 25] jmpifz [ 35] ............................ if stringp(argLoopFileNames) then
+  [ 28] getparam 16 ............................. <argLoopFileNames>
+  [ 30] pusharglist 1 ........................... <[argLoopFileNames]>
+  [ 32] pushlist ................................ <[argLoopFileNames]>
+  [ 33] setparam 16 ............................. argLoopFileNames = [argLoopFileNames]
+  [ 35] getglobal 7 ............................. <gRock>
+  [ 37] getobjprop 486 .......................... <gRock.m_classManager>
+  [ 40] getparam 8 .............................. <argSongID>
+  [ 42] pushsymb 490 ............................ <#Song>
+  [ 45] pusharglist 3 ........................... <gRock.m_classManager, argSongID, #Song>
+  [ 47] objcall 491 ............................. <gRock.m_classManager.getObjByIDAndClass(argSongID, #Song)>
+  [ 50] setlocal 0 .............................. song_r = gRock.m_classManager.getObjByIDAndClass(argSongID, #Song)
+  [ 52] getprop 484 ............................. <m_loopsPerSong>
+  [ 55] getlocal 0 .............................. <song_r>
+  [ 57] pusharglist 2 ........................... <m_loopsPerSong, song_r>
+  [ 59] objcall 67 .............................. <m_loopsPerSong.getaProp(song_r)>
+  [ 62] setlocal 8 .............................. loops_r = m_loopsPerSong.getaProp(song_r)
+  [ 64] pusharglist 0 ........................... <[]>
+  [ 66] pushlist ................................ <[]>
+  [ 67] setlocal 16 ............................. playLoops_r = []
+  [ 69] pusharglist 0 ........................... <[]>
+  [ 71] pushlist ................................ <[]>
+  [ 72] setlocal 24 ............................. vocalPersons = []
+  [ 74] getlocal 0 .............................. <song_r>
+  [ 76] getobjprop 60 ........................... <song_r.ID>
+  [ 79] pusharglist 1 ........................... <song_r.ID>
+  [ 81] extcall 38 .............................. <string(song_r.ID)>
+  [ 84] setlocal 32 ............................. songNr = string(song_r.ID)
+  [ 86] getlocal 32 ............................. <songNr>
+  [ 88] pushsymb 150 ............................ <#char>
+  [ 91] getlocal 32 ............................. <songNr>
+  [ 93] getobjprop 151 .......................... <songNr.length>
+  [ 96] pushint8 1 .............................. <1>
+  [ 99] sub ..................................... <songNr.length - 1>
+  [100] getlocal 32 ............................. <songNr>
+  [102] getobjprop 151 .......................... <songNr.length>
+  [105] pusharglist 4 ........................... <songNr, #char, songNr.length - 1, songNr.length>
+  [107] objcall 152 ............................. <songNr.char[songNr.length - 1..songNr.length]>
+  [110] pusharglist 1 ........................... <songNr.char[songNr.length - 1..songNr.length]>
+  [112] extcall 176 ............................. <value(songNr.char[songNr.length - 1..songNr.length])>
+  [115] setlocal 32 ............................. songNr = value(songNr.char[songNr.length - 1..songNr.length])
+  [117] getparam 16 ............................. <argLoopFileNames>
+  [119] peek 0
+  [121] pusharglist 1
+  [123] extcall 32
+  [126] pushint8 1
+  [128] peek 0
+  [130] peek 2
+  [132] lteq
+  [133] jmpifz [315] ............................ repeat with fileName in argLoopFileNames
+  [136] peek 2
+  [138] peek 1
+  [140] pusharglist 2
+  [142] extcall 34
+  [145] setlocal 40
+  [147] getlocal 40 ............................. <fileName>
+  [149] pushsymb 150 ............................ <#char>
+  [152] pushint8 1 .............................. <1>
+  [155] pushint8 2 .............................. <2>
+  [158] pusharglist 4 ........................... <fileName, #char, 1, 2>
+  [160] objcall 152 ............................. <fileName.char[1..2]>
+  [163] pusharglist 1 ........................... <fileName.char[1..2]>
+  [165] extcall 176 ............................. <value(fileName.char[1..2])>
+  [168] pushzero ................................ <0>
+  [169] gt ...................................... <value(fileName.char[1..2]) > 0>
+  [170] not ..................................... <not (value(fileName.char[1..2]) > 0)>
+  [171] jmpifz [189] ............................ if not (value(fileName.char[1..2]) > 0) then
+  [174] getlocal 32 ............................. <songNr>
+  [176] pushint8 2 .............................. <2>
+  [179] pusharglist 2 ........................... <songNr, 2>
+  [181] extcall 397 ............................. <convItoS(songNr, 2)>
+  [184] getlocal 40 ............................. <fileName>
+  [186] joinstr ................................. <convItoS(songNr, 2) & fileName>
+  [187] setlocal 40 ............................. fileName = convItoS(songNr, 2) & fileName
+  [189] getlocal 40 ............................. <fileName>
+  [191] pushsymb 150 ............................ <#char>
+  [194] pushint8 3 .............................. <3>
+  [197] pushint8 5 .............................. <5>
+  [200] pusharglist 4 ........................... <fileName, #char, 3, 5>
+  [202] objcall 152 ............................. <fileName.char[3..5]>
+  [205] pushcons 120 ............................ <"vca">
+  [207] eq ...................................... <fileName.char[3..5] = "vca">
+  [208] jmpifz [252] ............................ if fileName.char[3..5] = "vca" then
+  [211] getlocal 24 ............................. <vocalPersons>
+  [213] getlocal 40 ............................. <fileName>
+  [215] pushsymb 150 ............................ <#char>
+  [218] pushint8 5 .............................. <5>
+  [221] pushint8 7 .............................. <7>
+  [224] pusharglist 4 ........................... <fileName, #char, 5, 7>
+  [226] objcall 152 ............................. <fileName.char[5..7]>
+  [229] pusharglistnoret 2 ...................... <vocalPersons, fileName.char[5..7]>
+  [231] objcall 50 .............................. vocalPersons.add(fileName.char[5..7])
+  [234] getlocal 40 ............................. <fileName>
+  [236] pushsymb 150 ............................ <#char>
+  [239] pushint8 1 .............................. <1>
+  [242] pushint8 4 .............................. <4>
+  [245] pusharglist 4 ........................... <fileName, #char, 1, 4>
+  [247] objcall 152 ............................. <fileName.char[1..4]>
+  [250] setlocal 40 ............................. fileName = fileName.char[1..4]
+  [252] getlocal 8 .............................. <loops_r>
+  [254] peek 0
+  [256] pusharglist 1
+  [258] extcall 32
+  [261] pushint8 1
+  [263] peek 0
+  [265] peek 2
+  [267] lteq
+  [268] jmpifz [307] ............................ repeat with loop_r in loops_r
+  [271] peek 2
+  [273] peek 1
+  [275] pusharglist 2
+  [277] extcall 34
+  [280] setlocal 48
+  [282] getlocal 48 ............................. <loop_r>
+  [284] getobjprop 26 ........................... <loop_r.file>
+  [286] getlocal 40 ............................. <fileName>
+  [288] eq ...................................... <loop_r.file = fileName>
+  [289] jmpifz [301] ............................ if loop_r.file = fileName then
+  [292] getlocal 16 ............................. <playLoops_r>
+  [294] getlocal 48 ............................. <loop_r>
+  [296] pusharglistnoret 2 ...................... <playLoops_r, loop_r>
+  [298] objcall 50 .............................. playLoops_r.add(loop_r)
+  [301] pushint8 1
+  [303] add
+  [304] endrepeat [263]
+  [307] pop 3
+  [309] pushint8 1
+  [311] add
+  [312] endrepeat [128]
+  [315] pop 3
+  [317] pusharglist 0 ........................... <[]>
+  [319] pushlist ................................ <[]>
+  [320] setlocal 56 ............................. channels_r = []
+  [322] getlocal 16 ............................. <playLoops_r>
+  [324] peek 0
+  [326] pusharglist 1
+  [328] extcall 32
+  [331] pushint8 1
+  [333] peek 0
+  [335] peek 2
+  [337] lteq
+  [338] jmpifz [412] ............................ repeat with loop_r in playLoops_r
+  [341] peek 2
+  [343] peek 1
+  [345] pusharglist 2
+  [347] extcall 34
+  [350] setlocal 48
+  [352] getglobal 7 ............................. <gRock>
+  [354] getobjprop 486 .......................... <gRock.m_classManager>
+  [357] pushsymb 517 ............................ <#channel>
+  [360] pusharglist 2 ........................... <gRock.m_classManager, #channel>
+  [362] objcall 518 ............................. <gRock.m_classManager.createUnregObj(#channel)>
+  [365] setlocal 64 ............................. channel_r = gRock.m_classManager.createUnregObj(#channel)
+  [367] getlocal 64 ............................. <channel_r>
+  [369] getlocal 48 ............................. <loop_r>
+  [371] getobjprop 60 ........................... <loop_r.ID>
+  [374] setobjprop 494 .......................... channel_r.LoopID = loop_r.ID
+  [377] getlocal 64 ............................. <channel_r>
+  [379] pushcons 128 ............................ <1.0>
+  [381] setobjprop 137 .......................... channel_r.vol = 1.0
+  [384] getlocal 64 ............................. <channel_r>
+  [386] pushzero ................................ <0>
+  [387] setobjprop 333 .......................... channel_r.Mute = 0
+  [390] getlocal 64 ............................. <channel_r>
+  [392] pushcons 136 ............................ <0.0>
+  [394] setobjprop 334 .......................... channel_r.Pan = 0.0
+  [397] getlocal 56 ............................. <channels_r>
+  [399] getlocal 64 ............................. <channel_r>
+  [401] pusharglistnoret 2 ...................... <channels_r, channel_r>
+  [403] objcall 50 .............................. channels_r.add(channel_r)
+  [406] pushint8 1
+  [408] add
+  [409] endrepeat [333]
+  [412] pop 3
+  [414] getparam 0 .............................. <me>
+  [416] getlocal 0 .............................. <song_r>
+  [418] getlocal 56 ............................. <channels_r>
+  [420] getlocal 24 ............................. <vocalPersons>
+  [422] pusharglistnoret 4 ...................... <me, song_r, channels_r, vocalPersons>
+  [424] objcall 480 ............................. me.playChannels(song_r, channels_r, vocalPersons)
+  [427] ret
+end
+
+on cpo me
+  [  0] ret
+end
+
+on playChannels me, argSong_r, argChannels_r, argVocalPersons
+  [  0] getprop 323 ............................. <m_sequencer>
+  [  3] pusharglist 1 ........................... <m_sequencer>
+  [  5] extcall 71 .............................. <objectp(m_sequencer)>
+  [  8] jmpifz [ 21] ............................ if objectp(m_sequencer) then
+  [ 11] getprop 323 ............................. <m_sequencer>
+  [ 14] pusharglist 1 ........................... <m_sequencer>
+  [ 16] objcall 1 ............................... <m_sequencer.kill()>
+  [ 18] setprop 323 ............................. m_sequencer = m_sequencer.kill()
+  [ 21] getglobal 23 ............................ <gUseful>
+  [ 23] pushsymb 39 ............................. <#xtra>
+  [ 26] pusharglistnoret 2 ...................... <gUseful, #xtra>
+  [ 28] objcall 507 ............................. gUseful.setSoundSystem(#xtra)
+  [ 31] getparam 24 ............................. <argVocalPersons>
+  [ 33] pusharglist 1 ........................... <argVocalPersons>
+  [ 35] extcall 68 .............................. <voidp(argVocalPersons)>
+  [ 38] jmpifz [ 46] ............................ if voidp(argVocalPersons) then
+  [ 41] pusharglist 0 ........................... <[]>
+  [ 43] pushlist ................................ <[]>
+  [ 44] setparam 24 ............................. argVocalPersons = []
+  [ 46] pushcons 144 ............................ <"PlaySequenceScript">
+  [ 48] pusharglist 1 ........................... <"PlaySequenceScript">
+  [ 50] extcall 284 ............................. <script("PlaySequenceScript")>
+  [ 53] pusharglist 1 ........................... <script("PlaySequenceScript")>
+  [ 55] objcall 0 ............................... <script("PlaySequenceScript").new()>
+  [ 57] setprop 323 ............................. m_sequencer = script("PlaySequenceScript").new()
+  [ 60] getprop 323 ............................. <m_sequencer>
+  [ 63] pushsymb 259 ............................ <#sound>
+  [ 66] getglobal 7 ............................. <gRock>
+  [ 68] getobjprop 8 ............................ <gRock.m_paths>
+  [ 70] pushsymb 8 .............................. <#m_paths>
+  [ 72] pushsymb 15 ............................. <#RenderedMusic>
+  [ 74] pusharglist 3 ........................... <gRock.m_paths, #m_paths, #RenderedMusic>
+  [ 76] objcall 152 ............................. <gRock.m_paths.m_paths[#RenderedMusic]>
+  [ 79] pusharglist 2 ........................... <[#sound: gRock.m_paths.m_paths[#RenderedMusic]]>
+  [ 81] pushproplist ............................ <[#sound: gRock.m_paths.m_paths[#RenderedMusic]]>
+  [ 82] pusharglistnoret 2 ...................... <m_sequencer, [#sound: gRock.m_paths.m_paths[#RenderedMusic]]>
+  [ 84] objcall 231 ............................. m_sequencer.setPaths([#sound: gRock.m_paths.m_paths[#RenderedMusic]])
+  [ 87] getprop 323 ............................. <m_sequencer>
+  [ 90] getparam 8 .............................. <argSong_r>
+  [ 92] pushsymb 191 ............................ <#BPM>
+  [ 95] pusharglist 2 ........................... <argSong_r, #BPM>
+  [ 97] extcall 524 ............................. <rgetProp(argSong_r, #BPM)>
+  [100] setobjprop 253 .......................... m_sequencer.m_bpm = rgetProp(argSong_r, #BPM)
+  [103] getprop 323 ............................. <m_sequencer>
+  [106] getparam 8 .............................. <argSong_r>
+  [108] getobjprop 300 .......................... <argSong_r.numBars>
+  [111] setobjprop 251 .......................... m_sequencer.m_numBars = argSong_r.numBars
+  [114] getprop 323 ............................. <m_sequencer>
+  [117] getparam 8 .............................. <argSong_r>
+  [119] getobjprop 508 .......................... <argSong_r.TimeSignature>
+  [122] setobjprop 252 .......................... m_sequencer.m_beatSignature = argSong_r.TimeSignature
+  [125] getprop 485 ............................. <m_waveRenderer>
+  [128] pusharglist 1 ........................... <m_waveRenderer>
+  [130] extcall 68 .............................. <voidp(m_waveRenderer)>
+  [133] jmpifz [150] ............................ if voidp(m_waveRenderer) then
+  [136] pushcons 152 ............................ <"WaveRenderScript">
+  [138] pusharglist 1 ........................... <"WaveRenderScript">
+  [140] extcall 284 ............................. <script("WaveRenderScript")>
+  [143] pusharglist 1 ........................... <script("WaveRenderScript")>
+  [145] objcall 0 ............................... <script("WaveRenderScript").new()>
+  [147] setprop 485 ............................. m_waveRenderer = script("WaveRenderScript").new()
+  [150] pushint8 1 .............................. <1>
+  [153] setlocal 0
+  [155] getlocal 0
+  [157] getparam 16 ............................. <argChannels_r>
+  [159] getobjprop 32 ........................... <argChannels_r.count>
+  [162] lteq
+  [163] jmpifz [379] ............................ repeat with n = 1 to argChannels_r.count
+  [166] getparam 16 ............................. <argChannels_r>
+  [168] getlocal 0 .............................. <n>
+  [170] pusharglist 2 ........................... <argChannels_r, n>
+  [172] objcall 34 .............................. <argChannels_r[n]>
+  [175] setlocal 8 .............................. channel_r = argChannels_r[n]
+  [177] getlocal 8 .............................. <channel_r>
+  [179] getobjprop 494 .......................... <channel_r.LoopID>
+  [182] setlocal 16 ............................. LoopID = channel_r.LoopID
+  [184] getglobal 7 ............................. <gRock>
+  [186] getobjprop 486 .......................... <gRock.m_classManager>
+  [189] getlocal 16 ............................. <LoopID>
+  [191] pushsymb 487 ............................ <#loop>
+  [194] pusharglist 3 ........................... <gRock.m_classManager, LoopID, #loop>
+  [196] objcall 491 ............................. <gRock.m_classManager.getObjByIDAndClass(LoopID, #loop)>
+  [199] setlocal 24 ............................. loop_r = gRock.m_classManager.getObjByIDAndClass(LoopID, #loop)
+  [201] getlocal 24 ............................. <loop_r>
+  [203] getobjprop 514 .......................... <loop_r.Instrument>
+  [206] pushsymb 525 ............................ <#Vocals>
+  [209] eq ...................................... <loop_r.Instrument = #Vocals>
+  [210] jmpifz [265] ............................ if loop_r.Instrument = #Vocals then / else
+  [213] getparam 24 ............................. <argVocalPersons>
+  [215] getobjprop 32 ........................... <argVocalPersons.count>
+  [218] pushzero ................................ <0>
+  [219] eq ...................................... <argVocalPersons.count = 0>
+  [220] jmpifz [235] ............................ if argVocalPersons.count = 0 then / else
+  [223] getlocal 24 ............................. <loop_r>
+  [225] getobjprop 26 ........................... <loop_r.file>
+  [227] pushcons 160 ............................ <"a01">
+  [229] joinstr ................................. <loop_r.file & "a01">
+  [230] setlocal 32 ............................. tmpFile = loop_r.file & "a01"
+  [232] jmp [262]
+  [235] getlocal 24 ............................. <loop_r>
+  [237] getobjprop 26 ........................... <loop_r.file>
+  [239] getparam 24 ............................. <argVocalPersons>
+  [241] pushint8 1 .............................. <1>
+  [244] pusharglist 2 ........................... <argVocalPersons, 1>
+  [246] objcall 34 .............................. <argVocalPersons[1]>
+  [249] joinstr ................................. <loop_r.file & argVocalPersons[1]>
+  [250] setlocal 32 ............................. tmpFile = loop_r.file & argVocalPersons[1]
+  [252] getparam 24 ............................. <argVocalPersons>
+  [254] pushint8 1 .............................. <1>
+  [257] pusharglistnoret 2 ...................... <argVocalPersons, 1>
+  [259] objcall 100 ............................. argVocalPersons.deleteAt(1)
+  [262] jmp [271]
+  [265] getlocal 24 ............................. <loop_r>
+  [267] getobjprop 26 ........................... <loop_r.file>
+  [269] setlocal 32 ............................. tmpFile = loop_r.file
+  [271] getprop 485 ............................. <m_waveRenderer>
+  [274] getlocal 0 .............................. <n>
+  [276] getlocal 32 ............................. <tmpFile>
+  [278] pushsymb 186 ............................ <#tempo>
+  [281] pushsymb 187 ............................ <#Bars>
+  [284] getlocal 24 ............................. <loop_r>
+  [286] getobjprop 300 .......................... <loop_r.numBars>
+  [289] pushsymb 188 ............................ <#TimeSig>
+  [292] getparam 8 .............................. <argSong_r>
+  [294] pushsymb 508 ............................ <#TimeSignature>
+  [297] pushint8 1 .............................. <1>
+  [300] pusharglist 3 ........................... <argSong_r, #TimeSignature, 1>
+  [302] objcall 152 ............................. <argSong_r.TimeSignature[1]>
+  [305] pusharglist 1 ........................... <argSong_r.TimeSignature[1]>
+  [307] extcall 38 .............................. <string(argSong_r.TimeSignature[1])>
+  [310] pushcons 168 ............................ <"/">
+  [312] joinstr ................................. <string(argSong_r.TimeSignature[1]) & "/">
+  [313] getparam 8 .............................. <argSong_r>
+  [315] pushsymb 508 ............................ <#TimeSignature>
+  [318] pushint8 1 .............................. <1>
+  [321] pusharglist 3 ........................... <argSong_r, #TimeSignature, 1>
+  [323] objcall 152 ............................. <argSong_r.TimeSignature[1]>
+  [326] pusharglist 1 ........................... <argSong_r.TimeSignature[1]>
+  [328] extcall 38 .............................. <string(argSong_r.TimeSignature[1])>
+  [331] joinstr ................................. <string(argSong_r.TimeSignature[1]) & "/" & string(argSong_r.TimeSignature[1])>
+  [332] pushsymb 191 ............................ <#BPM>
+  [335] getprop 323 ............................. <m_sequencer>
+  [338] getobjprop 253 .......................... <m_sequencer.m_bpm>
+  [341] pusharglist 6 ........................... <[#Bars: loop_r.numBars, #TimeSig: string(argSong_r.TimeSignature[1]) & "/" & string(argSong_r.TimeSignature[1]), #BPM: m_sequencer.m_bpm]>
+  [343] pushproplist ............................ <[#Bars: loop_r.numBars, #TimeSig: string(argSong_r.TimeSignature[1]) & "/" & string(argSong_r.TimeSignature[1]), #BPM: m_sequencer.m_bpm]>
+  [344] pushsymb 192 ............................ <#random>
+  [347] pushsymb 193 ............................ <#max>
+  [350] getprop 483 ............................. <m_rndErr>
+  [353] pushsymb 194 ............................ <#center>
+  [356] pushcons 176 ............................ <0.0>
+  [358] pusharglist 4 ........................... <[#max: m_rndErr, #center: 0.0]>
+  [360] pushproplist ............................ <[#max: m_rndErr, #center: 0.0]>
+  [361] pusharglist 4 ........................... <[#tempo: [#Bars: loop_r.numBars, #TimeSig: string(argSong_r.TimeSignature[1]) & "/" & string(argSong_r.TimeSignature[1]), #BPM: m_sequencer.m_bpm], #random: [#max: m_rndErr, #center: 0.0]]>
+  [363] pushproplist ............................ <[#tempo: [#Bars: loop_r.numBars, #TimeSig: string(argSong_r.TimeSignature[1]) & "/" & string(argSong_r.TimeSignature[1]), #BPM: m_sequencer.m_bpm], #random: [#max: m_rndErr, #center: 0.0]]>
+  [364] pusharglistnoret 4 ...................... <m_waveRenderer, n, tmpFile, [#tempo: [#Bars: loop_r.numBars, #TimeSig: string(argSong_r.TimeSignature[1]) & "/" & string(argSong_r.TimeSignature[1]), #BPM: m_sequencer.m_bpm], #random: [#max: m_rndErr, #center: 0.0]]>
+  [366] objcall 2 ............................... m_waveRenderer.queueRendering(n, tmpFile, [#tempo: [#Bars: loop_r.numBars, #TimeSig: string(argSong_r.TimeSignature[1]) & "/" & string(argSong_r.TimeSignature[1]), #BPM: m_sequencer.m_bpm], #random: [#max: m_rndErr, #center: 0.0]])
+  [368] pushint8 1
+  [371] getlocal 0
+  [373] add
+  [374] setlocal 0
+  [376] endrepeat [155]
+  [379] getprop 485 ............................. <m_waveRenderer>
+  [382] pushsymb 72 ............................. <#ReportTo>
+  [385] getparam 0 .............................. <me>
+  [387] pushsymb 73 ............................. <#handler>
+  [390] pushsymb 481 ............................ <#renderDone>
+  [393] pusharglist 4 ........................... <[#ReportTo: me, #handler: #renderDone]>
+  [395] pushproplist ............................ <[#ReportTo: me, #handler: #renderDone]>
+  [396] setobjprop 19 ........................... m_waveRenderer.m_doWhatWhenDoneList = [#ReportTo: me, #handler: #renderDone]
+  [398] getglobal 23 ............................ <gUseful>
+  [400] pushzero ................................ <0>
+  [401] setobjprop 96 ........................... gUseful.isRunning = 0
+  [404] getprop 485 ............................. <m_waveRenderer>
+  [407] pusharglistnoret 1 ...................... <m_waveRenderer>
+  [409] objcall 3 ............................... m_waveRenderer.renderQueue()
+  [411] ret
+end
+
+on renderDone me
+  [  0] getprop 485 ............................. <m_waveRenderer>
+  [  3] pusharglist 0 ........................... <[:]>
+  [  5] pushproplist ............................ <[:]>
+  [  6] setobjprop 19 ........................... m_waveRenderer.m_doWhatWhenDoneList = [:]
+  [  8] pushint8 1 .............................. <1>
+  [ 11] setlocal 0
+  [ 13] getlocal 0
+  [ 15] getprop 485 ............................. <m_waveRenderer>
+  [ 18] pushsymb 18 ............................. <#m_rendered>
+  [ 20] pusharglist 2 ........................... <m_waveRenderer, #m_rendered>
+  [ 22] objcall 32 .............................. <m_waveRenderer.m_rendered.count>
+  [ 25] lteq
+  [ 26] jmpifz [109] ............................ repeat with n = 1 to m_waveRenderer.m_rendered.count
+  [ 29] pushcons 184 ............................ <"TrackLoopScript">
+  [ 31] pusharglist 1 ........................... <"TrackLoopScript">
+  [ 33] extcall 284 ............................. <script("TrackLoopScript")>
+  [ 36] getprop 323 ............................. <m_sequencer>
+  [ 39] pusharglist 2 ........................... <script("TrackLoopScript"), m_sequencer>
+  [ 41] objcall 0 ............................... <script("TrackLoopScript").new(m_sequencer)>
+  [ 43] setlocal 8 .............................. trackObj = script("TrackLoopScript").new(m_sequencer)
+  [ 45] getprop 485 ............................. <m_waveRenderer>
+  [ 48] getobjprop 18 ........................... <m_waveRenderer.m_rendered>
+  [ 50] getlocal 0 .............................. <n>
+  [ 52] pusharglist 2 ........................... <m_waveRenderer.m_rendered, n>
+  [ 54] objcall 34 .............................. <m_waveRenderer.m_rendered[n]>
+  [ 57] pusharglist 1 ........................... <m_waveRenderer.m_rendered[n]>
+  [ 59] extcall 529 ............................. <fileExtractName(m_waveRenderer.m_rendered[n])>
+  [ 62] setlocal 16 ............................. tmpFile = fileExtractName(m_waveRenderer.m_rendered[n])
+  [ 64] getlocal 8 .............................. <trackObj>
+  [ 66] pushsymb 26 ............................. <#file>
+  [ 68] getlocal 16 ............................. <tmpFile>
+  [ 70] pusharglistnoret 3 ...................... <trackObj, #file, tmpFile>
+  [ 72] objcall 310 ............................. trackObj.setSetting(#file, tmpFile)
+  [ 75] getlocal 8 .............................. <trackObj>
+  [ 77] pushsymb 137 ............................ <#vol>
+  [ 80] pushint8 80 ............................. <80>
+  [ 83] pusharglistnoret 3 ...................... <trackObj, #vol, 80>
+  [ 85] objcall 310 ............................. trackObj.setSetting(#vol, 80)
+  [ 88] getprop 323 ............................. <m_sequencer>
+  [ 91] getlocal 8 .............................. <trackObj>
+  [ 93] pusharglistnoret 2 ...................... <m_sequencer, trackObj>
+  [ 95] objcall 244 ............................. m_sequencer.addLoopTrack(trackObj)
+  [ 98] pushint8 1
+  [101] getlocal 0
+  [103] add
+  [104] setlocal 0
+  [106] endrepeat [ 13]
+  [109] getprop 323 ............................. <m_sequencer>
+  [112] pusharglistnoret 1 ...................... <m_sequencer>
+  [114] objcall 236 ............................. m_sequencer.prepare()
+  [117] getprop 323 ............................. <m_sequencer>
+  [120] pusharglistnoret 1 ...................... <m_sequencer>
+  [122] objcall 237 ............................. m_sequencer.play()
+  [125] ret
+end

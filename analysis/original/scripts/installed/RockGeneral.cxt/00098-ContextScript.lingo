@@ -1,0 +1,214 @@
+property m_context, m_editor, m_currentFocus, m_compiledPropList
+global gRock
+
+on new me
+  m_context = 0
+  m_currentFocus = [:]
+  return me
+end
+
+on kill me
+  if objectp(m_editor) then
+    m_editor = m_editor.kill()
+  end if
+  return 0
+end
+
+on key me, argObj, argWhat, argWhich
+  if argWhat = #down then
+    if not (the shiftDown) then
+      exit
+    end if
+    if objectp(m_editor) then
+      m_editor = m_editor.kill()
+    else
+      m_editor = script("PropertyEditDlgScript").new(me, m_compiledPropList)
+    end if
+  end if
+end
+
+on Report me, argObj, argWhat
+  if m_editor = argObj then
+    if argWhat = #close then
+      if objectp(m_editor) then
+        m_editor = m_editor.kill()
+      end if
+    end if
+  end if
+end
+
+on setFocus me, argProp, argObj, argUpdateCurrentContext
+  if not symbolp(argProp) and objectp(argObj) then
+    argProp = argObj.className
+  end if
+  m_currentFocus.setaProp(argProp, argObj)
+  if (argProp = #RealMusician) or (argProp = #Reporter) or (argProp = #Musician) then
+    m_currentFocus.setaProp(#Human, argObj)
+  else
+    if (argProp = #media) or (argProp = #Live) or (argProp = #Record) or (argProp = #Gangsta) then
+      m_currentFocus.setaProp(#place, argObj)
+    end if
+  end if
+  if argUpdateCurrentContext = 1 then
+    me.setContext()
+  end if
+end
+
+on getFocus me, argProp
+  return m_currentFocus.getaProp(argProp)
+end
+
+on hideEditor me
+  if objectp(m_editor) then
+    m_editor = m_editor.kill()
+  end if
+end
+
+on setContext me, argContext
+  if voidp(argContext) then
+    if not symbolp(m_context) then
+      exit
+    end if
+    argContext = m_context
+  end if
+  m_context = argContext
+  tmp = [#RealMusician, #Rehearsal01Choose, #Rehearsal01Artist]
+  if tmp.getPos(m_context) then
+    m_context = tmp[1]
+  end if
+  tmp = [#City: ["ÛCPlayer.Money.val", "Money", "ÛCBand.MusicStyle", "Music", "ÛCAlbum.sales", "Sales"], #Publish: ["ÛCAlbum.MusicStyle", "Album-Music", "ÛCAlbum.Quality", "Album-Quality", "ÛCAlbum.SongType", "Album-", "ÛCSong.StyleMix", "Song-", "ÛCSong.Quality", "Song-Quality", "ÛCSong.SongType", "Song-"], #Rehearsal01: ["ÛCBand.ImageStyle", "Image-", "ÛCBand.MusicStyle", "Music-"], #Concert: ["ÛCAlbum.ImageStyle", "Image-", "ÛCAlbum.MusicStyle", "Music-"], #RealMusician: ["ÛCRealMusician.MusicStyle", "Music-", "ÛCRealMusician.mood.current", "Mood", "ÛCRealMusician.health.current", "Health", "ÛCRealMusician.patience.current", "patience", "ÛCRealMusician.Musicality.current", "Musicality", "ÛCRealMusician.Charisma", "Charisma", "ÛCRealMusician.Needs.NeedObjs.NeedParty.DynamicTrigger.current", "NeedParty", "ÛCRealMusician.Needs.NeedObjs.NeedLive.DynamicTrigger.current", "NeedDrugs"], #Live: ["ÛCPlace.PreferredPriceModel.royalty", "royalty"]]
+  if not voidp(m_context) then
+    props = tmp[m_context]
+  end if
+  if voidp(props) then
+    exit
+  end if
+  if 0 then
+    realPropNum = 1
+    m_compiledPropList = [:]
+    repeat with n = 1 to props.count
+      tmpCode = props[n]
+      tmpWithoutLastProp = fileStepUpNFolders(tmpCode, 1, ".")
+      tmpLastProp = tmpCode.char[tmpWithoutLastProp.length + 1..tmpCode.length]
+      tmpLastProp = symbol(tmpLastProp)
+      tmpWithoutLastProp = tmpWithoutLastProp.char[1..tmpWithoutLastProp.length - 1]
+      obj = rParseAndCalc(tmpWithoutLastProp)
+      if not objectp(obj) then
+        tmpMaybeObjDef = fileStepUpNFolders(tmpWithoutLastProp, 1, ".")
+        tmpMaybeObjDef = tmpMaybeObjDef.char[1..tmpMaybeObjDef.length - 1]
+        tmpNextProp = tmpCode.char[tmpMaybeObjDef.length + 1..tmpWithoutLastProp.length]
+        obj = rParseAndCalc(tmpMaybeObjDef)
+        if objectp(obj) then
+          obj = rgetPropSimple(obj, tmpNextProp)
+        end if
+        obj = 0
+      end if
+      pott(obj, tmpWithoutLastProp, tmpLastProp)
+      if objectp(obj) then
+        subProps = VOID
+        tmpCalced = rParseAndCalc(tmpCode)
+        if objectp(tmpCalced) then
+          obj = tmpCalced
+          if voidp(obj.getaProp(#className)) then
+            next repeat
+          end if
+          subProps = gRock.m_classManager.getPropsInClass(obj.className)
+        else
+          subProps = [:]
+          subProps.addProp(tmpLastProp, gRock.m_classManager.getVarInfo(obj.className, tmpLastProp))
+        end if
+        if not listp(subProps) then
+          next repeat
+        end if
+        tmpComment = props[n + 1]
+        repeat with m = 1 to subProps.count
+          varInfo = subProps[m]
+          subProp = subProps.getPropAt(m)
+          m_compiledPropList.addProp(subProp, [#comment: tmpComment & "(" & string(subProp) & ")", #format: varInfo[1], #default: rgetProp(obj, subProp), #object: obj, #propName: subProp])
+          realPropNum = realPropNum + 1
+        end repeat
+      end if
+      n = n + 1
+    end repeat
+  else
+    m_compiledPropList = [:]
+    the itemDelimiter = "."
+    repeat with n = 1 to props.count
+      tmpStr = props[n]
+      obj = VOID
+      prop = VOID
+      repeat with itemNr = 1 to the number of items in tmpStr
+        tmpItem = tmpStr.item[itemNr]
+        if tmpItem.char[1] = "Û" then
+          if tmpItem.char[2] = "C" then
+            tmp = tmpItem.char[3..tmpItem.length]
+            obj = m_currentFocus[symbol(tmp)]
+            if not objectp(obj) then
+              exit repeat
+            end if
+          end if
+          next repeat
+        end if
+        tmpItem = symbol(tmpItem)
+        if not voidp(prop) then
+          if objectp(obj) then
+            obj = rgetPropSimple(obj, prop)
+          end if
+        end if
+        prop = tmpItem
+      end repeat
+      if objectp(obj) then
+        varInfo = gRock.m_classManager.getVarInfo(obj.className, prop)
+        val = rgetProp(obj, prop)
+        subProps = 0
+        if objectp(val) then
+          obj = val
+          if voidp(obj.getaProp(#className)) then
+            next repeat
+          end if
+          subProps = gRock.m_classManager.getPropsInClass(obj.className)
+        else
+          subProps = [:]
+          subProps.addProp(prop, gRock.m_classManager.getVarInfo(obj.className, prop))
+        end if
+        if listp(subProps) then
+          tmpComment = props[n + 1]
+          repeat with subPropNum = 1 to subProps.count
+            subProp = subProps.getPropAt(subPropNum)
+            varInfo = subProps[subPropNum]
+            m_compiledPropList.addProp(subProp, [#comment: tmpComment & "(" & string(subProp) & ")", #format: varInfo[1], #default: val, #object: obj, #propName: subProp])
+          end repeat
+        end if
+      else
+      end if
+      n = n + 1
+    end repeat
+  end if
+  if objectp(m_editor) then
+    m_editor = m_editor.kill()
+    m_editor = script("PropertyEditDlgScript").new(me, m_compiledPropList)
+  end if
+end
+
+on save me
+  tmpList = [:]
+  repeat with n = 1 to m_currentFocus.count()
+    obj = m_currentFocus[n]
+    if objectp(obj) then
+      if symbolp(obj.getaProp(#className)) then
+        tmpList.setaProp(m_currentFocus.getPropAt(n), obj.ID)
+      end if
+    end if
+  end repeat
+  return tmpList
+end
+
+on load me, argList
+  if not listp(argList) then
+    argList = [:]
+  end if
+  m_currentFocus = [:]
+  repeat with n = 1 to argList.count()
+    m_currentFocus.setaProp(argList.getPropAt(n), gRock.m_classManager.getObjByID(argList[n]))
+  end repeat
+end

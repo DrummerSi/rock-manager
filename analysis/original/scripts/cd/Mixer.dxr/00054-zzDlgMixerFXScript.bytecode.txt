@@ -1,0 +1,728 @@
+property ancestor, m_dlg, m_fxGfxObjs, m_fxObjs, m_channel, m_sndObj, m_renderProtectMouseObj, m_waitingForRenderer, m_loop_r, m_instrument, m_CPFile
+global gDir, gRock
+
+on new me, argOptions
+  [  0] getparam 8 .............................. <argOptions>
+  [  2] pushsymb 131 ............................ <#ReportTo>
+  [  5] getparam 0 .............................. <me>
+  [  7] pusharglistnoret 3 ...................... <argOptions, #ReportTo, me>
+  [  9] objcall 184 ............................. argOptions.setaProp(#ReportTo, me)
+  [ 12] getparam 8 .............................. <argOptions>
+  [ 14] pushsymb 1045 ........................... <#child>
+  [ 17] getparam 0 .............................. <me>
+  [ 19] pusharglistnoret 3 ...................... <argOptions, #child, me>
+  [ 21] objcall 184 ............................. argOptions.setaProp(#child, me)
+  [ 24] getparam 8 .............................. <argOptions>
+  [ 26] pushsymb 163 ............................ <#channelObj>
+  [ 29] pusharglist 2 ........................... <argOptions, #channelObj>
+  [ 31] objcall 70 .............................. <argOptions[#channelObj]>
+  [ 34] setprop 424 ............................. m_channel = argOptions[#channelObj]
+  [ 37] getparam 8 .............................. <argOptions>
+  [ 39] pushsymb 1041 ........................... <#FXObjs>
+  [ 42] pusharglist 2 ........................... <argOptions, #FXObjs>
+  [ 44] objcall 70 .............................. <argOptions[#FXObjs]>
+  [ 47] setprop 238 ............................. m_fxObjs = argOptions[#FXObjs]
+  [ 50] getprop 238 ............................. <m_fxObjs>
+  [ 53] pusharglist 1 ........................... <m_fxObjs>
+  [ 55] extcall 425 ............................. <listp(m_fxObjs)>
+  [ 58] not ..................................... <not listp(m_fxObjs)>
+  [ 59] jmpifz [ 68] ............................ if not listp(m_fxObjs) then
+  [ 62] pusharglist 0 ........................... <[:]>
+  [ 64] pushproplist ............................ <[:]>
+  [ 65] setprop 238 ............................. m_fxObjs = [:]
+  [ 68] getprop 238 ............................. <m_fxObjs>
+  [ 71] getobjprop 61 ........................... <m_fxObjs.count>
+  [ 74] pushzero ................................ <0>
+  [ 75] eq ...................................... <m_fxObjs.count = 0>
+  [ 76] jmpifz [191] ............................ if m_fxObjs.count = 0 then
+  [ 79] getglobal 15 ............................ <gRock>
+  [ 81] getobjprop 16 ........................... <gRock.m_context>
+  [ 83] pushsymb 17 ............................. <#Studio>
+  [ 85] pusharglist 2 ........................... <gRock.m_context, #Studio>
+  [ 87] objcall 18 .............................. <gRock.m_context.getFocus(#Studio)>
+  [ 89] setlocal 0 .............................. studio_r = gRock.m_context.getFocus(#Studio)
+  [ 91] getlocal 0 .............................. <studio_r>
+  [ 93] getobjprop 928 .......................... <studio_r.AvailableFX>
+  [ 96] peek 0
+  [ 98] pusharglist 1
+  [100] extcall 61
+  [103] pushint8 1
+  [105] peek 0
+  [107] peek 2
+  [109] lteq
+  [110] jmpifz [189] ............................ repeat with FXID in studio_r.AvailableFX
+  [113] peek 2
+  [115] peek 1
+  [117] pusharglist 2
+  [119] extcall 70
+  [122] setlocal 8
+  [124] getlocal 8 .............................. <FXID>
+  [126] pusharglist 1 ........................... <FXID>
+  [128] extcall 232 ............................. <string(FXID)>
+  [131] pushcons 0 .............................. <"Script">
+  [133] joinstr ................................. <string(FXID) & "Script">
+  [134] setlocal 16 ............................. scriptName = string(FXID) & "Script"
+  [136] getlocal 16 ............................. <scriptName>
+  [138] pusharglist 1 ........................... <scriptName>
+  [140] extcall 55 .............................. <member(scriptName)>
+  [143] getobjprop 494 .......................... <member(scriptName).number>
+  [146] pushzero ................................ <0>
+  [147] gt ...................................... <member(scriptName).number > 0>
+  [148] jmpifz [174] ............................ if member(scriptName).number > 0 then
+  [151] getprop 238 ............................. <m_fxObjs>
+  [154] getlocal 8 .............................. <FXID>
+  [156] getlocal 16 ............................. <scriptName>
+  [158] pusharglist 1 ........................... <scriptName>
+  [160] extcall 20 .............................. <script(scriptName)>
+  [162] pusharglist 1 ........................... <script(scriptName)>
+  [164] objcall 0 ............................... <script(scriptName).new()>
+  [166] pusharglistnoret 3 ...................... <m_fxObjs, FXID, script(scriptName).new()>
+  [168] objcall 80 .............................. m_fxObjs.addProp(FXID, script(scriptName).new())
+  [171] jmp [183] ............................... next repeat
+  [174] pushcons 8 .............................. <"FX undefined">
+  [176] getlocal 8 .............................. <FXID>
+  [178] pusharglistnoret 2 ...................... <"FX undefined", FXID>
+  [180] extcall 1009 ............................ pott("FX undefined", FXID)
+  [183] pushint8 1
+  [185] add
+  [186] endrepeat [105]
+  [189] pop 3
+  [191] pushzero ................................ <0>
+  [192] setprop 954 ............................. m_waitingForRenderer = 0
+  [195] pushcons 16 ............................. <"DlgRockAncestorScript">
+  [197] pusharglist 1 ........................... <"DlgRockAncestorScript">
+  [199] extcall 20 .............................. <script("DlgRockAncestorScript")>
+  [201] getparam 8 .............................. <argOptions>
+  [203] pusharglist 2 ........................... <script("DlgRockAncestorScript"), argOptions>
+  [205] objcall 0 ............................... <script("DlgRockAncestorScript").new(argOptions)>
+  [207] setprop 1042 ............................ ancestor = script("DlgRockAncestorScript").new(argOptions)
+  [210] getprop 1042 ............................ <ancestor>
+  [213] getobjprop 1043 ......................... <ancestor.m_objDlg>
+  [216] setprop 98 .............................. m_dlg = ancestor.m_objDlg
+  [219] getprop 98 .............................. <m_dlg>
+  [222] pushsymb 433 ............................ <#close>
+  [225] pusharglist 2 ........................... <m_dlg, #close>
+  [227] objcall 106 ............................. <m_dlg.getItem(#close)>
+  [230] setlocal 24 ............................. itemObj = m_dlg.getItem(#close)
+  [232] getlocal 24 ............................. <itemObj>
+  [234] pusharglist 1 ........................... <itemObj>
+  [236] extcall 14 .............................. <objectp(itemObj)>
+  [238] jmpifz [256] ............................ if objectp(itemObj) then
+  [241] getlocal 24 ............................. <itemObj>
+  [243] getobjprop 434 .......................... <itemObj.scriptInstanceList>
+  [246] pushint8 1 .............................. <1>
+  [249] getparam 0 .............................. <me>
+  [251] pusharglistnoret 3 ...................... <itemObj.scriptInstanceList, 1, me>
+  [253] objcall 435 ............................. itemObj.scriptInstanceList.addAt(1, me)
+  [256] getparam 0 .............................. <me>
+  [258] pusharglistnoret 1 ...................... <me>
+  [260] extcall 11 .............................. return me
+  [262] ret
+end
+
+on init me
+  [  0] pusharglist 0 ........................... <[]>
+  [  2] pushlist ................................ <[]>
+  [  3] setprop 804 ............................. m_fxGfxObjs = []
+  [  6] getprop 98 .............................. <m_dlg>
+  [  9] pushsymb 1036 ........................... <#FXDummy>
+  [ 12] pusharglist 2 ........................... <m_dlg, #FXDummy>
+  [ 14] objcall 106 ............................. <m_dlg.getItem(#FXDummy)>
+  [ 17] setlocal 0 .............................. itemObj = m_dlg.getItem(#FXDummy)
+  [ 19] getlocal 0 .............................. <itemObj>
+  [ 21] pushsymb 447 ............................ <#Pic>
+  [ 24] pushcons 24 ............................. <"Dummy">
+  [ 26] pusharglistnoret 3 ...................... <itemObj, #Pic, "Dummy">
+  [ 28] objcall 109 ............................. itemObj.setOneProp(#Pic, "Dummy")
+  [ 31] getlocal 0 .............................. <itemObj>
+  [ 33] pushsymb 432 ............................ <#inOffsetRect>
+  [ 36] pusharglist 2 ........................... <itemObj, #inOffsetRect>
+  [ 38] objcall 1037 ............................ <itemObj.getOneProp(#inOffsetRect)>
+  [ 41] pusharglist 1 ........................... <itemObj.getOneProp(#inOffsetRect)>
+  [ 43] objcall 166 ............................. <itemObj.getOneProp(#inOffsetRect).duplicate()>
+  [ 46] setlocal 8 .............................. rct = itemObj.getOneProp(#inOffsetRect).duplicate()
+  [ 48] getlocal 0 .............................. <itemObj>
+  [ 50] pushsymb 430 ............................ <#rel>
+  [ 53] pusharglist 2 ........................... <itemObj, #rel>
+  [ 55] objcall 1037 ............................ <itemObj.getOneProp(#rel)>
+  [ 58] pusharglist 1 ........................... <itemObj.getOneProp(#rel)>
+  [ 60] objcall 166 ............................. <itemObj.getOneProp(#rel).duplicate()>
+  [ 63] setlocal 16 ............................. rel = itemObj.getOneProp(#rel).duplicate()
+  [ 65] pushint8 1 .............................. <1>
+  [ 68] setlocal 24
+  [ 70] getlocal 24
+  [ 72] getprop 238 ............................. <m_fxObjs>
+  [ 75] getobjprop 61 ........................... <m_fxObjs.count>
+  [ 78] lteq
+  [ 79] jmpifz [284] ............................ repeat with n = 1 to m_fxObjs.count
+  [ 82] getprop 238 ............................. <m_fxObjs>
+  [ 85] getlocal 24 ............................. <n>
+  [ 87] pusharglist 2 ........................... <m_fxObjs, n>
+  [ 89] objcall 70 .............................. <m_fxObjs[n]>
+  [ 92] setlocal 32 ............................. fxObj = m_fxObjs[n]
+  [ 94] getprop 238 ............................. <m_fxObjs>
+  [ 97] getlocal 24 ............................. <n>
+  [ 99] pusharglist 2 ........................... <m_fxObjs, n>
+  [101] objcall 164 ............................. <m_fxObjs.getPropAt(n)>
+  [104] setlocal 40 ............................. fxType = m_fxObjs.getPropAt(n)
+  [106] pushcons 32 ............................. <"FXGfxScript">
+  [108] pusharglist 1 ........................... <"FXGfxScript">
+  [110] extcall 20 .............................. <script("FXGfxScript")>
+  [112] getparam 0 .............................. <me>
+  [114] getlocal 40 ............................. <fxType>
+  [116] getlocal 32 ............................. <fxObj>
+  [118] pusharglist 4 ........................... <script("FXGfxScript"), me, fxType, fxObj>
+  [120] objcall 0 ............................... <script("FXGfxScript").new(me, fxType, fxObj)>
+  [122] setlocal 48 ............................. obj = script("FXGfxScript").new(me, fxType, fxObj)
+  [124] pushsymb 71 ............................. <#ID>
+  [127] pushcons 40 ............................. <"FX">
+  [129] getlocal 24 ............................. <n>
+  [131] pusharglist 1 ........................... <n>
+  [133] extcall 232 ............................. <string(n)>
+  [136] joinstr ................................. <"FX" & string(n)>
+  [137] pusharglist 1 ........................... <"FX" & string(n)>
+  [139] extcall 440 ............................. <symbol("FX" & string(n))>
+  [142] pushsymb 199 ............................ <#type>
+  [145] pushsymb 441 ............................ <#Dialog>
+  [148] pushsymb 432 ............................ <#inOffsetRect>
+  [151] getlocal 8 .............................. <rct>
+  [153] pushsymb 430 ............................ <#rel>
+  [156] getlocal 16 ............................. <rel>
+  [158] pushsymb 443 ............................ <#dialogDataMemberName>
+  [161] pushcons 48 ............................. <"DlgSimpleData">
+  [163] pushsymb 472 ............................ <#ch>
+  [166] getlocal 24 ............................. <n>
+  [168] pushint8 1 .............................. <1>
+  [171] add ..................................... <n + 1>
+  [172] pushsymb 767 ............................ <#usingMouse>
+  [175] pushzero ................................ <0>
+  [176] pusharglist 14 .......................... <[#ID: symbol("FX" & string(n)), #type: #Dialog, #inOffsetRect: rct, #rel: rel, #dialogDataMemberName: "DlgSimpleData", #ch: n + 1, #usingMouse: 0]>
+  [178] pushproplist ............................ <[#ID: symbol("FX" & string(n)), #type: #Dialog, #inOffsetRect: rct, #rel: rel, #dialogDataMemberName: "DlgSimpleData", #ch: n + 1, #usingMouse: 0]>
+  [179] setlocal 56 ............................. lst = [#ID: symbol("FX" & string(n)), #type: #Dialog, #inOffsetRect: rct, #rel: rel, #dialogDataMemberName: "DlgSimpleData", #ch: n + 1, #usingMouse: 0]
+  [181] getprop 98 .............................. <m_dlg>
+  [184] getlocal 56 ............................. <lst>
+  [186] pusharglist 2 ........................... <m_dlg, lst>
+  [188] objcall 444 ............................. <m_dlg.addItem(lst)>
+  [191] setlocal 64 ............................. newObj = m_dlg.addItem(lst)
+  [193] getlocal 64 ............................. <newObj>
+  [195] getlocal 48 ............................. <obj>
+  [197] getobjprop 98 ........................... <obj.m_dlg>
+  [200] pusharglistnoret 2 ...................... <newObj, obj.m_dlg>
+  [202] objcall 445 ............................. newObj.attachDlg(obj.m_dlg)
+  [205] getprop 804 ............................. <m_fxGfxObjs>
+  [208] getlocal 48 ............................. <obj>
+  [210] pusharglistnoret 2 ...................... <m_fxGfxObjs, obj>
+  [212] objcall 72 .............................. m_fxGfxObjs.add(obj)
+  [215] getlocal 16 ............................. <rel>
+  [217] pusharglist 1 ........................... <rel>
+  [219] objcall 166 ............................. <rel.duplicate()>
+  [222] setlocal 16 ............................. rel = rel.duplicate()
+  [224] getlocal 16 ............................. <rel>
+  [226] pushint8 2 .............................. <2>
+  [229] getlocal 56 ............................. <lst>
+  [231] pushsymb 71 ............................. <#ID>
+  [234] pusharglist 2 ........................... <lst, #ID>
+  [236] objcall 70 .............................. <lst[#ID]>
+  [239] pushint8 4 .............................. <4>
+  [242] pusharglist 2 ........................... <[lst[#ID], 4]>
+  [244] pushlist ................................ <[lst[#ID], 4]>
+  [245] pusharglistnoret 3 ...................... <rel, 2, [lst[#ID], 4]>
+  [247] objcall 224 ............................. rel[2] = [lst[#ID], 4]
+  [250] getlocal 8 .............................. <rct>
+  [252] pusharglist 1 ........................... <rct>
+  [254] objcall 166 ............................. <rct.duplicate()>
+  [257] setlocal 8 .............................. rct = rct.duplicate()
+  [259] getlocal 8 .............................. <rct>
+  [261] pushint8 2 .............................. <2>
+  [264] pushint8 10 ............................. <10>
+  [267] inv ..................................... <-10>
+  [268] pusharglistnoret 3 ...................... <rct, 2, -10>
+  [270] objcall 224 ............................. rct[2] = -10
+  [273] pushint8 1
+  [276] getlocal 24
+  [278] add
+  [279] setlocal 24
+  [281] endrepeat [ 70]
+  [284] getprop 98 .............................. <m_dlg>
+  [287] pushsymb 904 ............................ <#FramedText>
+  [290] pusharglist 2 ........................... <m_dlg, #FramedText>
+  [292] objcall 106 ............................. <m_dlg.getItem(#FramedText)>
+  [295] setlocal 0 .............................. itemObj = m_dlg.getItem(#FramedText)
+  [297] getlocal 0 .............................. <itemObj>
+  [299] pushsymb 430 ............................ <#rel>
+  [302] pusharglist 2 ........................... <itemObj, #rel>
+  [304] objcall 1037 ............................ <itemObj.getOneProp(#rel)>
+  [307] setlocal 16 ............................. rel = itemObj.getOneProp(#rel)
+  [309] getlocal 16 ............................. <rel>
+  [311] pushint8 2 .............................. <2>
+  [314] getlocal 56 ............................. <lst>
+  [316] pushsymb 71 ............................. <#ID>
+  [319] pusharglist 2 ........................... <lst, #ID>
+  [321] objcall 70 .............................. <lst[#ID]>
+  [324] pushint8 4 .............................. <4>
+  [327] pusharglist 2 ........................... <[lst[#ID], 4]>
+  [329] pushlist ................................ <[lst[#ID], 4]>
+  [330] pusharglistnoret 3 ...................... <rel, 2, [lst[#ID], 4]>
+  [332] objcall 224 ............................. rel[2] = [lst[#ID], 4]
+  [335] getlocal 0 .............................. <itemObj>
+  [337] pushsymb 430 ............................ <#rel>
+  [340] getlocal 16 ............................. <rel>
+  [342] pusharglistnoret 3 ...................... <itemObj, #rel, rel>
+  [344] objcall 109 ............................. itemObj.setOneProp(#rel, rel)
+  [347] getprop 98 .............................. <m_dlg>
+  [350] pushsymb 909 ............................ <#ButtonNote>
+  [353] pusharglist 2 ........................... <m_dlg, #ButtonNote>
+  [355] objcall 106 ............................. <m_dlg.getItem(#ButtonNote)>
+  [358] setlocal 0 .............................. itemObj = m_dlg.getItem(#ButtonNote)
+  [360] getlocal 0 .............................. <itemObj>
+  [362] getobjprop 434 .......................... <itemObj.scriptInstanceList>
+  [365] getparam 0 .............................. <me>
+  [367] pusharglistnoret 2 ...................... <itemObj.scriptInstanceList, me>
+  [369] objcall 72 .............................. itemObj.scriptInstanceList.add(me)
+  [372] getprop 98 .............................. <m_dlg>
+  [375] pushsymb 778 ............................ <#MusicianSheet>
+  [378] pushsymb 447 ............................ <#Pic>
+  [381] pusharglist 2 ........................... <[#MusicianSheet, #Pic]>
+  [383] pushlist ................................ <[#MusicianSheet, #Pic]>
+  [384] pusharglist 2 ........................... <m_dlg, [#MusicianSheet, #Pic]>
+  [386] objcall 917 ............................. <m_dlg.getItemByPath([#MusicianSheet, #Pic])>
+  [389] setlocal 0 .............................. itemObj = m_dlg.getItemByPath([#MusicianSheet, #Pic])
+  [391] getlocal 0 .............................. <itemObj>
+  [393] getobjprop 434 .......................... <itemObj.scriptInstanceList>
+  [396] getparam 0 .............................. <me>
+  [398] pusharglistnoret 2 ...................... <itemObj.scriptInstanceList, me>
+  [400] objcall 72 .............................. itemObj.scriptInstanceList.add(me)
+  [403] getprop 424 ............................. <m_channel>
+  [406] getobjprop 180 .......................... <m_channel.m_loopObj_r>
+  [409] setprop 1087 ............................ m_loop_r = m_channel.m_loopObj_r
+  [412] getprop 1087 ............................ <m_loop_r>
+  [415] pusharglist 1 ........................... <m_loop_r>
+  [417] extcall 14 .............................. <objectp(m_loop_r)>
+  [419] jmpifz [434] ............................ if objectp(m_loop_r) then / else
+  [422] getprop 1087 ............................ <m_loop_r>
+  [425] getobjprop 75 ........................... <m_loop_r.Instrument>
+  [428] setprop 1088 ............................ m_instrument = m_loop_r.Instrument
+  [431] jmp [440]
+  [434] pushsymb 65 ............................. <#Guitar>
+  [437] setprop 1088 ............................ m_instrument = #Guitar
+  [440] getprop 424 ............................. <m_channel>
+  [443] pushsymb 181 ............................ <#channelMusicianObj>
+  [446] pushsymb 182 ............................ <#m_musician_r>
+  [449] pusharglist 2 ........................... <[#channelMusicianObj, #m_musician_r]>
+  [451] pushlist ................................ <[#channelMusicianObj, #m_musician_r]>
+  [452] pusharglist 2 ........................... <m_channel, [#channelMusicianObj, #m_musician_r]>
+  [454] extcall 81 .............................. <rgetProp(m_channel, [#channelMusicianObj, #m_musician_r])>
+  [457] setlocal 72 ............................. tmpMus_r = rgetProp(m_channel, [#channelMusicianObj, #m_musician_r])
+  [459] getparam 0 .............................. <me>
+  [461] getlocal 72 ............................. <tmpMus_r>
+  [463] pusharglistnoret 2 ...................... <me, tmpMus_r>
+  [465] objcall 126 ............................. me.setMusician(tmpMus_r)
+  [468] getparam 0 .............................. <me>
+  [470] pushzero ................................ <0>
+  [471] pusharglistnoret 2 ...................... <me, 0>
+  [473] objcall 913 ............................. me.changeLoop(0)
+  [476] getprop 1042 ............................ <ancestor>
+  [479] pusharglistnoret 1 ...................... <ancestor>
+  [481] objcall 395 ............................. ancestor.render()
+  [484] getlocal 72 ............................. <tmpMus_r>
+  [486] pusharglist 1 ........................... <tmpMus_r>
+  [488] extcall 14 .............................. <objectp(tmpMus_r)>
+  [490] not ..................................... <not objectp(tmpMus_r)>
+  [491] jmpifz [501] ............................ if not objectp(tmpMus_r) then
+  [494] getparam 0 .............................. <me>
+  [496] pusharglistnoret 1 ...................... <me>
+  [498] objcall 1040 ............................ me.launchMusicianDlg()
+  [501] ret
+end
+
+on kill me
+  [  0] getprop 804 ............................. <m_fxGfxObjs>
+  [  3] peek 0
+  [  5] pusharglist 1
+  [  7] extcall 61
+  [ 10] pushint8 1
+  [ 12] peek 0
+  [ 14] peek 2
+  [ 16] lteq
+  [ 17] jmpifz [ 42] ............................ repeat with obj in m_fxGfxObjs
+  [ 20] peek 2
+  [ 22] peek 1
+  [ 24] pusharglist 2
+  [ 26] extcall 70
+  [ 29] setlocal 0
+  [ 31] getlocal 0 .............................. <obj>
+  [ 33] pusharglistnoret 1 ...................... <obj>
+  [ 35] objcall 3 ............................... obj.kill()
+  [ 37] pushint8 1
+  [ 39] add
+  [ 40] endrepeat [ 12]
+  [ 42] pop 3
+  [ 44] pusharglist 0 ........................... <[]>
+  [ 46] pushlist ................................ <[]>
+  [ 47] setprop 804 ............................. m_fxGfxObjs = []
+  [ 50] getprop 911 ............................. <m_renderProtectMouseObj>
+  [ 53] pusharglist 1 ........................... <m_renderProtectMouseObj>
+  [ 55] extcall 14 .............................. <objectp(m_renderProtectMouseObj)>
+  [ 57] jmpifz [ 70] ............................ if objectp(m_renderProtectMouseObj) then
+  [ 60] getprop 911 ............................. <m_renderProtectMouseObj>
+  [ 63] pusharglist 1 ........................... <m_renderProtectMouseObj>
+  [ 65] objcall 3 ............................... <m_renderProtectMouseObj.kill()>
+  [ 67] setprop 911 ............................. m_renderProtectMouseObj = m_renderProtectMouseObj.kill()
+  [ 70] getprop 892 ............................. <m_sndObj>
+  [ 73] pusharglist 1 ........................... <m_sndObj>
+  [ 75] extcall 14 .............................. <objectp(m_sndObj)>
+  [ 77] jmpifz [ 90] ............................ if objectp(m_sndObj) then
+  [ 80] getprop 892 ............................. <m_sndObj>
+  [ 83] pusharglist 1 ........................... <m_sndObj>
+  [ 85] objcall 3 ............................... <m_sndObj.kill()>
+  [ 87] setprop 892 ............................. m_sndObj = m_sndObj.kill()
+  [ 90] getprop 1042 ............................ <ancestor>
+  [ 93] pusharglist 1 ........................... <ancestor>
+  [ 95] objcall 3 ............................... <ancestor.kill()>
+  [ 97] setprop 1042 ............................ ancestor = ancestor.kill()
+  [100] getparam 0 .............................. <me>
+  [102] pusharglistnoret 1 ...................... <me>
+  [104] extcall 11 .............................. return me
+  [106] ret
+end
+
+on setMusician me, argMusician_r
+  [  0] getparam 8 .............................. <argMusician_r>
+  [  2] getprop 98 .............................. <m_dlg>
+  [  5] getprop 1088 ............................ <m_instrument>
+  [  8] pusharglistnoret 3 ...................... <argMusician_r, m_dlg, m_instrument>
+  [ 10] extcall 1035 ............................ setMixerMusicianInfoSheet(argMusician_r, m_dlg, m_instrument)
+  [ 13] ret
+end
+
+on Report me, argObj, argWhat, argOption
+  [  0] getparam 8 .............................. <argObj>
+  [  2] getprop 892 ............................. <m_sndObj>
+  [  5] eq ...................................... <argObj = m_sndObj>
+  [  6] getparam 8 .............................. <argObj>
+  [  8] pusharglist 1 ........................... <argObj>
+  [ 10] extcall 14 .............................. <objectp(argObj)>
+  [ 12] and ..................................... <(argObj = m_sndObj) and objectp(argObj)>
+  [ 13] jmpifz [ 77] ............................ if (argObj = m_sndObj) and objectp(argObj) then / else
+  [ 16] getparam 16 ............................. <argWhat>
+  [ 18] pushsymb 899 ............................ <#finished>
+  [ 21] eq ...................................... <argWhat = #finished>
+  [ 22] jmpifz [ 74] ............................ if argWhat = #finished then
+  [ 25] getglobal 121 ........................... <gDir>
+  [ 28] getobjprop 19 ........................... <gDir.m_waveRenderer>
+  [ 30] pushsymb 131 ............................ <#ReportTo>
+  [ 33] pushzero ................................ <0>
+  [ 34] pushsymb 132 ............................ <#handler>
+  [ 37] pushzero ................................ <0>
+  [ 38] pusharglist 4 ........................... <[#ReportTo: 0, #handler: 0]>
+  [ 40] pushproplist ............................ <[#ReportTo: 0, #handler: 0]>
+  [ 41] setobjprop 133 .......................... gDir.m_waveRenderer.m_doWhatWhenDoneList = [#ReportTo: 0, #handler: 0]
+  [ 44] getprop 911 ............................. <m_renderProtectMouseObj>
+  [ 47] pusharglist 1 ........................... <m_renderProtectMouseObj>
+  [ 49] objcall 3 ............................... <m_renderProtectMouseObj.kill()>
+  [ 51] setprop 911 ............................. m_renderProtectMouseObj = m_renderProtectMouseObj.kill()
+  [ 54] getprop 892 ............................. <m_sndObj>
+  [ 57] pusharglist 1 ........................... <m_sndObj>
+  [ 59] extcall 14 .............................. <objectp(m_sndObj)>
+  [ 61] jmpifz [ 74] ............................ if objectp(m_sndObj) then
+  [ 64] getprop 892 ............................. <m_sndObj>
+  [ 67] pusharglist 1 ........................... <m_sndObj>
+  [ 69] objcall 3 ............................... <m_sndObj.kill()>
+  [ 71] setprop 892 ............................. m_sndObj = m_sndObj.kill()
+  [ 74] jmp [141]
+  [ 77] getparam 16 ............................. <argWhat>
+  [ 79] pushsymb 1085 ........................... <#ChoseMusician>
+  [ 82] eq ...................................... <argWhat = #ChoseMusician>
+  [ 83] jmpifz [141] ............................ if argWhat = #ChoseMusician then
+  [ 86] getparam 24 ............................. <argOption>
+  [ 88] pushsymb 1012 ........................... <#Musician>
+  [ 91] pusharglist 2 ........................... <argOption, #Musician>
+  [ 93] objcall 70 .............................. <argOption[#Musician]>
+  [ 96] setlocal 0 .............................. musician_r = argOption[#Musician]
+  [ 98] getparam 24 ............................. <argOption>
+  [100] pushsymb 75 ............................. <#Instrument>
+  [103] pusharglist 2 ........................... <argOption, #Instrument>
+  [105] objcall 70 .............................. <argOption[#Instrument]>
+  [108] setprop 1088 ............................ m_instrument = argOption[#Instrument]
+  [111] getprop 424 ............................. <m_channel>
+  [114] getobjprop 181 .......................... <m_channel.channelMusicianObj>
+  [117] getlocal 0 .............................. <musician_r>
+  [119] pusharglistnoret 2 ...................... <m_channel.channelMusicianObj, musician_r>
+  [121] objcall 126 ............................. m_channel.channelMusicianObj.setMusician(musician_r)
+  [124] getparam 0 .............................. <me>
+  [126] pushzero ................................ <0>
+  [127] pusharglistnoret 2 ...................... <me, 0>
+  [129] objcall 913 ............................. me.changeLoop(0)
+  [132] getparam 0 .............................. <me>
+  [134] getlocal 0 .............................. <musician_r>
+  [136] pusharglistnoret 2 ...................... <me, musician_r>
+  [138] objcall 126 ............................. me.setMusician(musician_r)
+  [141] ret
+end
+
+on launchMusicianDlg me
+  [  0] getglobal 121 ........................... <gDir>
+  [  3] getobjprop 30 ........................... <gDir.m_objDialogsMaster>
+  [  5] pushsymb 299 ............................ <#MixerChooseMusician>
+  [  8] pushsymb 131 ............................ <#ReportTo>
+  [ 11] getparam 0 .............................. <me>
+  [ 13] pushsymb 75 ............................. <#Instrument>
+  [ 16] getprop 1088 ............................ <m_instrument>
+  [ 19] pushsymb 883 ............................ <#CurrentlyPlaying>
+  [ 22] getprop 424 ............................. <m_channel>
+  [ 25] getobjprop 181 .......................... <m_channel.channelMusicianObj>
+  [ 28] getobjprop 182 .......................... <m_channel.channelMusicianObj.m_musician_r>
+  [ 31] pushsymb 927 ............................ <#StudioMusicianIDs>
+  [ 34] getglobal 121 ........................... <gDir>
+  [ 37] getobjprop 21 ........................... <gDir.m_mixerObj>
+  [ 39] getobjprop 856 .......................... <gDir.m_mixerObj.m_studio_r>
+  [ 42] getobjprop 302 .......................... <gDir.m_mixerObj.m_studio_r.StudioMusicians>
+  [ 45] pusharglist 8 ........................... <[#ReportTo: me, #Instrument: m_instrument, #CurrentlyPlaying: m_channel.channelMusicianObj.m_musician_r, #StudioMusicianIDs: gDir.m_mixerObj.m_studio_r.StudioMusicians]>
+  [ 47] pushproplist ............................ <[#ReportTo: me, #Instrument: m_instrument, #CurrentlyPlaying: m_channel.channelMusicianObj.m_musician_r, #StudioMusicianIDs: gDir.m_mixerObj.m_studio_r.StudioMusicians]>
+  [ 48] pusharglistnoret 3 ...................... <gDir.m_objDialogsMaster, #MixerChooseMusician, [#ReportTo: me, #Instrument: m_instrument, #CurrentlyPlaying: m_channel.channelMusicianObj.m_musician_r, #StudioMusicianIDs: gDir.m_mixerObj.m_studio_r.StudioMusicians]>
+  [ 50] objcall 300 ............................. gDir.m_objDialogsMaster.openDialog(#MixerChooseMusician, [#ReportTo: me, #Instrument: m_instrument, #CurrentlyPlaying: m_channel.channelMusicianObj.m_musician_r, #StudioMusicianIDs: gDir.m_mixerObj.m_studio_r.StudioMusicians])
+  [ 53] ret
+end
+
+on playPreview me
+  [  0] pushzero ................................ <0>
+  [  1] setprop 954 ............................. m_waitingForRenderer = 0
+  [  4] getglobal 121 ........................... <gDir>
+  [  7] getobjprop 19 ........................... <gDir.m_waveRenderer>
+  [  9] pushcons 56 ............................. <"preview">
+  [ 11] getprop 1102 ............................ <m_CPFile>
+  [ 14] pusharglist 3 ........................... <gDir.m_waveRenderer, "preview", m_CPFile>
+  [ 16] objcall 271 ............................. <gDir.m_waveRenderer.getRendered("preview", m_CPFile)>
+  [ 19] setlocal 0 .............................. file = gDir.m_waveRenderer.getRendered("preview", m_CPFile)
+  [ 21] getlocal 0 .............................. <file>
+  [ 23] pusharglist 1 ........................... <file>
+  [ 25] extcall 272 ............................. <fileExtractName(file)>
+  [ 28] setlocal 0 .............................. file = fileExtractName(file)
+  [ 30] pushcons 64 ............................. <"SoundScript">
+  [ 32] pusharglist 1 ........................... <"SoundScript">
+  [ 34] extcall 20 .............................. <script("SoundScript")>
+  [ 36] getglobal 121 ........................... <gDir>
+  [ 39] getobjprop 21 ........................... <gDir.m_mixerObj>
+  [ 41] getobjprop 32 ........................... <gDir.m_mixerObj.m_sequencer>
+  [ 44] getobjprop 893 .......................... <gDir.m_mixerObj.m_sequencer.m_soundPath>
+  [ 47] getlocal 0 .............................. <file>
+  [ 49] joinstr ................................. <gDir.m_mixerObj.m_sequencer.m_soundPath & file>
+  [ 50] pushsymb 131 ............................ <#ReportTo>
+  [ 53] getparam 0 .............................. <me>
+  [ 55] pushsymb 117 ............................ <#PlayDirect>
+  [ 58] pushint8 1 .............................. <1>
+  [ 61] pusharglist 4 ........................... <[#ReportTo: me, #PlayDirect: 1]>
+  [ 63] pushproplist ............................ <[#ReportTo: me, #PlayDirect: 1]>
+  [ 64] pusharglist 3 ........................... <script("SoundScript"), gDir.m_mixerObj.m_sequencer.m_soundPath & file, [#ReportTo: me, #PlayDirect: 1]>
+  [ 66] objcall 0 ............................... <script("SoundScript").new(gDir.m_mixerObj.m_sequencer.m_soundPath & file, [#ReportTo: me, #PlayDirect: 1])>
+  [ 68] setprop 892 ............................. m_sndObj = script("SoundScript").new(gDir.m_mixerObj.m_sequencer.m_soundPath & file, [#ReportTo: me, #PlayDirect: 1])
+  [ 71] ret
+end
+
+on mouse me, argObj, argWhat, argOption
+  [  0] getparam 16 ............................. <argWhat>
+  [  2] pushsymb 298 ............................ <#click>
+  [  5] eq ...................................... <argWhat = #click>
+  [  6] jmpifz [327] ............................ if argWhat = #click then
+  [  9] getparam 24 ............................. <argOption>
+  [ 11] pusharglist 1 ........................... <argOption>
+  [ 13] extcall 14 .............................. <objectp(argOption)>
+  [ 15] jmpifz [288] ............................ if objectp(argOption) then / else
+  [ 18] getparam 24 ............................. <argOption>
+  [ 20] getobjprop 71 ........................... <argOption.ID>
+  [ 23] pushsymb 446 ............................ <#ButtonOK>
+  [ 26] eq ...................................... <argOption.ID = #ButtonOK>
+  [ 27] jmpifz [170] ............................ if argOption.ID = #ButtonOK then / else
+  [ 30] getprop 954 ............................. <m_waitingForRenderer>
+  [ 33] jmpifz [ 37] ............................ if m_waitingForRenderer then
+  [ 36] ret ..................................... exit
+  [ 37] pushint8 1 .............................. <1>
+  [ 40] setprop 954 ............................. m_waitingForRenderer = 1
+  [ 43] pushcons 72 ............................. <"MouseObject">
+  [ 45] pusharglist 1 ........................... <"MouseObject">
+  [ 47] extcall 20 .............................. <script("MouseObject")>
+  [ 49] getparam 0 .............................. <me>
+  [ 51] pushzero ................................ <0>
+  [ 52] pushzero ................................ <0>
+  [ 53] pushint8 1000 ........................... <1000>
+  [ 56] pushint8 1000 ........................... <1000>
+  [ 59] pusharglist 4 ........................... <0, 0, 1000, 1000>
+  [ 61] extcall 230 ............................. <rect(0, 0, 1000, 1000)>
+  [ 64] pushsymb 895 ............................ <#layer>
+  [ 67] pushcons 80 ............................. <1000000>
+  [ 69] pushsymb 896 ............................ <#noPassRoll>
+  [ 72] pushint8 1 .............................. <1>
+  [ 75] pushsymb 897 ............................ <#cursorRoll>
+  [ 78] pushsymb 898 ............................ <#wait>
+  [ 81] pusharglist 6 ........................... <[#layer: 1000000, #noPassRoll: 1, #cursorRoll: #wait]>
+  [ 83] pushproplist ............................ <[#layer: 1000000, #noPassRoll: 1, #cursorRoll: #wait]>
+  [ 84] pusharglist 4 ........................... <script("MouseObject"), me, rect(0, 0, 1000, 1000), [#layer: 1000000, #noPassRoll: 1, #cursorRoll: #wait]>
+  [ 86] objcall 0 ............................... <script("MouseObject").new(me, rect(0, 0, 1000, 1000), [#layer: 1000000, #noPassRoll: 1, #cursorRoll: #wait])>
+  [ 88] setprop 911 ............................. m_renderProtectMouseObj = script("MouseObject").new(me, rect(0, 0, 1000, 1000), [#layer: 1000000, #noPassRoll: 1, #cursorRoll: #wait])
+  [ 91] getprop 424 ............................. <m_channel>
+  [ 94] getprop 1087 ............................ <m_loop_r>
+  [ 97] pusharglist 2 ........................... <m_channel, m_loop_r>
+  [ 99] objcall 218 ............................. <m_channel.getEffects(m_loop_r)>
+  [102] setlocal 0 .............................. FX = m_channel.getEffects(m_loop_r)
+  [104] getprop 424 ............................. <m_channel>
+  [107] getprop 1087 ............................ <m_loop_r>
+  [110] pusharglist 2 ........................... <m_channel, m_loop_r>
+  [112] objcall 1101 ............................ <m_channel.fixPossibleVocalFileName(m_loop_r)>
+  [115] setprop 1102 ............................ m_CPFile = m_channel.fixPossibleVocalFileName(m_loop_r)
+  [118] getglobal 121 ........................... <gDir>
+  [121] getobjprop 19 ........................... <gDir.m_waveRenderer>
+  [123] pushcons 88 ............................. <"preview">
+  [125] getprop 1102 ............................ <m_CPFile>
+  [128] getlocal 0 .............................. <FX>
+  [130] pusharglistnoret 4 ...................... <gDir.m_waveRenderer, "preview", m_CPFile, FX>
+  [132] objcall 311 ............................. gDir.m_waveRenderer.queueRendering("preview", m_CPFile, FX)
+  [135] getglobal 121 ........................... <gDir>
+  [138] getobjprop 19 ........................... <gDir.m_waveRenderer>
+  [140] pushsymb 131 ............................ <#ReportTo>
+  [143] getparam 0 .............................. <me>
+  [145] pushsymb 132 ............................ <#handler>
+  [148] pushsymb 900 ............................ <#playPreview>
+  [151] pusharglist 4 ........................... <[#ReportTo: me, #handler: #playPreview]>
+  [153] pushproplist ............................ <[#ReportTo: me, #handler: #playPreview]>
+  [154] setobjprop 133 .......................... gDir.m_waveRenderer.m_doWhatWhenDoneList = [#ReportTo: me, #handler: #playPreview]
+  [157] getglobal 121 ........................... <gDir>
+  [160] getobjprop 19 ........................... <gDir.m_waveRenderer>
+  [162] pusharglistnoret 1 ...................... <gDir.m_waveRenderer>
+  [164] objcall 134 ............................. gDir.m_waveRenderer.renderQueue()
+  [167] jmp [285]
+  [170] getparam 24 ............................. <argOption>
+  [172] getobjprop 71 ........................... <argOption.ID>
+  [175] pushsymb 105 ............................ <#ButtonCancel>
+  [178] eq ...................................... <argOption.ID = #ButtonCancel>
+  [179] jmpifz [215] ............................ if argOption.ID = #ButtonCancel then / else
+  [182] getprop 424 ............................. <m_channel>
+  [185] getprop 1087 ............................ <m_loop_r>
+  [188] pusharglistnoret 2 ...................... <m_channel, m_loop_r>
+  [190] objcall 127 ............................. m_channel.prepareLoop(m_loop_r)
+  [193] getprop 424 ............................. <m_channel>
+  [196] getparam 0 .............................. <me>
+  [198] pushsymb 1086 ........................... <#ClosedFX>
+  [201] pusharglistnoret 3 ...................... <m_channel, me, #ClosedFX>
+  [203] objcall 44 .............................. m_channel.Report(me, #ClosedFX)
+  [206] getparam 0 .............................. <me>
+  [208] pusharglistnoret 1 ...................... <me>
+  [210] objcall 3 ............................... me.kill()
+  [212] jmp [285]
+  [215] getparam 24 ............................. <argOption>
+  [217] getobjprop 71 ........................... <argOption.ID>
+  [220] pushsymb 447 ............................ <#Pic>
+  [223] eq ...................................... <argOption.ID = #Pic>
+  [224] jmpifz [237] ............................ if argOption.ID = #Pic then / else
+  [227] getparam 0 .............................. <me>
+  [229] pusharglistnoret 1 ...................... <me>
+  [231] objcall 1040 ............................ me.launchMusicianDlg()
+  [234] jmp [285]
+  [237] getparam 24 ............................. <argOption>
+  [239] getobjprop 71 ........................... <argOption.ID>
+  [242] pushsymb 914 ............................ <#ArrowUp>
+  [245] eq ...................................... <argOption.ID = #ArrowUp>
+  [246] jmpifz [263] ............................ if argOption.ID = #ArrowUp then / else
+  [249] getparam 0 .............................. <me>
+  [251] pushint8 1 .............................. <1>
+  [254] inv ..................................... <-1>
+  [255] pusharglistnoret 2 ...................... <me, -1>
+  [257] objcall 913 ............................. me.changeLoop(-1)
+  [260] jmp [285]
+  [263] getparam 24 ............................. <argOption>
+  [265] getobjprop 71 ........................... <argOption.ID>
+  [268] pushsymb 915 ............................ <#ArrowDown>
+  [271] eq ...................................... <argOption.ID = #ArrowDown>
+  [272] jmpifz [285] ............................ if argOption.ID = #ArrowDown then
+  [275] getparam 0 .............................. <me>
+  [277] pushint8 1 .............................. <1>
+  [280] pusharglistnoret 2 ...................... <me, 1>
+  [282] objcall 913 ............................. me.changeLoop(1)
+  [285] jmp [327]
+  [288] getparam 8 .............................. <argObj>
+  [290] getprop 911 ............................. <m_renderProtectMouseObj>
+  [293] eq ...................................... <argObj = m_renderProtectMouseObj>
+  [294] jmpifz [327] ............................ if argObj = m_renderProtectMouseObj then
+  [297] getprop 911 ............................. <m_renderProtectMouseObj>
+  [300] pusharglist 1 ........................... <m_renderProtectMouseObj>
+  [302] objcall 3 ............................... <m_renderProtectMouseObj.kill()>
+  [304] setprop 911 ............................. m_renderProtectMouseObj = m_renderProtectMouseObj.kill()
+  [307] getprop 892 ............................. <m_sndObj>
+  [310] pusharglist 1 ........................... <m_sndObj>
+  [312] extcall 14 .............................. <objectp(m_sndObj)>
+  [314] jmpifz [327] ............................ if objectp(m_sndObj) then
+  [317] getprop 892 ............................. <m_sndObj>
+  [320] pusharglist 1 ........................... <m_sndObj>
+  [322] objcall 3 ............................... <m_sndObj.kill()>
+  [324] setprop 892 ............................. m_sndObj = m_sndObj.kill()
+  [327] ret
+end
+
+on changeLoop me, argDir
+  [  0] getglobal 121 ........................... <gDir>
+  [  3] getobjprop 21 ........................... <gDir.m_mixerObj>
+  [  5] getprop 1088 ............................ <m_instrument>
+  [  8] pusharglist 2 ........................... <gDir.m_mixerObj, m_instrument>
+  [ 10] objcall 40 .............................. <gDir.m_mixerObj.getLoops(m_instrument)>
+  [ 13] setlocal 0 .............................. tmpLst = gDir.m_mixerObj.getLoops(m_instrument)
+  [ 15] getlocal 0 .............................. <tmpLst>
+  [ 17] pusharglist 1 ........................... <tmpLst>
+  [ 19] extcall 425 ............................. <listp(tmpLst)>
+  [ 22] jmpifz [ 94] ............................ if listp(tmpLst) then / else
+  [ 25] getlocal 0 .............................. <tmpLst>
+  [ 27] getprop 1087 ............................ <m_loop_r>
+  [ 30] pusharglist 2 ........................... <tmpLst, m_loop_r>
+  [ 32] objcall 77 .............................. <tmpLst.getPos(m_loop_r)>
+  [ 35] setlocal 8 .............................. tmpPos = tmpLst.getPos(m_loop_r)
+  [ 37] getlocal 8 .............................. <tmpPos>
+  [ 39] getparam 8 .............................. <argDir>
+  [ 41] add ..................................... <tmpPos + argDir>
+  [ 42] setlocal 8 .............................. tmpPos = tmpPos + argDir
+  [ 44] getlocal 8 .............................. <tmpPos>
+  [ 46] getlocal 0 .............................. <tmpLst>
+  [ 48] getobjprop 61 ........................... <tmpLst.count>
+  [ 51] gt ...................................... <tmpPos > tmpLst.count>
+  [ 52] jmpifz [ 65] ............................ if tmpPos > tmpLst.count then / else
+  [ 55] getlocal 0 .............................. <tmpLst>
+  [ 57] getobjprop 61 ........................... <tmpLst.count>
+  [ 60] setlocal 8 .............................. tmpPos = tmpLst.count
+  [ 62] jmp [ 79]
+  [ 65] getlocal 8 .............................. <tmpPos>
+  [ 67] pushint8 1 .............................. <1>
+  [ 70] lt ...................................... <tmpPos < 1>
+  [ 71] jmpifz [ 79] ............................ if tmpPos < 1 then
+  [ 74] pushint8 1 .............................. <1>
+  [ 77] setlocal 8 .............................. tmpPos = 1
+  [ 79] getlocal 0 .............................. <tmpLst>
+  [ 81] getlocal 8 .............................. <tmpPos>
+  [ 83] pusharglist 2 ........................... <tmpLst, tmpPos>
+  [ 85] objcall 70 .............................. <tmpLst[tmpPos]>
+  [ 88] setprop 1087 ............................ m_loop_r = tmpLst[tmpPos]
+  [ 91] jmp [ 98]
+  [ 94] pushzero ................................ <0>
+  [ 95] setprop 1087 ............................ m_loop_r = 0
+  [ 98] getprop 98 .............................. <m_dlg>
+  [101] pushsymb 904 ............................ <#FramedText>
+  [104] pushsymb 57 ............................. <#text>
+  [107] pusharglist 2 ........................... <[#FramedText, #text]>
+  [109] pushlist ................................ <[#FramedText, #text]>
+  [110] pusharglist 2 ........................... <m_dlg, [#FramedText, #text]>
+  [112] objcall 917 ............................. <m_dlg.getItemByPath([#FramedText, #text])>
+  [115] setlocal 16 ............................. itemObj = m_dlg.getItemByPath([#FramedText, #text])
+  [117] getprop 1087 ............................ <m_loop_r>
+  [120] pusharglist 1 ........................... <m_loop_r>
+  [122] extcall 14 .............................. <objectp(m_loop_r)>
+  [124] jmpifz [146] ............................ if objectp(m_loop_r) then / else
+  [127] getlocal 16 ............................. <itemObj>
+  [129] pushsymb 108 ............................ <#editData>
+  [132] getprop 1087 ............................ <m_loop_r>
+  [135] getobjprop 56 ........................... <m_loop_r.name>
+  [138] pusharglistnoret 3 ...................... <itemObj, #editData, m_loop_r.name>
+  [140] objcall 109 ............................. itemObj.setOneProp(#editData, m_loop_r.name)
+  [143] jmp [158]
+  [146] getlocal 16 ............................. <itemObj>
+  [148] pushsymb 108 ............................ <#editData>
+  [151] pushcons 96 ............................. <EMPTY>
+  [153] pusharglistnoret 3 ...................... <itemObj, #editData, EMPTY>
+  [155] objcall 109 ............................. itemObj.setOneProp(#editData, EMPTY)
+  [158] ret
+end

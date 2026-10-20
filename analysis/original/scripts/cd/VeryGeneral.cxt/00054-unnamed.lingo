@@ -1,0 +1,43 @@
+on createDropShadow argMSrc, argMDst
+  iSrc = argMSrc.image
+  if iSrc.useAlpha then
+    iAlpha = iSrc.extractAlpha()
+  end if
+  if not iSrc.useAlpha then
+    iDst = image(iSrc.width, iSrc.height, 24, 8)
+    iDst.copyPixels(iSrc, iSrc.rect, iSrc.rect, [#ink: 36])
+    iAlpha = iDst.extractAlpha()
+  end if
+  if voidp(argMDst) then
+    argMDst = assertMember(#bitmap, argMSrc.name & "Shadow")
+  else
+    argMDst = assertMember(#bitmap, argMDst.name)
+  end if
+  argMDst.image = iAlpha
+end
+
+on createText argStr, argFormattingOrMember, argOptions
+  if ilk(argFormattingOrMember) = #member then
+    tmpMemb = argFormattingOrMember
+  else
+    tmpMemb = member("TestText")
+    if not listp(argFormattingOrMember) then
+    else
+      tmpMemb.text = EMPTY
+      tmpDefFormat = [#font: "Andale Mono *", #fontSize: 70, #foreColor: 255, #fontStyle: [#plain], #size: point(150, 50), #alignment: #center]
+      repeat with n = 1 to argFormattingOrMember.count()
+        tmpDefFormat.setaProp(argFormattingOrMember.getPropAt(n), argFormattingOrMember[n])
+      end repeat
+      tmpMemb.font = tmpDefFormat[#font]
+      tmpMemb.fontStyle = tmpDefFormat[#fontStyle]
+      tmpMemb.fontSize = tmpDefFormat[#fontSize]
+      tmpMemb.foreColor = tmpDefFormat[#foreColor]
+      tmpMemb.alignment = tmpDefFormat[#alignment]
+      tmpSize = tmpDefFormat[#size]
+      if ilk(tmpSize) = #point then
+        tmpMemb.rect = rect(point(0, 0), tmpSize)
+      end if
+    end if
+  end if
+  tmpMemb.text = argStr
+end

@@ -1,0 +1,123 @@
+property m_callBackInfo, m_maxNumOpen, m_openOverWhat
+global gUseful, gRock, gDir
+
+on new me, argMaxNumOpen, argOpenOverWhat, argCallBackInfo
+  [  0] getparam 8 .............................. <argMaxNumOpen>
+  [  2] setprop 1582 ............................ m_maxNumOpen = argMaxNumOpen
+  [  5] getparam 16 ............................. <argOpenOverWhat>
+  [  7] setprop 1583 ............................ m_openOverWhat = argOpenOverWhat
+  [ 10] getparam 24 ............................. <argCallBackInfo>
+  [ 12] setprop 1584 ............................ m_callBackInfo = argCallBackInfo
+  [ 15] getprop 1584 ............................ <m_callBackInfo>
+  [ 18] pusharglist 1 ........................... <m_callBackInfo>
+  [ 20] extcall 68 .............................. <voidp(m_callBackInfo)>
+  [ 23] jmpifz [ 32] ............................ if voidp(m_callBackInfo) then
+  [ 26] pusharglist 0 ........................... <[:]>
+  [ 28] pushproplist ............................ <[:]>
+  [ 29] setprop 1584 ............................ m_callBackInfo = [:]
+  [ 32] getglobal 23 ............................ <gUseful>
+  [ 34] getobjprop 24 ........................... <gUseful.frameTimer>
+  [ 36] getparam 0 .............................. <me>
+  [ 38] pusharglistnoret 2 ...................... <gUseful.frameTimer, me>
+  [ 40] objcall 56 .............................. gUseful.frameTimer.addObject(me)
+  [ 43] getparam 0 .............................. <me>
+  [ 45] pusharglistnoret 1 ...................... <me>
+  [ 47] extcall 21 .............................. return me
+  [ 49] ret
+end
+
+on kill me
+  [  0] getglobal 23 ............................ <gUseful>
+  [  2] getobjprop 24 ........................... <gUseful.frameTimer>
+  [  4] getparam 0 .............................. <me>
+  [  6] pusharglistnoret 2 ...................... <gUseful.frameTimer, me>
+  [  8] objcall 25 .............................. gUseful.frameTimer.deleteObject(me)
+  [ 10] pushzero ................................ <0>
+  [ 11] setprop 1583 ............................ m_openOverWhat = 0
+  [ 14] pushzero ................................ <0>
+  [ 15] setprop 1584 ............................ m_callBackInfo = 0
+  [ 18] pushzero ................................ <0>
+  [ 19] pusharglistnoret 1 ...................... <0>
+  [ 21] extcall 21 .............................. return 0
+  [ 23] ret
+end
+
+on checkAnyCardsUpOrComing me
+  [  0] getglobal 7 ............................. <gRock>
+  [  2] getobjprop 1588 ......................... <gRock.m_eventCardsManager>
+  [  5] pusharglist 1 ........................... <gRock.m_eventCardsManager>
+  [  7] objcall 1589 ............................ <gRock.m_eventCardsManager.getWaiting()>
+  [ 10] setlocal 0 .............................. waitingECs = gRock.m_eventCardsManager.getWaiting()
+  [ 12] getprop 1583 ............................ <m_openOverWhat>
+  [ 15] pusharglist 1 ........................... <m_openOverWhat>
+  [ 17] extcall 71 .............................. <objectp(m_openOverWhat)>
+  [ 20] jmpifz [ 49] ............................ if objectp(m_openOverWhat) then / else
+  [ 23] getglobal 93 ............................ <gDir>
+  [ 26] getobjprop 1335 ......................... <gDir.m_objDialogsMaster>
+  [ 29] getprop 1583 ............................ <m_openOverWhat>
+  [ 32] pusharglist 2 ........................... <gDir.m_objDialogsMaster, m_openOverWhat>
+  [ 34] objcall 1275 ............................ <gDir.m_objDialogsMaster.getDialogsOver(m_openOverWhat)>
+  [ 37] setlocal 8 .............................. tmp = gDir.m_objDialogsMaster.getDialogsOver(m_openOverWhat)
+  [ 39] getlocal 8 .............................. <tmp>
+  [ 41] getobjprop 32 ........................... <tmp.count>
+  [ 44] setlocal 16 ............................. numOpen = tmp.count
+  [ 46] jmp [ 62]
+  [ 49] getglobal 93 ............................ <gDir>
+  [ 52] getobjprop 1335 ......................... <gDir.m_objDialogsMaster>
+  [ 55] pusharglist 1 ........................... <gDir.m_objDialogsMaster>
+  [ 57] objcall 1276 ............................ <gDir.m_objDialogsMaster.getNumOpen()>
+  [ 60] setlocal 16 ............................. numOpen = gDir.m_objDialogsMaster.getNumOpen()
+  [ 62] getlocal 16 ............................. <numOpen>
+  [ 64] getprop 1582 ............................ <m_maxNumOpen>
+  [ 67] gt ...................................... <numOpen > m_maxNumOpen>
+  [ 68] getlocal 0 .............................. <waitingECs>
+  [ 70] getobjprop 32 ........................... <waitingECs.count>
+  [ 73] pushzero ................................ <0>
+  [ 74] gt ...................................... <waitingECs.count > 0>
+  [ 75] or ...................................... <(numOpen > m_maxNumOpen) or (waitingECs.count > 0)>
+  [ 76] pusharglistnoret 1 ...................... <(numOpen > m_maxNumOpen) or (waitingECs.count > 0)>
+  [ 78] extcall 21 .............................. return (numOpen > m_maxNumOpen) or (waitingECs.count > 0)
+  [ 80] ret
+end
+
+on timeTick me
+  [  0] getparam 0 .............................. <me>
+  [  2] pusharglist 1 ........................... <me>
+  [  4] objcall 1581 ............................ <me.checkAnyCardsUpOrComing()>
+  [  7] pushzero ................................ <0>
+  [  8] eq ...................................... <me.checkAnyCardsUpOrComing() = 0>
+  [  9] jmpifz [ 92] ............................ if me.checkAnyCardsUpOrComing() = 0 then
+  [ 12] getprop 1584 ............................ <m_callBackInfo>
+  [ 15] pushsymb 1592 ........................... <#object>
+  [ 18] pusharglist 2 ........................... <m_callBackInfo, #object>
+  [ 20] objcall 34 .............................. <m_callBackInfo[#object]>
+  [ 23] pusharglist 1 ........................... <m_callBackInfo[#object]>
+  [ 25] extcall 71 .............................. <objectp(m_callBackInfo[#object])>
+  [ 28] jmpifz [ 92] ............................ if objectp(m_callBackInfo[#object]) then
+  [ 31] getprop 1584 ............................ <m_callBackInfo>
+  [ 34] pushsymb 73 ............................. <#handler>
+  [ 37] pusharglist 2 ........................... <m_callBackInfo, #handler>
+  [ 39] objcall 34 .............................. <m_callBackInfo[#handler]>
+  [ 42] setlocal 0 .............................. tmpHandler = m_callBackInfo[#handler]
+  [ 44] getlocal 0 .............................. <tmpHandler>
+  [ 46] pusharglist 1 ........................... <tmpHandler>
+  [ 48] extcall 68 .............................. <voidp(tmpHandler)>
+  [ 51] jmpifz [ 59] ............................ if voidp(tmpHandler) then
+  [ 54] pushsymb 1593 ........................... <#callback>
+  [ 57] setlocal 0 .............................. tmpHandler = #callback
+  [ 59] getlocal 0 .............................. <tmpHandler>
+  [ 61] getprop 1584 ............................ <m_callBackInfo>
+  [ 64] pushsymb 1592 ........................... <#object>
+  [ 67] pusharglist 2 ........................... <m_callBackInfo, #object>
+  [ 69] objcall 34 .............................. <m_callBackInfo[#object]>
+  [ 72] getparam 0 .............................. <me>
+  [ 74] pushsymb 1594 ........................... <#Ok>
+  [ 77] pusharglistnoret 4 ...................... <tmpHandler, m_callBackInfo[#object], me, #Ok>
+  [ 79] extcall 75 .............................. call(tmpHandler, m_callBackInfo[#object], me, #Ok)
+  [ 82] getglobal 23 ............................ <gUseful>
+  [ 84] getobjprop 24 ........................... <gUseful.frameTimer>
+  [ 86] getparam 0 .............................. <me>
+  [ 88] pusharglistnoret 2 ...................... <gUseful.frameTimer, me>
+  [ 90] objcall 25 .............................. gUseful.frameTimer.deleteObject(me)
+  [ 92] ret
+end

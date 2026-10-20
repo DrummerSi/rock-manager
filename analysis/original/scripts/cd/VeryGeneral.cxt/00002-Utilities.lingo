@@ -1,0 +1,248 @@
+on cuePassed whichChannel, cuePointNumber, cuePointName
+  global gUseful
+  if objectp(gUseful) then
+    whichChannel = value(the last char in string(whichChannel))
+    cuePassed(gUseful.cuePointMaster, whichChannel, cuePointNumber, cuePointName)
+  end if
+end
+
+on getRightColor argPaletteIndex
+  if the colorDepth = 8 then
+    return argPaletteIndex
+  else
+    tmpList = []
+  end if
+end
+
+on getRealFieldLoc argLoc
+  if the machineType <> 256 then
+    return argLoc + point(0, -2)
+  end if
+  return argLoc
+end
+
+on expandRectToInclude argRect1, argRect2
+  if argRect2[1] < argRect1[1] then
+    argRect1[1] = argRect2[1]
+  end if
+  if argRect2[2] < argRect1[2] then
+    argRect1[2] = argRect2[2]
+  end if
+  if argRect2[3] > argRect1[3] then
+    argRect1[3] = argRect2[3]
+  end if
+  if argRect2[4] > argRect1[4] then
+    argRect1[4] = argRect2[4]
+  end if
+end
+
+on intersectRects argRect1, argRect2
+  tmp = argRect1.intersect(argRect2)
+  if (tmp[1] = 0) and (tmp[2] = 0) and (tmp[3] = 0) and (tmp[4] = 0) then
+    return 0
+  end if
+  return 1
+  if (argRect1[1] < argRect2[3]) and (argRect1[3] > argRect2[1]) and (argRect1[2] < argRect2[4]) and (argRect1[4] > argRect2[2]) then
+    return 1
+  end if
+  return 0
+end
+
+on intersectCirles argC1Loc, argC1Rad, argC2Loc, argC2Rad
+  tmpDiff = argC1Loc - argC2Loc
+  tmpHypo = sqrt((getAt(tmpDiff, 1) * getAt(tmpDiff, 1)) + (getAt(tmpDiff, 2) * getAt(tmpDiff, 2)))
+  if tmpHypo <= (argC1Rad + argC2Rad) then
+    return 1
+  end if
+  return 0
+end
+
+on getAlignedPoint argRect, argRegs
+  tmpResult = point(0, 0)
+  repeat with n = 1 to 2
+    tmp = getAt(argRegs, n)
+    if tmp = 0 then
+      setAt(tmpResult, n, ((getAt(argRect, n + 2) - getAt(argRect, n)) / 2) + getAt(argRect, n))
+      next repeat
+    end if
+    if tmp = -1 then
+      setAt(tmpResult, n, getAt(argRect, n))
+      next repeat
+    end if
+    if tmp = 1 then
+      setAt(tmpResult, n, getAt(argRect, n + 2))
+    end if
+  end repeat
+  return tmpResult
+end
+
+on makeLocInsideThisRect argLoc, argRect
+  if getAt(argLoc, 1) < getAt(argRect, 1) then
+    setAt(argLoc, 1, getAt(argRect, 1))
+  else
+    if getAt(argLoc, 1) > getAt(argRect, 3) then
+      setAt(argLoc, 1, getAt(argRect, 3))
+    end if
+  end if
+  if getAt(argLoc, 2) < getAt(argRect, 2) then
+    setAt(argLoc, 2, getAt(argRect, 2))
+  else
+    if getAt(argLoc, 2) > getAt(argRect, 4) then
+      setAt(argLoc, 2, getAt(argRect, 4))
+    end if
+  end if
+  return argLoc
+end
+
+on convValToRange argVal, argInRange, argOutRange, argInclusive, argLimitToRange
+  tmpFact = float(argVal - argInRange[1]) / (argInRange[2] - argInRange[1])
+  tmp = (tmpFact * (argOutRange[2] - argOutRange[1])) + argOutRange[1]
+  if argLimitToRange = #limit then
+    if tmp < argOutRange[1] then
+      tmp = argOutRange[1]
+    else
+      if tmp > argOutRange[2] then
+        tmp = argOutRange[2]
+      end if
+    end if
+  end if
+  if integerp(argOutRange[1]) then
+    return integer(tmp)
+  end if
+  return tmp
+end
+
+on intersectRanges argRange1, argRange2
+  if argRange1[1] <= argRange2[2] then
+    if argRange1[2] >= argRange2[1] then
+      return 1
+    end if
+  end if
+  return 0
+end
+
+on getRectSize argRect
+  return point(argRect[3] - argRect[1], argRect[4] - argRect[2])
+end
+
+on getRectCenter argRect
+  return point(argRect[1], argRect[2]) + (getRectSize(argRect) / 2)
+end
+
+on printRect argRect
+  global gSystem
+  if voidp(argRect) then
+    argRect = rect(0, 0, 640, 480)
+  end if
+  if objectp(gSystem) then
+    tmpFile = gSystem.projectPath & "PrintThis"
+  else
+    tmpFile = the moviePath & "PrintThis"
+  end if
+  tmpDoc = new(xtra("PrintoMatic"))
+  if objectp(tmpDoc) then
+    StageToFile(getAt(argRect, 1), getAt(argRect, 2), getAt(argRect, 3), getAt(argRect, 4), tmpFile)
+    if the machineType = 256 then
+      setLandscapeMode(tmpDoc, 1)
+    end if
+    appendFile(tmpDoc, tmpFile)
+    if the controlDown and the shiftDown then
+      printPreview(tmpDoc)
+    else
+      print(tmpDoc)
+    end if
+    tmpDoc = 0
+  end if
+end
+
+on convStrToType argStr, argType, argDefaultIfNotOK
+  if argType = #float then
+    tmpOff = offset(",", argStr)
+    if tmpOff then
+      put "." into argStr.char[tmpOff]
+    end if
+    tmp = value(argStr)
+  else
+    if (argType = #int) or (argType = #integer) then
+      tmp = value(argStr)
+      if floatp(tmp) then
+        tmp = integer(tmp)
+      end if
+      argType = #integer
+    else
+      if argType = #string then
+        tmp = argStr
+      else
+        if argType = #symbol then
+          if argStr.char[1] = "#" then
+            delete argStr.char[1]
+          end if
+          tmp = symbol(argStr)
+        else
+          if argType = #point then
+            if offset("point", argStr) then
+              tmp = value(argStr)
+            else
+              tmp = value("point(" & argStr & ")")
+            end if
+          else
+            if (argType = #list) or (argType = #propList) then
+              tmp = value(argStr)
+              if not listp(tmp) then
+                tmp = value("[" & argStr & "]")
+              end if
+            end if
+          end if
+        end if
+      end if
+    end if
+  end if
+  tmpIlk = ilk(tmp)
+  if tmpIlk <> argType then
+    if (argType = #float) and (tmpIlk = #integer) then
+      return float(tmp)
+    end if
+    return argDefaultIfNotOK
+  end if
+  return tmp
+end
+
+on pott arg1, arg2, arg3, arg4, arg5
+  str = string(arg1)
+  if not voidp(arg2) then
+    str = str && string(arg2)
+  end if
+  if not voidp(arg3) then
+    str = str && string(arg3)
+  end if
+  if not voidp(arg4) then
+    str = str && string(arg4)
+  end if
+  if not voidp(arg5) then
+    str = str && string(arg5)
+  end if
+  if getSystemPref([#SavePotts, #mode]) = #Direct then
+    filePath = getSystemPref([#SavePotts, #path])
+    wholeStr = readFile(filePath)
+    wholeStr = wholeStr & str & RETURN & numToChar(10)
+    writeFile(filePath, wholeStr)
+  else
+    put str
+  end if
+end
+
+on getSystemPref argPrefID
+  global gSystem
+  if objectp(gSystem) then
+    prefs = gSystem.getaProp(#m_prefs)
+    if listp(prefs) then
+      if not voidp(argPrefID) then
+        if listp(argPrefID) then
+          return rgetPropSimple(prefs, argPrefID)
+        end if
+        return prefs[argPrefID]
+      end if
+      return prefs
+    end if
+  end if
+end

@@ -1,0 +1,239 @@
+property ancestor, m_musician_r, m_action_r, m_scroller, m_categoryHelper, m_selectedCategory, m_trainingDurations
+global gDir, gRock
+
+on new me, argOptions
+  argOptions.setaProp(#ReportTo, me)
+  argOptions.setaProp(#child, me)
+  ancestor = script("DlgRockAncestorScript").new(argOptions)
+  m_categoryHelper = script("CategoryScript").new(me)
+  m_categoryHelper.m_actionDlgLoc = point(220, 150)
+  allScrollItems = m_categoryHelper.createScrollData(ancestor.m_dialogInfoObj_r.Actions, #MusicianActionCategory)
+  itemObj = ancestor.m_objDlg.getItemByPath([#ScrollView, #Frame1])
+  r = itemObj.getOneProp(#inOffsetRect)
+  r[3] = 231
+  r[4] = 250
+  itemObj.setOneProp(#inOffsetRect, r)
+  ancestor.m_objDlg.recalc(#DontPaint)
+  itemObj = ancestor.m_objDlg.getItemByPath([#ScrollView, #Frame2])
+  rct = itemObj.getOnStageRect()
+  rct = rct + rect(2, 2, -2, -2)
+  m_scroller = script("CPScrollerScript").new(me, ancestor.getSPOverDlg(), allScrollItems, rct, ancestor.m_objDlg.highestMouseLayer, VOID, #DontShowControls)
+  me.setMusician(argOptions[#Musician])
+  gRock.m_context.setContext(#RealMusician)
+  itemObj = ancestor.m_objDlg.getItemByPath([#InfoFrame])
+  itemObj.setOneProp(#usingMouse, 1)
+  itemObj.scriptInstanceList.add(me)
+  ancestor.render()
+  itemObj = ancestor.m_objDlg.getItem(#Photo)
+  portraitRect = itemObj.onStageRect
+  tmpLoc = point(portraitRect[1], portraitRect[2]) + point(3, 3)
+  m_categoryHelper.m_actionDlgLoc = tmpLoc + point(-23, -20)
+  lst = m_musician_r.calcFaceSettings()
+  tmpMood = lst[#Mood]
+  ancestor.setFaceMode(tmpMood)
+  ancestor.showFace(1, m_musician_r.Gfx, tmpLoc, #LeftTop)
+  tmpFile = getSpeechFile(m_musician_r, [#status, tmpMood])
+  speakAndSetFace(tmpFile, lst[#Mood])
+  m_trainingDurations = [:]
+  gRock.m_tempVars.setaProp(#InsideDlgArtist, 1)
+  return me
+end
+
+on kill me
+  gRock.m_tempVars.deleteProp(#InsideDlgArtist)
+  gRock.m_context.setFocus(#TmpSetTrainDuration, 0)
+  if objectp(m_categoryHelper) then
+    m_categoryHelper = m_categoryHelper.kill()
+  end if
+  if objectp(m_scroller) then
+    m_scroller = m_scroller.kill()
+  end if
+  ancestor.kill()
+  return 0
+end
+
+on setTrainDuration me, argObj, argDuration, argTrainingType
+  m_trainingDurations.addProp(argObj, [argDuration, argTrainingType])
+end
+
+on Report me, argObj, argWhat, argOption
+  if argWhat = #DlgConfirm then
+  else
+    if argWhat = #DoAction then
+      m_action_r = argOption
+      if m_selectedCategory = #ActCatMusicianTrain then
+        eventToBook_r = gRock.m_classManager.createObj(#Training)
+        newID = gRock.m_classManager.genUniqueID(eventToBook_r)
+        eventToBook_r.ID = newID
+        lst = rgetProp(eventToBook_r, #neededIDs)
+        lst.add(m_musician_r.ID)
+        tmpTrainInfo = m_trainingDurations.getaProp(m_action_r)
+        if voidp(tmpTrainInfo) then
+          tmpTrainInfo = [2, #Instruments]
+        end if
+        tmpDuration = tmpTrainInfo[1]
+        tmpType = tmpTrainInfo[2]
+        eventToBook_r.type = tmpType
+        if voidp(tmpDuration) then
+          tmpDuration = 2
+        end if
+        eventToBook_r.setDates(2 + gRock.m_date.getDateInt(), tmpDuration)
+        eventToBook_r.AutoEventCard = 1
+        infoImg = rFormatText([m_action_r.name, m_action_r.comment, #szidCost, rCurrency(m_action_r.price, 0, 1)], "LiveBookFormatting", [#shadow: 1])
+        dlg = gDir.m_objDialogsMaster.openDialog(#Book, [#UseDlgID: #DlgRehearsalTrainingBook, #bookOptions: [#EventToBook: eventToBook_r, #InfoImage: infoImg, #PicImage: member("image_" & m_action_r.Gfx & "_small01").image]])
+        dlg.m_objReportTo = me
+        exit
+      end if
+      argObj.kill()
+      gRock.m_context.setFocus(#dlg, me)
+      me.DoAction()
+      if m_selectedCategory = #ActCatMusicianGifts then
+        gRock.m_msgManager.msg(#GiveGift, m_musician_r, m_action_r)
+      end if
+    else
+      if argWhat = #BookedOK then
+        gDir.m_objDialogsMaster.closeDialogsOnTopOf(me)
+        me.DoAction()
+        if m_selectedCategory = #ActCatMusicianTrain then
+          gRock.m_msgManager.msg(#GiveTraining, m_musician_r, m_action_r)
+        end if
+      else
+        if argWhat = #ActionCategory then
+          m_selectedCategory = argOption.ID
+          if m_selectedCategory = #ActCatMusicianTrain then
+            gRock.m_context.setFocus(#TmpSetTrainDuration, me)
+          end if
+        else
+          if m_categoryHelper.checkCategoryReport(argObj, argWhat, argOption) then
+            exit
+          end if
+        end if
+      end if
+    end if
+  end if
+end
+
+on actionCall me, argWhat
+  if argWhat = #KickMusician then
+    me.KickMusician()
+  end if
+end
+
+on DoAction me
+  gRock.m_modifiersManager.recalcModifiers()
+  if m_selectedCategory = #ActCatMusicianGifts then
+    cat = [#Band, #Gifts]
+  else
+    if m_selectedCategory = #ActCatMusicianTrain then
+      cat = [#Band, #Training]
+    else
+      cat = [#Band, #Other]
+    end if
+  end if
+  gRock.m_player.transactMoney(-m_action_r.price, cat)
+  mission_r = gRock.m_context.getFocus(#Mission)
+  rsetProp(mission_r.Vars, #ExpensesBand, m_action_r.price, "+=")
+  rex("ModSnapshot = getTotalModifyingID(ÛCRealMusician.ID)")
+  rPlayerOkayedAction(m_action_r)
+  if m_action_r.ID = #ActKick then
+    me.kill()
+    exit
+  end if
+  lst = m_musician_r.calcFaceSettings()
+  ancestor.setFaceMode(lst[#Mood])
+  me.showStats()
+  if gRock.m_tempVars.getaProp(#KillDlgArtist) = 1 then
+    gRock.m_tempVars.deleteProp(#KillDlgArtist)
+    pott("Oh, crucial!")
+    me.kill()
+  end if
+end
+
+on KickMusician me
+  m_musician_r.fire()
+  dlg = gDir.m_objDialogsMaster.getDialogUnder(me)
+  if objectp(dlg) then
+    dlg.m_calcSmallBandOnExitRehearsal = 1
+    dlg.refresh()
+  end if
+  gDir.redraw()
+end
+
+on mouse me, argObj, argWhat, argOption
+  if objectp(argOption) then
+    if argWhat = #click then
+      ID = argOption.getOneProp(#ID)
+      IDStr = string(ID)
+      if offset("Button", IDStr) then
+        overObj = gDir.m_objDialogsMaster.getDialogUnder(me)
+        if objectp(overObj) then
+          if overObj.handler(#refresh) then
+            overObj.refresh()
+          end if
+        end if
+        ancestor.mouse(argObj, argWhat, argOption)
+      end if
+    else
+      ID = argOption.getOneProp(#ID)
+      if ID = #InfoFrame then
+        if argWhat = #enter then
+          me.showStats(#long)
+        else
+          if argWhat = #Leave then
+            me.showStats(#short)
+          end if
+        end if
+      end if
+    end if
+  end if
+end
+
+on setMusician me, argObj
+  m_musician_r = argObj
+  gRock.m_context.setFocus(#RealMusician, argObj, 1)
+  itemObj = ancestor.m_objDlg.getItem(#title)
+  itemObj.setOneProp(#editData, m_musician_r.name)
+  Info = setMusicianInfoSheet(m_musician_r, ancestor.m_objDlg, [:])
+  me.showStats()
+end
+
+on showStats me, argShortOrLong
+  itemObj = ancestor.m_objDlg.getItemByPath([#InfoFrame, #Head, #icon])
+  itemObj.setOneProp(#Pic, "Dummy")
+  itemObj = ancestor.m_objDlg.getItemByPath([#InfoFrame, #Head, #Info])
+  itemObj.setOneProp(#editData, rGetStr(#szidCurrentMood))
+  itemObj = ancestor.m_objDlg.getItemByPath([#InfoFrame, #dlg, #Pic])
+  strList = rBothersMusician(m_musician_r, argShortOrLong)
+  maxNumChars = 37
+  tmpNeedLong = 0
+  repeat with n = 1 to strList.count
+    str = strList[n]
+    if str.length > maxNumChars then
+      tmpNeedLong = 1
+      exit repeat
+    end if
+  end repeat
+  if argShortOrLong <> #long then
+    repeat with n = 1 to strList.count
+      str = strList[n]
+      if str.length > maxNumChars then
+        str = str.char[1..maxNumChars] & "..."
+        strList[n] = str
+      end if
+    end repeat
+  end if
+  if (tmpNeedLong = 0) and (argShortOrLong = #long) then
+    argShortOrLong = #short
+  end if
+  strList.addAt(1, #szidMood)
+  strList.addAt(3, #szidMood)
+  strList.addAt(5, #szidHealth)
+  if argShortOrLong = #long then
+    img = rFormatText(strList, "MusicianMoodLongFormatting")
+  else
+    img = rFormatText(strList, "MusicianMoodFormatting")
+  end if
+  tmpImg = member("MusicianStatsIcons").image
+  img.copyPixels(tmpImg, tmpImg.rect + rect(0, 4, 0, 4), tmpImg.rect, [#ink: 36])
+  itemObj.setOneProp(#Pic, img)
+end

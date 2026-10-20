@@ -1,0 +1,228 @@
+property m_numFrames, m_firstFrame, m_SP, m_val, m_showVal, m_vel, m_convertRange
+global gUseful
+
+on new me, argObjMaster
+  [  0] pushcons 0 .............................. <"credometer01_0000">
+  [  2] pusharglist 1 ........................... <"credometer01_0000">
+  [  4] extcall 296 ............................. <member("credometer01_0000")>
+  [  7] getobjprop 537 .......................... <member("credometer01_0000").number>
+  [ 10] setprop 1965 ............................ m_firstFrame = member("credometer01_0000").number
+  [ 13] pushint8 41 ............................. <41>
+  [ 16] setprop 1126 ............................ m_numFrames = 41
+  [ 19] getparam 8 .............................. <argObjMaster>
+  [ 21] pushsymb 1444 ........................... <#m_spriteList>
+  [ 24] pushsymb 1966 ........................... <#CredMeter>
+  [ 27] pusharglist 3 ........................... <argObjMaster, #m_spriteList, #CredMeter>
+  [ 29] objcall 152 ............................. <argObjMaster.m_spriteList[#CredMeter]>
+  [ 32] pusharglist 1 ........................... <argObjMaster.m_spriteList[#CredMeter]>
+  [ 34] extcall 540 ............................. <sprite(argObjMaster.m_spriteList[#CredMeter])>
+  [ 37] setprop 1010 ............................ m_SP = sprite(argObjMaster.m_spriteList[#CredMeter])
+  [ 40] getprop 1010 ............................ <m_SP>
+  [ 43] pushint8 426 ............................ <426>
+  [ 46] pushint8 32 ............................. <32>
+  [ 49] pusharglist 2 ........................... <426, 32>
+  [ 51] extcall 568 ............................. <point(426, 32)>
+  [ 54] setobjprop 854 .......................... m_SP.loc = point(426, 32)
+  [ 57] pushcons 8 .............................. <0.0>
+  [ 59] setprop 1967 ............................ m_vel = 0.0
+  [ 62] pushcons 16 ............................. <0.0>
+  [ 64] setprop 1968 ............................ m_showVal = 0.0
+  [ 67] pushcons 24 ............................. <0.0>
+  [ 69] setprop 1969 ............................ m_val = 0.0
+  [ 72] pushcons 32 ............................. <7.0>
+  [ 74] inv ..................................... <-7.0>
+  [ 75] pushcons 40 ............................. <14.0>
+  [ 77] pusharglist 2 ........................... <[-7.0, 14.0]>
+  [ 79] pushlist ................................ <[-7.0, 14.0]>
+  [ 80] setprop 1970 ............................ m_convertRange = [-7.0, 14.0]
+  [ 83] getglobal 23 ............................ <gUseful>
+  [ 85] getobjprop 24 ........................... <gUseful.frameTimer>
+  [ 87] getparam 0 .............................. <me>
+  [ 89] pusharglistnoret 2 ...................... <gUseful.frameTimer, me>
+  [ 91] objcall 56 .............................. gUseful.frameTimer.addObject(me)
+  [ 94] getparam 0 .............................. <me>
+  [ 96] pusharglistnoret 1 ...................... <me>
+  [ 98] extcall 21 .............................. return me
+  [100] ret
+end
+
+on kill me
+  [  0] getglobal 23 ............................ <gUseful>
+  [  2] getobjprop 24 ........................... <gUseful.frameTimer>
+  [  4] getparam 0 .............................. <me>
+  [  6] pusharglistnoret 2 ...................... <gUseful.frameTimer, me>
+  [  8] objcall 25 .............................. gUseful.frameTimer.deleteObject(me)
+  [ 10] pushzero ................................ <0>
+  [ 11] pusharglistnoret 1 ...................... <0>
+  [ 13] extcall 21 .............................. return 0
+  [ 15] ret
+end
+
+on timeTick me
+  [  0] getprop 1967 ............................ <m_vel>
+  [  3] pushzero ................................ <0>
+  [  4] nteq .................................... <m_vel <> 0>
+  [  5] jmpifz [127] ............................ if m_vel <> 0 then
+  [  8] getprop 1968 ............................ <m_showVal>
+  [ 11] getprop 1969 ............................ <m_val>
+  [ 14] sub ..................................... <m_showVal - m_val>
+  [ 15] setlocal 0 .............................. diff = m_showVal - m_val
+  [ 17] getprop 1967 ............................ <m_vel>
+  [ 20] getlocal 0 .............................. <diff>
+  [ 22] pushcons 48 ............................. <0.10000000000000001>
+  [ 24] mul ..................................... <diff * 0.10000000000000001>
+  [ 25] sub ..................................... <m_vel - (diff * 0.10000000000000001)>
+  [ 26] setprop 1967 ............................ m_vel = m_vel - (diff * 0.10000000000000001)
+  [ 29] getprop 1968 ............................ <m_showVal>
+  [ 32] getprop 1967 ............................ <m_vel>
+  [ 35] add ..................................... <m_showVal + m_vel>
+  [ 36] setprop 1968 ............................ m_showVal = m_showVal + m_vel
+  [ 39] getprop 1968 ............................ <m_showVal>
+  [ 42] pushzero ................................ <0>
+  [ 43] lt ...................................... <m_showVal < 0>
+  [ 44] jmpifz [ 62] ............................ if m_showVal < 0 then / else
+  [ 47] pushcons 56 ............................. <0.0>
+  [ 49] setprop 1968 ............................ m_showVal = 0.0
+  [ 52] getprop 1967 ............................ <m_vel>
+  [ 55] inv ..................................... <-m_vel>
+  [ 56] setprop 1967 ............................ m_vel = -m_vel
+  [ 59] jmp [ 84]
+  [ 62] getprop 1968 ............................ <m_showVal>
+  [ 65] pushint8 1 .............................. <1>
+  [ 68] gt ...................................... <m_showVal > 1>
+  [ 69] jmpifz [ 84] ............................ if m_showVal > 1 then
+  [ 72] pushcons 64 ............................. <1.0>
+  [ 74] setprop 1968 ............................ m_showVal = 1.0
+  [ 77] getprop 1967 ............................ <m_vel>
+  [ 80] inv ..................................... <-m_vel>
+  [ 81] setprop 1967 ............................ m_vel = -m_vel
+  [ 84] getprop 1967 ............................ <m_vel>
+  [ 87] pushcons 72 ............................. <0.80000000000000004>
+  [ 89] mul ..................................... <m_vel * 0.80000000000000004>
+  [ 90] setprop 1967 ............................ m_vel = m_vel * 0.80000000000000004
+  [ 93] getprop 1967 ............................ <m_vel>
+  [ 96] pusharglist 1 ........................... <m_vel>
+  [ 98] extcall 765 ............................. <abs(m_vel)>
+  [101] pushcons 80 ............................. <0.0001>
+  [103] lt ...................................... <abs(m_vel) < 0.0001>
+  [104] jmpifz [117] ............................ if abs(m_vel) < 0.0001 then
+  [107] pushzero ................................ <0>
+  [108] setprop 1967 ............................ m_vel = 0
+  [111] getprop 1969 ............................ <m_val>
+  [114] setprop 1968 ............................ m_showVal = m_val
+  [117] getparam 0 .............................. <me>
+  [119] getprop 1968 ............................ <m_showVal>
+  [122] pusharglistnoret 2 ...................... <me, m_showVal>
+  [124] objcall 1962 ............................ me.showVal(m_showVal)
+  [127] ret
+end
+
+on changeMeter me, argVal
+  [  0] getprop 1969 ............................ <m_val>
+  [  3] setprop 1968 ............................ m_showVal = m_val
+  [  6] getparam 8 .............................. <argVal>
+  [  8] setprop 1969 ............................ m_val = argVal
+  [ 11] getprop 1968 ............................ <m_showVal>
+  [ 14] getprop 1969 ............................ <m_val>
+  [ 17] sub ..................................... <m_showVal - m_val>
+  [ 18] setlocal 0 .............................. diff = m_showVal - m_val
+  [ 20] getlocal 0 .............................. <diff>
+  [ 22] inv ..................................... <-diff>
+  [ 23] pushcons 88 ............................. <0.10000000000000001>
+  [ 25] mul ..................................... <-diff * 0.10000000000000001>
+  [ 26] setprop 1967 ............................ m_vel = -diff * 0.10000000000000001
+  [ 29] getparam 0 .............................. <me>
+  [ 31] pusharglistnoret 1 ...................... <me>
+  [ 33] objcall 5 ............................... me.timeTick()
+  [ 35] ret
+end
+
+on setVal me, argVal
+  [  0] getparam 8 .............................. <argVal>
+  [  2] setprop 1969 ............................ m_val = argVal
+  [  5] ret
+end
+
+on showVal me, argVal
+  [  0] ret ..................................... exit
+  [  1] getparam 8 .............................. <argVal>
+  [  3] getprop 1126 ............................ <m_numFrames>
+  [  6] pushint8 1 .............................. <1>
+  [  9] sub ..................................... <m_numFrames - 1>
+  [ 10] mul ..................................... <argVal * (m_numFrames - 1)>
+  [ 11] pusharglist 1 ........................... <argVal * (m_numFrames - 1)>
+  [ 13] extcall 54 .............................. <integer(argVal * (m_numFrames - 1))>
+  [ 16] pushint8 1 .............................. <1>
+  [ 19] add ..................................... <integer(argVal * (m_numFrames - 1)) + 1>
+  [ 20] setlocal 0 .............................. tmp = integer(argVal * (m_numFrames - 1)) + 1
+  [ 22] getlocal 0 .............................. <tmp>
+  [ 24] pushint8 1 .............................. <1>
+  [ 27] lt ...................................... <tmp < 1>
+  [ 28] jmpifz [ 39] ............................ if tmp < 1 then / else
+  [ 31] pushint8 1 .............................. <1>
+  [ 34] setlocal 0 .............................. tmp = 1
+  [ 36] jmp [ 53]
+  [ 39] getlocal 0 .............................. <tmp>
+  [ 41] getprop 1126 ............................ <m_numFrames>
+  [ 44] gt ...................................... <tmp > m_numFrames>
+  [ 45] jmpifz [ 53] ............................ if tmp > m_numFrames then
+  [ 48] getprop 1126 ............................ <m_numFrames>
+  [ 51] setlocal 0 .............................. tmp = m_numFrames
+  [ 53] getprop 1010 ............................ <m_SP>
+  [ 56] getprop 1965 ............................ <m_firstFrame>
+  [ 59] pushint8 1 .............................. <1>
+  [ 62] sub ..................................... <m_firstFrame - 1>
+  [ 63] getlocal 0 .............................. <tmp>
+  [ 65] add ..................................... <m_firstFrame - 1 + tmp>
+  [ 66] pusharglist 1 ........................... <m_firstFrame - 1 + tmp>
+  [ 68] extcall 296 ............................. <member(m_firstFrame - 1 + tmp)>
+  [ 71] setobjprop 296 .......................... m_SP.member = member(m_firstFrame - 1 + tmp)
+  [ 74] ret
+end
+
+on setConvVal me, argVal
+  [  0] getparam 8 .............................. <argVal>
+  [  2] getprop 1970 ............................ <m_convertRange>
+  [  5] pushint8 1 .............................. <1>
+  [  8] pusharglist 2 ........................... <m_convertRange, 1>
+  [ 10] objcall 34 .............................. <m_convertRange[1]>
+  [ 13] sub ..................................... <argVal - m_convertRange[1]>
+  [ 14] getprop 1970 ............................ <m_convertRange>
+  [ 17] pushint8 2 .............................. <2>
+  [ 20] pusharglist 2 ........................... <m_convertRange, 2>
+  [ 22] objcall 34 .............................. <m_convertRange[2]>
+  [ 25] getprop 1970 ............................ <m_convertRange>
+  [ 28] pushint8 1 .............................. <1>
+  [ 31] pusharglist 2 ........................... <m_convertRange, 1>
+  [ 33] objcall 34 .............................. <m_convertRange[1]>
+  [ 36] sub ..................................... <m_convertRange[2] - m_convertRange[1]>
+  [ 37] div ..................................... <(argVal - m_convertRange[1]) / (m_convertRange[2] - m_convertRange[1])>
+  [ 38] setlocal 0 .............................. tmp = (argVal - m_convertRange[1]) / (m_convertRange[2] - m_convertRange[1])
+  [ 40] getparam 0 .............................. <me>
+  [ 42] getlocal 0 .............................. <tmp>
+  [ 44] pusharglistnoret 2 ...................... <me, tmp>
+  [ 46] objcall 1960 ............................ me.changeMeter(tmp)
+  [ 49] ret
+end
+
+on getConvVal me
+  [  0] getprop 1969 ............................ <m_val>
+  [  3] getprop 1970 ............................ <m_convertRange>
+  [  6] pushint8 2 .............................. <2>
+  [  9] pusharglist 2 ........................... <m_convertRange, 2>
+  [ 11] objcall 34 .............................. <m_convertRange[2]>
+  [ 14] getprop 1970 ............................ <m_convertRange>
+  [ 17] pushint8 1 .............................. <1>
+  [ 20] pusharglist 2 ........................... <m_convertRange, 1>
+  [ 22] objcall 34 .............................. <m_convertRange[1]>
+  [ 25] sub ..................................... <m_convertRange[2] - m_convertRange[1]>
+  [ 26] mul ..................................... <m_val * (m_convertRange[2] - m_convertRange[1])>
+  [ 27] getprop 1970 ............................ <m_convertRange>
+  [ 30] pushint8 1 .............................. <1>
+  [ 33] pusharglist 2 ........................... <m_convertRange, 1>
+  [ 35] objcall 34 .............................. <m_convertRange[1]>
+  [ 38] add ..................................... <(m_val * (m_convertRange[2] - m_convertRange[1])) + m_convertRange[1]>
+  [ 39] pusharglistnoret 1 ...................... <(m_val * (m_convertRange[2] - m_convertRange[1])) + m_convertRange[1]>
+  [ 41] extcall 21 .............................. return (m_val * (m_convertRange[2] - m_convertRange[1])) + m_convertRange[1]
+  [ 43] ret
+end

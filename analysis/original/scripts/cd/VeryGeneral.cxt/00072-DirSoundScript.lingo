@@ -1,0 +1,265 @@
+property sndId, fileName, fullFileName, options, prio, size, interruptMode, finishedMode, interruptedAtTicks, ID, orgFreq, orgLength, volume, muted, reportObj, myMember, interrupted, Pan, membName
+global gUseful
+
+on new me, argMemberOrNameOrNumber, argOptions
+  if ilk(argMemberOrNameOrNumber) = #member then
+    myMember = argMemberOrNameOrNumber
+  else
+    if stringp(argMemberOrNameOrNumber) or integerp(argMemberOrNameOrNumber) then
+      myMember = member(argMemberOrNameOrNumber)
+    end if
+  end if
+  membName = myMember.name
+  options = argOptions
+  if voidp(options) then
+    options = [:]
+  end if
+  size = 0
+  interruptedAtTicks = 0
+  prio = options[#prio]
+  if voidp(prio) then
+    prio = 3
+  end if
+  interruptMode = options[#KeepTrying]
+  if voidp(interruptMode) then
+    interruptMode = #kill
+  end if
+  finishedMode = options[#WhenFinished]
+  if voidp(finishedMode) then
+    finishedMode = #kill
+  end if
+  size = myMember.size
+  if size = 0 then
+    put "Sound not found " & string(argMemberOrNameOrNumber)
+    return 0
+  end if
+  reportObj = options[#ReportTo]
+  tmpVol = options[#vol]
+  if voidp(tmpVol) then
+    tmpVol = 100
+  end if
+  me.setVol(tmpVol)
+  tmpPan = options[#Pan]
+  if voidp(tmpPan) then
+    tmpPan = 0
+  end if
+  me.setPan(tmpPan)
+  muted = 0
+  interrupted = 0
+  ID = options[#ID]
+  me.preload()
+  if (sndId = 0) and (interruptMode = #kill) then
+    return -1
+  end if
+  gUseful.soundObj.addObject(me)
+  tmpPlayDirect = options[#PlayDirect]
+  if voidp(tmpPlayDirect) then
+    tmpPlayDirect = 1
+  end if
+  if not (tmpPlayDirect = 0) then
+    me.play()
+  end if
+  return me
+end
+
+on kill me
+  if sndId then
+    if not me.finished() then
+      sound(sndId).stop()
+    end if
+  end if
+  gUseful.soundObj.deleteObject(me)
+  sndId = 0
+  return 0
+end
+
+on getStatus me
+  if sndId then
+    return sound(sndId).status
+  end if
+  return 0
+end
+
+on masterSays me, argWhat, argOption
+  case argWhat of
+    #play:
+      if argOption then
+        sndId = argOption
+      end if
+      if not sndId then
+        exit
+      end if
+      sound(sndId).play()
+      playing = 1
+      if objectp(reportObj) then
+        reportObj.Report(me, argWhat)
+      end if
+    #stop:
+      sound(sndId).stop()
+      sndId = 0
+      playing = 0
+      if objectp(reportObj) then
+        reportObj.Report(me, argWhat)
+      end if
+    #pause:
+      sound(sndId).pause()
+      playing = 0
+      if objectp(reportObj) then
+        reportObj.Report(me, argWhat)
+      end if
+    #preload:
+      if argOption then
+        sndId = argOption
+        sound(sndId).queue(myMember)
+        me.setPrefs()
+        orgFreq = myMember.sampleRate
+        orgLength = myMember.duration
+        if objectp(reportObj) then
+          reportObj.Report(me, #Preloaded)
+        end if
+      else
+        put "Not loaded...!"
+      end if
+    #unload:
+      if not me.finished() then
+        me.masterSays(#stop)
+      end if
+      sndId = 0
+    #Interrupt:
+      interrupted = 1
+      if objectp(reportObj) then
+        reportObj.Report(me, argWhat)
+      end if
+      if interruptMode = #kill then
+        me.kill()
+      else
+        if interruptMode = #restart then
+        else
+          if interruptMode = #Timed then
+            interruptedAtTicks = the ticks
+          end if
+        end if
+      end if
+    #finished:
+      if objectp(reportObj) then
+        reportObj.Report(me, argWhat)
+      end if
+      if finishedMode = #kill then
+        me.kill()
+      end if
+  end case
+end
+
+on preload me
+  gUseful.soundObj.preload(me)
+end
+
+on unload me
+  if not me.finished() then
+    me.stop()
+  end if
+  dsDelSound(sndId)
+  sndId = 0
+end
+
+on play me
+  gUseful.soundObj.play(me)
+end
+
+on stop me
+  gUseful.soundObj.stop(me)
+end
+
+on setFreq me, argFreq
+end
+
+on setVol me, argVol, argOption
+  argVol = argVol * 255 / 100
+  if argOption = #dB then
+  end if
+  if muted = 0 then
+    if sndId then
+      sound(sndId).volume = argVol
+    end if
+  end if
+  volume = argVol
+end
+
+on Mute me, argIsTRUE
+  muted = argIsTRUE
+  if muted then
+    sound(sndId).volume = 0
+  else
+    sound(sndId).volume = volume
+  end if
+end
+
+on setLoop me, argIsTRUE
+  sound(sndId).loopCount = 0
+  sound(sndId).loopStartTime = 0
+  sound(sndId).loopEndTime = me.getLength()
+end
+
+on finished me
+  if not sndId then
+    return 1
+  end if
+  return not sound(sndId).isBusy()
+end
+
+on getChannel me
+  return 0
+end
+
+on fade me, inOut, theLength
+end
+
+on getPosition me
+  if sndId = 0 then
+    return 0
+  end if
+  return sound(sndId).elapsedTime
+end
+
+on getPos me
+  return me.getPosition()
+end
+
+on getFreq me
+  return myMember.sampleRate
+end
+
+on getSize me
+  return size
+end
+
+on getLength me
+  return myMember.duration
+end
+
+on setPan me, argPan
+  Pan = argPan
+  if sndId then
+    sound(sndId).Pan = Pan
+  end if
+end
+
+on isLoaded me
+  return sndId
+end
+
+on isPlaying me
+  if not sndId then
+    return 0
+  end if
+  return sound(sndId).status = 3
+end
+
+on secsToPos me, argSecs
+  return argSecs * float(orgFreq) / 2
+end
+
+on setPrefs me
+  sound(sndId).volume = volume
+  sound(sndId).Pan = Pan
+end

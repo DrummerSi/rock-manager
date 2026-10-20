@@ -1,0 +1,102 @@
+property itemObjs, scrollTLPixels, scrollTLItems, size, activeAxis, displaySize, defaultItemSize, outputMode, outputObj, imageObj
+
+on new me
+  outputMode = #text
+  if outputMode = #text then
+    outputObj = member("TestScrollText")
+    if outputObj.type = #field then
+      defaultItemSize = point(outputObj.width, outputObj.lineHeight)
+    else
+      defaultItemSize = point(outputObj.width, 14)
+    end if
+    displaySize = point(outputObj.width, 40)
+  end if
+  size = point(0, 0)
+  scrollTLPixels = point(0, 0)
+  scrollTLItems = point(0, 0)
+  activeAxis = 2
+  itemObjs = []
+  return me
+end
+
+on kill me
+  return 0
+end
+
+on setDisplaySize me, argSize
+end
+
+on addItem me, argItemObj, argWhere
+  itemObjs.add(argItemObj)
+  if outputMode = #text then
+    tmpSize = defaultItemSize
+  else
+    tmpSize = argItemObj.size
+  end if
+  if tmpSize[3 - activeAxis] > size[3 - activeAxis] then
+    size[3 - activeAxis] = tmpSize[3 - activeAxis]
+  end if
+  size[activeAxis] = size[activeAxis] + tmpSize[activeAxis]
+end
+
+on deleteItem me, argItemObj
+  itemObjs.deleteOne(argItemObj)
+  if outputMode = #text then
+    tmpSize = defaultItemSize
+  else
+    tmpSize = argItemObj.size
+  end if
+  size[activeAxis] = size[activeAxis] - tmpSize[activeAxis]
+end
+
+on scroll me, argVal, argWhat
+  if voidp(argWhat) then
+    argWhat = #pixels
+  end if
+  if argWhat = #items then
+    if outputMode = #text then
+      argVal = argVal * defaultItemSize[activeAxis]
+    end if
+  end if
+  if not listp(argVal) then
+    tmp = point(0, 0)
+    tmp[activeAxis] = argVal
+    argVal = tmp
+  end if
+  tmpNewTL = scrollTLPixels + argVal
+  if tmpNewTL[1] < 0 then
+    tmpNewTL[1] = 0
+  end if
+  if tmpNewTL[2] < 0 then
+    tmpNewTL[2] = 0
+  end if
+  if tmpNewTL[1] > (size[1] - displaySize[1]) then
+    tmpNewTL[1] = size[1] - displaySize[1]
+  end if
+  if tmpNewTL[2] > (size[2] - displaySize[2]) then
+    tmpNewTL[2] = size[2] - displaySize[2]
+  end if
+  scrollTLPixels = tmpNewTL
+  me.render()
+end
+
+on paint me
+  if outputMode = #text then
+    tmpStr = EMPTY
+    repeat with n = 1 to itemObjs.count()
+      tmpStr = tmpStr & itemObjs[n] & RETURN
+    end repeat
+    delete tmpStr.char[tmpStr.length]
+    outputObj.text = tmpStr
+  end if
+end
+
+on render me
+  if outputMode = #text then
+    outputObj.scrollTop = scrollTLPixels[2]
+  end if
+  updateStage()
+end
+
+on mouse me, argObj, argWhat
+end

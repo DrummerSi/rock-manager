@@ -1,0 +1,63 @@
+property m_data, m_cnt, m_pause, m_reportObj, m_firstFrame, m_delay, m_frame, m_SP, m_active
+global gUseful
+
+on new me, argReportObj, argName, argSPNum
+  m_reportObj = argReportObj
+  m_SP = sprite(argSPNum)
+  m_firstFrame = member(argName).number
+  m_data = member(argName & "f").text
+  m_data = "[" & m_data & "]"
+  m_data = m_data.value
+  m_cnt = 1
+  m_pause = 0
+  m_frame = 0
+  m_active = 1
+  return me
+end
+
+on kill me
+  return 0
+end
+
+on timeTick me
+  if not m_active then
+    exit
+  end if
+  if m_delay then
+    m_delay = m_delay - 1
+  else
+    m_delay = 2
+    if m_pause then
+      m_pause = m_pause - 1
+    else
+      m_frame = m_data[m_cnt]
+      if listp(m_frame) then
+        m_pause = m_frame[1]
+        m_frame = m_frame.getPropAt(1)
+      end if
+      m_cnt = m_cnt + 1
+      if m_cnt > m_data.count() then
+        m_cnt = 1
+      end if
+    end if
+  end if
+  if objectp(m_reportObj) then
+    m_reportObj.Report(me, #draw, m_firstFrame + m_frame)
+  end if
+end
+
+on redraw me, argLoc
+  m_SP.member = member(m_firstFrame + m_frame)
+  m_SP.loc = argLoc
+end
+
+on activate me, argIsTRUE
+  m_active = argIsTRUE
+end
+
+on show me, argIsTRUE
+  me.activate(argIsTRUE)
+  if argIsTRUE = 0 then
+    m_SP.member = member("Dummy")
+  end if
+end

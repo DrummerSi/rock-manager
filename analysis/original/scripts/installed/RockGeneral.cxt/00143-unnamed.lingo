@@ -1,0 +1,30 @@
+on calcGoodStep argStepFloat, argAllowDecimalSteps
+  if voidp(argAllowDecimalSteps) then
+    argAllowDecimalSteps = 1
+  end if
+  if voidp(argStepFloat) then
+    argStepFloat = 1.0 / 0.40000000000000002
+  end if
+  magnitude = log(argStepFloat) / log(10)
+  if (argAllowDecimalSteps = 0) and (magnitude < 0) then
+    return 1
+  end if
+  magnitude = realInteger(magnitude)
+  if (magnitude < 1) and (argAllowDecimalSteps = 0) then
+    okSteps = [1, 2, 3, 5, 10]
+  else
+    okSteps = [1, 2, 2.5, 3, 5, 10]
+  end if
+  wantedStep = argStepFloat / power(10, magnitude)
+  repeat with n = 1 to okSteps.count()
+    if wantedStep <= okSteps[n] then
+      step = okSteps[n]
+      exit repeat
+    end if
+  end repeat
+  step = step * power(10, magnitude)
+  if argAllowDecimalSteps = 0 then
+    step = realInteger(step)
+  end if
+  return step
+end

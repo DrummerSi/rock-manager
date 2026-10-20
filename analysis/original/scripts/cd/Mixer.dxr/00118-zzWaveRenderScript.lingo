@@ -1,0 +1,135 @@
+property m_queued, m_exePath, m_rendered, m_doWhatWhenDoneList, m_waitUntilMsecs, m_renderToPath, m_slicedPath, m_batchFilePath, m_useDll, m_maxWait
+global gUseful, gRock
+
+on new me
+  m_exePath = gRock.m_paths.getPath(#RockWave) & "Rockwave.exe"
+  m_batchFilePath = gRock.m_paths.getPath(#RockWave)
+  m_slicedPath = gRock.m_paths.getPath(#Sliced)
+  m_renderToPath = gRock.m_paths.getPath(#RenderedMusic)
+  m_queued = [:]
+  m_rendered = [:]
+  m_doWhatWhenDoneList = [:]
+  m_useDll = 1
+  return me
+end
+
+on kill me
+  gUseful.frameTimer.deleteObject(me)
+  return 0
+end
+
+on queueRendering me, argID, argFile, argSwitches
+  m_queued.setaProp(argID, [#file: argFile, #Switches: argSwitches])
+end
+
+on renderQueue me
+  renderStrings = []
+  m_rendered = [:]
+  bigRenderStr = EMPTY
+  repeat with n = 1 to m_queued.count
+    ID = m_queued.getPropAt(n)
+    Info = m_queued[n]
+    inputPath = m_slicedPath & Info[#file] & "\" & "*.*"
+    if 0 then
+      if isFolderEmpty(m_slicedPath & Info[#file] & "\") then
+        pott("Doesn't exist", Info[#file])
+        next repeat
+      end if
+    else
+      if fileExists2(m_slicedPath & Info[#file] & ".wav") = 0 then
+        pott("Doesn't exist", Info[#file])
+        next repeat
+      end if
+    end if
+    outputPath = Info[#file]
+    outputPath = fileStripName(outputPath)
+    outputPath = m_renderToPath & string(ID) & ".wav"
+    tmpFileObj = xtra("FileIO").new()
+    tmpFileObj.openFile(outputPath, 0)
+    if tmpFileObj.status() = 0 then
+      delete tmpFileObj
+      tmpFileObj.closeFile()
+    end if
+    tmpInfo = Info[#Switches].duplicate()
+    tmpInfo[#in] = inputPath
+    tmpInfo[#Out] = outputPath
+    if m_useDll then
+      renderStr = mixGenFXStr(tmpInfo, #dll)
+      renderStrings.add(renderStr)
+    else
+      renderStr = mixGenFXStr(tmpInfo, #Exe)
+      off = offset(inputPath, renderStr)
+      renderStr = renderStr.char[off..renderStr.length]
+      bigRenderStr = bigRenderStr & renderStr & RETURN & numToChar(10)
+    end if
+    m_rendered.setaProp(ID, outputPath)
+  end repeat
+  if m_useDll then
+    if renderStrings.count = 0 then
+      exit
+    end if
+    mixCallRockWave(renderStrings)
+  else
+    if m_queued.count = 0 then
+      open(m_exePath && bigRenderStr.line[1])
+    else
+      batchFile = m_batchFilePath & "batch.txt"
+      writeFile(batchFile, bigRenderStr)
+      open(m_exePath && "/batch:" & batchFile)
+    end if
+  end if
+  m_queued = [:]
+  if m_useDll then
+    if m_doWhatWhenDoneList.count then
+      m_maxWait = the milliSeconds + integer(10.0 * 1000)
+      m_waitUntilMsecs = the milliSeconds + 0
+      gUseful.frameTimer.addObject(me)
+    end if
+  else
+    if m_doWhatWhenDoneList.count then
+      m_waitUntilMsecs = the milliSeconds + 500
+      gUseful.frameTimer.addObject(me)
+    end if
+  end if
+end
+
+on getRendered me, argID, argAltFileName
+  tmp = m_rendered.getaProp(argID)
+  if voidp(tmp) then
+    return argAltFileName
+  end if
+  return tmp
+end
+
+on timeTick me
+  if the milliSeconds > m_waitUntilMsecs then
+    tmpImDone = 1
+    tmpFileObj = xtra("FileIO").new()
+    repeat with n = m_rendered.count() down to 1
+      tmpFileObj.openFile(m_rendered[n], 0)
+      if tmpFileObj.status() = 0 then
+        tmpFileObj.closeFile()
+        next repeat
+      end if
+      tmpImDone = 0
+      exit repeat
+    end repeat
+    if tmpImDone = 0 then
+      if the milliSeconds > m_maxWait then
+      else
+        m_waitUntilMsecs = the milliSeconds + 500
+        exit
+      end if
+    end if
+    if objectp(m_doWhatWhenDoneList[#ReportTo]) then
+      tmpHandler = m_doWhatWhenDoneList[#handler]
+      if voidp(tmpHandler) then
+        tmpHandler = #Report
+      end if
+      if m_doWhatWhenDoneList[#ReportTo].handler(tmpHandler) then
+        call(tmpHandler, m_doWhatWhenDoneList[#ReportTo])
+      end if
+    end if
+    gUseful.frameTimer.deleteObject(me)
+  end if
+end

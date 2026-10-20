@@ -1,0 +1,272 @@
+property m_sndObj, m_waveInfo, m_vol, m_muted, m_sequencer, m_unloadWhileMuted
+
+on new me, argSequencer
+  [  0] getparam 8 .............................. <argSequencer>
+  [  2] setprop 323 ............................. m_sequencer = argSequencer
+  [  5] pushzero ................................ <0>
+  [  6] setprop 330 ............................. m_vol = 0
+  [  9] pushzero ................................ <0>
+  [ 10] setprop 328 ............................. m_muted = 0
+  [ 13] pushzero ................................ <0>
+  [ 14] setprop 423 ............................. m_unloadWhileMuted = 0
+  [ 17] getparam 0 .............................. <me>
+  [ 19] pusharglistnoret 1 ...................... <me>
+  [ 21] extcall 21 .............................. return me
+  [ 23] ret
+end
+
+on kill me
+  [  0] getprop 392 ............................. <m_sndObj>
+  [  3] pusharglist 1 ........................... <m_sndObj>
+  [  5] extcall 71 .............................. <objectp(m_sndObj)>
+  [  8] jmpifz [ 21] ............................ if objectp(m_sndObj) then
+  [ 11] getprop 392 ............................. <m_sndObj>
+  [ 14] pusharglist 1 ........................... <m_sndObj>
+  [ 16] objcall 1 ............................... <m_sndObj.kill()>
+  [ 18] setprop 392 ............................. m_sndObj = m_sndObj.kill()
+  [ 21] pushzero ................................ <0>
+  [ 22] pusharglistnoret 1 ...................... <0>
+  [ 24] extcall 21 .............................. return 0
+  [ 26] ret
+end
+
+on play me
+  [  0] getprop 392 ............................. <m_sndObj>
+  [  3] pusharglist 1 ........................... <m_sndObj>
+  [  5] extcall 71 .............................. <objectp(m_sndObj)>
+  [  8] jmpifz [ 49] ............................ if objectp(m_sndObj) then / else
+  [ 11] getprop 423 ............................. <m_unloadWhileMuted>
+  [ 14] jmpifz [ 38] ............................ if m_unloadWhileMuted then / else
+  [ 17] getprop 328 ............................. <m_muted>
+  [ 20] pushint8 1 .............................. <1>
+  [ 23] nteq .................................... <m_muted <> 1>
+  [ 24] jmpifz [ 35] ............................ if m_muted <> 1 then
+  [ 27] getprop 392 ............................. <m_sndObj>
+  [ 30] pusharglistnoret 1 ...................... <m_sndObj>
+  [ 32] objcall 237 ............................. m_sndObj.play()
+  [ 35] jmp [ 46]
+  [ 38] getprop 392 ............................. <m_sndObj>
+  [ 41] pusharglistnoret 1 ...................... <m_sndObj>
+  [ 43] objcall 237 ............................. m_sndObj.play()
+  [ 46] jmp [ 56]
+  [ 49] pushcons 0 .............................. <"No sound object!">
+  [ 51] pusharglistnoret 1 ...................... <"No sound object!">
+  [ 53] extcall 36 .............................. pott("No sound object!")
+  [ 56] ret
+end
+
+on stop me
+  [  0] getprop 392 ............................. <m_sndObj>
+  [  3] pusharglist 1 ........................... <m_sndObj>
+  [  5] extcall 71 .............................. <objectp(m_sndObj)>
+  [  8] jmpifz [ 19] ............................ if objectp(m_sndObj) then
+  [ 11] getprop 392 ............................. <m_sndObj>
+  [ 14] pusharglistnoret 1 ...................... <m_sndObj>
+  [ 16] objcall 238 ............................. m_sndObj.stop()
+  [ 19] ret
+end
+
+on setSetting me, argProp, argVal
+  [  0] getparam 8 .............................. <argProp>
+  [  2] pushsymb 26 ............................. <#file>
+  [  4] eq ...................................... <argProp = #file>
+  [  5] jmpifz [157] ............................ if argProp = #file then / else
+  [  8] getprop 392 ............................. <m_sndObj>
+  [ 11] pusharglist 1 ........................... <m_sndObj>
+  [ 13] extcall 71 .............................. <objectp(m_sndObj)>
+  [ 16] jmpifz [ 29] ............................ if objectp(m_sndObj) then
+  [ 19] getprop 392 ............................. <m_sndObj>
+  [ 22] pusharglist 1 ........................... <m_sndObj>
+  [ 24] objcall 1 ............................... <m_sndObj.kill()>
+  [ 26] setprop 392 ............................. m_sndObj = m_sndObj.kill()
+  [ 29] pushcons 8 .............................. <"SoundScript">
+  [ 31] pusharglist 1 ........................... <"SoundScript">
+  [ 33] extcall 284 ............................. <script("SoundScript")>
+  [ 36] getprop 323 ............................. <m_sequencer>
+  [ 39] getobjprop 254 .......................... <m_sequencer.m_soundPath>
+  [ 42] getparam 16 ............................. <argVal>
+  [ 44] joinstr ................................. <m_sequencer.m_soundPath & argVal>
+  [ 45] pushsymb 401 ............................ <#PlayDirect>
+  [ 48] pushzero ................................ <0>
+  [ 49] pushsymb 72 ............................. <#ReportTo>
+  [ 52] getparam 0 .............................. <me>
+  [ 54] pusharglist 4 ........................... <[#PlayDirect: 0, #ReportTo: me]>
+  [ 56] pushproplist ............................ <[#PlayDirect: 0, #ReportTo: me]>
+  [ 57] pusharglist 3 ........................... <script("SoundScript"), m_sequencer.m_soundPath & argVal, [#PlayDirect: 0, #ReportTo: me]>
+  [ 59] objcall 0 ............................... <script("SoundScript").new(m_sequencer.m_soundPath & argVal, [#PlayDirect: 0, #ReportTo: me])>
+  [ 61] setprop 392 ............................. m_sndObj = script("SoundScript").new(m_sequencer.m_soundPath & argVal, [#PlayDirect: 0, #ReportTo: me])
+  [ 64] getprop 392 ............................. <m_sndObj>
+  [ 67] pusharglist 1 ........................... <m_sndObj>
+  [ 69] extcall 71 .............................. <objectp(m_sndObj)>
+  [ 72] not ..................................... <not objectp(m_sndObj)>
+  [ 73] jmpifz [ 84] ............................ if not objectp(m_sndObj) then
+  [ 76] pushcons 16 ............................. <"Err snd not fnd">
+  [ 78] pusharglistnoret 1 ...................... <"Err snd not fnd">
+  [ 80] extcall 36 .............................. pott("Err snd not fnd")
+  [ 83] ret ..................................... exit
+  [ 84] getprop 392 ............................. <m_sndObj>
+  [ 87] getobjprop 424 .......................... <m_sndObj.fullFileName>
+  [ 90] setlocal 0 .............................. tmpFullFile = m_sndObj.fullFileName
+  [ 92] getlocal 0 .............................. <tmpFullFile>
+  [ 94] pusharglist 1 ........................... <tmpFullFile>
+  [ 96] extcall 426 ............................. <getWaveFileInfo(tmpFullFile)>
+  [ 99] setprop 425 ............................. m_waveInfo = getWaveFileInfo(tmpFullFile)
+  [102] getprop 425 ............................. <m_waveInfo>
+  [105] pushsymb 26 ............................. <#file>
+  [107] getparam 16 ............................. <argVal>
+  [109] pusharglistnoret 3 ...................... <m_waveInfo, #file, argVal>
+  [111] objcall 46 .............................. m_waveInfo[#file] = argVal
+  [114] getprop 392 ............................. <m_sndObj>
+  [117] pushint8 1 .............................. <1>
+  [120] pusharglistnoret 2 ...................... <m_sndObj, 1>
+  [122] objcall 427 ............................. m_sndObj.setLoop(1)
+  [125] getprop 328 ............................. <m_muted>
+  [128] jmpifz [143] ............................ if m_muted then / else
+  [131] getprop 392 ............................. <m_sndObj>
+  [134] pushzero ................................ <0>
+  [135] pusharglistnoret 2 ...................... <m_sndObj, 0>
+  [137] objcall 402 ............................. m_sndObj.setVol(0)
+  [140] jmp [154]
+  [143] getprop 392 ............................. <m_sndObj>
+  [146] getprop 330 ............................. <m_vol>
+  [149] pusharglistnoret 2 ...................... <m_sndObj, m_vol>
+  [151] objcall 402 ............................. m_sndObj.setVol(m_vol)
+  [154] jmp [379]
+  [157] getparam 8 .............................. <argProp>
+  [159] pushsymb 137 ............................ <#vol>
+  [162] eq ...................................... <argProp = #vol>
+  [163] jmpifz [205] ............................ if argProp = #vol then / else
+  [166] getparam 16 ............................. <argVal>
+  [168] setprop 330 ............................. m_vol = argVal
+  [171] getprop 392 ............................. <m_sndObj>
+  [174] pusharglist 1 ........................... <m_sndObj>
+  [176] extcall 71 .............................. <objectp(m_sndObj)>
+  [179] not ..................................... <not objectp(m_sndObj)>
+  [180] jmpifz [184] ............................ if not objectp(m_sndObj) then
+  [183] ret ..................................... exit
+  [184] getprop 328 ............................. <m_muted>
+  [187] not ..................................... <not m_muted>
+  [188] jmpifz [202] ............................ if not m_muted then
+  [191] getprop 392 ............................. <m_sndObj>
+  [194] getprop 330 ............................. <m_vol>
+  [197] pusharglistnoret 2 ...................... <m_sndObj, m_vol>
+  [199] objcall 402 ............................. m_sndObj.setVol(m_vol)
+  [202] jmp [379]
+  [205] getparam 8 .............................. <argProp>
+  [207] pushsymb 334 ............................ <#Pan>
+  [210] eq ...................................... <argProp = #Pan>
+  [211] jmpifz [240] ............................ if argProp = #Pan then / else
+  [214] getprop 392 ............................. <m_sndObj>
+  [217] pusharglist 1 ........................... <m_sndObj>
+  [219] extcall 71 .............................. <objectp(m_sndObj)>
+  [222] not ..................................... <not objectp(m_sndObj)>
+  [223] jmpifz [227] ............................ if not objectp(m_sndObj) then
+  [226] ret ..................................... exit
+  [227] getprop 392 ............................. <m_sndObj>
+  [230] getparam 16 ............................. <argVal>
+  [232] pusharglistnoret 2 ...................... <m_sndObj, argVal>
+  [234] objcall 403 ............................. m_sndObj.setPan(argVal)
+  [237] jmp [379]
+  [240] getparam 8 .............................. <argProp>
+  [242] pushsymb 333 ............................ <#Mute>
+  [245] eq ...................................... <argProp = #Mute>
+  [246] jmpifz [379] ............................ if argProp = #Mute then
+  [249] getprop 392 ............................. <m_sndObj>
+  [252] pusharglist 1 ........................... <m_sndObj>
+  [254] extcall 71 .............................. <objectp(m_sndObj)>
+  [257] not ..................................... <not objectp(m_sndObj)>
+  [258] jmpifz [262] ............................ if not objectp(m_sndObj) then
+  [261] ret ..................................... exit
+  [262] getparam 16 ............................. <argVal>
+  [264] setprop 328 ............................. m_muted = argVal
+  [267] getprop 328 ............................. <m_muted>
+  [270] pushzero ................................ <0>
+  [271] gt ...................................... <m_muted > 0>
+  [272] jmpifz [304] ............................ if m_muted > 0 then / else
+  [275] getprop 423 ............................. <m_unloadWhileMuted>
+  [278] jmpifz [292] ............................ if m_unloadWhileMuted then / else
+  [281] getprop 392 ............................. <m_sndObj>
+  [284] pusharglistnoret 1 ...................... <m_sndObj>
+  [286] objcall 428 ............................. m_sndObj.unload()
+  [289] jmp [301]
+  [292] getprop 392 ............................. <m_sndObj>
+  [295] pushzero ................................ <0>
+  [296] pusharglistnoret 2 ...................... <m_sndObj, 0>
+  [298] objcall 402 ............................. m_sndObj.setVol(0)
+  [301] jmp [379]
+  [304] getprop 423 ............................. <m_unloadWhileMuted>
+  [307] jmpifz [368] ............................ if m_unloadWhileMuted then / else
+  [310] getprop 392 ............................. <m_sndObj>
+  [313] pusharglistnoret 1 ...................... <m_sndObj>
+  [315] objcall 429 ............................. m_sndObj.preload()
+  [318] getprop 323 ............................. <m_sequencer>
+  [321] pushsymb 263 ............................ <#Secs>
+  [324] pusharglist 2 ........................... <m_sequencer, #Secs>
+  [326] objcall 235 ............................. <m_sequencer.getElapsedTime(#Secs)>
+  [329] setlocal 8 .............................. tmpSecs = m_sequencer.getElapsedTime(#Secs)
+  [331] getlocal 8 .............................. <tmpSecs>
+  [333] pushcons 24 ............................. <44100>
+  [335] mul ..................................... <tmpSecs * 44100>
+  [336] setlocal 16 ............................. tmpSample = tmpSecs * 44100
+  [338] getlocal 8 .............................. <tmpSecs>
+  [340] getlocal 16 ............................. <tmpSample>
+  [342] pusharglistnoret 2 ...................... <tmpSecs, tmpSample>
+  [344] extcall 36 .............................. pott(tmpSecs, tmpSample)
+  [347] getprop 392 ............................. <m_sndObj>
+  [350] getlocal 16 ............................. <tmpSample>
+  [352] pusharglistnoret 2 ...................... <m_sndObj, tmpSample>
+  [354] objcall 430 ............................. m_sndObj.setPosition(tmpSample)
+  [357] getprop 392 ............................. <m_sndObj>
+  [360] pusharglistnoret 1 ...................... <m_sndObj>
+  [362] objcall 237 ............................. m_sndObj.play()
+  [365] jmp [379]
+  [368] getprop 392 ............................. <m_sndObj>
+  [371] getprop 330 ............................. <m_vol>
+  [374] pusharglistnoret 2 ...................... <m_sndObj, m_vol>
+  [376] objcall 402 ............................. m_sndObj.setVol(m_vol)
+  [379] ret
+end
+
+on Report me, argObj, argWhat
+  [  0] getparam 8 .............................. <argObj>
+  [  2] getprop 392 ............................. <m_sndObj>
+  [  5] eq ...................................... <argObj = m_sndObj>
+  [  6] getprop 392 ............................. <m_sndObj>
+  [  9] pusharglist 1 ........................... <m_sndObj>
+  [ 11] extcall 71 .............................. <objectp(m_sndObj)>
+  [ 14] and ..................................... <(argObj = m_sndObj) and objectp(m_sndObj)>
+  [ 15] jmpifz [ 44] ............................ if (argObj = m_sndObj) and objectp(m_sndObj) then
+  [ 18] getparam 16 ............................. <argWhat>
+  [ 20] pushsymb 433 ............................ <#Unloaded>
+  [ 23] eq ...................................... <argWhat = #Unloaded>
+  [ 24] jmpifz [ 44] ............................ if argWhat = #Unloaded then
+  [ 27] pushcons 32 ............................. <"Was unloaded!">
+  [ 29] getprop 425 ............................. <m_waveInfo>
+  [ 32] pushsymb 26 ............................. <#file>
+  [ 34] pusharglist 2 ........................... <m_waveInfo, #file>
+  [ 36] objcall 34 .............................. <m_waveInfo[#file]>
+  [ 39] pusharglistnoret 2 ...................... <"Was unloaded!", m_waveInfo[#file]>
+  [ 41] extcall 36 .............................. pott("Was unloaded!", m_waveInfo[#file])
+  [ 44] ret
+end
+
+on getSetting me, argProp
+  [  0] getparam 8 .............................. <argProp>
+  [  2] pushsymb 333 ............................ <#Mute>
+  [  5] eq ...................................... <argProp = #Mute>
+  [  6] jmpifz [ 16] ............................ if argProp = #Mute then
+  [  9] getprop 328 ............................. <m_muted>
+  [ 12] pusharglistnoret 1 ...................... <m_muted>
+  [ 14] extcall 21 .............................. return m_muted
+  [ 16] ret
+end
+
+on getLength me
+  [  0] getprop 425 ............................. <m_waveInfo>
+  [  3] pushsymb 434 ............................ <#duration>
+  [  6] pusharglist 2 ........................... <m_waveInfo, #duration>
+  [  8] objcall 34 .............................. <m_waveInfo[#duration]>
+  [ 11] pusharglistnoret 1 ...................... <m_waveInfo[#duration]>
+  [ 13] extcall 21 .............................. return m_waveInfo[#duration]
+  [ 15] ret
+end

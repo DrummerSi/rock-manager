@@ -1,0 +1,477 @@
+property m_globeObj, m_frameNum, m_longLatList, m_tmpLoc, m_reportObj, m_SP, m_planeLastLoc, m_planeFirstFrame, m_active
+global gRock, gUseful
+
+on new me, argReportObj, argGlobeObj, argSPNum
+  [  0] getparam 8 .............................. <argReportObj>
+  [  2] setprop 1694 ............................ m_reportObj = argReportObj
+  [  5] getparam 16 ............................. <argGlobeObj>
+  [  7] setprop 1346 ............................ m_globeObj = argGlobeObj
+  [ 10] getglobal 39 ............................ <gUseful>
+  [ 13] getobjprop 95 ........................... <gUseful.frameTimer>
+  [ 16] getprop 1346 ............................ <m_globeObj>
+  [ 19] pusharglistnoret 2 ...................... <gUseful.frameTimer, m_globeObj>
+  [ 21] objcall 120 ............................. gUseful.frameTimer.deleteObject(m_globeObj)
+  [ 24] getprop 1346 ............................ <m_globeObj>
+  [ 27] pusharglistnoret 1 ...................... <m_globeObj>
+  [ 29] objcall 72 .............................. m_globeObj.timeTick()
+  [ 32] getprop 1346 ............................ <m_globeObj>
+  [ 35] getobjprop 1696 ......................... <m_globeObj.m_onStageLoc>
+  [ 38] getprop 1346 ............................ <m_globeObj>
+  [ 41] getobjprop 1697 ......................... <m_globeObj.m_radius>
+  [ 44] getprop 1346 ............................ <m_globeObj>
+  [ 47] getobjprop 1697 ......................... <m_globeObj.m_radius>
+  [ 50] pusharglist 2 ........................... <m_globeObj.m_radius, m_globeObj.m_radius>
+  [ 52] extcall 75 .............................. <point(m_globeObj.m_radius, m_globeObj.m_radius)>
+  [ 55] add ..................................... <m_globeObj.m_onStageLoc + point(m_globeObj.m_radius, m_globeObj.m_radius)>
+  [ 56] setprop 1695 ............................ m_tmpLoc = m_globeObj.m_onStageLoc + point(m_globeObj.m_radius, m_globeObj.m_radius)
+  [ 59] getparam 24 ............................. <argSPNum>
+  [ 61] pusharglist 1 ........................... <argSPNum>
+  [ 63] extcall 64 .............................. <sprite(argSPNum)>
+  [ 66] setprop 167 ............................. m_SP = sprite(argSPNum)
+  [ 69] getprop 167 ............................. <m_SP>
+  [ 72] pushcons 0 .............................. <"Dummy">
+  [ 74] pusharglist 1 ........................... <"Dummy">
+  [ 76] extcall 8 ............................... <member("Dummy")>
+  [ 78] setobjprop 8 ............................ m_SP.member = member("Dummy")
+  [ 80] pushint8 1 .............................. <1>
+  [ 83] inv ..................................... <-1>
+  [ 84] pushcons 8 .............................. <"plane02_0012">
+  [ 86] pusharglist 1 ........................... <"plane02_0012">
+  [ 88] extcall 8 ............................... <member("plane02_0012")>
+  [ 90] getobjprop 162 .......................... <member("plane02_0012").number>
+  [ 93] add ..................................... <-1 + member("plane02_0012").number>
+  [ 94] setprop 1698 ............................ m_planeFirstFrame = -1 + member("plane02_0012").number
+  [ 97] pushzero ................................ <0>
+  [ 98] pushzero ................................ <0>
+  [ 99] pusharglist 2 ........................... <0, 0>
+  [101] extcall 75 .............................. <point(0, 0)>
+  [104] setprop 1699 ............................ m_planeLastLoc = point(0, 0)
+  [107] pushint8 1 .............................. <1>
+  [110] setprop 108 ............................. m_active = 1
+  [113] getglobal 39 ............................ <gUseful>
+  [116] getobjprop 95 ........................... <gUseful.frameTimer>
+  [119] getparam 0 .............................. <me>
+  [121] pusharglistnoret 2 ...................... <gUseful.frameTimer, me>
+  [123] objcall 96 .............................. gUseful.frameTimer.addObject(me)
+  [126] getparam 0 .............................. <me>
+  [128] pusharglistnoret 1 ...................... <me>
+  [130] extcall 46 .............................. return me
+  [133] ret
+end
+
+on kill me
+  [  0] getprop 167 ............................. <m_SP>
+  [  3] pushcons 16 ............................. <"Dummy">
+  [  5] pusharglist 1 ........................... <"Dummy">
+  [  7] extcall 8 ............................... <member("Dummy")>
+  [  9] setobjprop 8 ............................ m_SP.member = member("Dummy")
+  [ 11] getprop 167 ............................. <m_SP>
+  [ 14] pushzero ................................ <0>
+  [ 15] setobjprop 67 ........................... m_SP.stretch = 0
+  [ 18] getprop 1346 ............................ <m_globeObj>
+  [ 21] pusharglist 1 ........................... <m_globeObj>
+  [ 23] objcall 3 ............................... <m_globeObj.kill()>
+  [ 25] setprop 1346 ............................ m_globeObj = m_globeObj.kill()
+  [ 28] getglobal 35 ............................ <gRock>
+  [ 31] getobjprop 52 ........................... <gRock.m_gameTimer>
+  [ 34] getparam 0 .............................. <me>
+  [ 36] pusharglistnoret 2 ...................... <gRock.m_gameTimer, me>
+  [ 38] objcall 120 ............................. gRock.m_gameTimer.deleteObject(me)
+  [ 41] getglobal 39 ............................ <gUseful>
+  [ 44] getobjprop 95 ........................... <gUseful.frameTimer>
+  [ 47] getparam 0 .............................. <me>
+  [ 49] pusharglistnoret 2 ...................... <gUseful.frameTimer, me>
+  [ 51] objcall 120 ............................. gUseful.frameTimer.deleteObject(me)
+  [ 54] pushzero ................................ <0>
+  [ 55] pusharglistnoret 1 ...................... <0>
+  [ 57] extcall 46 .............................. return 0
+  [ 60] ret
+end
+
+on timeTick me, argObj
+  [  0] getparam 8 .............................. <argObj>
+  [  2] getglobal 35 ............................ <gRock>
+  [  5] getobjprop 52 ........................... <gRock.m_gameTimer>
+  [  8] eq ...................................... <argObj = gRock.m_gameTimer>
+  [  9] jmpifz [ 39] ............................ if argObj = gRock.m_gameTimer then
+  [ 12] getglobal 35 ............................ <gRock>
+  [ 15] getobjprop 52 ........................... <gRock.m_gameTimer>
+  [ 18] getparam 0 .............................. <me>
+  [ 20] pusharglistnoret 2 ...................... <gRock.m_gameTimer, me>
+  [ 22] objcall 120 ............................. gRock.m_gameTimer.deleteObject(me)
+  [ 25] getglobal 39 ............................ <gUseful>
+  [ 28] getobjprop 95 ........................... <gUseful.frameTimer>
+  [ 31] getparam 0 .............................. <me>
+  [ 33] pusharglistnoret 2 ...................... <gUseful.frameTimer, me>
+  [ 35] objcall 96 .............................. gUseful.frameTimer.addObject(me)
+  [ 38] ret ..................................... exit
+  [ 39] getprop 108 ............................. <m_active>
+  [ 42] not ..................................... <not m_active>
+  [ 43] jmpifz [ 47] ............................ if not m_active then
+  [ 46] ret ..................................... exit
+  [ 47] getprop 1702 ............................ <m_frameNum>
+  [ 50] pushzero ................................ <0>
+  [ 51] gt ...................................... <m_frameNum > 0>
+  [ 52] jmpifz [599] ............................ if m_frameNum > 0 then
+  [ 55] getprop 1703 ............................ <m_longLatList>
+  [ 58] getprop 1702 ............................ <m_frameNum>
+  [ 61] pusharglist 2 ........................... <m_longLatList, m_frameNum>
+  [ 63] objcall 51 .............................. <m_longLatList[m_frameNum]>
+  [ 66] setlocal 0 .............................. tmpLongLat = m_longLatList[m_frameNum]
+  [ 68] pusharglist 0 ........................... <>
+  [ 70] extcall 1367 ............................ <PI>
+  [ 73] pushint8 2 .............................. <2>
+  [ 76] mul ..................................... <PI * 2>
+  [ 77] getprop 1346 ............................ <m_globeObj>
+  [ 80] getobjprop 1704 ......................... <m_globeObj.m_equatorialRotation>
+  [ 83] sub ..................................... <(PI * 2) - m_globeObj.m_equatorialRotation>
+  [ 84] getlocal 0 .............................. <tmpLongLat>
+  [ 86] pushint8 1 .............................. <1>
+  [ 89] pusharglist 2 ........................... <tmpLongLat, 1>
+  [ 91] objcall 51 .............................. <tmpLongLat[1]>
+  [ 94] sub ..................................... <(PI * 2) - m_globeObj.m_equatorialRotation - tmpLongLat[1]>
+  [ 95] setlocal 8 .............................. tmpDiff = (PI * 2) - m_globeObj.m_equatorialRotation - tmpLongLat[1]
+  [ 97] getlocal 8 .............................. <tmpDiff>
+  [ 99] pusharglist 1 ........................... <tmpDiff>
+  [101] extcall 128 ............................. <abs(tmpDiff)>
+  [104] pusharglist 0 ........................... <>
+  [106] extcall 1367 ............................ <PI>
+  [109] gt ...................................... <abs(tmpDiff) > PI>
+  [110] jmpifz [141] ............................ if abs(tmpDiff) > PI then
+  [113] getlocal 8 .............................. <tmpDiff>
+  [115] pusharglist 1 ........................... <tmpDiff>
+  [117] extcall 129 ............................. <getSign(tmpDiff)>
+  [120] pusharglist 0 ........................... <>
+  [122] extcall 1367 ............................ <PI>
+  [125] pushint8 2 .............................. <2>
+  [128] mul ..................................... <PI * 2>
+  [129] getlocal 8 .............................. <tmpDiff>
+  [131] pusharglist 1 ........................... <tmpDiff>
+  [133] extcall 128 ............................. <abs(tmpDiff)>
+  [136] sub ..................................... <(PI * 2) - abs(tmpDiff)>
+  [137] inv ..................................... <-((PI * 2) - abs(tmpDiff))>
+  [138] mul ..................................... <getSign(tmpDiff) * -((PI * 2) - abs(tmpDiff))>
+  [139] setlocal 8 .............................. tmpDiff = getSign(tmpDiff) * -((PI * 2) - abs(tmpDiff))
+  [141] getlocal 8 .............................. <tmpDiff>
+  [143] pusharglist 1 ........................... <tmpDiff>
+  [145] extcall 128 ............................. <abs(tmpDiff)>
+  [148] pushcons 24 ............................. <0.40000000000000002>
+  [150] pusharglist 0 ........................... <>
+  [152] extcall 1367 ............................ <PI>
+  [155] mul ..................................... <0.40000000000000002 * PI>
+  [156] pushint8 2 .............................. <2>
+  [159] div ..................................... <0.40000000000000002 * PI / 2>
+  [160] gt ...................................... <abs(tmpDiff) > (0.40000000000000002 * PI / 2)>
+  [161] jmpifz [197] ............................ if abs(tmpDiff) > (0.40000000000000002 * PI / 2) then / else
+  [164] getlocal 8 .............................. <tmpDiff>
+  [166] pusharglist 1 ........................... <tmpDiff>
+  [168] extcall 129 ............................. <getSign(tmpDiff)>
+  [171] getlocal 8 .............................. <tmpDiff>
+  [173] pusharglist 1 ........................... <tmpDiff>
+  [175] extcall 128 ............................. <abs(tmpDiff)>
+  [178] pushcons 32 ............................. <0.40000000000000002>
+  [180] pusharglist 0 ........................... <>
+  [182] extcall 1367 ............................ <PI>
+  [185] mul ..................................... <0.40000000000000002 * PI>
+  [186] pushint8 2 .............................. <2>
+  [189] div ..................................... <0.40000000000000002 * PI / 2>
+  [190] sub ..................................... <abs(tmpDiff) - (0.40000000000000002 * PI / 2)>
+  [191] mul ..................................... <getSign(tmpDiff) * (abs(tmpDiff) - (0.40000000000000002 * PI / 2))>
+  [192] setlocal 16 ............................. tmpRotate = getSign(tmpDiff) * (abs(tmpDiff) - (0.40000000000000002 * PI / 2))
+  [194] jmp [200]
+  [197] pushzero ................................ <0>
+  [198] setlocal 16 ............................. tmpRotate = 0
+  [200] getlocal 16 ............................. <tmpRotate>
+  [202] pushzero ................................ <0>
+  [203] nteq .................................... <tmpRotate <> 0>
+  [204] jmpifz [239] ............................ if tmpRotate <> 0 then
+  [207] getprop 1346 ............................ <m_globeObj>
+  [210] getprop 1346 ............................ <m_globeObj>
+  [213] getobjprop 1704 ......................... <m_globeObj.m_equatorialRotation>
+  [216] getlocal 16 ............................. <tmpRotate>
+  [218] add ..................................... <m_globeObj.m_equatorialRotation + tmpRotate>
+  [219] setobjprop 1704 ......................... m_globeObj.m_equatorialRotation = m_globeObj.m_equatorialRotation + tmpRotate
+  [222] getprop 1346 ............................ <m_globeObj>
+  [225] pushint8 1 .............................. <1>
+  [228] setobjprop 1705 ......................... m_globeObj.m_invalidated = 1
+  [231] getprop 1346 ............................ <m_globeObj>
+  [234] pusharglistnoret 1 ...................... <m_globeObj>
+  [236] objcall 72 .............................. m_globeObj.timeTick()
+  [239] getlocal 0 .............................. <tmpLongLat>
+  [241] getprop 1346 ............................ <m_globeObj>
+  [244] getobjprop 1697 ......................... <m_globeObj.m_radius>
+  [247] pusharglist 2 ........................... <tmpLongLat, m_globeObj.m_radius>
+  [249] extcall 1706 ............................ <longLatTo3D(tmpLongLat, m_globeObj.m_radius)>
+  [252] setlocal 24 ............................. tmp3DLoc = longLatTo3D(tmpLongLat, m_globeObj.m_radius)
+  [254] getprop 1346 ............................ <m_globeObj>
+  [257] getlocal 24 ............................. <tmp3DLoc>
+  [259] pusharglist 2 ........................... <m_globeObj, tmp3DLoc>
+  [261] objcall 1707 ............................ <m_globeObj.rotate3DLocToCurrent(tmp3DLoc)>
+  [264] setlocal 24 ............................. tmp3DLoc = m_globeObj.rotate3DLocToCurrent(tmp3DLoc)
+  [266] getlocal 24 ............................. <tmp3DLoc>
+  [268] pushint8 1 .............................. <1>
+  [271] pusharglist 2 ........................... <tmp3DLoc, 1>
+  [273] objcall 51 .............................. <tmp3DLoc[1]>
+  [276] getlocal 24 ............................. <tmp3DLoc>
+  [278] pushint8 2 .............................. <2>
+  [281] pusharglist 2 ........................... <tmp3DLoc, 2>
+  [283] objcall 51 .............................. <tmp3DLoc[2]>
+  [286] pusharglist 2 ........................... <tmp3DLoc[1], tmp3DLoc[2]>
+  [288] extcall 75 .............................. <point(tmp3DLoc[1], tmp3DLoc[2])>
+  [291] getprop 1695 ............................ <m_tmpLoc>
+  [294] add ..................................... <point(tmp3DLoc[1], tmp3DLoc[2]) + m_tmpLoc>
+  [295] setlocal 32 ............................. tmp2DLoc = point(tmp3DLoc[1], tmp3DLoc[2]) + m_tmpLoc
+  [297] getprop 1702 ............................ <m_frameNum>
+  [300] pushint8 1 .............................. <1>
+  [303] add ..................................... <m_frameNum + 1>
+  [304] getprop 1703 ............................ <m_longLatList>
+  [307] getobjprop 85 ........................... <m_longLatList.count>
+  [310] lt ...................................... <(m_frameNum + 1) < m_longLatList.count>
+  [311] jmpifz [410] ............................ if (m_frameNum + 1) < m_longLatList.count then / else
+  [314] getprop 1703 ............................ <m_longLatList>
+  [317] getprop 1702 ............................ <m_frameNum>
+  [320] pushint8 1 .............................. <1>
+  [323] add ..................................... <m_frameNum + 1>
+  [324] pusharglist 2 ........................... <m_longLatList, m_frameNum + 1>
+  [326] objcall 51 .............................. <m_longLatList[m_frameNum + 1]>
+  [329] getprop 1346 ............................ <m_globeObj>
+  [332] getobjprop 1697 ......................... <m_globeObj.m_radius>
+  [335] pusharglist 2 ........................... <m_longLatList[m_frameNum + 1], m_globeObj.m_radius>
+  [337] extcall 1706 ............................ <longLatTo3D(m_longLatList[m_frameNum + 1], m_globeObj.m_radius)>
+  [340] setlocal 40 ............................. tmpNext3DLoc = longLatTo3D(m_longLatList[m_frameNum + 1], m_globeObj.m_radius)
+  [342] getprop 1346 ............................ <m_globeObj>
+  [345] getlocal 40 ............................. <tmpNext3DLoc>
+  [347] pusharglist 2 ........................... <m_globeObj, tmpNext3DLoc>
+  [349] objcall 1707 ............................ <m_globeObj.rotate3DLocToCurrent(tmpNext3DLoc)>
+  [352] setlocal 40 ............................. tmpNext3DLoc = m_globeObj.rotate3DLocToCurrent(tmpNext3DLoc)
+  [354] getlocal 40 ............................. <tmpNext3DLoc>
+  [356] pushint8 1 .............................. <1>
+  [359] pusharglist 2 ........................... <tmpNext3DLoc, 1>
+  [361] objcall 51 .............................. <tmpNext3DLoc[1]>
+  [364] getlocal 40 ............................. <tmpNext3DLoc>
+  [366] pushint8 2 .............................. <2>
+  [369] pusharglist 2 ........................... <tmpNext3DLoc, 2>
+  [371] objcall 51 .............................. <tmpNext3DLoc[2]>
+  [374] pusharglist 2 ........................... <tmpNext3DLoc[1], tmpNext3DLoc[2]>
+  [376] extcall 75 .............................. <point(tmpNext3DLoc[1], tmpNext3DLoc[2])>
+  [379] getprop 1695 ............................ <m_tmpLoc>
+  [382] add ..................................... <point(tmpNext3DLoc[1], tmpNext3DLoc[2]) + m_tmpLoc>
+  [383] setlocal 48 ............................. tmpNext2DLoc = point(tmpNext3DLoc[1], tmpNext3DLoc[2]) + m_tmpLoc
+  [385] getlocal 32 ............................. <tmp2DLoc>
+  [387] getlocal 48 ............................. <tmpNext2DLoc>
+  [389] pushint8 16 ............................. <16>
+  [392] pusharglist 3 ........................... <tmp2DLoc, tmpNext2DLoc, 16>
+  [394] extcall 1708 ............................ <calcDirection(tmp2DLoc, tmpNext2DLoc, 16)>
+  [397] setlocal 56 ............................. tmpDir = calcDirection(tmp2DLoc, tmpNext2DLoc, 16)
+  [399] pushint8 17 ............................. <17>
+  [402] getlocal 56 ............................. <tmpDir>
+  [404] sub ..................................... <17 - tmpDir>
+  [405] setlocal 56 ............................. tmpDir = 17 - tmpDir
+  [407] jmp [415]
+  [410] pushint8 1 .............................. <1>
+  [413] setlocal 56 ............................. tmpDir = 1
+  [415] pushcons 40 ............................. <1.0>
+  [417] setlocal 64 ............................. tmpSizeFact = 1.0
+  [419] pushcons 48 ............................. <0.20000000000000001>
+  [421] setlocal 72 ............................. partWhenSmall = 0.20000000000000001
+  [423] getprop 1702 ............................ <m_frameNum>
+  [426] pusharglist 1 ........................... <m_frameNum>
+  [428] extcall 127 ............................. <float(m_frameNum)>
+  [431] getprop 1703 ............................ <m_longLatList>
+  [434] getobjprop 85 ........................... <m_longLatList.count>
+  [437] div ..................................... <float(m_frameNum) / m_longLatList.count>
+  [438] setlocal 80 ............................. partFlown = float(m_frameNum) / m_longLatList.count
+  [440] getlocal 80 ............................. <partFlown>
+  [442] getlocal 72 ............................. <partWhenSmall>
+  [444] lt ...................................... <partFlown < partWhenSmall>
+  [445] jmpifz [458] ............................ if partFlown < partWhenSmall then / else
+  [448] getlocal 80 ............................. <partFlown>
+  [450] getlocal 72 ............................. <partWhenSmall>
+  [452] div ..................................... <partFlown / partWhenSmall>
+  [453] setlocal 64 ............................. tmpSizeFact = partFlown / partWhenSmall
+  [455] jmp [479]
+  [458] getlocal 80 ............................. <partFlown>
+  [460] pushcons 56 ............................. <1.0>
+  [462] getlocal 72 ............................. <partWhenSmall>
+  [464] sub ..................................... <1.0 - partWhenSmall>
+  [465] gt ...................................... <partFlown > (1.0 - partWhenSmall)>
+  [466] jmpifz [479] ............................ if partFlown > (1.0 - partWhenSmall) then
+  [469] pushcons 64 ............................. <1.0>
+  [471] getlocal 80 ............................. <partFlown>
+  [473] sub ..................................... <1.0 - partFlown>
+  [474] getlocal 72 ............................. <partWhenSmall>
+  [476] div ..................................... <(1.0 - partFlown) / partWhenSmall>
+  [477] setlocal 64 ............................. tmpSizeFact = (1.0 - partFlown) / partWhenSmall
+  [479] getlocal 64 ............................. <tmpSizeFact>
+  [481] pushcons 72 ............................. <0.0>
+  [483] pushcons 80 ............................. <1.0>
+  [485] pusharglist 2 ........................... <[0.0, 1.0]>
+  [487] pushlist ................................ <[0.0, 1.0]>
+  [488] pushcons 88 ............................. <0.40000000000000002>
+  [490] pushcons 96 ............................. <1.0>
+  [492] pusharglist 2 ........................... <[0.40000000000000002, 1.0]>
+  [494] pushlist ................................ <[0.40000000000000002, 1.0]>
+  [495] pusharglist 0 ........................... <>
+  [497] extcall 381 ............................. <VOID>
+  [500] pushsymb 1679 ........................... <#limit>
+  [503] pusharglist 5 ........................... <tmpSizeFact, [0.0, 1.0], [0.40000000000000002, 1.0], VOID, #limit>
+  [505] extcall 1678 ............................ <convValToRange(tmpSizeFact, [0.0, 1.0], [0.40000000000000002, 1.0], VOID, #limit)>
+  [508] setlocal 64 ............................. tmpSizeFact = convValToRange(tmpSizeFact, [0.0, 1.0], [0.40000000000000002, 1.0], VOID, #limit)
+  [510] getprop 1698 ............................ <m_planeFirstFrame>
+  [513] getlocal 56 ............................. <tmpDir>
+  [515] add ..................................... <m_planeFirstFrame + tmpDir>
+  [516] pusharglist 1 ........................... <m_planeFirstFrame + tmpDir>
+  [518] extcall 8 ............................... <member(m_planeFirstFrame + tmpDir)>
+  [520] setlocal 88 ............................. tmpMemb = member(m_planeFirstFrame + tmpDir)
+  [522] getlocal 88 ............................. <tmpMemb>
+  [524] pusharglist 1 ........................... <tmpMemb>
+  [526] extcall 164 ............................. <getMemberRect(tmpMemb)>
+  [529] setlocal 96 ............................. tmpRect = getMemberRect(tmpMemb)
+  [531] getprop 167 ............................. <m_SP>
+  [534] getlocal 32 ............................. <tmp2DLoc>
+  [536] getlocal 32 ............................. <tmp2DLoc>
+  [538] pusharglist 2 ........................... <tmp2DLoc, tmp2DLoc>
+  [540] extcall 65 .............................. <rect(tmp2DLoc, tmp2DLoc)>
+  [543] getlocal 96 ............................. <tmpRect>
+  [545] getlocal 64 ............................. <tmpSizeFact>
+  [547] mul ..................................... <tmpRect * tmpSizeFact>
+  [548] add ..................................... <rect(tmp2DLoc, tmp2DLoc) + (tmpRect * tmpSizeFact)>
+  [549] setobjprop 65 ........................... m_SP.rect = rect(tmp2DLoc, tmp2DLoc) + (tmpRect * tmpSizeFact)
+  [552] getprop 167 ............................. <m_SP>
+  [555] getlocal 88 ............................. <tmpMemb>
+  [557] setobjprop 8 ............................ m_SP.member = tmpMemb
+  [559] getprop 1702 ............................ <m_frameNum>
+  [562] pushint8 1 .............................. <1>
+  [565] add ..................................... <m_frameNum + 1>
+  [566] setprop 1702 ............................ m_frameNum = m_frameNum + 1
+  [569] getprop 1702 ............................ <m_frameNum>
+  [572] getprop 1703 ............................ <m_longLatList>
+  [575] getobjprop 85 ........................... <m_longLatList.count>
+  [578] gt ...................................... <m_frameNum > m_longLatList.count>
+  [579] jmpifz [599] ............................ if m_frameNum > m_longLatList.count then
+  [582] pushzero ................................ <0>
+  [583] setprop 1702 ............................ m_frameNum = 0
+  [586] getprop 1694 ............................ <m_reportObj>
+  [589] getparam 0 .............................. <me>
+  [591] pushsymb 1650 ........................... <#done>
+  [594] pusharglistnoret 3 ...................... <m_reportObj, me, #done>
+  [596] objcall 156 ............................. m_reportObj.Report(me, #done)
+  [599] ret
+end
+
+on startTravel me, argFromCityID, argToCityID, argNumDays
+  [  0] pushint8 1 .............................. <1>
+  [  3] setprop 1702 ............................ m_frameNum = 1
+  [  6] getparam 24 ............................. <argNumDays>
+  [  8] getglobal 39 ............................ <gUseful>
+  [ 11] getobjprop 95 ........................... <gUseful.frameTimer>
+  [ 14] getobjprop 1718 ......................... <gUseful.frameTimer.framesPerTick>
+  [ 17] mul ..................................... <argNumDays * gUseful.frameTimer.framesPerTick>
+  [ 18] getglobal 35 ............................ <gRock>
+  [ 21] getobjprop 52 ........................... <gRock.m_gameTimer>
+  [ 24] getobjprop 1718 ......................... <gRock.m_gameTimer.framesPerTick>
+  [ 27] mul ..................................... <argNumDays * gUseful.frameTimer.framesPerTick * gRock.m_gameTimer.framesPerTick>
+  [ 28] getglobal 35 ............................ <gRock>
+  [ 31] getobjprop 52 ........................... <gRock.m_gameTimer>
+  [ 34] getobjprop 1629 ......................... <gRock.m_gameTimer.speedFactor>
+  [ 37] div ..................................... <argNumDays * gUseful.frameTimer.framesPerTick * gRock.m_gameTimer.framesPerTick / gRock.m_gameTimer.speedFactor>
+  [ 38] setlocal 0 .............................. numFrames = argNumDays * gUseful.frameTimer.framesPerTick * gRock.m_gameTimer.framesPerTick / gRock.m_gameTimer.speedFactor
+  [ 40] getprop 1346 ............................ <m_globeObj>
+  [ 43] getparam 8 .............................. <argFromCityID>
+  [ 45] pusharglist 2 ........................... <m_globeObj, argFromCityID>
+  [ 47] objcall 298 ............................. <m_globeObj.getObjByID(argFromCityID)>
+  [ 50] setlocal 8 .............................. fromObj = m_globeObj.getObjByID(argFromCityID)
+  [ 52] getprop 1346 ............................ <m_globeObj>
+  [ 55] getparam 16 ............................. <argToCityID>
+  [ 57] pusharglist 2 ........................... <m_globeObj, argToCityID>
+  [ 59] objcall 298 ............................. <m_globeObj.getObjByID(argToCityID)>
+  [ 62] setlocal 16 ............................. toObj = m_globeObj.getObjByID(argToCityID)
+  [ 64] getprop 1346 ............................ <m_globeObj>
+  [ 67] getlocal 8 .............................. <fromObj>
+  [ 69] getlocal 16 ............................. <toObj>
+  [ 71] pusharglist 3 ........................... <m_globeObj, fromObj, toObj>
+  [ 73] objcall 1719 ............................ <m_globeObj.calcBetweenStuff(fromObj, toObj)>
+  [ 76] setlocal 24 ............................. tmpInfo = m_globeObj.calcBetweenStuff(fromObj, toObj)
+  [ 78] pusharglist 0 ........................... <[]>
+  [ 80] pushlist ................................ <[]>
+  [ 81] setprop 1703 ............................ m_longLatList = []
+  [ 84] pushint8 1 .............................. <1>
+  [ 87] setlocal 32
+  [ 89] getlocal 32
+  [ 91] getlocal 0 .............................. <numFrames>
+  [ 93] lteq
+  [ 94] jmpifz [252] ............................ repeat with n = 1 to numFrames
+  [ 97] getlocal 32 ............................. <n>
+  [ 99] getlocal 24 ............................. <tmpInfo>
+  [101] pushsymb 1720 ........................... <#angle>
+  [104] pusharglist 2 ........................... <tmpInfo, #angle>
+  [106] objcall 51 .............................. <tmpInfo[#angle]>
+  [109] mul ..................................... <n * tmpInfo[#angle]>
+  [110] getlocal 0 .............................. <numFrames>
+  [112] div ..................................... <n * tmpInfo[#angle] / numFrames>
+  [113] setlocal 40 ............................. tmpAng = n * tmpInfo[#angle] / numFrames
+  [115] getlocal 40 ............................. <tmpAng>
+  [117] pushzero ................................ <0>
+  [118] pusharglist 2 ........................... <tmpAng, 0>
+  [120] extcall 75 .............................. <point(tmpAng, 0)>
+  [123] getprop 1346 ............................ <m_globeObj>
+  [126] getobjprop 1697 ......................... <m_globeObj.m_radius>
+  [129] pusharglist 2 ........................... <point(tmpAng, 0), m_globeObj.m_radius>
+  [131] extcall 1706 ............................ <longLatTo3D(point(tmpAng, 0), m_globeObj.m_radius)>
+  [134] setlocal 48 ............................. tmp3DLoc = longLatTo3D(point(tmpAng, 0), m_globeObj.m_radius)
+  [136] getlocal 48 ............................. <tmp3DLoc>
+  [138] getlocal 24 ............................. <tmpInfo>
+  [140] pushsymb 1722 ........................... <#rot>
+  [143] pusharglist 2 ........................... <tmpInfo, #rot>
+  [145] objcall 51 .............................. <tmpInfo[#rot]>
+  [148] pushint8 3 .............................. <3>
+  [151] pusharglist 2 ........................... <tmpInfo[#rot], 3>
+  [153] objcall 51 .............................. <tmpInfo[#rot][3]>
+  [156] pushint8 3 .............................. <3>
+  [159] pusharglist 3 ........................... <tmp3DLoc, tmpInfo[#rot][3], 3>
+  [161] extcall 1721 ............................ <rotate3D(tmp3DLoc, tmpInfo[#rot][3], 3)>
+  [164] setlocal 48 ............................. tmp3DLoc = rotate3D(tmp3DLoc, tmpInfo[#rot][3], 3)
+  [166] getlocal 48 ............................. <tmp3DLoc>
+  [168] getlocal 24 ............................. <tmpInfo>
+  [170] pushsymb 1722 ........................... <#rot>
+  [173] pusharglist 2 ........................... <tmpInfo, #rot>
+  [175] objcall 51 .............................. <tmpInfo[#rot]>
+  [178] pushint8 1 .............................. <1>
+  [181] pusharglist 2 ........................... <tmpInfo[#rot], 1>
+  [183] objcall 51 .............................. <tmpInfo[#rot][1]>
+  [186] pushint8 1 .............................. <1>
+  [189] pusharglist 3 ........................... <tmp3DLoc, tmpInfo[#rot][1], 1>
+  [191] extcall 1721 ............................ <rotate3D(tmp3DLoc, tmpInfo[#rot][1], 1)>
+  [194] setlocal 48 ............................. tmp3DLoc = rotate3D(tmp3DLoc, tmpInfo[#rot][1], 1)
+  [196] getlocal 48 ............................. <tmp3DLoc>
+  [198] getlocal 24 ............................. <tmpInfo>
+  [200] pushsymb 1722 ........................... <#rot>
+  [203] pusharglist 2 ........................... <tmpInfo, #rot>
+  [205] objcall 51 .............................. <tmpInfo[#rot]>
+  [208] pushint8 2 .............................. <2>
+  [211] pusharglist 2 ........................... <tmpInfo[#rot], 2>
+  [213] objcall 51 .............................. <tmpInfo[#rot][2]>
+  [216] pushint8 2 .............................. <2>
+  [219] pusharglist 3 ........................... <tmp3DLoc, tmpInfo[#rot][2], 2>
+  [221] extcall 1721 ............................ <rotate3D(tmp3DLoc, tmpInfo[#rot][2], 2)>
+  [224] setlocal 48 ............................. tmp3DLoc = rotate3D(tmp3DLoc, tmpInfo[#rot][2], 2)
+  [226] getprop 1703 ............................ <m_longLatList>
+  [229] getlocal 48 ............................. <tmp3DLoc>
+  [231] pusharglist 1 ........................... <tmp3DLoc>
+  [233] extcall 1723 ............................ <ThreeDToLongLat(tmp3DLoc)>
+  [236] pusharglistnoret 2 ...................... <m_longLatList, ThreeDToLongLat(tmp3DLoc)>
+  [238] objcall 98 .............................. m_longLatList.add(ThreeDToLongLat(tmp3DLoc))
+  [241] pushint8 1
+  [244] getlocal 32
+  [246] add
+  [247] setlocal 32
+  [249] endrepeat [ 89]
+  [252] ret
+end
+
+on pause me, argIsTRUE
+  [  0] getparam 8 .............................. <argIsTRUE>
+  [  2] not ..................................... <not argIsTRUE>
+  [  3] setprop 108 ............................. m_active = not argIsTRUE
+  [  6] ret
+end

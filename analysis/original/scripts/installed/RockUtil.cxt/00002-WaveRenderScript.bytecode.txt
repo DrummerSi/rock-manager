@@ -1,0 +1,809 @@
+property m_queued, m_rendered, m_doWhatWhenDoneList, m_waitUntilMsecs, m_renderToPath, m_slicedPath, m_useDll, m_maxWait, m_decodeFilesList, m_compressedPath, m_renderStrings, m_cuesPath, m_compressionFormatExtension, m_debugging, m_progressObj, m_allDecodedList
+global gUseful, gRock
+
+on new me
+  [  0] pushzero ................................ <0>
+  [  1] jmpifz [ 56] ............................ if 0 then / else
+  [  4] getglobal 7 ............................. <gRock>
+  [  6] getobjprop 8 ............................ <gRock.m_paths>
+  [  8] pushsymb 13 ............................. <#Sliced>
+  [ 10] pusharglist 2 ........................... <gRock.m_paths, #Sliced>
+  [ 12] objcall 10 .............................. <gRock.m_paths.getPath(#Sliced)>
+  [ 14] setprop 12 .............................. m_slicedPath = gRock.m_paths.getPath(#Sliced)
+  [ 16] getglobal 7 ............................. <gRock>
+  [ 18] getobjprop 8 ............................ <gRock.m_paths>
+  [ 20] pushsymb 15 ............................. <#RenderedMusic>
+  [ 22] pusharglist 2 ........................... <gRock.m_paths, #RenderedMusic>
+  [ 24] objcall 10 .............................. <gRock.m_paths.getPath(#RenderedMusic)>
+  [ 26] setprop 14 .............................. m_renderToPath = gRock.m_paths.getPath(#RenderedMusic)
+  [ 28] getglobal 7 ............................. <gRock>
+  [ 30] getobjprop 8 ............................ <gRock.m_paths>
+  [ 32] pushsymb 13 ............................. <#Sliced>
+  [ 34] pusharglist 2 ........................... <gRock.m_paths, #Sliced>
+  [ 36] objcall 10 .............................. <gRock.m_paths.getPath(#Sliced)>
+  [ 38] setprop 81 .............................. m_compressedPath = gRock.m_paths.getPath(#Sliced)
+  [ 41] getglobal 7 ............................. <gRock>
+  [ 43] getobjprop 8 ............................ <gRock.m_paths>
+  [ 45] pushsymb 13 ............................. <#Sliced>
+  [ 47] pusharglist 2 ........................... <gRock.m_paths, #Sliced>
+  [ 49] objcall 10 .............................. <gRock.m_paths.getPath(#Sliced)>
+  [ 51] setprop 16 .............................. m_cuesPath = gRock.m_paths.getPath(#Sliced)
+  [ 53] jmp [130]
+  [ 56] getglobal 7 ............................. <gRock>
+  [ 58] getobjprop 8 ............................ <gRock.m_paths>
+  [ 60] pushsymb 15 ............................. <#RenderedMusic>
+  [ 62] pusharglist 2 ........................... <gRock.m_paths, #RenderedMusic>
+  [ 64] objcall 10 .............................. <gRock.m_paths.getPath(#RenderedMusic)>
+  [ 66] setprop 12 .............................. m_slicedPath = gRock.m_paths.getPath(#RenderedMusic)
+  [ 68] getglobal 7 ............................. <gRock>
+  [ 70] getobjprop 8 ............................ <gRock.m_paths>
+  [ 72] pushsymb 15 ............................. <#RenderedMusic>
+  [ 74] pusharglist 2 ........................... <gRock.m_paths, #RenderedMusic>
+  [ 76] objcall 10 .............................. <gRock.m_paths.getPath(#RenderedMusic)>
+  [ 78] setprop 14 .............................. m_renderToPath = gRock.m_paths.getPath(#RenderedMusic)
+  [ 80] getglobal 7 ............................. <gRock>
+  [ 82] getobjprop 8 ............................ <gRock.m_paths>
+  [ 84] pushsymb 82 ............................. <#CompressedMusic>
+  [ 87] pusharglist 2 ........................... <gRock.m_paths, #CompressedMusic>
+  [ 89] objcall 10 .............................. <gRock.m_paths.getPath(#CompressedMusic)>
+  [ 91] setprop 81 .............................. m_compressedPath = gRock.m_paths.getPath(#CompressedMusic)
+  [ 94] pushsymb 84 ............................. <#LowSoundQuality>
+  [ 97] pusharglist 1 ........................... <#LowSoundQuality>
+  [ 99] extcall 83 .............................. <rgetPref(#LowSoundQuality)>
+  [102] pushint8 1 .............................. <1>
+  [105] eq ...................................... <rgetPref(#LowSoundQuality) = 1>
+  [106] jmpifz [118] ............................ if rgetPref(#LowSoundQuality) = 1 then
+  [109] getprop 81 .............................. <m_compressedPath>
+  [112] pushcons 0 .............................. <"22kHz\\">
+  [114] joinstr ................................. <m_compressedPath & "22kHz\\">
+  [115] setprop 81 .............................. m_compressedPath = m_compressedPath & "22kHz\\"
+  [118] getglobal 7 ............................. <gRock>
+  [120] getobjprop 8 ............................ <gRock.m_paths>
+  [122] pushsymb 13 ............................. <#Sliced>
+  [124] pusharglist 2 ........................... <gRock.m_paths, #Sliced>
+  [126] objcall 10 .............................. <gRock.m_paths.getPath(#Sliced)>
+  [128] setprop 16 .............................. m_cuesPath = gRock.m_paths.getPath(#Sliced)
+  [130] pushcons 8 .............................. <"ogg">
+  [132] setprop 85 .............................. m_compressionFormatExtension = "ogg"
+  [135] pusharglist 0 ........................... <[:]>
+  [137] pushproplist ............................ <[:]>
+  [138] setprop 17 .............................. m_queued = [:]
+  [140] pusharglist 0 ........................... <[:]>
+  [142] pushproplist ............................ <[:]>
+  [143] setprop 18 .............................. m_rendered = [:]
+  [145] pusharglist 0 ........................... <[:]>
+  [147] pushproplist ............................ <[:]>
+  [148] setprop 19 .............................. m_doWhatWhenDoneList = [:]
+  [150] pusharglist 0 ........................... <[:]>
+  [152] pushproplist ............................ <[:]>
+  [153] setprop 86 .............................. m_decodeFilesList = [:]
+  [156] pusharglist 0 ........................... <[]>
+  [158] pushlist ................................ <[]>
+  [159] setprop 87 .............................. m_allDecodedList = []
+  [162] pushint8 1 .............................. <1>
+  [165] setprop 20 .............................. m_useDll = 1
+  [167] pushzero ................................ <0>
+  [168] setprop 88 .............................. m_debugging = 0
+  [171] getparam 0 .............................. <me>
+  [173] pusharglistnoret 1 ...................... <me>
+  [175] extcall 21 .............................. return me
+  [177] ret
+end
+
+on kill me
+  [  0] getglobal 23 ............................ <gUseful>
+  [  2] getobjprop 24 ........................... <gUseful.frameTimer>
+  [  4] getparam 0 .............................. <me>
+  [  6] pusharglistnoret 2 ...................... <gUseful.frameTimer, me>
+  [  8] objcall 25 .............................. gUseful.frameTimer.deleteObject(me)
+  [ 10] pushzero ................................ <0>
+  [ 11] pusharglistnoret 1 ...................... <0>
+  [ 13] extcall 21 .............................. return 0
+  [ 15] ret
+end
+
+on queueRendering me, argID, argFile, argSwitches
+  [  0] getprop 17 .............................. <m_queued>
+  [  2] getparam 8 .............................. <argID>
+  [  4] pushsymb 26 ............................. <#file>
+  [  6] getparam 16 ............................. <argFile>
+  [  8] pushsymb 27 ............................. <#Switches>
+  [ 10] getparam 24 ............................. <argSwitches>
+  [ 12] pusharglist 4 ........................... <[#file: argFile, #Switches: argSwitches]>
+  [ 14] pushproplist ............................ <[#file: argFile, #Switches: argSwitches]>
+  [ 15] pusharglistnoret 3 ...................... <m_queued, argID, [#file: argFile, #Switches: argSwitches]>
+  [ 17] objcall 28 .............................. m_queued.setaProp(argID, [#file: argFile, #Switches: argSwitches])
+  [ 19] ret
+end
+
+on renderQueue me
+  [  0] pushint8 1 .............................. <1>
+  [  3] pusharglistnoret 1 ...................... <1>
+  [  5] extcall 89 .............................. waitCursor(1)
+  [  8] pusharglist 0 ........................... <[]>
+  [ 10] pushlist ................................ <[]>
+  [ 11] setprop 86 .............................. m_decodeFilesList = []
+  [ 14] pusharglist 0 ........................... <[]>
+  [ 16] pushlist ................................ <[]>
+  [ 17] setprop 90 .............................. m_renderStrings = []
+  [ 20] pusharglist 0 ........................... <[:]>
+  [ 22] pushproplist ............................ <[:]>
+  [ 23] setprop 18 .............................. m_rendered = [:]
+  [ 25] pushint8 1 .............................. <1>
+  [ 28] setlocal 0
+  [ 30] getlocal 0
+  [ 32] getprop 17 .............................. <m_queued>
+  [ 34] getobjprop 32 ........................... <m_queued.count>
+  [ 37] lteq
+  [ 38] jmpifz [479] ............................ repeat with n = 1 to m_queued.count
+  [ 41] getprop 17 .............................. <m_queued>
+  [ 43] getlocal 0 .............................. <n>
+  [ 45] pusharglist 2 ........................... <m_queued, n>
+  [ 47] objcall 33 .............................. <m_queued.getPropAt(n)>
+  [ 50] setlocal 8 .............................. ID = m_queued.getPropAt(n)
+  [ 52] getprop 17 .............................. <m_queued>
+  [ 54] getlocal 0 .............................. <n>
+  [ 56] pusharglist 2 ........................... <m_queued, n>
+  [ 58] objcall 34 .............................. <m_queued[n]>
+  [ 61] setlocal 16 ............................. Info = m_queued[n]
+  [ 63] getprop 12 .............................. <m_slicedPath>
+  [ 65] getlocal 16 ............................. <Info>
+  [ 67] pushsymb 26 ............................. <#file>
+  [ 69] pusharglist 2 ........................... <Info, #file>
+  [ 71] objcall 34 .............................. <Info[#file]>
+  [ 74] joinstr ................................. <m_slicedPath & Info[#file]>
+  [ 75] pushcons 16 ............................. <".wa*">
+  [ 77] joinstr ................................. <m_slicedPath & Info[#file] & ".wa*">
+  [ 78] setlocal 24 ............................. inputPath = m_slicedPath & Info[#file] & ".wa*"
+  [ 80] getparam 0 .............................. <me>
+  [ 82] getlocal 16 ............................. <Info>
+  [ 84] pushsymb 26 ............................. <#file>
+  [ 86] pusharglist 2 ........................... <Info, #file>
+  [ 88] objcall 34 .............................. <Info[#file]>
+  [ 91] pusharglist 2 ........................... <me, Info[#file]>
+  [ 93] objcall 78 .............................. <me.checkDecodedExists(Info[#file])>
+  [ 96] pushzero ................................ <0>
+  [ 97] eq ...................................... <me.checkDecodedExists(Info[#file]) = 0>
+  [ 98] jmpifz [289] ............................ if me.checkDecodedExists(Info[#file]) = 0 then
+  [101] getprop 81 .............................. <m_compressedPath>
+  [104] getlocal 16 ............................. <Info>
+  [106] pushsymb 26 ............................. <#file>
+  [108] pusharglist 2 ........................... <Info, #file>
+  [110] objcall 34 .............................. <Info[#file]>
+  [113] joinstr ................................. <m_compressedPath & Info[#file]>
+  [114] pushcons 24 ............................. <".">
+  [116] joinstr ................................. <m_compressedPath & Info[#file] & ".">
+  [117] getprop 85 .............................. <m_compressionFormatExtension>
+  [120] joinstr ................................. <m_compressedPath & Info[#file] & "." & m_compressionFormatExtension>
+  [121] pusharglist 1 ........................... <m_compressedPath & Info[#file] & "." & m_compressionFormatExtension>
+  [123] extcall 35 .............................. <fileExists2(m_compressedPath & Info[#file] & "." & m_compressionFormatExtension)>
+  [126] pushzero ................................ <0>
+  [127] eq ...................................... <fileExists2(m_compressedPath & Info[#file] & "." & m_compressionFormatExtension) = 0>
+  [128] jmpifz [153] ............................ if fileExists2(m_compressedPath & Info[#file] & "." & m_compressionFormatExtension) = 0 then / else
+  [131] pushcons 32 ............................. <"Doesn't exist">
+  [133] getlocal 16 ............................. <Info>
+  [135] pushsymb 26 ............................. <#file>
+  [137] pusharglist 2 ........................... <Info, #file>
+  [139] objcall 34 .............................. <Info[#file]>
+  [142] pusharglistnoret 2 ...................... <"Doesn't exist", Info[#file]>
+  [144] extcall 36 .............................. pott("Doesn't exist", Info[#file])
+  [147] jmp [468] ............................... next repeat
+  [150] jmp [289]
+  [153] getprop 88 .............................. <m_debugging>
+  [156] pushint8 1 .............................. <1>
+  [159] eq ...................................... <m_debugging = 1>
+  [160] jmpifz [180] ............................ if m_debugging = 1 then
+  [163] pushcons 40 ............................. <"Decoding ">
+  [165] getlocal 16 ............................. <Info>
+  [167] pushsymb 26 ............................. <#file>
+  [169] pusharglist 2 ........................... <Info, #file>
+  [171] objcall 34 .............................. <Info[#file]>
+  [174] joinstr ................................. <"Decoding " & Info[#file]>
+  [175] pusharglistnoret 1 ...................... <"Decoding " & Info[#file]>
+  [177] extcall 36 .............................. pott("Decoding " & Info[#file])
+  [180] pushsymb 91 ............................. <#fileName>
+  [183] getlocal 16 ............................. <Info>
+  [185] pushsymb 26 ............................. <#file>
+  [187] pusharglist 2 ........................... <Info, #file>
+  [189] objcall 34 .............................. <Info[#file]>
+  [192] pushsymb 45 ............................. <#in>
+  [195] getprop 81 .............................. <m_compressedPath>
+  [198] getlocal 16 ............................. <Info>
+  [200] pushsymb 26 ............................. <#file>
+  [202] pusharglist 2 ........................... <Info, #file>
+  [204] objcall 34 .............................. <Info[#file]>
+  [207] joinstr ................................. <m_compressedPath & Info[#file]>
+  [208] pushcons 48 ............................. <".">
+  [210] joinstr ................................. <m_compressedPath & Info[#file] & ".">
+  [211] getprop 85 .............................. <m_compressionFormatExtension>
+  [214] joinstr ................................. <m_compressedPath & Info[#file] & "." & m_compressionFormatExtension>
+  [215] pushsymb 47 ............................. <#Out>
+  [218] getprop 12 .............................. <m_slicedPath>
+  [220] getlocal 16 ............................. <Info>
+  [222] pushsymb 26 ............................. <#file>
+  [224] pusharglist 2 ........................... <Info, #file>
+  [226] objcall 34 .............................. <Info[#file]>
+  [229] joinstr ................................. <m_slicedPath & Info[#file]>
+  [230] pushcons 56 ............................. <".wav">
+  [232] joinstr ................................. <m_slicedPath & Info[#file] & ".wav">
+  [233] pusharglist 6 ........................... <[#fileName: Info[#file], #in: m_compressedPath & Info[#file] & "." & m_compressionFormatExtension, #Out: m_slicedPath & Info[#file] & ".wav"]>
+  [235] pushproplist ............................ <[#fileName: Info[#file], #in: m_compressedPath & Info[#file] & "." & m_compressionFormatExtension, #Out: m_slicedPath & Info[#file] & ".wav"]>
+  [236] setlocal 32 ............................. tmpDecodeInfo = [#fileName: Info[#file], #in: m_compressedPath & Info[#file] & "." & m_compressionFormatExtension, #Out: m_slicedPath & Info[#file] & ".wav"]
+  [238] getprop 86 .............................. <m_decodeFilesList>
+  [241] getlocal 32 ............................. <tmpDecodeInfo>
+  [243] pusharglistnoret 2 ...................... <m_decodeFilesList, tmpDecodeInfo>
+  [245] objcall 50 .............................. m_decodeFilesList.add(tmpDecodeInfo)
+  [248] getprop 87 .............................. <m_allDecodedList>
+  [251] getlocal 32 ............................. <tmpDecodeInfo>
+  [253] pushsymb 47 ............................. <#Out>
+  [256] pusharglist 2 ........................... <tmpDecodeInfo, #Out>
+  [258] objcall 34 .............................. <tmpDecodeInfo[#Out]>
+  [261] pusharglist 2 ........................... <m_allDecodedList, tmpDecodeInfo[#Out]>
+  [263] objcall 92 .............................. <m_allDecodedList.getPos(tmpDecodeInfo[#Out])>
+  [266] pushzero ................................ <0>
+  [267] eq ...................................... <m_allDecodedList.getPos(tmpDecodeInfo[#Out]) = 0>
+  [268] jmpifz [289] ............................ if m_allDecodedList.getPos(tmpDecodeInfo[#Out]) = 0 then
+  [271] getprop 87 .............................. <m_allDecodedList>
+  [274] getlocal 32 ............................. <tmpDecodeInfo>
+  [276] pushsymb 47 ............................. <#Out>
+  [279] pusharglist 2 ........................... <tmpDecodeInfo, #Out>
+  [281] objcall 34 .............................. <tmpDecodeInfo[#Out]>
+  [284] pusharglistnoret 2 ...................... <m_allDecodedList, tmpDecodeInfo[#Out]>
+  [286] objcall 50 .............................. m_allDecodedList.add(tmpDecodeInfo[#Out])
+  [289] getlocal 16 ............................. <Info>
+  [291] pushsymb 26 ............................. <#file>
+  [293] pusharglist 2 ........................... <Info, #file>
+  [295] objcall 34 .............................. <Info[#file]>
+  [298] setlocal 40 ............................. outputPath = Info[#file]
+  [300] getlocal 40 ............................. <outputPath>
+  [302] pusharglist 1 ........................... <outputPath>
+  [304] extcall 37 .............................. <fileStripName(outputPath)>
+  [307] setlocal 40 ............................. outputPath = fileStripName(outputPath)
+  [309] getprop 14 .............................. <m_renderToPath>
+  [311] getlocal 8 .............................. <ID>
+  [313] pusharglist 1 ........................... <ID>
+  [315] extcall 38 .............................. <string(ID)>
+  [318] joinstr ................................. <m_renderToPath & string(ID)>
+  [319] pushcons 64 ............................. <".wav">
+  [321] joinstr ................................. <m_renderToPath & string(ID) & ".wav">
+  [322] setlocal 40 ............................. outputPath = m_renderToPath & string(ID) & ".wav"
+  [324] pushcons 72 ............................. <"FileIO">
+  [326] pusharglist 1 ........................... <"FileIO">
+  [328] extcall 39 .............................. <xtra("FileIO")>
+  [331] pusharglist 1 ........................... <xtra("FileIO")>
+  [333] objcall 0 ............................... <xtra("FileIO").new()>
+  [335] setlocal 48 ............................. tmpFileObj = xtra("FileIO").new()
+  [337] getlocal 48 ............................. <tmpFileObj>
+  [339] getlocal 40 ............................. <outputPath>
+  [341] pushzero ................................ <0>
+  [342] pusharglistnoret 3 ...................... <tmpFileObj, outputPath, 0>
+  [344] objcall 40 .............................. tmpFileObj.openFile(outputPath, 0)
+  [347] getlocal 48 ............................. <tmpFileObj>
+  [349] pusharglist 1 ........................... <tmpFileObj>
+  [351] objcall 41 .............................. <tmpFileObj.status()>
+  [354] pushzero ................................ <0>
+  [355] eq ...................................... <tmpFileObj.status() = 0>
+  [356] jmpifz [373] ............................ if tmpFileObj.status() = 0 then
+  [359] getlocal 48 ............................. <tmpFileObj>
+  [361] pusharglistnoret 1 ...................... <tmpFileObj>
+  [363] objcall 42 .............................. delete tmpFileObj
+  [366] getlocal 48 ............................. <tmpFileObj>
+  [368] pusharglistnoret 1 ...................... <tmpFileObj>
+  [370] objcall 43 .............................. tmpFileObj.closeFile()
+  [373] getlocal 16 ............................. <Info>
+  [375] pushsymb 27 ............................. <#Switches>
+  [377] pusharglist 2 ........................... <Info, #Switches>
+  [379] objcall 34 .............................. <Info[#Switches]>
+  [382] pusharglist 1 ........................... <Info[#Switches]>
+  [384] objcall 44 .............................. <Info[#Switches].duplicate()>
+  [387] setlocal 56 ............................. tmpInfo = Info[#Switches].duplicate()
+  [389] getlocal 56 ............................. <tmpInfo>
+  [391] pushsymb 45 ............................. <#in>
+  [394] getlocal 24 ............................. <inputPath>
+  [396] pusharglistnoret 3 ...................... <tmpInfo, #in, inputPath>
+  [398] objcall 46 .............................. tmpInfo[#in] = inputPath
+  [401] getlocal 56 ............................. <tmpInfo>
+  [403] pushsymb 47 ............................. <#Out>
+  [406] getlocal 40 ............................. <outputPath>
+  [408] pusharglistnoret 3 ...................... <tmpInfo, #Out, outputPath>
+  [410] objcall 46 .............................. tmpInfo[#Out] = outputPath
+  [413] getlocal 56 ............................. <tmpInfo>
+  [415] pushsymb 49 ............................. <#dll>
+  [418] pusharglist 2 ........................... <tmpInfo, #dll>
+  [420] extcall 48 .............................. <mixGenFXStr(tmpInfo, #dll)>
+  [423] setlocal 64 ............................. renderStr = mixGenFXStr(tmpInfo, #dll)
+  [425] pushcons 80 ............................. <"cues:">
+  [427] getprop 16 .............................. <m_cuesPath>
+  [429] joinstr ................................. <"cues:" & m_cuesPath>
+  [430] getlocal 16 ............................. <Info>
+  [432] pushsymb 26 ............................. <#file>
+  [434] pusharglist 2 ........................... <Info, #file>
+  [436] objcall 34 .............................. <Info[#file]>
+  [439] joinstr ................................. <"cues:" & m_cuesPath & Info[#file]>
+  [440] pushcons 88 ............................. <".txt, ">
+  [442] joinstr ................................. <"cues:" & m_cuesPath & Info[#file] & ".txt, ">
+  [443] getlocal 64 ............................. <renderStr>
+  [445] joinstr ................................. <"cues:" & m_cuesPath & Info[#file] & ".txt, " & renderStr>
+  [446] setlocal 64 ............................. renderStr = "cues:" & m_cuesPath & Info[#file] & ".txt, " & renderStr
+  [448] getprop 90 .............................. <m_renderStrings>
+  [451] getlocal 64 ............................. <renderStr>
+  [453] pusharglistnoret 2 ...................... <m_renderStrings, renderStr>
+  [455] objcall 50 .............................. m_renderStrings.add(renderStr)
+  [458] getprop 18 .............................. <m_rendered>
+  [460] getlocal 8 .............................. <ID>
+  [462] getlocal 40 ............................. <outputPath>
+  [464] pusharglistnoret 3 ...................... <m_rendered, ID, outputPath>
+  [466] objcall 28 .............................. m_rendered.setaProp(ID, outputPath)
+  [468] pushint8 1
+  [471] getlocal 0
+  [473] add
+  [474] setlocal 0
+  [476] endrepeat [ 30]
+  [479] getprop 90 .............................. <m_renderStrings>
+  [482] getobjprop 32 ........................... <m_renderStrings.count>
+  [485] pushzero ................................ <0>
+  [486] gt ...................................... <m_renderStrings.count > 0>
+  [487] jmpifz [706] ............................ if m_renderStrings.count > 0 then / else
+  [490] getglobal 93 ............................ <gDir>
+  [493] pusharglist 1 ........................... <gDir>
+  [495] extcall 71 .............................. <objectp(gDir)>
+  [498] jmpifz [540] ............................ if objectp(gDir) then
+  [501] getglobal 93 ............................ <gDir>
+  [504] pushsymb 94 ............................. <#progressInit>
+  [507] pusharglist 2 ........................... <gDir, #progressInit>
+  [509] objcall 73 .............................. <gDir.handler(#progressInit)>
+  [512] jmpifz [540] ............................ if gDir.handler(#progressInit) then
+  [515] getprop 86 .............................. <m_decodeFilesList>
+  [518] getobjprop 32 ........................... <m_decodeFilesList.count>
+  [521] getprop 90 .............................. <m_renderStrings>
+  [524] getobjprop 32 ........................... <m_renderStrings.count>
+  [527] add ..................................... <m_decodeFilesList.count + m_renderStrings.count>
+  [528] setlocal 72 ............................. totalNumOperations = m_decodeFilesList.count + m_renderStrings.count
+  [530] getglobal 93 ............................ <gDir>
+  [533] getlocal 72 ............................. <totalNumOperations>
+  [535] pusharglistnoret 2 ...................... <gDir, totalNumOperations>
+  [537] objcall 94 .............................. gDir.progressInit(totalNumOperations)
+  [540] getprop 86 .............................. <m_decodeFilesList>
+  [543] getobjprop 32 ........................... <m_decodeFilesList.count>
+  [546] pushzero ................................ <0>
+  [547] gt ...................................... <m_decodeFilesList.count > 0>
+  [548] jmpifz [586] ............................ if m_decodeFilesList.count > 0 then / else
+  [551] getprop 88 .............................. <m_debugging>
+  [554] pushint8 1 .............................. <1>
+  [557] eq ...................................... <m_debugging = 1>
+  [558] jmpifz [572] ............................ if m_debugging = 1 then
+  [561] pushcons 96 ............................. <"Decoding ">
+  [563] getprop 86 .............................. <m_decodeFilesList>
+  [566] joinstr ................................. <"Decoding " & m_decodeFilesList>
+  [567] pusharglistnoret 1 ...................... <"Decoding " & m_decodeFilesList>
+  [569] extcall 36 .............................. pott("Decoding " & m_decodeFilesList)
+  [572] getprop 86 .............................. <m_decodeFilesList>
+  [575] getprop 85 .............................. <m_compressionFormatExtension>
+  [578] pusharglistnoret 2 ...................... <m_decodeFilesList, m_compressionFormatExtension>
+  [580] extcall 95 .............................. mixDecodeFiles(m_decodeFilesList, m_compressionFormatExtension)
+  [583] jmp [628]
+  [586] getprop 88 .............................. <m_debugging>
+  [589] pushint8 1 .............................. <1>
+  [592] eq ...................................... <m_debugging = 1>
+  [593] jmpifz [603] ............................ if m_debugging = 1 then
+  [596] pushcons 104 ............................ <"Start rendering(1)">
+  [598] pusharglistnoret 1 ...................... <"Start rendering(1)">
+  [600] extcall 36 .............................. pott("Start rendering(1)")
+  [603] getprop 90 .............................. <m_renderStrings>
+  [606] pusharglistnoret 1 ...................... <m_renderStrings>
+  [608] extcall 51 .............................. mixCallRockWave(m_renderStrings)
+  [611] getprop 88 .............................. <m_debugging>
+  [614] pushint8 1 .............................. <1>
+  [617] eq ...................................... <m_debugging = 1>
+  [618] jmpifz [628] ............................ if m_debugging = 1 then
+  [621] pushcons 112 ............................ <"Done rendering(1)">
+  [623] pusharglistnoret 1 ...................... <"Done rendering(1)">
+  [625] extcall 36 .............................. pott("Done rendering(1)")
+  [628] pusharglist 0 ........................... <[:]>
+  [630] pushproplist ............................ <[:]>
+  [631] setprop 17 .............................. m_queued = [:]
+  [633] getprop 19 .............................. <m_doWhatWhenDoneList>
+  [635] getobjprop 32 ........................... <m_doWhatWhenDoneList.count>
+  [638] jmpifz [703] ............................ if m_doWhatWhenDoneList.count then
+  [641] getmovieprop 53 ......................... <the milliSeconds>
+  [644] pushcons 120 ............................ <10.0>
+  [646] pushint8 1000 ........................... <1000>
+  [649] mul ..................................... <10.0 * 1000>
+  [650] pusharglist 1 ........................... <10.0 * 1000>
+  [652] extcall 54 .............................. <integer(10.0 * 1000)>
+  [655] add ..................................... <the milliSeconds + integer(10.0 * 1000)>
+  [656] setprop 52 .............................. m_maxWait = the milliSeconds + integer(10.0 * 1000)
+  [659] getmovieprop 53 ......................... <the milliSeconds>
+  [662] pushzero ................................ <0>
+  [663] add ..................................... <the milliSeconds + 0>
+  [664] setprop 55 .............................. m_waitUntilMsecs = the milliSeconds + 0
+  [667] getglobal 23 ............................ <gUseful>
+  [669] getobjprop 96 ........................... <gUseful.isRunning>
+  [672] pushint8 1 .............................. <1>
+  [675] nteq .................................... <gUseful.isRunning <> 1>
+  [676] jmpifz [692] ............................ if gUseful.isRunning <> 1 then / else
+  [679] pushzero ................................ <0>
+  [680] setprop 55 .............................. m_waitUntilMsecs = 0
+  [683] getparam 0 .............................. <me>
+  [685] pusharglistnoret 1 ...................... <me>
+  [687] objcall 5 ............................... me.timeTick()
+  [689] jmp [703]
+  [692] getglobal 23 ............................ <gUseful>
+  [694] getobjprop 24 ........................... <gUseful.frameTimer>
+  [696] getparam 0 .............................. <me>
+  [698] pusharglistnoret 2 ...................... <gUseful.frameTimer, me>
+  [700] objcall 56 .............................. gUseful.frameTimer.addObject(me)
+  [703] jmp [713]
+  [706] getparam 0 .............................. <me>
+  [708] pusharglistnoret 1 ...................... <me>
+  [710] objcall 79 .............................. me.doTheCallBack()
+  [713] ret
+end
+
+on getRendered me, argID, argAltFileName
+  [  0] getprop 18 .............................. <m_rendered>
+  [  2] getparam 8 .............................. <argID>
+  [  4] pusharglist 2 ........................... <m_rendered, argID>
+  [  6] objcall 67 .............................. <m_rendered.getaProp(argID)>
+  [  9] setlocal 0 .............................. tmp = m_rendered.getaProp(argID)
+  [ 11] getlocal 0 .............................. <tmp>
+  [ 13] pusharglist 1 ........................... <tmp>
+  [ 15] extcall 68 .............................. <voidp(tmp)>
+  [ 18] jmpifz [ 27] ............................ if voidp(tmp) then
+  [ 21] getparam 16 ............................. <argAltFileName>
+  [ 23] pusharglistnoret 1 ...................... <argAltFileName>
+  [ 25] extcall 21 .............................. return argAltFileName
+  [ 27] getlocal 0 .............................. <tmp>
+  [ 29] pusharglistnoret 1 ...................... <tmp>
+  [ 31] extcall 21 .............................. return tmp
+  [ 33] ret
+end
+
+on checkDecodedExists me, argFileName
+  [  0] getprop 12 .............................. <m_slicedPath>
+  [  2] getparam 8 .............................. <argFileName>
+  [  4] joinstr ................................. <m_slicedPath & argFileName>
+  [  5] pushcons 128 ............................ <".wav">
+  [  7] joinstr ................................. <m_slicedPath & argFileName & ".wav">
+  [  8] pusharglist 1 ........................... <m_slicedPath & argFileName & ".wav">
+  [ 10] extcall 35 .............................. <fileExists2(m_slicedPath & argFileName & ".wav")>
+  [ 13] pusharglistnoret 1 ...................... <fileExists2(m_slicedPath & argFileName & ".wav")>
+  [ 15] extcall 21 .............................. return fileExists2(m_slicedPath & argFileName & ".wav")
+  [ 17] ret
+end
+
+on timeTick me
+  [  0] getmovieprop 53 ......................... <the milliSeconds>
+  [  3] getprop 55 .............................. <m_waitUntilMsecs>
+  [  6] gt ...................................... <the milliSeconds > m_waitUntilMsecs>
+  [  7] jmpifz [309] ............................ if the milliSeconds > m_waitUntilMsecs then
+  [ 10] pushint8 1 .............................. <1>
+  [ 13] setlocal 0 .............................. tmpImDone = 1
+  [ 15] getprop 86 .............................. <m_decodeFilesList>
+  [ 18] getobjprop 32 ........................... <m_decodeFilesList.count>
+  [ 21] pushzero ................................ <0>
+  [ 22] gt ...................................... <m_decodeFilesList.count > 0>
+  [ 23] jmpifz [167] ............................ if m_decodeFilesList.count > 0 then
+  [ 26] getprop 86 .............................. <m_decodeFilesList>
+  [ 29] getobjprop 32 ........................... <m_decodeFilesList.count>
+  [ 32] setlocal 8
+  [ 34] getlocal 8
+  [ 36] pushint8 1 .............................. <1>
+  [ 39] gteq
+  [ 40] jmpifz [ 96] ............................ repeat with n = m_decodeFilesList.count down to 1
+  [ 43] getprop 86 .............................. <m_decodeFilesList>
+  [ 46] getlocal 8 .............................. <n>
+  [ 48] pusharglist 2 ........................... <m_decodeFilesList, n>
+  [ 50] objcall 34 .............................. <m_decodeFilesList[n]>
+  [ 53] setlocal 16 ............................. tmp = m_decodeFilesList[n]
+  [ 55] getparam 0 .............................. <me>
+  [ 57] getlocal 16 ............................. <tmp>
+  [ 59] pushsymb 91 ............................. <#fileName>
+  [ 62] pusharglist 2 ........................... <tmp, #fileName>
+  [ 64] objcall 34 .............................. <tmp[#fileName]>
+  [ 67] pusharglist 2 ........................... <me, tmp[#fileName]>
+  [ 69] objcall 78 .............................. <me.checkDecodedExists(tmp[#fileName])>
+  [ 72] jmpifz [ 85] ............................ if me.checkDecodedExists(tmp[#fileName]) then
+  [ 75] getprop 86 .............................. <m_decodeFilesList>
+  [ 78] getlocal 8 .............................. <n>
+  [ 80] pusharglistnoret 2 ...................... <m_decodeFilesList, n>
+  [ 82] objcall 100 ............................. m_decodeFilesList.deleteAt(n)
+  [ 85] pushint8 -1
+  [ 88] getlocal 8
+  [ 90] add
+  [ 91] setlocal 8
+  [ 93] endrepeat [ 34]
+  [ 96] getprop 86 .............................. <m_decodeFilesList>
+  [ 99] getobjprop 32 ........................... <m_decodeFilesList.count>
+  [102] pushzero ................................ <0>
+  [103] gt ...................................... <m_decodeFilesList.count > 0>
+  [104] jmpifz [142] ............................ if m_decodeFilesList.count > 0 then / else
+  [107] getprop 88 .............................. <m_debugging>
+  [110] pushint8 1 .............................. <1>
+  [113] eq ...................................... <m_debugging = 1>
+  [114] jmpifz [136] ............................ if m_debugging = 1 then
+  [117] pushcons 136 ............................ <"Num left to decode: ">
+  [119] getprop 86 .............................. <m_decodeFilesList>
+  [122] getobjprop 32 ........................... <m_decodeFilesList.count>
+  [125] pusharglist 1 ........................... <m_decodeFilesList.count>
+  [127] extcall 38 .............................. <string(m_decodeFilesList.count)>
+  [130] joinstr ................................. <"Num left to decode: " & string(m_decodeFilesList.count)>
+  [131] pusharglistnoret 1 ...................... <"Num left to decode: " & string(m_decodeFilesList.count)>
+  [133] extcall 36 .............................. pott("Num left to decode: " & string(m_decodeFilesList.count))
+  [136] pushzero ................................ <0>
+  [137] setlocal 0 .............................. tmpImDone = 0
+  [139] jmp [167]
+  [142] getprop 88 .............................. <m_debugging>
+  [145] pushint8 1 .............................. <1>
+  [148] eq ...................................... <m_debugging = 1>
+  [149] jmpifz [159] ............................ if m_debugging = 1 then
+  [152] pushcons 144 ............................ <"Start rendering(2)">
+  [154] pusharglistnoret 1 ...................... <"Start rendering(2)">
+  [156] extcall 36 .............................. pott("Start rendering(2)")
+  [159] getprop 90 .............................. <m_renderStrings>
+  [162] pusharglistnoret 1 ...................... <m_renderStrings>
+  [164] extcall 51 .............................. mixCallRockWave(m_renderStrings)
+  [167] getlocal 0 .............................. <tmpImDone>
+  [169] pushint8 1 .............................. <1>
+  [172] eq ...................................... <tmpImDone = 1>
+  [173] jmpifz [244] ............................ if tmpImDone = 1 then
+  [176] getprop 18 .............................. <m_rendered>
+  [178] getobjprop 32 ........................... <m_rendered.count>
+  [181] setlocal 8
+  [183] getlocal 8
+  [185] pushint8 1 .............................. <1>
+  [188] gteq
+  [189] jmpifz [244] ............................ repeat with n = m_rendered.count down to 1
+  [192] getprop 18 .............................. <m_rendered>
+  [194] getlocal 8 .............................. <n>
+  [196] pusharglist 2 ........................... <m_rendered, n>
+  [198] objcall 34 .............................. <m_rendered[n]>
+  [201] pusharglist 1 ........................... <m_rendered[n]>
+  [203] extcall 35 .............................. <fileExists2(m_rendered[n])>
+  [206] pushzero ................................ <0>
+  [207] eq ...................................... <fileExists2(m_rendered[n]) = 0>
+  [208] jmpifz [233] ............................ if fileExists2(m_rendered[n]) = 0 then
+  [211] pushcons 152 ............................ <"Still waiting for">
+  [213] getprop 18 .............................. <m_rendered>
+  [215] getlocal 8 .............................. <n>
+  [217] pusharglist 2 ........................... <m_rendered, n>
+  [219] objcall 34 .............................. <m_rendered[n]>
+  [222] pusharglistnoret 2 ...................... <"Still waiting for", m_rendered[n]>
+  [224] extcall 36 .............................. pott("Still waiting for", m_rendered[n])
+  [227] pushzero ................................ <0>
+  [228] setlocal 0 .............................. tmpImDone = 0
+  [230] jmp [244] ............................... exit repeat
+  [233] pushint8 -1
+  [236] getlocal 8
+  [238] add
+  [239] setlocal 8
+  [241] endrepeat [183]
+  [244] getlocal 0 .............................. <tmpImDone>
+  [246] pushzero ................................ <0>
+  [247] eq ...................................... <tmpImDone = 0>
+  [248] jmpifz [275] ............................ if tmpImDone = 0 then
+  [251] getmovieprop 53 ......................... <the milliSeconds>
+  [254] getprop 52 .............................. <m_maxWait>
+  [257] gt ...................................... <the milliSeconds > m_maxWait>
+  [258] jmpifz [264] ............................ if the milliSeconds > m_maxWait then / else
+  [261] jmp [275]
+  [264] getmovieprop 53 ......................... <the milliSeconds>
+  [267] pushint8 500 ............................ <500>
+  [270] add ..................................... <the milliSeconds + 500>
+  [271] setprop 55 .............................. m_waitUntilMsecs = the milliSeconds + 500
+  [274] ret ..................................... exit
+  [275] getprop 88 .............................. <m_debugging>
+  [278] pushint8 1 .............................. <1>
+  [281] eq ...................................... <m_debugging = 1>
+  [282] jmpifz [292] ............................ if m_debugging = 1 then
+  [285] pushcons 160 ............................ <"Render DONE!">
+  [287] pusharglistnoret 1 ...................... <"Render DONE!">
+  [289] extcall 36 .............................. pott("Render DONE!")
+  [292] getparam 0 .............................. <me>
+  [294] pusharglistnoret 1 ...................... <me>
+  [296] objcall 79 .............................. me.doTheCallBack()
+  [299] getglobal 23 ............................ <gUseful>
+  [301] getobjprop 24 ........................... <gUseful.frameTimer>
+  [303] getparam 0 .............................. <me>
+  [305] pusharglistnoret 2 ...................... <gUseful.frameTimer, me>
+  [307] objcall 25 .............................. gUseful.frameTimer.deleteObject(me)
+  [309] ret
+end
+
+on doTheCallBack me
+  [  0] getprop 19 .............................. <m_doWhatWhenDoneList>
+  [  2] pushsymb 72 ............................. <#ReportTo>
+  [  5] pusharglist 2 ........................... <m_doWhatWhenDoneList, #ReportTo>
+  [  7] objcall 34 .............................. <m_doWhatWhenDoneList[#ReportTo]>
+  [ 10] pusharglist 1 ........................... <m_doWhatWhenDoneList[#ReportTo]>
+  [ 12] extcall 71 .............................. <objectp(m_doWhatWhenDoneList[#ReportTo])>
+  [ 15] jmpifz [ 82] ............................ if objectp(m_doWhatWhenDoneList[#ReportTo]) then
+  [ 18] getprop 19 .............................. <m_doWhatWhenDoneList>
+  [ 20] pushsymb 73 ............................. <#handler>
+  [ 23] pusharglist 2 ........................... <m_doWhatWhenDoneList, #handler>
+  [ 25] objcall 34 .............................. <m_doWhatWhenDoneList[#handler]>
+  [ 28] setlocal 0 .............................. tmpHandler = m_doWhatWhenDoneList[#handler]
+  [ 30] getlocal 0 .............................. <tmpHandler>
+  [ 32] pusharglist 1 ........................... <tmpHandler>
+  [ 34] extcall 68 .............................. <voidp(tmpHandler)>
+  [ 37] jmpifz [ 45] ............................ if voidp(tmpHandler) then
+  [ 40] pushsymb 74 ............................. <#Report>
+  [ 43] setlocal 0 .............................. tmpHandler = #Report
+  [ 45] getprop 19 .............................. <m_doWhatWhenDoneList>
+  [ 47] pushsymb 72 ............................. <#ReportTo>
+  [ 50] pusharglist 2 ........................... <m_doWhatWhenDoneList, #ReportTo>
+  [ 52] objcall 34 .............................. <m_doWhatWhenDoneList[#ReportTo]>
+  [ 55] getlocal 0 .............................. <tmpHandler>
+  [ 57] pusharglist 2 ........................... <m_doWhatWhenDoneList[#ReportTo], tmpHandler>
+  [ 59] objcall 73 .............................. <m_doWhatWhenDoneList[#ReportTo].handler(tmpHandler)>
+  [ 62] jmpifz [ 82] ............................ if m_doWhatWhenDoneList[#ReportTo].handler(tmpHandler) then
+  [ 65] getlocal 0 .............................. <tmpHandler>
+  [ 67] getprop 19 .............................. <m_doWhatWhenDoneList>
+  [ 69] pushsymb 72 ............................. <#ReportTo>
+  [ 72] pusharglist 2 ........................... <m_doWhatWhenDoneList, #ReportTo>
+  [ 74] objcall 34 .............................. <m_doWhatWhenDoneList[#ReportTo]>
+  [ 77] pusharglistnoret 2 ...................... <tmpHandler, m_doWhatWhenDoneList[#ReportTo]>
+  [ 79] extcall 75 .............................. call(tmpHandler, m_doWhatWhenDoneList[#ReportTo])
+  [ 82] ret
+end
+
+on deleteDecodedFiles me
+  [  0] pushzero ................................ <0>
+  [  1] jmpifz [ 95] ............................ if 0 then
+  [  4] pushcons 168 ............................ <"FileIO">
+  [  6] pusharglist 1 ........................... <"FileIO">
+  [  8] extcall 39 .............................. <xtra("FileIO")>
+  [ 11] pusharglist 1 ........................... <xtra("FileIO")>
+  [ 13] objcall 0 ............................... <xtra("FileIO").new()>
+  [ 15] setlocal 0 .............................. fileObj = xtra("FileIO").new()
+  [ 17] getprop 87 .............................. <m_allDecodedList>
+  [ 20] peek 0
+  [ 22] pusharglist 1
+  [ 24] extcall 32
+  [ 27] pushint8 1
+  [ 29] peek 0
+  [ 31] peek 2
+  [ 33] lteq
+  [ 34] jmpifz [ 90] ............................ repeat with filePath in m_allDecodedList
+  [ 37] peek 2
+  [ 39] peek 1
+  [ 41] pusharglist 2
+  [ 43] extcall 34
+  [ 46] setlocal 8
+  [ 48] getlocal 0 .............................. <fileObj>
+  [ 50] getlocal 8 .............................. <filePath>
+  [ 52] pushzero ................................ <0>
+  [ 53] pusharglistnoret 3 ...................... <fileObj, filePath, 0>
+  [ 55] objcall 40 .............................. fileObj.openFile(filePath, 0)
+  [ 58] getlocal 0 .............................. <fileObj>
+  [ 60] pusharglist 1 ........................... <fileObj>
+  [ 62] objcall 41 .............................. <fileObj.status()>
+  [ 65] pushzero ................................ <0>
+  [ 66] eq ...................................... <fileObj.status() = 0>
+  [ 67] jmpifz [ 84] ............................ if fileObj.status() = 0 then
+  [ 70] getlocal 0 .............................. <fileObj>
+  [ 72] pusharglistnoret 1 ...................... <fileObj>
+  [ 74] objcall 42 .............................. delete fileObj
+  [ 77] getlocal 0 .............................. <fileObj>
+  [ 79] pusharglistnoret 1 ...................... <fileObj>
+  [ 81] objcall 43 .............................. fileObj.closeFile()
+  [ 84] pushint8 1
+  [ 86] add
+  [ 87] endrepeat [ 29]
+  [ 90] pop 3
+  [ 92] pushzero ................................ <0>
+  [ 93] setlocal 0 .............................. fileObj = 0
+  [ 95] pusharglist 0 ........................... <[]>
+  [ 97] pushlist ................................ <[]>
+  [ 98] setprop 87 .............................. m_allDecodedList = []
+  [101] pushcons 176 ............................ <"FileIO">
+  [103] pusharglist 1 ........................... <"FileIO">
+  [105] extcall 39 .............................. <xtra("FileIO")>
+  [108] pusharglist 1 ........................... <xtra("FileIO")>
+  [110] objcall 0 ............................... <xtra("FileIO").new()>
+  [112] setlocal 0 .............................. fileObj = xtra("FileIO").new()
+  [114] getprop 14 .............................. <m_renderToPath>
+  [116] pusharglist 1 ........................... <m_renderToPath>
+  [118] extcall 101 ............................. <getFilesInFolder(m_renderToPath)>
+  [121] setlocal 16 ............................. Files = getFilesInFolder(m_renderToPath)
+  [123] pushcons 184 ............................ <"*.wav">
+  [125] getlocal 16 ............................. <Files>
+  [127] pushsymb 103 ............................ <#Strings>
+  [130] pusharglist 3 ........................... <"*.wav", Files, #Strings>
+  [132] extcall 102 ............................. <wildCardSearch("*.wav", Files, #Strings)>
+  [135] setlocal 16 ............................. Files = wildCardSearch("*.wav", Files, #Strings)
+  [137] pushcons 192 ............................ <"?.wav">
+  [139] pushcons 200 ............................ <"mix*.wav">
+  [141] pusharglist 2 ........................... <["?.wav", "mix*.wav"]>
+  [143] pushlist ................................ <["?.wav", "mix*.wav"]>
+  [144] setlocal 24 ............................. dontRemoveWilds = ["?.wav", "mix*.wav"]
+  [146] getlocal 24 ............................. <dontRemoveWilds>
+  [148] peek 0
+  [150] pusharglist 1
+  [152] extcall 32
+  [155] pushint8 1
+  [157] peek 0
+  [159] peek 2
+  [161] lteq
+  [162] jmpifz [242] ............................ repeat with wild in dontRemoveWilds
+  [165] peek 2
+  [167] peek 1
+  [169] pusharglist 2
+  [171] extcall 34
+  [174] setlocal 32
+  [176] getlocal 32 ............................. <wild>
+  [178] getlocal 16 ............................. <Files>
+  [180] pushsymb 103 ............................ <#Strings>
+  [183] pusharglist 3 ........................... <wild, Files, #Strings>
+  [185] extcall 102 ............................. <wildCardSearch(wild, Files, #Strings)>
+  [188] setlocal 40 ............................. dontRemove = wildCardSearch(wild, Files, #Strings)
+  [190] getlocal 40 ............................. <dontRemove>
+  [192] peek 0
+  [194] pusharglist 1
+  [196] extcall 32
+  [199] pushint8 1
+  [201] peek 0
+  [203] peek 2
+  [205] lteq
+  [206] jmpifz [234] ............................ repeat with file in dontRemove
+  [209] peek 2
+  [211] peek 1
+  [213] pusharglist 2
+  [215] extcall 34
+  [218] setlocal 48
+  [220] getlocal 16 ............................. <Files>
+  [222] getlocal 48 ............................. <file>
+  [224] pusharglistnoret 2 ...................... <Files, file>
+  [226] objcall 104 ............................. Files.deleteOne(file)
+  [229] pushint8 1
+  [231] add
+  [232] endrepeat [201]
+  [234] pop 3
+  [236] pushint8 1
+  [238] add
+  [239] endrepeat [157]
+  [242] pop 3
+  [244] getlocal 16 ............................. <Files>
+  [246] pusharglistnoret 1 ...................... <Files>
+  [248] extcall 36 .............................. pott(Files)
+  [251] getlocal 16 ............................. <Files>
+  [253] peek 0
+  [255] pusharglist 1
+  [257] extcall 32
+  [260] pushint8 1
+  [262] peek 0
+  [264] peek 2
+  [266] lteq
+  [267] jmpifz [326] ............................ repeat with file in Files
+  [270] peek 2
+  [272] peek 1
+  [274] pusharglist 2
+  [276] extcall 34
+  [279] setlocal 48
+  [281] getlocal 0 .............................. <fileObj>
+  [283] getprop 14 .............................. <m_renderToPath>
+  [285] getlocal 48 ............................. <file>
+  [287] joinstr ................................. <m_renderToPath & file>
+  [288] pushzero ................................ <0>
+  [289] pusharglistnoret 3 ...................... <fileObj, m_renderToPath & file, 0>
+  [291] objcall 40 .............................. fileObj.openFile(m_renderToPath & file, 0)
+  [294] getlocal 0 .............................. <fileObj>
+  [296] pusharglist 1 ........................... <fileObj>
+  [298] objcall 41 .............................. <fileObj.status()>
+  [301] pushzero ................................ <0>
+  [302] eq ...................................... <fileObj.status() = 0>
+  [303] jmpifz [320] ............................ if fileObj.status() = 0 then
+  [306] getlocal 0 .............................. <fileObj>
+  [308] pusharglistnoret 1 ...................... <fileObj>
+  [310] objcall 42 .............................. delete fileObj
+  [313] getlocal 0 .............................. <fileObj>
+  [315] pusharglistnoret 1 ...................... <fileObj>
+  [317] objcall 43 .............................. fileObj.closeFile()
+  [320] pushint8 1
+  [322] add
+  [323] endrepeat [262]
+  [326] pop 3
+  [328] pushzero ................................ <0>
+  [329] setlocal 0 .............................. fileObj = 0
+  [331] ret
+end

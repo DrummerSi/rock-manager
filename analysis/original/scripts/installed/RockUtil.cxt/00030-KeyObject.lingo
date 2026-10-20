@@ -1,0 +1,108 @@
+property reportObject, key, initPause, repeatRate, pollCode, keyCode, repeatCnt, State, options, ID, timerObj, tellMovie, Active
+global gUseful
+
+on new me, argReportObject, argKey, argOptions, argTimerObj, argTellMovie
+  reportObject = argReportObject
+  tellMovie = argTellMovie
+  key = argKey
+  options = argOptions
+  if listp(options) then
+    initPause = getaProp(options, #initPause)
+    repeatRate = getaProp(options, #repeatRate)
+    if voidp(initPause) then
+      initPause = repeatRate
+    end if
+    tmpType = getaProp(options, #CodeType)
+    ID = getaProp(options, #ID)
+  else
+    options = [:]
+  end if
+  if voidp(ID) then
+    ID = key
+  end if
+  if voidp(tmpType) or (tmpType = #user) then
+    pollCode = gUseful.keyObjects.convert(#user, #Poll, key)
+    keyCode = gUseful.keyObjects.convert(#user, #code, key)
+  else
+    if tmpType = #Poll then
+      pollCode = key
+    else
+      pollCode = gUseful.keyObjects.convert(tmpType, #Poll, key)
+    end if
+    if tmpType = #code then
+      keyCode = key
+    else
+      keyCode = gUseful.keyObjects.convert(tmpType, #code, key)
+    end if
+  end if
+  repeatCnt = 0
+  State = #up
+  timerObj = argTimerObj
+  if voidp(timerObj) then
+    timerObj = gUseful.frameTimer
+  end if
+  gUseful.keyObjects.addObject(me, options[#prio])
+  timerObj.addObject(me)
+  Active = 1
+  return me
+end
+
+on kill me
+  Active = 0
+  timerObj.deleteObject(me)
+  gUseful.keyObjects.deleteObject(me)
+  timerObj = 0
+  reportObject = 0
+  return 0
+end
+
+on timeTick me
+  if not Active then
+    exit
+  end if
+  if repeatCnt then
+    repeatCnt = repeatCnt - 1
+    if repeatCnt = 0 then
+      repeatCnt = repeatRate
+      if objectp(tellMovie) then
+        tell tellMovie
+          reportObject.key(me, #down, ID)
+        end tell
+      else
+        reportObject.key(me, #down, ID)
+      end if
+    end if
+  end if
+end
+
+on key me, argState, argPollCode
+  if not Active then
+    exit
+  end if
+  if argPollCode = pollCode then
+    if (State = #up) and (argState = #down) then
+      repeatCnt = initPause
+    else
+      if argState = #up then
+        repeatCnt = 0
+      end if
+    end if
+    State = argState
+    if objectp(tellMovie) then
+      tell tellMovie
+        reportObject.key(me, argState, ID)
+      end tell
+    else
+      reportObject.key(me, argState, ID)
+    end if
+    return 1
+  end if
+end
+
+on getOption me, argProp
+  return options.getaProp(argProp)
+end
+
+on setTellMovie me, argObj
+  tellMovie = argObj
+end

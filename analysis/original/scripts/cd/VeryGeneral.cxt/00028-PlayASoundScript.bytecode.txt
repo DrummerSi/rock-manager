@@ -1,0 +1,76 @@
+property reportObj, sndId, myTimer
+global gSound, gUseful
+
+on new me, argReportObj, argSnd, argPrec, argTimer
+  [  0] getparam 8 .............................. <argReportObj>
+  [  2] setprop 691 ............................. reportObj = argReportObj
+  [  5] getglobal 306 ........................... <gSound>
+  [  8] getparam 16 ............................. <argSnd>
+  [ 10] getparam 24 ............................. <argPrec>
+  [ 12] pusharglist 3 ........................... <gSound, argSnd, argPrec>
+  [ 14] extcall 326 ............................. <play(gSound, argSnd, argPrec)>
+  [ 17] setprop 298 ............................. sndId = play(gSound, argSnd, argPrec)
+  [ 20] getprop 298 ............................. <sndId>
+  [ 23] pushzero ................................ <0>
+  [ 24] eq ...................................... <sndId = 0>
+  [ 25] jmpifz [ 34] ............................ if sndId = 0 then
+  [ 28] pushzero ................................ <0>
+  [ 29] pusharglistnoret 1 ...................... <0>
+  [ 31] extcall 32 .............................. return 0
+  [ 34] getparam 32 ............................. <argTimer>
+  [ 36] setprop 692 ............................. myTimer = argTimer
+  [ 39] getprop 692 ............................. <myTimer>
+  [ 42] pusharglist 1 ........................... <myTimer>
+  [ 44] extcall 104 ............................. <voidp(myTimer)>
+  [ 47] jmpifz [ 58] ............................ if voidp(myTimer) then
+  [ 50] getglobal 66 ............................ <gUseful>
+  [ 53] getobjprop 13 ........................... <gUseful.frameTimer>
+  [ 55] setprop 692 ............................. myTimer = gUseful.frameTimer
+  [ 58] getprop 692 ............................. <myTimer>
+  [ 61] getparam 0 .............................. <me>
+  [ 63] pusharglistnoret 2 ...................... <myTimer, me>
+  [ 65] extcall 17 .............................. addObject(myTimer, me)
+  [ 67] getparam 0 .............................. <me>
+  [ 69] pusharglistnoret 1 ...................... <me>
+  [ 71] extcall 32 .............................. return me
+  [ 74] ret
+end
+
+on kill me
+  [  0] getprop 298 ............................. <sndId>
+  [  3] jmpifz [ 17] ............................ if sndId then
+  [  6] getglobal 306 ........................... <gSound>
+  [  9] getprop 298 ............................. <sndId>
+  [ 12] pusharglistnoret 2 ...................... <gSound, sndId>
+  [ 14] extcall 305 ............................. stop(gSound, sndId)
+  [ 17] pushzero ................................ <0>
+  [ 18] setprop 298 ............................. sndId = 0
+  [ 21] getprop 692 ............................. <myTimer>
+  [ 24] getparam 0 .............................. <me>
+  [ 26] pusharglistnoret 2 ...................... <myTimer, me>
+  [ 28] extcall 36 .............................. deleteObject(myTimer, me)
+  [ 31] pushzero ................................ <0>
+  [ 32] setprop 691 ............................. reportObj = 0
+  [ 35] pushzero ................................ <0>
+  [ 36] pusharglistnoret 1 ...................... <0>
+  [ 38] extcall 32 .............................. return 0
+  [ 41] ret
+end
+
+on timeTick me
+  [  0] getglobal 306 ........................... <gSound>
+  [  3] getprop 298 ............................. <sndId>
+  [  6] pusharglist 2 ........................... <gSound, sndId>
+  [  8] extcall 331 ............................. <finished(gSound, sndId)>
+  [ 11] jmpifz [ 34] ............................ if finished(gSound, sndId) then
+  [ 14] getprop 691 ............................. <reportObj>
+  [ 17] getparam 0 .............................. <me>
+  [ 19] pusharglistnoret 2 ...................... <reportObj, me>
+  [ 21] extcall 697 ............................. soundFinished(reportObj, me)
+  [ 24] pushzero ................................ <0>
+  [ 25] setprop 298 ............................. sndId = 0
+  [ 28] getparam 0 .............................. <me>
+  [ 30] pusharglistnoret 1 ...................... <me>
+  [ 32] localcall 1 ............................. kill(me)
+  [ 34] ret
+end

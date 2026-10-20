@@ -1,0 +1,63 @@
+property ID, rect, rel, chains, levels
+
+on new me, argID, argRel
+  ID = argID
+  if voidp(argRel) then
+    argRel = []
+  end if
+  rel = []
+  repeat with n = 1 to argRel.count()
+    tmp = argRel[n]
+    if listp(tmp) then
+      if tmp.count() then
+        rel[n] = tmp
+      end if
+      next repeat
+    end if
+    rel[n] = tmp
+  end repeat
+  repeat with m = n to 4
+    rel[m] = 0
+  end repeat
+  levels = []
+  chains = []
+  repeat with n = 1 to 4
+    levels.add(-2)
+    chains.add(0)
+  end repeat
+  return me
+end
+
+on kill me
+  return 0
+end
+
+on getOther me, argWhich
+  if argWhich > 2 then
+    tmpOther = argWhich - 2
+  else
+    tmpOther = argWhich + 2
+  end if
+  return tmpOther
+end
+
+on getChain me, argWhich
+  tmpNewWhich = argWhich
+  if rel[argWhich] = #Auto then
+    tmpNewWhich = me.getOther(argWhich)
+    levels[argWhich] = levels[tmpNewWhich]
+  end if
+  return chains[tmpNewWhich]
+end
+
+on setChain me, argWhich, argChain
+  tmpLevel = argChain.getPos(ID) - 1
+  levels[argWhich] = tmpLevel
+  tmpNewWhich = argWhich
+  if rel[argWhich] = #Auto then
+    tmpNewWhich = me.getOther(argWhich)
+  end if
+  if chains[tmpNewWhich] = 0 then
+    chains[tmpNewWhich] = argChain
+  end if
+end

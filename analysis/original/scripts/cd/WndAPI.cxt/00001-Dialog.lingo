@@ -1,0 +1,824 @@
+property itemObjs, spriteObj, surroundRect, size, maxSize, hierarchyData, myLoc, renderSortedObjs, myImageMember, usingImage, topLeftLocOffset, topLeftRectOffset, blitLocOffset, scrollLocOffset, SPid, editing, usingSP, invalidatedRects, baseMouseLayer, highestMouseLayer, changedStuff, isOKtoResizeImage, ID, myImagePtr, usingSuppliedImage, wndParent, dlgItemParent, wndTop, usingTemporaryMember, ImUpAndRunningAlready
+global gUseful
+
+on new me, argOptions
+  ImUpAndRunningAlready = 0
+  if voidp(argOptions) then
+    argOptions = [:]
+  end if
+  if argOptions[#mode] = #edit then
+    editing = 1
+  else
+    editing = 0
+  end if
+  ID = argOptions[#ID]
+  myImagePtr = [VOID]
+  tmpImage = argOptions[#image]
+  if listp(argOptions[#image]) then
+    usingSuppliedImage = 1
+  end if
+  if not voidp(argOptions[#AttachImageToMember]) then
+    if ilk(argOptions[#AttachImageToMember]) = #member then
+      myImageMember = argOptions[#AttachImageToMember]
+    else
+      if argOptions[#AttachImageToMember] = #temp then
+        myImageMember = newMember(#bitmap, "__TEMP", 1)
+        tmpImageSettings = [#size: point(1, 1), #depth: 16, #alpha: 0]
+        usingTemporaryMember = 1
+      else
+        myImageMember = member(argOptions[#AttachImageToMember])
+        if voidp(tmpImage) then
+          tmpImage = myImageMember.image
+          tmpSize = getRectSize(myImageMember.rect)
+          if (tmpSize[1] = 0) or (tmpSize[2] = 0) then
+            tmpImageSettings = [#size: point(1, 1), #depth: 16, #alpha: 0]
+          else
+            tmpImageSettings = [#size: point(1, 1), #depth: tmpImage.depth, #alpha: tmpImage.useAlpha * 8]
+          end if
+        end if
+      end if
+    end if
+    mergeLists(tmpImageSettings, argOptions[#ImageSettings], #Replace)
+    tmpImage = image(tmpImageSettings[#size][1], tmpImageSettings[#size][2], tmpImageSettings[#depth], tmpImageSettings[#alpha])
+  end if
+  if listp(tmpImage) then
+    myImagePtr = tmpImage
+  else
+    myImagePtr = [tmpImage]
+  end if
+  hierarchyData = []
+  if voidp(argOptions[#StartSpriteNum]) then
+    baseMouseLayer = 0
+    spriteObj = new(script("DynamicSpriteScript"), 0, 0)
+    usingSP = 0
+    usingImage = 1
+  else
+    baseMouseLayer = argOptions[#StartSpriteNum] * 1000
+    tmpNumSPs = argOptions[#NumSprites]
+    if voidp(tmpNumSPs) then
+      tmpNumSPs = 1
+    end if
+    spriteObj = new(script("DynamicSpriteScript"), argOptions[#StartSpriteNum], tmpNumSPs)
+    usingSP = 1
+    usingImage = 0
+  end if
+  highestMouseLayer = baseMouseLayer
+  isOKtoResizeImage = argOptions[#OKtoResize]
+  if voidp(isOKtoResizeImage) then
+    isOKtoResizeImage = 1
+  end if
+  renderSortedObjs = [:]
+  changedStuff = [:]
+  invalidatedRects = []
+  itemObjs = [:]
+  myLoc = point(0, 0)
+  topLeftLocOffset = point(0, 0)
+  topLeftRectOffset = rect(0, 0, 0, 0)
+  surroundRect = rect(0, 0, 0, 0)
+  size = point(0, 0)
+  scrollLocOffset = point(0, 0)
+  blitLocOffset = point(0, 0)
+  maxSize = point(-1, -1)
+  if wndTop = 0 then
+    gUseful.frameTimer.addObject(me)
+  end if
+  me.setWndHeritage(argOptions)
+  return me
+end
+
+on kill me
+  __debug(#WndOpt, "Kill dlg", me.getOverIDs())
+  if objectp(myImageMember) then
+    myImageMember.unload()
+  end if
+  if usingTemporaryMember = 1 then
+    myImageMember.erase()
+  end if
+  gUseful.frameTimer.deleteObject(me)
+  me.clear()
+  spriteObj.clear(1)
+  spriteObj = spriteObj.kill()
+  myImagePtr = []
+  wndParent = 0
+  dlgItemParent = 0
+  wndTop = 0
+  return 0
+end
+
+on save me
+  tmpList = []
+  repeat with tmpObj in itemObjs
+    tmpObj.moveNonRels(-topLeftRectOffset)
+    tmp = tmpObj.convPropsForSave(tmpObj.getProps())
+    tmpList.add(tmp)
+    tmpObj.moveNonRels(topLeftRectOffset)
+  end repeat
+  return [#items: tmpList, #Hierarchy: hierarchyData]
+end
+
+on clear me
+  scrollLocOffset = point(0, 0)
+  blitLocOffset = point(0, 0)
+  topLeftLocOffset = point(0, 0)
+  topLeftRectOffset = rect(0, 0, 0, 0)
+  size = point(0, 0)
+  invalidatedRects = []
+  spriteObj.clear(1)
+  scrollLocOffset = point(0, 0)
+  usingImage = 0
+  repeat with tmpObj in itemObjs
+    tmpObj.kill()
+  end repeat
+  itemObjs = [:]
+  ImUpAndRunningAlready = 0
+end
+
+on setWndHeritage me, argList
+  wndParent = argList[#wndParent]
+  wndTop = me.getTopWindow()
+  if wndTop = me then
+    wndTop = 0
+  end if
+  if objectp(argList[#dlgItemParent]) then
+    dlgItemParent = argList[#dlgItemParent]
+  end if
+  tmpObjs = me.getItemsByType(#Dialog, 0)
+  repeat with tmpObj in tmpObjs
+    if objectp(tmpObj.dialogObj) then
+      tmpObj.dialogObj.setWndHeritage([#wndParent: wndParent])
+    end if
+  end repeat
+end
+
+on create me, argList
+  if me.rawCreate(argList) = 0 then
+    return 0
+  end if
+  me.recalc()
+end
+
+on rawCreate me, argList
+  ImUpAndRunningAlready = 0
+  me.clear()
+  argList = ensureListFromMember(argList)
+  if not listp(argList) then
+    put "RawCreate: Not a list!"
+    return 0
+  end if
+  if ilk(argList) = #propList then
+    hierarchyData = argList[#Hierarchy]
+    if voidp(hierarchyData) then
+      hierarchyData = []
+    end if
+    argList = argList[#items]
+  end if
+  tmpCnt = argList.count()
+  tmpGotHierarchy = hierarchyData.count()
+  repeat with n = 1 to tmpCnt
+    me.addItem(argList[n], tmpGotHierarchy)
+  end repeat
+  if not tmpGotHierarchy then
+    me.calcHierarchy()
+  end if
+  me.changed(#All)
+  me.invalidateRect()
+  return 1
+end
+
+on addItem me, argListOrObj, argGotHierarchy
+  if listp(argListOrObj) then
+    if not usingSP then
+      argListOrObj.setaProp(#blit, 1)
+    end if
+    tmpType = argListOrObj[#type]
+    tmpID = argListOrObj[#ID]
+    tmpObj = script("Dialog" & string(tmpType) & "Script").new(me, 0, argListOrObj)
+    tmpObj.init()
+  else
+    if objectp(argListOrObj) then
+      tmpObj = argListOrObj
+      tmpID = tmpObj.ID
+    end if
+  end if
+  itemObjs.addProp(tmpID, tmpObj)
+  if tmpObj.blit then
+    usingImage = 1
+  end if
+  return tmpObj
+end
+
+on deleteItem me, argObjOrID
+  if not objectp(argObjOrID) then
+    argObjOrID = me.getItem(argObjOrID, #ID, 0)
+  end if
+  tmpID = argObjOrID.getOneProp(#ID)
+  argObjOrID.kill()
+  itemObjs.deleteOne(argObjOrID)
+  if itemObjs.count() = 0 then
+    me.clear()
+    exit
+  else
+    repeat with tmpObj in itemObjs
+      repeat with n = 1 to tmpObj.rel.count
+        tmp = tmpObj.rel[n]
+        if listp(tmp) then
+          if tmp[1] = tmpID then
+            tmpObj.rel[n] = 0
+          end if
+        end if
+      end repeat
+    end repeat
+  end if
+  me.changed(#All)
+  me.invalidateRect()
+end
+
+on activate me, argIsTRUE
+  repeat with tmpObj in itemObjs
+    tmpObj.activate(argIsTRUE)
+  end repeat
+end
+
+on changed me, argWhat, argOpt
+  if argWhat = #All then
+    tmpList = [#rel, #ch, #Rects]
+    repeat with tmp in tmpList
+      me.changed(tmp)
+    end repeat
+  else
+    if voidp(argOpt) then
+      argOpt = 1
+    end if
+    changedStuff.setaProp(argWhat, argOpt)
+  end if
+end
+
+on calcHierarchy me
+  tmpForHierarchyCalc = []
+  repeat with tmpObj in itemObjs
+    tmpForHierarchyCalc.add([#ID: tmpObj.getOneProp(#ID), #rel: tmpObj.getOneProp(#rel)])
+  end repeat
+  tmpCompileObj = new(script("CompileItemsScript"))
+  hierarchyData = tmpCompileObj.calcRelations(tmpForHierarchyCalc)
+  changedStuff.deleteProp(#rel)
+  me.changed(#Rects)
+end
+
+on setLayer me, argLayer, argLayerPtr
+  __debug(#WndOpt, "SetLayer", me.getOverIDs())
+  if integerp(argLayer) then
+    baseMouseLayer = argLayer
+  end if
+  changedStuff.deleteProp(#ch)
+  renderSortedObjs = [:]
+  renderSortedObjs.sort()
+  repeat with n = 1 to itemObjs.count()
+    tmpCh = itemObjs[n].getOneProp(#ch)
+    if voidp(tmpCh) then
+      tmpCh = 1000
+    end if
+    renderSortedObjs.addProp(tmpCh, itemObjs[n])
+  end repeat
+  spriteObj.clear()
+  if usingImage then
+    SPid = spriteObj.reserveSprite(0)
+  end if
+  tmpCurrentLayer = 1
+  if voidp(argLayerPtr) then
+    argLayerPtr = [baseMouseLayer + 1]
+  end if
+  repeat with tmpObj in renderSortedObjs
+    tmpObj.setLayer(tmpCurrentLayer, argLayerPtr)
+    tmpNumSPs = tmpObj.getNumSprites()
+    if not integerp(tmpNumSPs) then
+      tmpNumSPs = 0
+    end if
+    tmpCurrentLayer = tmpCurrentLayer + 1 + tmpNumSPs
+  end repeat
+  highestMouseLayer = argLayerPtr[1]
+end
+
+on invalidateRect me, argRect, argMode
+  if ImUpAndRunningAlready = 0 then
+    exit
+  end if
+  if argMode = #External then
+  else
+    if objectp(wndTop) then
+      wndTop.invalidateRect(argRect + rect(blitLocOffset, blitLocOffset) + rect(scrollLocOffset, scrollLocOffset))
+      exit
+    end if
+  end if
+  if invalidatedRects.count then
+    tmp = invalidatedRects[1]
+  else
+    tmp = rect(10000, 10000, -10000, -10000)
+  end if
+  if objectp(dlgItemParent) then
+    tmpMaxSize = getRectSize(dlgItemParent.calcRect)
+  else
+    tmpMaxSize = getRectSize(surroundRect)
+  end if
+  if voidp(argRect) then
+    tmp = surroundRect.duplicate()
+  else
+    if argRect[1] < tmp[1] then
+      tmp[1] = argRect[1]
+    end if
+    if argRect[2] < tmp[2] then
+      tmp[2] = argRect[2]
+    end if
+    if argRect[3] > tmp[3] then
+      tmp[3] = argRect[3]
+    end if
+    if argRect[4] > tmp[4] then
+      tmp[4] = argRect[4]
+    end if
+  end if
+  tmpSize = getRectSize(tmp)
+  tmp = tmp
+  if tmpSize[1] > tmpMaxSize[1] then
+    tmp[3] = tmp[1] + tmpMaxSize[1]
+  end if
+  if tmpSize[2] > tmpMaxSize[2] then
+    tmp[4] = tmp[2] + tmpMaxSize[2]
+  end if
+  invalidatedRects = [tmp]
+  me.changed(#Invalidated)
+end
+
+on paint me
+  if not usingImage then
+    exit
+  end if
+  if invalidatedRects.count = 0 then
+    exit
+  end if
+  changedStuff.deleteProp(#Invalidated)
+  if not objectp(wndParent) then
+    blitLocOffset = -topLeftLocOffset
+  end if
+  if voidp(myImagePtr[1]) then
+    pott("New img", ID)
+    tmpNewImage = image(size[1], size[2], 16)
+    myImagePtr[1] = tmpNewImage
+  else
+    if isOKtoResizeImage then
+      tmpImgRect = myImagePtr[1].rect
+      if (tmpImgRect[3] <> size[1]) or (tmpImgRect[4] <> size[2]) then
+        tmpNewImage = image(size[1], size[2], myImagePtr[1].depth, myImagePtr[1].useAlpha * 8)
+        tmpNewImage.copyPixels(myImagePtr[1], tmpImgRect, tmpImgRect)
+        myImagePtr[1] = tmpNewImage
+      end if
+    end if
+  end if
+  tmpRect = invalidatedRects[1]
+  tmpRect = tmpRect + rect(topLeftLocOffset, point(0, 0))
+  if not usingSuppliedImage then
+    myImagePtr[1].fill(tmpRect + rect(blitLocOffset, blitLocOffset), rgb(255, 255, 255))
+  end if
+  repeat with tmpObj in renderSortedObjs
+    tmpObj.paint(tmpRect)
+  end repeat
+  invalidatedRects = []
+  me.updateImage()
+  tmp = me.getOverIDs()
+  if tmp.count() = 1 then
+    if tmp[1] = #ScrollThis then
+      a = 1
+    end if
+  end if
+  gUseful.debug.debugOut(#WndOpt, "Paint done", me.getOverIDs())
+end
+
+on calcRects me
+  changedStuff.deleteProp(#Rects)
+  tmpOldSrndRect = surroundRect.duplicate()
+  surroundRect = rect(10000, 10000, -10000, -10000)
+  repeat with tmpObj in itemObjs
+    tmpObj.initCalcRect()
+  end repeat
+  repeat with tmpAxis = 1 to 2
+    repeat with tmpRelInfo in hierarchyData[tmpAxis]
+      tmpItemID = tmpRelInfo[1]
+      tmpObj = itemObjs.getaProp(tmpItemID)
+      tmpObj.calcAxisLoc(tmpAxis + (tmpRelInfo[2] * 2))
+      tmpRect = tmpObj.calcRect
+      if tmpRect[tmpAxis] < surroundRect[tmpAxis] then
+        surroundRect[tmpAxis] = tmpRect[tmpAxis]
+      end if
+      if tmpRect[tmpAxis + 2] > surroundRect[tmpAxis + 2] then
+        surroundRect[tmpAxis + 2] = tmpRect[tmpAxis + 2]
+      end if
+    end repeat
+  end repeat
+  topLeftLocOffset = point(surroundRect[1], surroundRect[2])
+  topLeftRectOffset = rect(topLeftLocOffset, topLeftLocOffset)
+  repeat with tmpObj in itemObjs
+    tmpObj.calcRectDone()
+  end repeat
+  gUseful.debug.debugOut(#WndOpt, "After calcRectDone")
+  size = getRectSize(surroundRect)
+  repeat with n = 1 to 2
+    if (maxSize[n] > -1) and (size[n] > maxSize[n]) then
+      size[n] = maxSize[n]
+      surroundRect[n + 2] = surroundRect[n] + size[n]
+    end if
+  end repeat
+  if tmpOldSrndRect <> surroundRect then
+    if not objectp(wndParent) and usingImage then
+      if (tmpOldSrndRect[1] <> surroundRect[1]) or (tmpOldSrndRect[2] <> surroundRect[2]) then
+        me.invalidateRect()
+      end if
+    end if
+    if objectp(dlgItemParent) then
+      dlgItemParent.dlgRectChanged()
+    end if
+  end if
+end
+
+on incorporateNewItems me
+  repeat with n = 1 to itemObjs.count()
+    if itemObjs[n].ImUpAndRunningAlready = 0 then
+      itemObjs[n].finalInitsBeforeCalc()
+    end if
+  end repeat
+  me.changed(#All)
+end
+
+on recalc me, argOption
+  if ImUpAndRunningAlready = 0 then
+    gUseful.debug.debugOut(#WndOpt, "ImUpAndRunningAlready1 start", me.getOverIDs())
+    repeat with n = 1 to itemObjs.count()
+      tmpObj = itemObjs[n]
+      gUseful.debug.debugOut(#WndOpt, "item!", tmpObj.ID, tmpObj.type)
+      if itemObjs[n].ImUpAndRunningAlready = 0 then
+        itemObjs[n].finalInitsBeforeCalc()
+      end if
+    end repeat
+  else
+    gUseful.debug.debugOut(#WndOpt, "ImUpAndRunningAlready2 start", me.getOverIDs())
+    repeat with n = 1 to itemObjs.count()
+      if itemObjs[n].ImUpAndRunningAlready = 0 then
+        itemObjs[n].finalInitsBeforeCalc()
+      end if
+    end repeat
+  end if
+  gUseful.debug.debugOut(#WndOpt, "FinalInits end", me.getOverIDs())
+  gUseful.debug.debugOut(#WndOpt, "TODO:not necessary to do all the time...!", me.getOverIDs())
+  tmpDialogObjs = me.getItemsByType(#Dialog, 0)
+  repeat with tmpObj in tmpDialogObjs
+    tmpObj.dialogObj.recalc(argOption)
+  end repeat
+  if changedStuff.count() = 0 then
+    exit
+  end if
+  gUseful.debug.debugOut(#WndOpt, "Ok...")
+  if not voidp(changedStuff[#rel]) then
+    me.calcHierarchy()
+    gUseful.debug.debugOut(#WndOpt, "Rel!")
+  end if
+  if not voidp(changedStuff[#Rects]) then
+    me.calcRects()
+    gUseful.debug.debugOut(#WndOpt, "Rects!")
+  end if
+  if not voidp(changedStuff[#ch]) then
+    me.setLayer()
+    gUseful.debug.debugOut(#WndOpt, "Ch!")
+  end if
+  gUseful.debug.debugOut(#WndOpt, "Done (or paint)", me.getOverIDs())
+  if ImUpAndRunningAlready = 0 then
+    ImUpAndRunningAlready = 1
+    me.invalidateRect()
+  end if
+  ImUpAndRunningAlready = 1
+  if (argOption <> #DontPaint) and not usingSuppliedImage then
+    gUseful.debug.debugOut(#WndOpt, "Start paint", me.getOverIDs())
+    me.paint()
+  end if
+end
+
+on updateImage me
+  if objectp(myImageMember) then
+    if usingSP then
+    end if
+    myImageMember.image = myImagePtr[1]
+    myImagePtr[1] = myImageMember.image
+    myImageMember.regPoint = point(myImageMember.rect[1], myImageMember.rect[2])
+  end if
+end
+
+on changedOffset me
+end
+
+on move me, argLoc
+  if usingSuppliedImage then
+    put "MPOVEEE"
+    me.invalidateRect(surroundRect)
+    blitLocOffset = blitLocOffset + argLoc
+    me.invalidateRect(surroundRect + rect(argLoc, argLoc))
+  end if
+  argLoc = argLoc + myLoc
+  me.renderAtLoc(argLoc)
+end
+
+on getLoc me
+  return myLoc
+end
+
+on timeTick me
+  if changedStuff.count then
+    me.renderAtLoc()
+  end if
+end
+
+on setLoc me, argLoc
+  myLoc = argLoc
+end
+
+on renderAtLoc me, argLoc
+  me.recalc()
+  if not voidp(argLoc) then
+    tmpLocDiff = argLoc - myLoc
+    myLoc = argLoc
+  end if
+  if usingSuppliedImage and invalidatedRects.count() then
+    gUseful.debug.debugOut(#WndOpt, "Still invalidated!!!")
+    blitLocOffset = myLoc
+    me.recalc()
+    if objectp(dlgItemParent) then
+      put "Parent ID:", dlgItemParent.ID
+    end if
+    me.invalidateRect(surroundRect)
+    if voidp(tmpLocDiff) then
+      tmpLocDiff = point(0, 0)
+    end if
+    me.invalidateRect(surroundRect + rect(tmpLocDiff, tmpLocDiff))
+    me.paint()
+  end if
+  if objectp(dlgItemParent) then
+    if dlgItemParent.ID = #Scroller then
+    end if
+  end if
+  tmpR = rect(myLoc, myLoc) + rect(scrollLocOffset, scrollLocOffset) + rect(blitLocOffset, blitLocOffset)
+  __debug(#WndOpt, "YXA!", me.getOverIDs())
+  repeat with tmpObj in renderSortedObjs
+    tmpObj.render(tmpR)
+  end repeat
+  if usingImage then
+    if usingSP then
+      tmpSPNum = spriteObj.getSprite(SPid)
+      if tmpSPNum then
+        tmpSP = sprite(tmpSPNum)
+        tmpSP.loc = myLoc
+        tmpSP.member = myImageMember
+      end if
+    end if
+  end if
+  __debug(#WndOpt, "BYXA!", me.getOverIDs())
+end
+
+on getItemAxisLoc me, argRel, argWhich
+  tmpItemID = argRel[1]
+  if tmpItemID = #ZYXSrnd then
+    if argRel[2] = #Mid then
+      if argWhich > 2 then
+        argWhich = argWhich - 2
+      end if
+      return surroundRect[argWhich] + ((surroundRect[argWhich + 2] - surroundRect[argWhich]) / 2)
+    end if
+    return surroundRect[argRel[2]]
+  else
+    tmpStr = string(tmpItemID)
+    if argRel[2] = #Mid then
+      if argWhich > 2 then
+        argWhich = argWhich - 2
+      end if
+      tmp1 = itemObjs.getaProp(tmpItemID).calcRect[argWhich]
+      tmp2 = itemObjs.getaProp(tmpItemID).calcRect[argWhich + 2]
+      return ((tmp2 - tmp1) / 2) + tmp1
+    else
+      if argRel[2] = #Reg then
+        if argWhich > 2 then
+          argWhich = argWhich - 2
+        end if
+        return itemObjs.getaProp(tmpItemID).regPoint[argWhich]
+      end if
+    end if
+    if tmpStr.char[1..3] <> "ZYX" then
+      return itemObjs.getaProp(tmpItemID).calcRect[argRel[2]]
+    end if
+  end if
+  return 0
+end
+
+on getItems me, argID, argReturnList
+  tmpObj = itemObjs.getaProp(argID)
+  if objectp(tmpObj) then
+    argReturnList.add(tmpObj)
+  end if
+  tmpList = me.getItemsByType(#Dialog, 0)
+  repeat with tmptmpObj in tmpList
+    tmptmpObj.dialogObj.getItems(argID, argReturnList)
+  end repeat
+end
+
+on getItemByPath me, argPath
+  tmpObj = me.getItem(argPath[1], #ID, 0)
+  argPath.deleteAt(1)
+  if argPath.count() = 0 then
+    return tmpObj
+  end if
+  if not objectp(tmpObj) then
+    return tmpObj
+  end if
+  if tmpObj.type = #Dialog then
+    return tmpObj.dialogObj.getItemByPath(argPath)
+  end if
+  return tmpObj
+end
+
+on getItem me, arg, argByWhat, argIncludeChildren
+  if voidp(argIncludeChildren) then
+    argIncludeChildren = 1
+  end if
+  if (argByWhat = #ID) or symbolp(arg) then
+    tmpObj = itemObjs.getaProp(arg)
+    if objectp(tmpObj) then
+      return tmpObj
+    else
+      if argIncludeChildren then
+        tmpList = me.getItemsByType(#Dialog, 0)
+        repeat with tmptmpObj in tmpList
+          tmpObj = tmptmpObj.dialogObj.getItem(arg, #ID, 1)
+          if objectp(tmpObj) then
+            return tmpObj
+          end if
+        end repeat
+        return 0
+      end if
+    end if
+  else
+    if (argByWhat = #Nr) or integerp(arg) then
+      return itemObjs[arg]
+    end if
+  end if
+  return 0
+end
+
+on getItemsByType me, argType, argIncludeChildren
+  if voidp(argIncludeChildren) then
+    argIncludeChildren = 1
+  end if
+  tmpList = []
+  repeat with tmpObj in itemObjs
+    if tmpObj.type = argType then
+      tmpList.add(tmpObj)
+    end if
+    if (argIncludeChildren = 1) and (tmpObj.type = #Dialog) then
+      mergeLists(tmpList, tmpObj.dialogObj.getItemsByType(argType, argIncludeChildren))
+    end if
+  end repeat
+  return tmpList
+end
+
+on changeID me, argObj, argNewID
+  if argObj.getOneProp(#ID) = argNewID then
+    return 0
+  end if
+  repeat with tmpObj in itemObjs
+    if tmpObj.getOneProp(#ID) = argNewID then
+      alert("ID already used!")
+      return 0
+    end if
+  end repeat
+  tmpOldID = argObj.getOneProp(#ID)
+  if tmpOldID = argNewID then
+    exit
+  end if
+  repeat with tmpObj in itemObjs
+    repeat with n = 1 to tmpObj.rel.count
+      tmp = tmpObj.rel[n]
+      if listp(tmp) then
+        if tmp[1] = tmpOldID then
+          tmp[1] = argNewID
+        end if
+      end if
+    end repeat
+  end repeat
+  tmpPos = itemObjs.getPos(argObj)
+  if tmpPos then
+    tmpNewItemObjs = [:]
+    repeat with n = 1 to tmpPos - 1
+      tmpNewItemObjs.addProp(itemObjs.getPropAt(n), itemObjs[n])
+    end repeat
+    tmpNewItemObjs.addProp(argNewID, argObj)
+    repeat with n = tmpPos + 1 to itemObjs.count()
+      tmpNewItemObjs.addProp(itemObjs.getPropAt(n), itemObjs[n])
+    end repeat
+    itemObjs = tmpNewItemObjs
+  end if
+  repeat with tmpAxis = 1 to 2
+    tmp = hierarchyData[tmpAxis]
+    repeat with tmpRel in tmp
+      if tmpRel[1] = tmpOldID then
+        tmpRel[1] = argNewID
+      end if
+    end repeat
+  end repeat
+  return 1
+end
+
+on getFreeID me
+  n = itemObjs.count()
+  repeat while 1
+    tmp = symbol("Item" & string(n))
+    if objectp(itemObjs.getaProp(tmp)) then
+      n = n + 1
+      next repeat
+    end if
+    return tmp
+  end repeat
+end
+
+on scroll me, argMoveLoc
+  if objectp(dlgItemParent) then
+    tmpSize = getRectSize(dlgItemParent.calcRect)
+    tmpShownRect = rect(blitLocOffset, blitLocOffset) + rect(point(0, 0), tmpSize)
+    tmpInvalidRect = tmpShownRect - rect(blitLocOffset, blitLocOffset)
+  else
+    tmpShownRect = surroundRect
+    tmpInvalidRect = surroundRect.duplicate()
+  end if
+  tmpDstRect = imageMoveWithin(myImagePtr[1], argMoveLoc, tmpShownRect, tmpShownRect)
+  if argMoveLoc[1] = 0 then
+    if argMoveLoc[2] > 0 then
+      tmpInvalidRect[4] = tmpInvalidRect[2] + argMoveLoc[2]
+    else
+      tmpInvalidRect[2] = tmpInvalidRect[4] + argMoveLoc[2]
+    end if
+  else
+    if argMoveLoc[1] > 0 then
+      tmpInvalidRect[3] = tmpInvalidRect[1] + argMoveLoc[1]
+    else
+      tmpInvalidRect[1] = tmpInvalidRect[3] + argMoveLoc[1]
+    end if
+  end if
+  scrollLocOffset = scrollLocOffset + argMoveLoc
+  me.invalidateRect(tmpInvalidRect - rect(scrollLocOffset, scrollLocOffset), #Internal)
+  tmpObjs = me.getItemsByType(#Dialog, 0)
+  repeat with tmpObj in tmpObjs
+    tmpObj.dlgParentScrolled(argMoveLoc)
+  end repeat
+  obj = me.getTopWindow()
+  obj.renderAtLoc()
+end
+
+on clientToStage me, argLoc
+  return argLoc
+end
+
+on stageToClient me, argLoc
+  return argLoc
+end
+
+on getTopWindow me
+  if objectp(wndParent) then
+    return wndParent.getTopWindow()
+  else
+    return me
+  end if
+end
+
+on getParentWindow me
+  return wndParent
+end
+
+on getSubTree me
+  tmpList = [:]
+  repeat with tmpObj in itemObjs
+    if tmpObj.type = #Dialog then
+      tmpList.addProp(tmpObj.ID, tmpObj.dialogObj.getSubTree())
+      next repeat
+    end if
+    tmpList.addProp(tmpObj.ID, 0)
+  end repeat
+  return tmpList
+end
+
+on getOverIDs me, argIDList
+  if voidp(argIDList) then
+    argIDList = []
+  end if
+  if objectp(dlgItemParent) then
+    argIDList.addAt(1, dlgItemParent.ID)
+    dlgItemParent.ancestor.masterObj.getOverIDs(argIDList)
+  end if
+  return argIDList
+end
+
+on sendAll me, argHandlerName, arg1, arg2, arg3, arg4, arg5
+  repeat with tmpObj in itemObjs
+    tmpObj.send(argHandlerName, arg1, arg2, arg3, arg4, arg5)
+  end repeat
+end

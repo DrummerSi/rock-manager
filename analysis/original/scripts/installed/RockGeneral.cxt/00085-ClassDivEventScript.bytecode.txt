@@ -1,0 +1,112 @@
+property ancestor, child, className, belongsTo, _killed, AgendaFormat, AutoEventCard
+global gRock
+
+on new me, argChild, argBelongsTo
+  [  0] getparam 8 .............................. <argChild>
+  [  2] pusharglist 1 ........................... <argChild>
+  [  4] extcall 8 ............................... <objectp(argChild)>
+  [  6] jmpifz [ 17] ............................ if objectp(argChild) then / else
+  [  9] getparam 8 .............................. <argChild>
+  [ 11] setprop 496 ............................. child = argChild
+  [ 14] jmp [ 22]
+  [ 17] getparam 0 .............................. <me>
+  [ 19] setprop 496 ............................. child = me
+  [ 22] getparam 16 ............................. <argBelongsTo>
+  [ 24] setprop 208 ............................. belongsTo = argBelongsTo
+  [ 27] pushcons 0 .............................. <"ClassEventScript">
+  [ 29] pusharglist 1 ........................... <"ClassEventScript">
+  [ 31] extcall 10 .............................. <script("ClassEventScript")>
+  [ 33] getprop 496 ............................. <child>
+  [ 36] pusharglist 2 ........................... <script("ClassEventScript"), child>
+  [ 38] objcall 11 .............................. <script("ClassEventScript").new(child)>
+  [ 40] setprop 347 ............................. ancestor = script("ClassEventScript").new(child)
+  [ 43] pushsymb 1022 ........................... <#DivEvent>
+  [ 46] setprop 224 ............................. className = #DivEvent
+  [ 49] pushsymb 268 ............................ <#none>
+  [ 52] setprop 1023 ............................ AgendaFormat = #none
+  [ 55] pushzero ................................ <0>
+  [ 56] setprop 1027 ............................ AutoEventCard = 0
+  [ 59] getparam 0 .............................. <me>
+  [ 61] pusharglistnoret 1 ...................... <me>
+  [ 63] extcall 69 .............................. return me
+  [ 66] ret
+end
+
+on kill me
+  [  0] pushint8 1 .............................. <1>
+  [  3] setprop 506 ............................. _killed = 1
+  [  6] getprop 347 ............................. <ancestor>
+  [  9] pusharglist 1 ........................... <ancestor>
+  [ 11] extcall 8 ............................... <objectp(ancestor)>
+  [ 13] jmpifz [ 26] ............................ if objectp(ancestor) then
+  [ 16] getprop 347 ............................. <ancestor>
+  [ 19] pusharglist 1 ........................... <ancestor>
+  [ 21] objcall 31 .............................. <ancestor.kill()>
+  [ 23] setprop 347 ............................. ancestor = ancestor.kill()
+  [ 26] pushzero ................................ <0>
+  [ 27] setprop 496 ............................. child = 0
+  [ 30] pushzero ................................ <0>
+  [ 31] setprop 208 ............................. belongsTo = 0
+  [ 34] pushzero ................................ <0>
+  [ 35] pusharglistnoret 1 ...................... <0>
+  [ 37] extcall 69 .............................. return 0
+  [ 40] ret
+end
+
+on eventChangeState me, argAction, argOption
+  [  0] getparam 8 .............................. <argAction>
+  [  2] pushsymb 43 ............................. <#start>
+  [  5] eq ...................................... <argAction = #start>
+  [  6] jmpifz [ 12] ............................ if argAction = #start then / else
+  [  9] jmp [118]
+  [ 12] getparam 8 .............................. <argAction>
+  [ 14] pushsymb 663 ............................ <#stop>
+  [ 17] eq ...................................... <argAction = #stop>
+  [ 18] jmpifz [118] ............................ if argAction = #stop then
+  [ 21] getprop 1027 ............................ <AutoEventCard>
+  [ 24] pushint8 1 .............................. <1>
+  [ 27] eq ...................................... <AutoEventCard = 1>
+  [ 28] jmpifz [ 34] ............................ if AutoEventCard = 1 then / else
+  [ 31] jmp [118]
+  [ 34] getprop 1027 ............................ <AutoEventCard>
+  [ 37] pusharglist 1 ........................... <AutoEventCard>
+  [ 39] extcall 96 .............................. <symbolp(AutoEventCard)>
+  [ 42] jmpifz [118] ............................ if symbolp(AutoEventCard) then
+  [ 45] getprop 347 ............................. <ancestor>
+  [ 48] pushsymb 1016 ........................... <#neededIDs>
+  [ 51] pusharglist 2 ........................... <ancestor, #neededIDs>
+  [ 53] objcall 156 ............................. <ancestor.neededIDs.count>
+  [ 56] jmpifz [ 78] ............................ if ancestor.neededIDs.count then / else
+  [ 59] getprop 347 ............................. <ancestor>
+  [ 62] pushsymb 1016 ........................... <#neededIDs>
+  [ 65] pushint8 1 .............................. <1>
+  [ 68] pusharglist 3 ........................... <ancestor, #neededIDs, 1>
+  [ 70] objcall 113 ............................. <ancestor.neededIDs[1]>
+  [ 73] setlocal 0 .............................. tmpHumanID = ancestor.neededIDs[1]
+  [ 75] jmp [ 85]
+  [ 78] pusharglist 0 ........................... <>
+  [ 80] extcall 151 ............................. <VOID>
+  [ 83] setlocal 0 .............................. tmpHumanID = VOID
+  [ 85] getglobal 23 ............................ <gRock>
+  [ 87] getobjprop 80 ........................... <gRock.m_eventCardsManager>
+  [ 90] getprop 1027 ............................ <AutoEventCard>
+  [ 93] pushsymb 1303 ........................... <#prio>
+  [ 96] pushint8 3 .............................. <3>
+  [ 99] pushsymb 847 ............................ <#EventCardOptions>
+  [102] pushsymb 848 ............................ <#HumanID>
+  [105] getlocal 0 .............................. <tmpHumanID>
+  [107] pusharglist 2 ........................... <[#HumanID: tmpHumanID]>
+  [109] pushproplist ............................ <[#HumanID: tmpHumanID]>
+  [110] pusharglist 4 ........................... <[#prio: 3, #EventCardOptions: [#HumanID: tmpHumanID]]>
+  [112] pushproplist ............................ <[#prio: 3, #EventCardOptions: [#HumanID: tmpHumanID]]>
+  [113] pusharglistnoret 3 ...................... <gRock.m_eventCardsManager, AutoEventCard, [#prio: 3, #EventCardOptions: [#HumanID: tmpHumanID]]>
+  [115] objcall 856 ............................. gRock.m_eventCardsManager.tryNewShowEventCard(AutoEventCard, [#prio: 3, #EventCardOptions: [#HumanID: tmpHumanID]])
+  [118] getprop 347 ............................. <ancestor>
+  [121] getparam 8 .............................. <argAction>
+  [123] getparam 16 ............................. <argOption>
+  [125] pusharglist 3 ........................... <ancestor, argAction, argOption>
+  [127] objcall 660 ............................. <ancestor.eventChangeState(argAction, argOption)>
+  [130] pusharglistnoret 1 ...................... <ancestor.eventChangeState(argAction, argOption)>
+  [132] extcall 69 .............................. return ancestor.eventChangeState(argAction, argOption)
+  [135] ret
+end

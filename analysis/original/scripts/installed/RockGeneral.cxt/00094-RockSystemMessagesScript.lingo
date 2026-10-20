@@ -1,0 +1,86 @@
+property m_active, m_addObjects, m_deleteObjects, m_objects, m_setProp, m_busyRepeating, m_busyDepth
+
+on new me
+  m_setProp = symbol("_ItIsOKToSendMsg")
+  m_active = 1
+  me.cleanUp()
+  return me
+end
+
+on kill me
+  return 0
+end
+
+on cleanUp me
+  m_addObjects = []
+  m_deleteObjects = []
+  m_objects = []
+  m_busyDepth = 0
+end
+
+on msg me, argWhat, argOption, argOption2
+  if m_active then
+    m_busyDepth = m_busyDepth + 1
+    if m_busyRepeating = 1 then
+      pott("MSG m_busyRepeating", argWhat, m_busyDepth)
+      wasBusyRepeating = 1
+    else
+      wasBusyRepeating = 0
+      me.refreshLists()
+    end if
+    m_busyRepeating = 1
+    repeat with obj in m_objects
+      if obj.getaProp(m_setProp) then
+        obj.msg(argWhat, argOption, argOption2)
+      end if
+    end repeat
+    if 0 then
+      repeat with obj in m_addObjects
+        if obj.getaProp(m_setProp) then
+          obj.msg(argWhat, argOption, argOption2)
+        end if
+      end repeat
+    end if
+    if wasBusyRepeating = 0 then
+      m_busyRepeating = 0
+    end if
+    m_busyDepth = m_busyDepth - 1
+  end if
+end
+
+on activate me, YesNo
+  m_active = YesNo
+end
+
+on addObject me, argObj
+  argObj.setaProp(m_setProp, 1)
+  if m_deleteObjects.getPos(argObj) then
+    m_deleteObjects.deleteOne(argObj)
+  end if
+  m_addObjects.add(argObj)
+end
+
+on deleteObject me, argObj
+  argObj.setaProp(m_setProp, 0)
+  if m_addObjects.getPos(argObj) then
+    m_addObjects.deleteOne(argObj)
+    if m_objects.getPos(argObj) then
+      m_deleteObjects.add(argObj)
+    end if
+    exit
+  end if
+  m_deleteObjects.add(argObj)
+end
+
+on refreshLists me
+  repeat with obj in m_addObjects
+    if m_objects.getPos(obj) = 0 then
+      m_objects.add(obj)
+    end if
+  end repeat
+  m_addObjects = []
+  repeat with obj in m_deleteObjects
+    m_objects.deleteOne(obj)
+  end repeat
+  m_deleteObjects = []
+end

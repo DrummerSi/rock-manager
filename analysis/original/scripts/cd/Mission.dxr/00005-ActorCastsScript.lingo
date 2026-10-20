@@ -1,0 +1,56 @@
+property m_freeCasts, m_orgCasts, m_usingCasts
+
+on new me
+  m_usingCasts = []
+  m_orgCasts = []
+  m_freeCasts = []
+  repeat with n = 1 to the number of castLibs
+    if offset("Actor", castLib(n).name) = 1 then
+      m_orgCasts.add(castLib(n).name)
+      m_usingCasts.add([])
+    end if
+  end repeat
+  m_freeCasts = m_orgCasts.duplicate()
+  return me
+end
+
+on kill me
+  m_usingCasts = []
+  m_orgCasts = []
+  m_freeCasts = []
+  return 0
+end
+
+on getCast me, argObj
+  repeat with n = 1 to m_usingCasts.count
+    if m_usingCasts[n].count = 0 then
+      m_usingCasts[n].add(argObj)
+      return m_orgCasts[n]
+    end if
+  end repeat
+  return 0
+end
+
+on returnCast me, argObj, argCast
+  tmpPos = m_orgCasts.getPos(argCast)
+  usingThisCast = m_usingCasts[tmpPos]
+  usingThisCast.deleteOne(argObj)
+  repeat while 1
+    if usingThisCast.getPos(0) then
+      usingThisCast.deleteOne(0)
+      next repeat
+    end if
+    exit repeat
+  end repeat
+end
+
+on linkCast me, argObj, argFileName
+  repeat with n = 1 to m_orgCasts.count
+    strippedName = fileStripName(castLib(m_orgCasts[n]).fileName)
+    if strippedName = argFileName then
+      m_usingCasts[n].add(argObj)
+      return m_orgCasts[n]
+    end if
+  end repeat
+  return me.getCast(argObj)
+end

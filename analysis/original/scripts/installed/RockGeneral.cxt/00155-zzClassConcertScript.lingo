@@ -1,0 +1,174 @@
+property ancestor, child, className, belongsTo, Venue, PriceModel, NumAudience, quality, Income, VenueIncome, BandPerformance, calcedList
+global gRock
+
+on new me, argChild, argBelongsTo
+  if objectp(argChild) then
+    child = argChild
+  else
+    child = me
+  end if
+  belongsTo = argBelongsTo
+  ancestor = script("ClassEventScript").new(child)
+  className = #Concert
+  Venue = #none
+  PriceModel = script("ClassPriceModelScript").new(VOID, me)
+  NumAudience = 0
+  quality = 0.0
+  Income = 0
+  VenueIncome = 0
+  BandPerformance = 0.0
+  return me
+end
+
+on kill me
+  if objectp(ancestor) then
+    ancestor = ancestor.kill()
+  end if
+  child = 0
+  belongsTo = 0
+  return 0
+end
+
+on eventChangeState me, argAction, argOption
+  global gRock
+  if argAction = #start then
+  else
+    if argAction = #stop then
+      venue_r = gRock.m_classManager.getObjByIDAndClass(Venue, #place)
+      if not objectp(venue_r) then
+        alert("Error in concert's venue!")
+        exit
+      end if
+      calcedList = me.calcAudienceSatisfaction()
+      calcedList.addProp(#VenueID, venue_r.ID)
+      calcedList.addProp(#ConcertID, ancestor.ID)
+      reporters_r = gRock.m_classManager.getObjsOfClass(#Reporter)
+      repeat with reporter_r in reporters_r
+        if reporter_r.gotTicketsForConcert(ancestor.ID) then
+          reporter_r.checkWillReviewConcert(me)
+        end if
+      end repeat
+      gRock.m_eventCardsManager.tryNewShowEventCard(VOID, [#DlgScript: #ConcertResult, #ConcertInfo: calcedList])
+    end if
+  end if
+  ancestor.eventChangeState(argAction, argOption)
+end
+
+on calcNumAudience me
+  band_r = gRock.m_context.getFocus(#Band)
+  album_r = gRock.m_context.getFocus(#album)
+  venue_r = gRock.m_classManager.getObjByIDAndClass(Venue, #place)
+  regularVisitors = venue_r.size * venue_r.Regulars
+  tmpNumPerGroup = [:]
+  tmpTotReachFact = 0
+  ReachesGroups = venue_r.calcReach()
+  repeat with n = 1 to ReachesGroups.count
+    tmpReachFact = ReachesGroups[n]
+    tmpTotReachFact = tmpTotReachFact + tmpReachFact
+  end repeat
+  if tmpTotReachFact = 0 then
+    return tmpNumPerGroup
+  end if
+  tmpTot = 0
+  tmpTotRegulars = 0
+  repeat with n = 1 to ReachesGroups.count
+    tmpReachFact = ReachesGroups[n]
+    tmpNumRegularsFromGroup = regularVisitors * tmpReachFact / tmpTotReachFact
+    group_r = gRock.m_classManager.getObjByIDAndClass(ReachesGroups.getPropAt(n), #Group)
+    tmpHype = 0
+    tmpAtt = group_r.Attitudes.getAttitude(band_r.ID)
+    if listp(tmpAtt) then
+      tmpHype = tmpAtt[#Hype]
+      if objectp(tmpHype) then
+        tmpHype = tmpHype.Current
+      end if
+    end if
+    tmpNumFromGroup = tmpNumRegularsFromGroup + (tmpReachFact * group_r.size * tmpHype * 0.05)
+    tmpTotRegulars = tmpTotRegulars + tmpNumRegularsFromGroup
+    tmpTot = tmpTot + tmpNumFromGroup
+    tmpNumPerGroup.addProp(group_r.ID, tmpNumFromGroup)
+  end repeat
+  pott("Tot audience", tmpTot, "Regulars", tmpTotRegulars)
+  return tmpNumPerGroup
+end
+
+on calcAudienceSatisfaction me
+  returnList = [:]
+  band_r = gRock.m_context.getFocus(#Band)
+  if band_r.memberObjs.count = 0 then
+    returnList.addProp(#Cancelled, 1)
+  end if
+  album_r = gRock.m_context.getFocus(#album)
+  venue_r = gRock.m_classManager.getObjByIDAndClass(Venue, #place)
+  tmpNumPerGroup = me.calcNumAudience()
+  tmpTotAudience = 0
+  repeat with n = 1 to tmpNumPerGroup.count
+    tmpTotAudience = tmpTotAudience + tmpNumPerGroup[n]
+  end repeat
+  tmpFilledFact = tmpTotAudience / venue_r.size
+  if tmpFilledFact > 1.30000000000000004 then
+    tmpFilledFact = 1.30000000000000004
+  end if
+  tmpRealAudience = tmpTotAudience
+  if tmpRealAudience > venue_r.size then
+    tmpRealAudience = venue_r.size
+  end if
+  returnList.addProp(#NumAudience, tmpRealAudience)
+  returnList.addProp(#FilledFact, tmpFilledFact)
+  returnList.addProp(#WantedToGo, tmpTotAudience)
+  tmpFillBoost = 1.0
+  if tmpFilledFact > 0.90000000000000002 then
+    tmpFillBoost = 1.0 + ((tmpFilledFact - 0.90000000000000002) / 0.10000000000000001)
+  else
+    if tmpFilledFact < 0.20000000000000001 then
+      tmpFillBoost = tmpFilledFact / 0.20000000000000001
+    end if
+  end if
+  tmpFillBoost = (0.29999999999999999 * (tmpFillBoost - 1.0)) + 1.0
+  if band_r.memberObjs.count then
+    tmpPerformanceWeighted = [:]
+    repeat with n = 1 to band_r.memberObjs.count()
+      musician_r = band_r.memberObjs[n]
+      tmpLiveSkill = rgetProp(musician_r, #LiveSkill)
+      tmpMood = rgetProp(musician_r, #Mood)
+      tmpInstrSkill = rgetProp(musician_r, [#InstrumentalSkills, musician_r.NowPlaying])
+      tmpPerf = calcAverage([1.0: tmpLiveSkill, 0.29999999999999999: tmpMood, 0.29999999999999999: tmpInstrSkill])
+      tmpPerformanceWeighted.addProp(1.0, tmpPerf)
+    end repeat
+    BandPerformance = calcAverage(tmpPerformanceWeighted)
+  else
+    BandPerformance = 0
+  end if
+  BandPerformance = BandPerformance * tmpFillBoost
+  returnList.addProp(#Performance, BandPerformance)
+  tmpAvgLike = 0
+  if (tmpTotAudience >= 1) and (band_r.memberObjs.count > 0) then
+    tmpLikeWeighted = [:]
+    repeat with n = 1 to tmpNumPerGroup.count()
+      group_r = gRock.m_classManager.getObjByIDAndClass(tmpNumPerGroup.getPropAt(n), #Group)
+      tmpLike = me.likesConcert(group_r)
+      tmpWeight = tmpNumPerGroup[n] / tmpTotAudience
+      tmpLikeWeighted.addProp(tmpWeight, tmpLike)
+    end repeat
+    tmpAvgLike = calcAverage(tmpLikeWeighted)
+  end if
+  returnList.addProp(#Satisfaction, tmpAvgLike)
+  return returnList
+end
+
+on likesConcert me, argWho_r, argWeights, argReturnWhat
+  if voidp(argWeights) then
+    argWeights = [#music: 1, #image: 1, #SongType: 1, #quality: 1, #Performance: 4]
+  end if
+  likesAlbumInfo = rDefLikesAlbum(argWho_r, VOID, argWeights, #ExtraInfo)
+  tmpWeighted = likesAlbumInfo[#WeightedList]
+  likesAlbumInfo[#LikeSorted].addProp(BandPerformance, [#Performance])
+  if argWeights[#Performance] > 0 then
+    tmpWeighted.addProp(argWeights[#Performance], BandPerformance)
+  end if
+  tmpLike = calcAverage(tmpWeighted)
+  if argReturnWhat = #ExtraInfo then
+    return likesAlbumInfo
+  end if
+  return tmpLike
+end

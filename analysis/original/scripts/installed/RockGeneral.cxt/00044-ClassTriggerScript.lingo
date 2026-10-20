@@ -1,0 +1,137 @@
+property ancestor, child, className, belongsTo, _killed, ID, Active, ReactToMsgStr, ExecuteThis, ReactToMsgParsed, ExecuteThisParsed, TriggerActivateDate, useTimer, initedAlready
+global gRock
+
+on new me, argChild, argBelongsTo
+  if objectp(argChild) then
+    child = argChild
+  else
+    child = me
+  end if
+  belongsTo = argBelongsTo
+  className = #Trigger
+  ID = #none
+  Active = 0
+  ReactToMsgStr = EMPTY
+  ExecuteThis = EMPTY
+  ReactToMsgParsed = []
+  ExecuteThisParsed = []
+  TriggerActivateDate = 0
+  useTimer = 0
+  initedAlready = 0
+  return me
+end
+
+on kill me
+  _killed = 1
+  if objectp(gRock) then
+    gRock.m_msgManager.deleteObject(me)
+    gRock.m_gameTimer.deleteObject(me)
+  end if
+  if objectp(ancestor) then
+    ancestor = ancestor.kill()
+  end if
+  child = 0
+  belongsTo = 0
+  return 0
+end
+
+on init me
+  if initedAlready then
+    exit
+  end if
+  initedAlready = 1
+  if Active then
+    Active = 0
+    me.activate(1, #Loading)
+  end if
+end
+
+on IsActiveDuringTour me
+  if offset("ActiveDuringTour=1", ExecuteThis) then
+    return 1
+  end if
+  return 0
+end
+
+on activate me, argIsTRUE, argSpecial
+  if (argIsTRUE = 1) or voidp(argIsTRUE) then
+    if Active = 1 then
+      exit
+    end if
+    tmpStr = ReactToMsgStr
+    tmpOff = offset("timer", tmpStr)
+    if tmpOff then
+      if (tmpOff <= 2) or (tmpStr.char[tmpOff - 1] = "=") or (tmpStr.char[tmpOff - 1] = " ") then
+        useTimer = 1
+        tmpOff = offset(";", tmpStr)
+        if not tmpOff then
+          tmpOff = tmpStr.length
+        end if
+        delete tmpStr.char[1..tmpOff]
+      end if
+    end if
+    if tmpStr.length > 1 then
+      ReactToMsgParsed = gRock.m_executor.rParse(tmpStr)
+    end if
+    if argSpecial <> #Loading then
+      game_r = gRock.m_context.getFocus(#Game)
+      if game_r.getIsDiscarded(me.ID) then
+        pott("Can't use again!")
+        exit
+      end if
+    end if
+    if not initedAlready then
+      me.init()
+    end if
+    Active = 1
+    if useTimer then
+      gRock.m_gameTimer.addObject(me)
+    end if
+    if ReactToMsgParsed.count then
+      gRock.m_msgManager.addObject(me)
+    end if
+    ExecuteThisParsed = gRock.m_executor.preParseActionList(ExecuteThis.value)
+    if argSpecial <> #Loading then
+      TriggerActivateDate = gRock.m_date.getDateInt()
+      me.msg(#WasActivated, me)
+    end if
+  else
+    ExecuteThisParsed = []
+    TriggerActivateDate = 0
+    Active = 0
+    gRock.m_msgManager.deleteObject(me)
+    gRock.m_gameTimer.deleteObject(me)
+  end if
+end
+
+on msg me, argWhat, argOptions, argOption2
+  if Active = 0 then
+    exit
+  end if
+  tmpOK = 1
+  if ReactToMsgParsed.count > 0 then
+    tmpOK = rCalc(ReactToMsgParsed, [#what: argWhat, #option: argOptions, #Option2: argOption2])
+    if not integerp(tmpOK) then
+      pott("Err calc!", ReactToMsgStr, tmpOK, ID)
+      tmpOK = 0
+    end if
+  end if
+  if tmpOK then
+    me.act([#option: argOptions, #Option2: argOption2])
+  else
+  end if
+end
+
+on timeTick me
+  if Active = 0 then
+    exit
+  end if
+  me.act()
+end
+
+on act me, argOptions
+  if voidp(argOptions) then
+    argOptions = [:]
+  end if
+  gRock.m_executor.executePreParsedActionList(ExecuteThisParsed, [#option: argOptions[#option], #Option2: argOptions[#Option2], #TriggerActivateDate: TriggerActivateDate], me)
+end

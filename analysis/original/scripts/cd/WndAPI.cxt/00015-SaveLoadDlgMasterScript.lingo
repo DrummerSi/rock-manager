@@ -1,0 +1,82 @@
+property dlgObj, mode, reportObj, SP
+
+on new me, argReportObj, argMode, argStartFile
+  reportObj = argReportObj
+  if voidp(argMode) then
+    argMode = #open
+  end if
+  mode = argMode
+  SP = sprite(45)
+  dlgObj = script("Dialog").new([#AttachImageToMember: "SaveLoadDialogAssembly", #StartSpriteNum: SP.spriteNum, #NumSprites: 1, #OKtoResize: 1, #ID: #SaveLoad])
+  tmpList = member("DlgSaveLoadData").text.value
+  tmpt = the ticks
+  dlgObj.create(tmpList)
+  tmpt = the ticks - tmpt
+  tmpButtonObjs = dlgObj.getItemsByType(#button)
+  repeat with tmpObj in tmpButtonObjs
+    tmpObj.scriptInstanceList.addAt(1, me)
+  end repeat
+  if voidp(argStartFile) then
+    argStartFile = EMPTY
+  end if
+  tmpObj = dlgObj.getItem(#NameField)
+  tmpObj.setOneProp(#editData, argStartFile)
+  return me
+end
+
+on kill me
+  me.display(0)
+  if objectp(dlgObj) then
+    dlgObj = dlgObj.kill()
+  end if
+  return 0
+end
+
+on display me, argIsTRUE
+  if argIsTRUE then
+    SP.ink = 0
+    tmpt = the ticks
+    dlgObj.renderAtLoc(point(50, 50))
+    tmpt = the ticks - tmpt
+  else
+    SP.ink = 36
+  end if
+end
+
+on setList me, arg
+  exit
+  if stringp(arg) then
+  else
+    if listp(arg) then
+      exit
+    end if
+  end if
+  tmpObj = dlgObj.getItem(#Item9)
+  if objectp(tmpObj) then
+    tmpObj.setOneProp(#editData, arg)
+  end if
+end
+
+on mouse me, argObj, argWhat
+  if argWhat = #click then
+    if argObj.ID = #close then
+      reportObj.Report(me, #close)
+    else
+      if argObj.ID = #Ok then
+        tmpObj = dlgObj.getItem(#NameField)
+        me.choseFile(tmpObj.getEnteredData())
+      end if
+    end if
+  end if
+end
+
+on Report me, argObj, argWhat
+  if argObj.ID = #NameField then
+  end if
+end
+
+on choseFile me, argStr
+  if objectp(reportObj) then
+    reportObj.Report(me, mode, argStr)
+  end if
+end

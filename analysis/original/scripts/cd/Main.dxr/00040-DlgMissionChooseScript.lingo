@@ -1,0 +1,122 @@
+property ancestor, m_mission_r, m_scroller
+global gDir, gRock
+
+on new me, argOptions
+  ID = argOptions[#ID]
+  argOptions.setaProp(#ReportTo, me)
+  argOptions.setaProp(#child, me)
+  ancestor = script("DlgRockAncestorScript").new(argOptions)
+  missions_r = gRock.m_classManager.getObjsOfClass(#Mission)
+  sortedMissions_r = [:]
+  sortedMissions_r.sort()
+  repeat with n = 1 to missions_r.count
+    mission_r = missions_r[n]
+    sortedMissions_r.addProp(string(mission_r.ID), mission_r)
+  end repeat
+  if rOKCheatPass() then
+    availableMissions_r = [:]
+    repeat with mis_r in sortedMissions_r
+      availableMissions_r.addProp(mis_r.ID, mis_r)
+    end repeat
+  else
+    availableMissions_r = gRock.m_player.getAvailableMissions()
+  end if
+  allScrollItems = []
+  repeat with n = 1 to sortedMissions_r.count
+    mission_r = sortedMissions_r[n]
+    if mission_r.name = EMPTY then
+      next repeat
+    end if
+    if availableMissions_r.findPos(mission_r.ID) then
+      tmpPoints = gRock.m_player.getPointsOnMission(mission_r.ID)
+      if voidp(tmpPoints) then
+        tmpPoints = EMPTY
+      else
+        tmpPoints = rCurrency(roundToNearest(tmpPoints, 1000))
+      end if
+      tmp = rDlgCreateScrollItemInfo(mission_r, mission_r, VOID, VOID, [#points: tmpPoints])
+    else
+      tmp = rDlgCreateScrollItemInfo(mission_r, mission_r, VOID, 1, [#points: EMPTY])
+    end if
+    allScrollItems.add(tmp)
+  end repeat
+  itemObj = ancestor.m_objDlg.getItemByPath([#ScrollView, #Head1, #Info])
+  if objectp(itemObj) then
+    itemObj.setOneProp(#editData, rGetStr(#szidMission))
+  end if
+  itemObj = ancestor.m_objDlg.getItemByPath([#ScrollView, #Head2, #Info])
+  if objectp(itemObj) then
+    itemObj.setOneProp(#editData, rGetStr(#szidPoint_P))
+  end if
+  itemObj = ancestor.m_objDlg.getItemByPath([#ScrollView, #Frame1])
+  rct = itemObj.getOneProp(#inOffsetRect)
+  rct[3] = 400
+  rct[4] = 270
+  itemObj.setOneProp(#inOffsetRect, rct)
+  itemObj = ancestor.m_objDlg.getItemByPath([#Total, #Head, #icon])
+  itemObj.setOneProp(#Pic, "icon_effect02")
+  itemObj = ancestor.m_objDlg.getItemByPath([#Total, #Head, #Info])
+  itemObj.setOneProp(#editData, rGetStr(#szidTotalScore))
+  itemObj = ancestor.m_objDlg.getItemByPath([#Total, #dlg, #Pic])
+  itemObj.setOneProp(#Pic, rFormatText([rCurrency(roundToNearest(gRock.m_player.getTotalPoints([#Mission09]), 1000)), #szidPoint_P], "MissionTotalPointsFormatting"))
+  ancestor.m_objDlg.recalc(#DontPaint)
+  itemObj = ancestor.m_objDlg.getItem(#ButtonOK)
+  if objectp(itemObj) then
+    itemObj.send(#dimButton, 1)
+  end if
+  itemObj = ancestor.m_objDlg.getItemByPath([#ScrollView, #Frame2])
+  rct = itemObj.getOnStageRect()
+  rct = rct + rect(2, 2, -2, -2)
+  m_scroller = script("CPScrollerScript").new(me, ancestor.getSPOverDlg(), allScrollItems, rct, ancestor.m_objDlg.highestMouseLayer)
+  ancestor.render()
+  return me
+end
+
+on kill me
+  m_scroller = m_scroller.kill()
+  ancestor.kill()
+  return 0
+end
+
+on Report me, argObj, argWhat, argOption
+  if argObj = m_scroller then
+    if argWhat = #select then
+      m_mission_r = argOption.m_ID
+      me.choseMission(m_mission_r)
+    end if
+  end if
+end
+
+on choseMission me, argMission_r
+  m_mission_r = argMission_r
+  missionID = m_mission_r.ID
+  if rOKCheatPass() then
+    gDir.m_objDialogsMaster.closeAllDialogs()
+    gRock.startMission(missionID)
+    gRock.m_msgManager.msg(#ExitToCity)
+    exit
+  end if
+  waitCursor(1)
+  gRock.m_context.setFocus(#Mission, m_mission_r)
+  gRock.m_eventCardsManager.setOKToShowOnTopOfNumDialogs(-1)
+  gDir.m_objDialogsMaster.ImNOTExitingToCity()
+  gDir.m_objDialogsMaster.closeAllDialogs()
+  goMovie("Mission")
+  waitCursor(0)
+end
+
+on mouse me, argObj, argWhat, argOption
+  if objectp(argOption) then
+    if argWhat = #click then
+      ID = argOption.getOneProp(#ID)
+      IDStr = string(ID)
+      if ID = #ButtonOK then
+        if objectp(m_mission_r) then
+          me.choseMission(m_mission_r)
+          exit
+        end if
+      end if
+      ancestor.mouse(argObj, argWhat, argOption)
+    end if
+  end if
+end

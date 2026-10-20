@@ -1,0 +1,139 @@
+property m_soundName, m_do, m_sndObj
+global gDir, gUseful, gRock
+
+on beginSprite me
+  [  0] pushcons 0 .............................. <"SoundScript">
+  [  2] pusharglist 1 ........................... <"SoundScript">
+  [  4] extcall 18 .............................. <script("SoundScript")>
+  [  6] getglobal 14 ............................ <gRock>
+  [  8] getobjprop 190 .......................... <gRock.m_paths>
+  [ 11] pushsymb 190 ............................ <#m_paths>
+  [ 14] pushsymb 291 ............................ <#sound>
+  [ 17] pusharglist 3 ........................... <gRock.m_paths, #m_paths, #sound>
+  [ 19] objcall 28 .............................. <gRock.m_paths.m_paths[#sound]>
+  [ 21] getprop 118 ............................. <m_soundName>
+  [ 24] joinstr ................................. <gRock.m_paths.m_paths[#sound] & m_soundName>
+  [ 25] getglobal 57 ............................ <gUseful>
+  [ 28] getobjprop 192 .......................... <gUseful.soundFileExt>
+  [ 31] joinstr ................................. <gRock.m_paths.m_paths[#sound] & m_soundName & gUseful.soundFileExt>
+  [ 32] pushsymb 193 ............................ <#ReportTo>
+  [ 35] getparam 0 .............................. <me>
+  [ 37] pushsymb 194 ............................ <#vol>
+  [ 40] pushsymb 166 ............................ <#Speak>
+  [ 43] pusharglist 4 ........................... <[#ReportTo: me, #vol: #Speak]>
+  [ 45] pushproplist ............................ <[#ReportTo: me, #vol: #Speak]>
+  [ 46] pusharglist 3 ........................... <script("SoundScript"), gRock.m_paths.m_paths[#sound] & m_soundName & gUseful.soundFileExt, [#ReportTo: me, #vol: #Speak]>
+  [ 48] objcall 0 ............................... <script("SoundScript").new(gRock.m_paths.m_paths[#sound] & m_soundName & gUseful.soundFileExt, [#ReportTo: me, #vol: #Speak])>
+  [ 50] setprop 189 ............................. m_sndObj = script("SoundScript").new(gRock.m_paths.m_paths[#sound] & m_soundName & gUseful.soundFileExt, [#ReportTo: me, #vol: #Speak])
+  [ 53] ret
+end
+
+on exitFrame me
+  [  0] getprop 174 ............................. <m_do>
+  [  3] pushsymb 195 ............................ <#wait>
+  [  6] eq ...................................... <m_do = #wait>
+  [  7] getprop 189 ............................. <m_sndObj>
+  [ 10] pusharglist 1 ........................... <m_sndObj>
+  [ 12] extcall 37 .............................. <objectp(m_sndObj)>
+  [ 15] and ..................................... <(m_do = #wait) and objectp(m_sndObj)>
+  [ 16] jmpifz [ 31] ............................ if (m_do = #wait) and objectp(m_sndObj) then / else
+  [ 19] pusharglist 0 ........................... <>
+  [ 21] thebuiltin 24 ........................... <the frame>
+  [ 23] pusharglistnoret 1 ...................... <the frame>
+  [ 25] extcall 44 .............................. go(the frame)
+  [ 28] jmp [ 79]
+  [ 31] getprop 174 ............................. <m_do>
+  [ 34] pushsymb 196 ............................ <#WaitAtEndFrame>
+  [ 37] eq ...................................... <m_do = #WaitAtEndFrame>
+  [ 38] getprop 189 ............................. <m_sndObj>
+  [ 41] pusharglist 1 ........................... <m_sndObj>
+  [ 43] extcall 37 .............................. <objectp(m_sndObj)>
+  [ 46] and ..................................... <(m_do = #WaitAtEndFrame) and objectp(m_sndObj)>
+  [ 47] jmpifz [ 79] ............................ if (m_do = #WaitAtEndFrame) and objectp(m_sndObj) then
+  [ 50] pusharglist 0 ........................... <>
+  [ 52] thebuiltin 24 ........................... <the frame>
+  [ 54] getparam 0 .............................. <me>
+  [ 56] getobjprop 112 .......................... <me.spriteNum>
+  [ 59] pusharglist 1 ........................... <me.spriteNum>
+  [ 61] extcall 21 .............................. <sprite(me.spriteNum)>
+  [ 63] getobjprop 197 .......................... <sprite(me.spriteNum).endFrame>
+  [ 66] eq ...................................... <the frame = sprite(me.spriteNum).endFrame>
+  [ 67] jmpifz [ 79] ............................ if the frame = sprite(me.spriteNum).endFrame then
+  [ 70] pusharglist 0 ........................... <>
+  [ 72] thebuiltin 24 ........................... <the frame>
+  [ 74] pusharglistnoret 1 ...................... <the frame>
+  [ 76] extcall 44 .............................. go(the frame)
+  [ 79] ret
+end
+
+on stopSound me
+  [  0] getprop 189 ............................. <m_sndObj>
+  [  3] pusharglist 1 ........................... <m_sndObj>
+  [  5] extcall 37 .............................. <objectp(m_sndObj)>
+  [  8] jmpifz [ 21] ............................ if objectp(m_sndObj) then
+  [ 11] getprop 189 ............................. <m_sndObj>
+  [ 14] pusharglist 1 ........................... <m_sndObj>
+  [ 16] objcall 3 ............................... <m_sndObj.kill()>
+  [ 18] setprop 189 ............................. m_sndObj = m_sndObj.kill()
+  [ 21] ret
+end
+
+on endSprite me
+  [  0] getprop 189 ............................. <m_sndObj>
+  [  3] pusharglist 1 ........................... <m_sndObj>
+  [  5] extcall 37 .............................. <objectp(m_sndObj)>
+  [  8] jmpifz [ 21] ............................ if objectp(m_sndObj) then
+  [ 11] getprop 189 ............................. <m_sndObj>
+  [ 14] pusharglist 1 ........................... <m_sndObj>
+  [ 16] objcall 3 ............................... <m_sndObj.kill()>
+  [ 18] setprop 189 ............................. m_sndObj = m_sndObj.kill()
+  [ 21] ret
+end
+
+on Report me, argObj, argWhat
+  [  0] getparam 16 ............................. <argWhat>
+  [  2] pushsymb 125 ............................ <#finished>
+  [  5] eq ...................................... <argWhat = #finished>
+  [  6] jmpifz [ 30] ............................ if argWhat = #finished then
+  [  9] getprop 189 ............................. <m_sndObj>
+  [ 12] pusharglist 1 ........................... <m_sndObj>
+  [ 14] extcall 37 .............................. <objectp(m_sndObj)>
+  [ 17] jmpifz [ 30] ............................ if objectp(m_sndObj) then
+  [ 20] getprop 189 ............................. <m_sndObj>
+  [ 23] pusharglist 1 ........................... <m_sndObj>
+  [ 25] objcall 3 ............................... <m_sndObj.kill()>
+  [ 27] setprop 189 ............................. m_sndObj = m_sndObj.kill()
+  [ 30] ret
+end
+
+on getPropertyDescriptionList me
+  [  0] pushsymb 118 ............................ <#m_soundName>
+  [  3] pushsymb 138 ............................ <#comment>
+  [  6] pushcons 8 .............................. <"Play sound">
+  [  8] pushsymb 139 ............................ <#format>
+  [ 11] pushsymb 39 ............................. <#string>
+  [ 14] pushsymb 140 ............................ <#default>
+  [ 17] pushcons 16 ............................. <EMPTY>
+  [ 19] pusharglist 6 ........................... <[#comment: "Play sound", #format: #string, #default: EMPTY]>
+  [ 21] pushproplist ............................ <[#comment: "Play sound", #format: #string, #default: EMPTY]>
+  [ 22] pushsymb 174 ............................ <#m_do>
+  [ 25] pushsymb 138 ............................ <#comment>
+  [ 28] pushcons 24 ............................. <"Do what">
+  [ 30] pushsymb 139 ............................ <#format>
+  [ 33] pushsymb 33 ............................. <#symbol>
+  [ 36] pushsymb 140 ............................ <#default>
+  [ 39] pushsymb 195 ............................ <#wait>
+  [ 42] pushsymb 141 ............................ <#range>
+  [ 45] pushsymb 195 ............................ <#wait>
+  [ 48] pushsymb 180 ............................ <#nothing>
+  [ 51] pushsymb 196 ............................ <#WaitAtEndFrame>
+  [ 54] pusharglist 3 ........................... <[#wait, #nothing, #WaitAtEndFrame]>
+  [ 56] pushlist ................................ <[#wait, #nothing, #WaitAtEndFrame]>
+  [ 57] pusharglist 8 ........................... <[#comment: "Do what", #format: #symbol, #default: #wait, #range: [#wait, #nothing, #WaitAtEndFrame]]>
+  [ 59] pushproplist ............................ <[#comment: "Do what", #format: #symbol, #default: #wait, #range: [#wait, #nothing, #WaitAtEndFrame]]>
+  [ 60] pusharglist 4 ........................... <[#m_soundName: [#comment: "Play sound", #format: #string, #default: EMPTY], #m_do: [#comment: "Do what", #format: #symbol, #default: #wait, #range: [#wait, #nothing, #WaitAtEndFrame]]]>
+  [ 62] pushproplist ............................ <[#m_soundName: [#comment: "Play sound", #format: #string, #default: EMPTY], #m_do: [#comment: "Do what", #format: #symbol, #default: #wait, #range: [#wait, #nothing, #WaitAtEndFrame]]]>
+  [ 63] pusharglistnoret 1 ...................... <[#m_soundName: [#comment: "Play sound", #format: #string, #default: EMPTY], #m_do: [#comment: "Do what", #format: #symbol, #default: #wait, #range: [#wait, #nothing, #WaitAtEndFrame]]]>
+  [ 65] extcall 12 .............................. return [#m_soundName: [#comment: "Play sound", #format: #string, #default: EMPTY], #m_do: [#comment: "Do what", #format: #symbol, #default: #wait, #range: [#wait, #nothing, #WaitAtEndFrame]]]
+  [ 67] ret
+end

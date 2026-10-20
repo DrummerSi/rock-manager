@@ -1,0 +1,596 @@
+property soundObjs, maxMemory, usedMemory, maxNumChannels, numPlaying, nowPlayingObjs, waitingToPreloadObjs, waitingToPlayObjs, addObjs, deleteObjs, soundPath, volume, usedIDs, freeIDs, isDX
+global gUseful
+
+on new me
+  [  0] pushzero ................................ <0>
+  [  1] setprop 1719 ............................ isDX = 0
+  [  4] getmovieprop 108 ........................ <the moviePath>
+  [  7] pushcons 0 .............................. <"Sound\\">
+  [  9] joinstr ................................. <the moviePath & "Sound\\">
+  [ 10] setprop 1736 ............................ soundPath = the moviePath & "Sound\\"
+  [ 13] pusharglist 0 ........................... <>
+  [ 15] thebuiltin 74 ........................... <the machineType>
+  [ 18] pushint8 256 ............................ <256>
+  [ 21] eq ...................................... <the machineType = 256>
+  [ 22] jmpifz [ 33] ............................ if the machineType = 256 then / else
+  [ 25] pushint8 63 ............................. <63>
+  [ 28] setlocal 0 .............................. ticksPerSec = 63
+  [ 30] jmp [ 38]
+  [ 33] pushint8 60 ............................. <60>
+  [ 36] setlocal 0 .............................. ticksPerSec = 60
+  [ 38] pusharglist 0 ........................... <[]>
+  [ 40] pushlist ................................ <[]>
+  [ 41] setprop 1802 ............................ addObjs = []
+  [ 44] pusharglist 0 ........................... <[]>
+  [ 46] pushlist ................................ <[]>
+  [ 47] setprop 1803 ............................ deleteObjs = []
+  [ 50] pusharglist 0 ........................... <[:]>
+  [ 52] pushproplist ............................ <[:]>
+  [ 53] setprop 1804 ............................ soundObjs = [:]
+  [ 56] getprop 1804 ............................ <soundObjs>
+  [ 59] pusharglistnoret 1 ...................... <soundObjs>
+  [ 61] objcall 197 ............................. soundObjs.sort()
+  [ 64] pusharglist 0 ........................... <[:]>
+  [ 66] pushproplist ............................ <[:]>
+  [ 67] setprop 1805 ............................ nowPlayingObjs = [:]
+  [ 70] getprop 1805 ............................ <nowPlayingObjs>
+  [ 73] pusharglistnoret 1 ...................... <nowPlayingObjs>
+  [ 75] objcall 197 ............................. nowPlayingObjs.sort()
+  [ 78] pusharglist 0 ........................... <[:]>
+  [ 80] pushproplist ............................ <[:]>
+  [ 81] setprop 1806 ............................ waitingToPreloadObjs = [:]
+  [ 84] getprop 1806 ............................ <waitingToPreloadObjs>
+  [ 87] pusharglistnoret 1 ...................... <waitingToPreloadObjs>
+  [ 89] objcall 197 ............................. waitingToPreloadObjs.sort()
+  [ 92] pusharglist 0 ........................... <[:]>
+  [ 94] pushproplist ............................ <[:]>
+  [ 95] setprop 1807 ............................ waitingToPlayObjs = [:]
+  [ 98] getprop 1807 ............................ <waitingToPlayObjs>
+  [101] pusharglistnoret 1 ...................... <waitingToPlayObjs>
+  [103] objcall 197 ............................. waitingToPlayObjs.sort()
+  [106] pushint8 2048 ........................... <2048>
+  [109] pushint8 1024 ........................... <1024>
+  [112] mul ..................................... <2048 * 1024>
+  [113] setprop 1808 ............................ maxMemory = 2048 * 1024
+  [116] pushzero ................................ <0>
+  [117] setprop 1809 ............................ usedMemory = 0
+  [120] pushint8 8 .............................. <8>
+  [123] setprop 1810 ............................ maxNumChannels = 8
+  [126] pushzero ................................ <0>
+  [127] setprop 1811 ............................ numPlaying = 0
+  [130] pusharglist 0 ........................... <[]>
+  [132] pushlist ................................ <[]>
+  [133] setprop 1821 ............................ usedIDs = []
+  [136] pusharglist 0 ........................... <[]>
+  [138] pushlist ................................ <[]>
+  [139] setprop 1822 ............................ freeIDs = []
+  [142] pushint8 1 .............................. <1>
+  [145] setlocal 8
+  [147] getlocal 8
+  [149] getprop 1810 ............................ <maxNumChannels>
+  [152] lteq
+  [153] jmpifz [176] ............................ repeat with n = 1 to maxNumChannels
+  [156] getprop 1822 ............................ <freeIDs>
+  [159] getlocal 8 .............................. <n>
+  [161] pusharglistnoret 2 ...................... <freeIDs, n>
+  [163] objcall 183 ............................. freeIDs.add(n)
+  [166] pushint8 1
+  [169] getlocal 8
+  [171] add
+  [172] setlocal 8
+  [174] endrepeat [147]
+  [176] getparam 0 .............................. <me>
+  [178] pusharglistnoret 1 ...................... <me>
+  [180] extcall 32 .............................. return me
+  [183] ret
+end
+
+on init me
+  [  0] getglobal 66 ............................ <gUseful>
+  [  3] getobjprop 13 ........................... <gUseful.frameTimer>
+  [  5] getparam 0 .............................. <me>
+  [  7] pusharglistnoret 2 ...................... <gUseful.frameTimer, me>
+  [  9] objcall 17 .............................. gUseful.frameTimer.addObject(me)
+  [ 11] ret
+end
+
+on kill me
+  [  0] getprop 1804 ............................ <soundObjs>
+  [  3] peek 0
+  [  5] pusharglist 1
+  [  7] extcall 175
+  [ 10] pushint8 1
+  [ 12] peek 0
+  [ 14] peek 2
+  [ 16] lteq
+  [ 17] jmpifz [ 41] ............................ repeat with tmpObj in soundObjs
+  [ 20] peek 2
+  [ 22] peek 1
+  [ 24] pusharglist 2
+  [ 26] extcall 23
+  [ 28] setlocal 0
+  [ 30] getlocal 0 .............................. <tmpObj>
+  [ 32] pusharglistnoret 1 ...................... <tmpObj>
+  [ 34] localcall 2 ............................. kill(tmpObj)
+  [ 36] pushint8 1
+  [ 38] add
+  [ 39] endrepeat [ 12]
+  [ 41] pop 3
+  [ 43] pusharglist 0 ........................... <[:]>
+  [ 45] pushproplist ............................ <[:]>
+  [ 46] setprop 1804 ............................ soundObjs = [:]
+  [ 49] getglobal 66 ............................ <gUseful>
+  [ 52] getobjprop 13 ........................... <gUseful.frameTimer>
+  [ 54] getparam 0 .............................. <me>
+  [ 56] pusharglistnoret 2 ...................... <gUseful.frameTimer, me>
+  [ 58] objcall 36 .............................. gUseful.frameTimer.deleteObject(me)
+  [ 61] pushzero ................................ <0>
+  [ 62] pusharglistnoret 1 ...................... <0>
+  [ 64] extcall 32 .............................. return 0
+  [ 67] ret
+end
+
+on addObject me, argObj
+  [  0] getprop 1802 ............................ <addObjs>
+  [  3] getparam 8 .............................. <argObj>
+  [  5] pusharglistnoret 2 ...................... <addObjs, argObj>
+  [  7] objcall 183 ............................. addObjs.add(argObj)
+  [ 10] ret
+end
+
+on deleteObject me, argObj
+  [  0] getparam 8 .............................. <argObj>
+  [  2] getobjprop 298 .......................... <argObj.sndId>
+  [  5] jmpifz [ 20] ............................ if argObj.sndId then
+  [  8] getparam 0 .............................. <me>
+  [ 10] getparam 8 .............................. <argObj>
+  [ 12] getobjprop 298 .......................... <argObj.sndId>
+  [ 15] pusharglistnoret 2 ...................... <me, argObj.sndId>
+  [ 17] objcall 1820 ............................ me.returnId(argObj.sndId)
+  [ 20] getprop 1809 ............................ <usedMemory>
+  [ 23] getparam 8 .............................. <argObj>
+  [ 25] getobjprop 440 .......................... <argObj.size>
+  [ 28] sub ..................................... <usedMemory - argObj.size>
+  [ 29] setprop 1809 ............................ usedMemory = usedMemory - argObj.size
+  [ 32] getprop 1803 ............................ <deleteObjs>
+  [ 35] getparam 8 .............................. <argObj>
+  [ 37] pusharglistnoret 2 ...................... <deleteObjs, argObj>
+  [ 39] objcall 183 ............................. deleteObjs.add(argObj)
+  [ 42] ret
+end
+
+on updateObjects me
+  [  0] getprop 1802 ............................ <addObjs>
+  [  3] peek 0
+  [  5] pusharglist 1
+  [  7] extcall 175
+  [ 10] pushint8 1
+  [ 12] peek 0
+  [ 14] peek 2
+  [ 16] lteq
+  [ 17] jmpifz [ 66] ............................ repeat with tmpObj in addObjs
+  [ 20] peek 2
+  [ 22] peek 1
+  [ 24] pusharglist 2
+  [ 26] extcall 23
+  [ 28] setlocal 0
+  [ 30] getprop 1804 ............................ <soundObjs>
+  [ 33] getlocal 0 .............................. <tmpObj>
+  [ 35] pusharglist 2 ........................... <soundObjs, tmpObj>
+  [ 37] objcall 181 ............................. <soundObjs.getPos(tmpObj)>
+  [ 40] pushzero ................................ <0>
+  [ 41] eq ...................................... <soundObjs.getPos(tmpObj) = 0>
+  [ 42] jmpifz [ 60] ............................ if soundObjs.getPos(tmpObj) = 0 then
+  [ 45] getprop 1804 ............................ <soundObjs>
+  [ 48] getlocal 0 .............................. <tmpObj>
+  [ 50] getobjprop 714 .......................... <tmpObj.prio>
+  [ 53] getlocal 0 .............................. <tmpObj>
+  [ 55] pusharglistnoret 3 ...................... <soundObjs, tmpObj.prio, tmpObj>
+  [ 57] objcall 45 .............................. soundObjs.addProp(tmpObj.prio, tmpObj)
+  [ 60] pushint8 1
+  [ 62] add
+  [ 63] endrepeat [ 12]
+  [ 66] pop 3
+  [ 68] pusharglist 0 ........................... <[]>
+  [ 70] pushlist ................................ <[]>
+  [ 71] setprop 1802 ............................ addObjs = []
+  [ 74] getprop 1803 ............................ <deleteObjs>
+  [ 77] peek 0
+  [ 79] pusharglist 1
+  [ 81] extcall 175
+  [ 84] pushint8 1
+  [ 86] peek 0
+  [ 88] peek 2
+  [ 90] lteq
+  [ 91] jmpifz [119] ............................ repeat with tmpObj in deleteObjs
+  [ 94] peek 2
+  [ 96] peek 1
+  [ 98] pusharglist 2
+  [100] extcall 23
+  [102] setlocal 0
+  [104] getprop 1804 ............................ <soundObjs>
+  [107] getlocal 0 .............................. <tmpObj>
+  [109] pusharglistnoret 2 ...................... <soundObjs, tmpObj>
+  [111] objcall 182 ............................. soundObjs.deleteOne(tmpObj)
+  [114] pushint8 1
+  [116] add
+  [117] endrepeat [ 86]
+  [119] pop 3
+  [121] pusharglist 0 ........................... <[]>
+  [123] pushlist ................................ <[]>
+  [124] setprop 1803 ............................ deleteObjs = []
+  [127] ret
+end
+
+on getNumOfHigherPrio me, argObj
+  [  0] getprop 1804 ............................ <soundObjs>
+  [  3] getparam 8 .............................. <argObj>
+  [  5] getobjprop 714 .......................... <argObj.prio>
+  [  8] pushint8 1 .............................. <1>
+  [ 11] add ..................................... <argObj.prio + 1>
+  [ 12] pushint8 1 .............................. <1>
+  [ 15] inv ..................................... <-1>
+  [ 16] pusharglistnoret 3 ...................... <soundObjs, argObj.prio + 1, -1>
+  [ 18] objcall 45 .............................. soundObjs.addProp(argObj.prio + 1, -1)
+  [ 21] getprop 1804 ............................ <soundObjs>
+  [ 24] pushint8 1 .............................. <1>
+  [ 27] inv ..................................... <-1>
+  [ 28] pusharglist 2 ........................... <soundObjs, -1>
+  [ 30] objcall 181 ............................. <soundObjs.getPos(-1)>
+  [ 33] setlocal 0 .............................. tmpPos = soundObjs.getPos(-1)
+  [ 35] getprop 1804 ............................ <soundObjs>
+  [ 38] getlocal 0 .............................. <tmpPos>
+  [ 40] pusharglistnoret 2 ...................... <soundObjs, tmpPos>
+  [ 42] objcall 344 ............................. soundObjs.deleteAt(tmpPos)
+  [ 45] getlocal 0 .............................. <tmpPos>
+  [ 47] pusharglistnoret 1 ...................... <tmpPos>
+  [ 49] extcall 32 .............................. return tmpPos
+  [ 52] ret
+end
+
+on preload me, argObj
+  [  0] getparam 8 .............................. <argObj>
+  [  2] pusharglist 1 ........................... <argObj>
+  [  4] objcall 607 ............................. <argObj.getSize()>
+  [  7] setlocal 0 .............................. tmpNeededMem = argObj.getSize()
+  [  9] pushzero ................................ <0>
+  [ 10] setlocal 8 .............................. tmpGainedMem = 0
+  [ 12] getparam 8 .............................. <argObj>
+  [ 14] pushsymb 1721 ........................... <#preload>
+  [ 17] getparam 0 .............................. <me>
+  [ 19] pusharglist 1 ........................... <me>
+  [ 21] objcall 1819 ............................ <me.getFreeID()>
+  [ 24] pusharglistnoret 3 ...................... <argObj, #preload, me.getFreeID()>
+  [ 26] objcall 1720 ............................ argObj.masterSays(#preload, me.getFreeID())
+  [ 29] getparam 8 .............................. <argObj>
+  [ 31] getobjprop 298 .......................... <argObj.sndId>
+  [ 34] pushzero ................................ <0>
+  [ 35] eq ...................................... <argObj.sndId = 0>
+  [ 36] jmpifz [ 52] ............................ if argObj.sndId = 0 then
+  [ 39] pushcons 8 .............................. <"Couldn't load sound!">
+  [ 41] pusharglistnoret 1 ...................... <"Couldn't load sound!">
+  [ 43] extcall 142 ............................. put "Couldn't load sound!"
+  [ 46] pushzero ................................ <0>
+  [ 47] pusharglistnoret 1 ...................... <0>
+  [ 49] extcall 32 .............................. return 0
+  [ 52] getprop 1809 ............................ <usedMemory>
+  [ 55] getlocal 0 .............................. <tmpNeededMem>
+  [ 57] add ..................................... <usedMemory + tmpNeededMem>
+  [ 58] getlocal 8 .............................. <tmpGainedMem>
+  [ 60] sub ..................................... <usedMemory + tmpNeededMem - tmpGainedMem>
+  [ 61] setprop 1809 ............................ usedMemory = usedMemory + tmpNeededMem - tmpGainedMem
+  [ 64] pushint8 1 .............................. <1>
+  [ 67] pusharglistnoret 1 ...................... <1>
+  [ 69] extcall 32 .............................. return 1
+  [ 72] ret
+end
+
+on play me, argObj
+  [  0] getprop 1805 ............................ <nowPlayingObjs>
+  [  3] getparam 8 .............................. <argObj>
+  [  5] pusharglist 2 ........................... <nowPlayingObjs, argObj>
+  [  7] objcall 181 ............................. <nowPlayingObjs.getPos(argObj)>
+  [ 10] jmpifz [ 14] ............................ if nowPlayingObjs.getPos(argObj) then
+  [ 13] ret ..................................... exit
+  [ 14] getprop 1805 ............................ <nowPlayingObjs>
+  [ 17] pusharglist 1 ........................... <nowPlayingObjs>
+  [ 19] objcall 175 ............................. <nowPlayingObjs.count()>
+  [ 22] setlocal 0 .............................. tmpCnt = nowPlayingObjs.count()
+  [ 24] getlocal 0 .............................. <tmpCnt>
+  [ 26] getprop 1810 ............................ <maxNumChannels>
+  [ 29] eq ...................................... <tmpCnt = maxNumChannels>
+  [ 30] jmpifz [ 91] ............................ if tmpCnt = maxNumChannels then
+  [ 33] getprop 1805 ............................ <nowPlayingObjs>
+  [ 36] pushint8 1 .............................. <1>
+  [ 39] pusharglist 2 ........................... <nowPlayingObjs, 1>
+  [ 41] objcall 23 .............................. <nowPlayingObjs[1]>
+  [ 43] getobjprop 714 .......................... <nowPlayingObjs[1].prio>
+  [ 46] getparam 8 .............................. <argObj>
+  [ 48] getobjprop 714 .......................... <argObj.prio>
+  [ 51] lt ...................................... <nowPlayingObjs[1].prio < argObj.prio>
+  [ 52] jmpifz [ 75] ............................ if nowPlayingObjs[1].prio < argObj.prio then / else
+  [ 55] getparam 0 .............................. <me>
+  [ 57] getprop 1805 ............................ <nowPlayingObjs>
+  [ 60] pushint8 1 .............................. <1>
+  [ 63] pusharglist 2 ........................... <nowPlayingObjs, 1>
+  [ 65] objcall 23 .............................. <nowPlayingObjs[1]>
+  [ 67] pusharglistnoret 2 ...................... <me, nowPlayingObjs[1]>
+  [ 69] objcall 1759 ............................ me.Interrupt(nowPlayingObjs[1])
+  [ 72] jmp [ 91]
+  [ 75] getprop 1807 ............................ <waitingToPlayObjs>
+  [ 78] getparam 8 .............................. <argObj>
+  [ 80] getobjprop 714 .......................... <argObj.prio>
+  [ 83] getparam 8 .............................. <argObj>
+  [ 85] pusharglistnoret 3 ...................... <waitingToPlayObjs, argObj.prio, argObj>
+  [ 87] objcall 45 .............................. waitingToPlayObjs.addProp(argObj.prio, argObj)
+  [ 90] ret ..................................... exit
+  [ 91] getprop 1805 ............................ <nowPlayingObjs>
+  [ 94] getparam 8 .............................. <argObj>
+  [ 96] getobjprop 714 .......................... <argObj.prio>
+  [ 99] getparam 8 .............................. <argObj>
+  [101] pusharglistnoret 3 ...................... <nowPlayingObjs, argObj.prio, argObj>
+  [103] objcall 45 .............................. nowPlayingObjs.addProp(argObj.prio, argObj)
+  [106] getparam 8 .............................. <argObj>
+  [108] getobjprop 298 .......................... <argObj.sndId>
+  [111] pushzero ................................ <0>
+  [112] eq ...................................... <argObj.sndId = 0>
+  [113] jmpifz [136] ............................ if argObj.sndId = 0 then / else
+  [116] getparam 8 .............................. <argObj>
+  [118] pushsymb 326 ............................ <#play>
+  [121] getparam 0 .............................. <me>
+  [123] pusharglist 1 ........................... <me>
+  [125] objcall 1819 ............................ <me.getFreeID()>
+  [128] pusharglistnoret 3 ...................... <argObj, #play, me.getFreeID()>
+  [130] objcall 1720 ............................ argObj.masterSays(#play, me.getFreeID())
+  [133] jmp [146]
+  [136] getparam 8 .............................. <argObj>
+  [138] pushsymb 326 ............................ <#play>
+  [141] pusharglistnoret 2 ...................... <argObj, #play>
+  [143] objcall 1720 ............................ argObj.masterSays(#play)
+  [146] ret
+end
+
+on getFreeID me
+  [  0] getprop 1822 ............................ <freeIDs>
+  [  3] pusharglist 1 ........................... <freeIDs>
+  [  5] objcall 175 ............................. <freeIDs.count()>
+  [  8] pushzero ................................ <0>
+  [  9] eq ...................................... <freeIDs.count() = 0>
+  [ 10] jmpifz [ 19] ............................ if freeIDs.count() = 0 then
+  [ 13] pushzero ................................ <0>
+  [ 14] pusharglistnoret 1 ...................... <0>
+  [ 16] extcall 32 .............................. return 0
+  [ 19] getprop 1822 ............................ <freeIDs>
+  [ 22] pushint8 1 .............................. <1>
+  [ 25] pusharglist 2 ........................... <freeIDs, 1>
+  [ 27] objcall 23 .............................. <freeIDs[1]>
+  [ 29] setlocal 0 .............................. tmpID = freeIDs[1]
+  [ 31] getprop 1822 ............................ <freeIDs>
+  [ 34] pushint8 1 .............................. <1>
+  [ 37] pusharglistnoret 2 ...................... <freeIDs, 1>
+  [ 39] objcall 344 ............................. freeIDs.deleteAt(1)
+  [ 42] getprop 1821 ............................ <usedIDs>
+  [ 45] getlocal 0 .............................. <tmpID>
+  [ 47] pusharglistnoret 2 ...................... <usedIDs, tmpID>
+  [ 49] objcall 183 ............................. usedIDs.add(tmpID)
+  [ 52] getlocal 0 .............................. <tmpID>
+  [ 54] pusharglistnoret 1 ...................... <tmpID>
+  [ 56] extcall 32 .............................. return tmpID
+  [ 59] ret
+end
+
+on returnId me, argID
+  [  0] getprop 1822 ............................ <freeIDs>
+  [  3] getparam 8 .............................. <argID>
+  [  5] pusharglistnoret 2 ...................... <freeIDs, argID>
+  [  7] objcall 183 ............................. freeIDs.add(argID)
+  [ 10] getprop 1821 ............................ <usedIDs>
+  [ 13] getparam 8 .............................. <argID>
+  [ 15] pusharglistnoret 2 ...................... <usedIDs, argID>
+  [ 17] objcall 182 ............................. usedIDs.deleteOne(argID)
+  [ 20] ret
+end
+
+on Interrupt me, argObj
+  [  0] getparam 8 .............................. <argObj>
+  [  2] pusharglist 1 ........................... <argObj>
+  [  4] objcall 1733 ............................ <argObj.isPlaying()>
+  [  7] jmpifz [ 30] ............................ if argObj.isPlaying() then
+  [ 10] getparam 8 .............................. <argObj>
+  [ 12] pushsymb 1759 ........................... <#Interrupt>
+  [ 15] pusharglistnoret 2 ...................... <argObj, #Interrupt>
+  [ 17] objcall 1720 ............................ argObj.masterSays(#Interrupt)
+  [ 20] getprop 1805 ............................ <nowPlayingObjs>
+  [ 23] getparam 8 .............................. <argObj>
+  [ 25] pusharglistnoret 2 ...................... <nowPlayingObjs, argObj>
+  [ 27] objcall 182 ............................. nowPlayingObjs.deleteOne(argObj)
+  [ 30] ret
+end
+
+on stop me, argObj
+  [  0] getprop 1805 ............................ <nowPlayingObjs>
+  [  3] getparam 8 .............................. <argObj>
+  [  5] pusharglistnoret 2 ...................... <nowPlayingObjs, argObj>
+  [  7] objcall 182 ............................. nowPlayingObjs.deleteOne(argObj)
+  [ 10] getparam 8 .............................. <argObj>
+  [ 12] pushsymb 305 ............................ <#stop>
+  [ 15] pusharglistnoret 2 ...................... <argObj, #stop>
+  [ 17] objcall 1720 ............................ argObj.masterSays(#stop)
+  [ 20] getparam 0 .............................. <me>
+  [ 22] pusharglistnoret 1 ...................... <me>
+  [ 24] objcall 1798 ............................ me.letTheWaitingPlay()
+  [ 27] ret
+end
+
+on stopAll me
+  [  0] getprop 1804 ............................ <soundObjs>
+  [  3] peek 0
+  [  5] pusharglist 1
+  [  7] extcall 175
+  [ 10] pushint8 1
+  [ 12] peek 0
+  [ 14] peek 2
+  [ 16] lteq
+  [ 17] jmpifz [ 35] ............................ repeat with tmpObj in soundObjs
+  [ 20] peek 2
+  [ 22] peek 1
+  [ 24] pusharglist 2
+  [ 26] extcall 23
+  [ 28] setlocal 0
+  [ 30] pushint8 1
+  [ 32] add
+  [ 33] endrepeat [ 12]
+  [ 35] pop 3
+  [ 37] ret
+end
+
+on cuePassed me
+  [  0] ret
+end
+
+on letTheWaitingPlay me
+  [  0] getprop 1810 ............................ <maxNumChannels>
+  [  3] getprop 1805 ............................ <nowPlayingObjs>
+  [  6] pusharglist 1 ........................... <nowPlayingObjs>
+  [  8] objcall 175 ............................. <nowPlayingObjs.count()>
+  [ 11] sub ..................................... <maxNumChannels - nowPlayingObjs.count()>
+  [ 12] setlocal 0 .............................. tmpFree = maxNumChannels - nowPlayingObjs.count()
+  [ 14] getlocal 0 .............................. <tmpFree>
+  [ 16] jmpifz [106] ............................ if tmpFree then
+  [ 19] getprop 1807 ............................ <waitingToPlayObjs>
+  [ 22] pusharglist 1 ........................... <waitingToPlayObjs>
+  [ 24] objcall 175 ............................. <waitingToPlayObjs.count()>
+  [ 27] setlocal 8 .............................. tmpStart = waitingToPlayObjs.count()
+  [ 29] getlocal 8 .............................. <tmpStart>
+  [ 31] setlocal 16 ............................. tmp = tmpStart
+  [ 33] getlocal 16 ............................. <tmp>
+  [ 35] getlocal 0 .............................. <tmpFree>
+  [ 37] gt ...................................... <tmp > tmpFree>
+  [ 38] jmpifz [ 45] ............................ if tmp > tmpFree then
+  [ 41] getlocal 0 .............................. <tmpFree>
+  [ 43] setlocal 16 ............................. tmp = tmpFree
+  [ 45] getlocal 8 .............................. <tmpStart>
+  [ 47] setlocal 24
+  [ 49] getlocal 24
+  [ 51] getlocal 8 .............................. <tmpStart>
+  [ 53] getlocal 16 ............................. <tmp>
+  [ 55] sub ..................................... <tmpStart - tmp>
+  [ 56] pushint8 1 .............................. <1>
+  [ 59] add ..................................... <tmpStart - tmp + 1>
+  [ 60] gteq
+  [ 61] jmpifz [106] ............................ repeat with n = tmpStart down to tmpStart - tmp + 1
+  [ 64] getprop 1807 ............................ <waitingToPlayObjs>
+  [ 67] getlocal 24 ............................. <n>
+  [ 69] pusharglist 2 ........................... <waitingToPlayObjs, n>
+  [ 71] objcall 23 .............................. <waitingToPlayObjs[n]>
+  [ 73] setlocal 32 ............................. tmpObj = waitingToPlayObjs[n]
+  [ 75] getprop 1807 ............................ <waitingToPlayObjs>
+  [ 78] getlocal 24 ............................. <n>
+  [ 80] pusharglistnoret 2 ...................... <waitingToPlayObjs, n>
+  [ 82] objcall 344 ............................. waitingToPlayObjs.deleteAt(n)
+  [ 85] getlocal 32 ............................. <tmpObj>
+  [ 87] pushsymb 326 ............................ <#play>
+  [ 90] pusharglistnoret 2 ...................... <tmpObj, #play>
+  [ 92] objcall 1720 ............................ tmpObj.masterSays(#play)
+  [ 95] pushint8 -1
+  [ 98] getlocal 24
+  [100] add
+  [101] setlocal 24
+  [103] endrepeat [ 49]
+  [106] ret
+end
+
+on timeTick me
+  [  0] getprop 1809 ............................ <usedMemory>
+  [  3] setlocal 0 .............................. tmpBeforeMem = usedMemory
+  [  5] getprop 1805 ............................ <nowPlayingObjs>
+  [  8] pusharglist 1 ........................... <nowPlayingObjs>
+  [ 10] objcall 175 ............................. <nowPlayingObjs.count()>
+  [ 13] setlocal 8
+  [ 15] getlocal 8
+  [ 17] pushint8 1 .............................. <1>
+  [ 20] gteq
+  [ 21] jmpifz [ 76] ............................ repeat with n = nowPlayingObjs.count() down to 1
+  [ 24] getprop 1805 ............................ <nowPlayingObjs>
+  [ 27] getlocal 8 .............................. <n>
+  [ 29] pusharglist 2 ........................... <nowPlayingObjs, n>
+  [ 31] objcall 23 .............................. <nowPlayingObjs[n]>
+  [ 33] setlocal 16 ............................. tmpObj = nowPlayingObjs[n]
+  [ 35] getlocal 16 ............................. <tmpObj>
+  [ 37] pusharglist 1 ........................... <tmpObj>
+  [ 39] objcall 331 ............................. <tmpObj.finished()>
+  [ 42] jmpifz [ 65] ............................ if tmpObj.finished() then
+  [ 45] getprop 1805 ............................ <nowPlayingObjs>
+  [ 48] getlocal 8 .............................. <n>
+  [ 50] pusharglistnoret 2 ...................... <nowPlayingObjs, n>
+  [ 52] objcall 344 ............................. nowPlayingObjs.deleteAt(n)
+  [ 55] getlocal 16 ............................. <tmpObj>
+  [ 57] pushsymb 331 ............................ <#finished>
+  [ 60] pusharglistnoret 2 ...................... <tmpObj, #finished>
+  [ 62] objcall 1720 ............................ tmpObj.masterSays(#finished)
+  [ 65] pushint8 -1
+  [ 68] getlocal 8
+  [ 70] add
+  [ 71] setlocal 8
+  [ 73] endrepeat [ 15]
+  [ 76] getlocal 0 .............................. <tmpBeforeMem>
+  [ 78] getprop 1809 ............................ <usedMemory>
+  [ 81] sub ..................................... <tmpBeforeMem - usedMemory>
+  [ 82] pushzero ................................ <0>
+  [ 83] gt ...................................... <(tmpBeforeMem - usedMemory) > 0>
+  [ 84] jmpifz [198] ............................ if (tmpBeforeMem - usedMemory) > 0 then
+  [ 87] getprop 1806 ............................ <waitingToPreloadObjs>
+  [ 90] pusharglist 1 ........................... <waitingToPreloadObjs>
+  [ 92] objcall 175 ............................. <waitingToPreloadObjs.count()>
+  [ 95] setlocal 24 ............................. tmp = waitingToPreloadObjs.count()
+  [ 97] getlocal 24 ............................. <tmp>
+  [ 99] setlocal 8
+  [101] getlocal 8
+  [103] pushint8 1 .............................. <1>
+  [106] gteq
+  [107] jmpifz [198] ............................ repeat with n = tmp down to 1
+  [110] getprop 1806 ............................ <waitingToPreloadObjs>
+  [113] getlocal 8 .............................. <n>
+  [115] pusharglist 2 ........................... <waitingToPreloadObjs, n>
+  [117] objcall 23 .............................. <waitingToPreloadObjs[n]>
+  [119] setlocal 16 ............................. tmpObj = waitingToPreloadObjs[n]
+  [121] getlocal 16 ............................. <tmpObj>
+  [123] pusharglist 1 ........................... <tmpObj>
+  [125] objcall 607 ............................. <tmpObj.getSize()>
+  [128] getprop 1809 ............................ <usedMemory>
+  [131] add ..................................... <tmpObj.getSize() + usedMemory>
+  [132] getprop 1808 ............................ <maxMemory>
+  [135] lteq .................................... <(tmpObj.getSize() + usedMemory) <= maxMemory>
+  [136] jmpifz [184] ............................ if (tmpObj.getSize() + usedMemory) <= maxMemory then
+  [139] getlocal 16 ............................. <tmpObj>
+  [141] pushsymb 1721 ........................... <#preload>
+  [144] pusharglistnoret 2 ...................... <tmpObj, #preload>
+  [146] objcall 1720 ............................ tmpObj.masterSays(#preload)
+  [149] getlocal 16 ............................. <tmpObj>
+  [151] getobjprop 298 .......................... <tmpObj.sndId>
+  [154] jmpifz [181] ............................ if tmpObj.sndId then
+  [157] getprop 1809 ............................ <usedMemory>
+  [160] getlocal 16 ............................. <tmpObj>
+  [162] pusharglist 1 ........................... <tmpObj>
+  [164] objcall 607 ............................. <tmpObj.getSize()>
+  [167] add ..................................... <usedMemory + tmpObj.getSize()>
+  [168] setprop 1809 ............................ usedMemory = usedMemory + tmpObj.getSize()
+  [171] getprop 1806 ............................ <waitingToPreloadObjs>
+  [174] getlocal 8 .............................. <n>
+  [176] pusharglistnoret 2 ...................... <waitingToPreloadObjs, n>
+  [178] objcall 344 ............................. waitingToPreloadObjs.deleteAt(n)
+  [181] jmp [187] ............................... next repeat
+  [184] jmp [198] ............................... exit repeat
+  [187] pushint8 -1
+  [190] getlocal 8
+  [192] add
+  [193] setlocal 8
+  [195] endrepeat [101]
+  [198] getparam 0 .............................. <me>
+  [200] pusharglistnoret 1 ...................... <me>
+  [202] objcall 1798 ............................ me.letTheWaitingPlay()
+  [205] getparam 0 .............................. <me>
+  [207] pusharglistnoret 1 ...................... <me>
+  [209] objcall 1795 ............................ me.updateObjects()
+  [212] ret
+end

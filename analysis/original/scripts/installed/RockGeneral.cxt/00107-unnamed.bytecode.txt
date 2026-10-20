@@ -1,0 +1,160 @@
+on refreshMembersInCast argFolders, argCast
+  [  0] getparam 0 .............................. <argFolders>
+  [  2] pusharglist 1 ........................... <argFolders>
+  [  4] extcall 115 ............................. <listp(argFolders)>
+  [  7] not ..................................... <not listp(argFolders)>
+  [  8] jmpifz [ 20] ............................ if not listp(argFolders) then
+  [ 11] pushcons 0 .............................. <"D:\\dok\\import1\\">
+  [ 13] pushcons 8 .............................. <"D:\\dok\\import2\\">
+  [ 15] pusharglist 2 ........................... <["D:\\dok\\import1\\", "D:\\dok\\import2\\"]>
+  [ 17] pushlist ................................ <["D:\\dok\\import1\\", "D:\\dok\\import2\\"]>
+  [ 18] setparam 0 .............................. argFolders = ["D:\\dok\\import1\\", "D:\\dok\\import2\\"]
+  [ 20] getparam 8 .............................. <argCast>
+  [ 22] pusharglist 1 ........................... <argCast>
+  [ 24] extcall 61 .............................. <voidp(argCast)>
+  [ 27] jmpifz [ 35] ............................ if voidp(argCast) then
+  [ 30] pushint8 2 .............................. <2>
+  [ 33] setparam 8 .............................. argCast = 2
+  [ 35] pushcons 16 ............................. <"FileXtra3">
+  [ 37] pusharglist 1 ........................... <"FileXtra3">
+  [ 39] extcall 120 ............................. <xtra("FileXtra3")>
+  [ 42] pusharglist 1 ........................... <xtra("FileXtra3")>
+  [ 44] objcall 11 .............................. <xtra("FileXtra3").new()>
+  [ 46] setlocal 0 .............................. fxObj = xtra("FileXtra3").new()
+  [ 48] pushint8 1 .............................. <1>
+  [ 51] setlocal 8
+  [ 53] getlocal 8
+  [ 55] getparam 0 .............................. <argFolders>
+  [ 57] getobjprop 156 .......................... <argFolders.count>
+  [ 60] lteq
+  [ 61] jmpifz [338] ............................ repeat with folderNr = 1 to argFolders.count
+  [ 64] getparam 0 .............................. <argFolders>
+  [ 66] getlocal 8 .............................. <folderNr>
+  [ 68] pusharglist 2 ........................... <argFolders, folderNr>
+  [ 70] objcall 119 ............................. <argFolders[folderNr]>
+  [ 73] setlocal 16 ............................. Folder = argFolders[folderNr]
+  [ 75] getlocal 16 ............................. <Folder>
+  [ 77] pusharglist 1 ........................... <Folder>
+  [ 79] extcall 2196 ............................ <getFilesInFolder(Folder)>
+  [ 82] setlocal 24 ............................. Files = getFilesInFolder(Folder)
+  [ 84] getlocal 16 ............................. <Folder>
+  [ 86] pusharglistnoret 1 ...................... <Folder>
+  [ 88] extcall 2197 ............................ put Folder
+  [ 91] pushint8 1 .............................. <1>
+  [ 94] setlocal 32
+  [ 96] getlocal 32
+  [ 98] getlocal 24 ............................. <Files>
+  [100] getobjprop 156 .......................... <Files.count>
+  [103] lteq
+  [104] jmpifz [327] ............................ repeat with fileNr = 1 to Files.count
+  [107] getlocal 24 ............................. <Files>
+  [109] getlocal 32 ............................. <fileNr>
+  [111] pusharglist 2 ........................... <Files, fileNr>
+  [113] objcall 119 ............................. <Files[fileNr]>
+  [116] setlocal 40 ............................. file = Files[fileNr]
+  [118] getlocal 40 ............................. <file>
+  [120] pusharglist 1 ........................... <file>
+  [122] extcall 2198 ............................ <fileStripName(file)>
+  [125] setlocal 48 ............................. stripped = fileStripName(file)
+  [127] getlocal 48 ............................. <stripped>
+  [129] getparam 8 .............................. <argCast>
+  [131] pusharglist 2 ........................... <stripped, argCast>
+  [133] extcall 56 .............................. <member(stripped, argCast)>
+  [136] setlocal 56 ............................. tmpMemb = member(stripped, argCast)
+  [138] pushzero ................................ <0>
+  [139] setlocal 64 ............................. importInto = 0
+  [141] getlocal 56 ............................. <tmpMemb>
+  [143] getobjprop 410 .......................... <tmpMemb.number>
+  [146] pushzero ................................ <0>
+  [147] gt ...................................... <tmpMemb.number > 0>
+  [148] jmpifz [252] ............................ if tmpMemb.number > 0 then / else
+  [151] getlocal 56 ............................. <tmpMemb>
+  [153] getobjprop 2199 ......................... <tmpMemb.creationDate>
+  [156] setlocal 72 ............................. membDate = tmpMemb.creationDate
+  [158] getlocal 0 .............................. <fxObj>
+  [160] getlocal 16 ............................. <Folder>
+  [162] getlocal 40 ............................. <file>
+  [164] joinstr ................................. <Folder & file>
+  [165] pusharglist 2 ........................... <fxObj, Folder & file>
+  [167] objcall 2201 ............................ <fxObj.fx_FileGetModDate(Folder & file)>
+  [170] pushsymb 2202 ........................... <#lingo>
+  [173] pusharglist 2 ........................... <fxObj.fx_FileGetModDate(Folder & file), #lingo>
+  [175] extcall 2200 ............................ <translateFXDate(fxObj.fx_FileGetModDate(Folder & file), #lingo)>
+  [178] setlocal 80 ............................. fileDate = translateFXDate(fxObj.fx_FileGetModDate(Folder & file), #lingo)
+  [180] getlocal 80 ............................. <fileDate>
+  [182] getlocal 72 ............................. <membDate>
+  [184] sub ..................................... <fileDate - membDate>
+  [185] pushzero ................................ <0>
+  [186] gteq .................................... <(fileDate - membDate) >= 0>
+  [187] jmpifz [249] ............................ if (fileDate - membDate) >= 0 then
+  [190] getlocal 80 ............................. <fileDate>
+  [192] getlocal 72 ............................. <membDate>
+  [194] sub ..................................... <fileDate - membDate>
+  [195] pushzero ................................ <0>
+  [196] eq ...................................... <(fileDate - membDate) = 0>
+  [197] jmpifz [224] ............................ if (fileDate - membDate) = 0 then / else
+  [200] getlocal 80 ............................. <fileDate>
+  [202] getobjprop 2203 ......................... <fileDate.seconds>
+  [205] getlocal 72 ............................. <membDate>
+  [207] getobjprop 2203 ......................... <membDate.seconds>
+  [210] gt ...................................... <fileDate.seconds > membDate.seconds>
+  [211] jmpifz [221] ............................ if fileDate.seconds > membDate.seconds then
+  [214] getlocal 56 ............................. <tmpMemb>
+  [216] getobjprop 2204 ......................... <tmpMemb.memberNum>
+  [219] setlocal 64 ............................. importInto = tmpMemb.memberNum
+  [221] jmp [231]
+  [224] getlocal 56 ............................. <tmpMemb>
+  [226] getobjprop 2204 ......................... <tmpMemb.memberNum>
+  [229] setlocal 64 ............................. importInto = tmpMemb.memberNum
+  [231] getlocal 64 ............................. <importInto>
+  [233] pushzero ................................ <0>
+  [234] gt ...................................... <importInto > 0>
+  [235] jmpifz [249] ............................ if importInto > 0 then
+  [238] pushcons 24 ............................. <"New file">
+  [240] getlocal 80 ............................. <fileDate>
+  [242] getlocal 72 ............................. <membDate>
+  [244] pusharglistnoret 3 ...................... <"New file", fileDate, membDate>
+  [246] extcall 122 ............................. pott("New file", fileDate, membDate)
+  [249] jmp [265]
+  [252] pushint8 1 .............................. <1>
+  [255] getparam 8 .............................. <argCast>
+  [257] pushint8 2 .............................. <2>
+  [260] get 8 ................................... <the number of castMembers of castLib argCast>
+  [262] add ..................................... <1 + the number of castMembers of castLib argCast>
+  [263] setlocal 64 ............................. importInto = 1 + the number of castMembers of castLib argCast
+  [265] getlocal 64 ............................. <importInto>
+  [267] pushzero ................................ <0>
+  [268] gt ...................................... <importInto > 0>
+  [269] jmpifz [316] ............................ if importInto > 0 then
+  [272] pushcons 32 ............................. <"import">
+  [274] getlocal 40 ............................. <file>
+  [276] getlocal 64 ............................. <importInto>
+  [278] pusharglistnoret 3 ...................... <"import", file, importInto>
+  [280] extcall 2197 ............................ put "import", file, importInto
+  [283] pushsymb 2205 ........................... <#bitmap>
+  [286] getlocal 48 ............................. <stripped>
+  [288] getlocal 64 ............................. <importInto>
+  [290] getparam 8 .............................. <argCast>
+  [292] pusharglist 2 ........................... <importInto, argCast>
+  [294] extcall 56 .............................. <member(importInto, argCast)>
+  [297] pusharglist 3 ........................... <#bitmap, stripped, member(importInto, argCast)>
+  [299] extcall 411 ............................. <newMember(#bitmap, stripped, member(importInto, argCast))>
+  [302] setlocal 88 ............................. newMemb = newMember(#bitmap, stripped, member(importInto, argCast))
+  [304] getlocal 88 ............................. <newMemb>
+  [306] getlocal 16 ............................. <Folder>
+  [308] getlocal 40 ............................. <file>
+  [310] joinstr ................................. <Folder & file>
+  [311] pusharglistnoret 2 ...................... <newMemb, Folder & file>
+  [313] extcall 2206 ............................ importFileInto(newMemb, Folder & file)
+  [316] pushint8 1
+  [319] getlocal 32
+  [321] add
+  [322] setlocal 32
+  [324] endrepeat [ 96]
+  [327] pushint8 1
+  [330] getlocal 8
+  [332] add
+  [333] setlocal 8
+  [335] endrepeat [ 53]
+  [338] ret
+end

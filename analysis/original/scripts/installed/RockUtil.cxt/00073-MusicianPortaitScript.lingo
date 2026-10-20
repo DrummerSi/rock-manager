@@ -1,0 +1,50 @@
+property m_SP, m_musicianID, m_mouseObj
+global gDir, gRock
+
+on new me, argSPNum, argLoc, argRect
+  m_mouseObj = script("MouseObject").new(me, argRect, [#layer: 11, #noPassRoll: 1])
+  m_SP = sprite(argSPNum)
+  m_SP.loc = argLoc
+  return me
+end
+
+on kill me
+  if objectp(m_mouseObj) then
+    m_mouseObj = m_mouseObj.kill()
+  end if
+  m_SP.member = member("Dummy")
+  return 0
+end
+
+on redraw me, argMusician_r, argMoodSetting
+  if objectp(argMusician_r) then
+    m_mouseObj.noPassRoll = 1
+    m_musicianID = argMusician_r.ID
+    tmpPic = argMusician_r.getCurrentPic(#Medium, argMoodSetting)
+    tmpMemb = tryGetMember(tmpPic)
+    if voidp(tmpMemb) then
+      pott("Couldn't find musician pic!", tmpPic, argMoodSetting)
+      tmpMemb = member("Portrait_Actor09_bear_Satisfied_Medium")
+    end if
+    m_SP.member = tmpMemb
+  else
+    m_mouseObj.noPassRoll = 0
+    m_musicianID = 0
+    m_SP.member = member("Dummy")
+  end if
+end
+
+on mouse me, argObj, argWhat
+  if argWhat = #click then
+    if symbolp(m_musicianID) then
+      musician_r = gRock.m_classManager.getObjByIDAndClass(m_musicianID, #RealMusician)
+      if musician_r.getIsOccupied() then
+        gRock.m_eventCardsManager.tryNewShowEventCard(#ECOCMusicianAway, [#prio: 0])
+      else
+        gDir.m_objDialogsMaster.openDialog(#Rehearsal01Artist, [#Musician: musician_r])
+      end if
+    else
+      gDir.m_objDialogsMaster.openDialog(#Rehearsal01)
+    end if
+  end if
+end

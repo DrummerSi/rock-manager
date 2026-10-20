@@ -1,0 +1,195 @@
+property buttonObjs, SP, reportObj, currentlyUsingSPObj, lastUsingSPObj, mode
+
+on new me, argReportObj, argSP, argMode
+  [  0] getparam 8 .............................. <argReportObj>
+  [  2] setprop 691 ............................. reportObj = argReportObj
+  [  5] getparam 16 ............................. <argSP>
+  [  7] setprop 294 ............................. SP = argSP
+  [ 10] pusharglist 0 ........................... <[]>
+  [ 12] pushlist ................................ <[]>
+  [ 13] setprop 764 ............................. buttonObjs = []
+  [ 16] pushzero ................................ <0>
+  [ 17] setprop 765 ............................. currentlyUsingSPObj = 0
+  [ 20] pushzero ................................ <0>
+  [ 21] setprop 766 ............................. lastUsingSPObj = 0
+  [ 24] getparam 24 ............................. <argMode>
+  [ 26] setprop 136 ............................. mode = argMode
+  [ 29] getparam 0 .............................. <me>
+  [ 31] pusharglistnoret 1 ...................... <me>
+  [ 33] extcall 32 .............................. return me
+  [ 36] ret
+end
+
+on kill me
+  [  0] getprop 764 ............................. <buttonObjs>
+  [  3] peek 0
+  [  5] pusharglist 1
+  [  7] extcall 175
+  [ 10] pushint8 1
+  [ 12] peek 0
+  [ 14] peek 2
+  [ 16] lteq
+  [ 17] jmpifz [ 41] ............................ repeat with tmpObj in buttonObjs
+  [ 20] peek 2
+  [ 22] peek 1
+  [ 24] pusharglist 2
+  [ 26] extcall 23
+  [ 28] setlocal 0
+  [ 30] getlocal 0 .............................. <tmpObj>
+  [ 32] pusharglistnoret 1 ...................... <tmpObj>
+  [ 34] localcall 1 ............................. kill(tmpObj)
+  [ 36] pushint8 1
+  [ 38] add
+  [ 39] endrepeat [ 12]
+  [ 41] pop 3
+  [ 43] pusharglist 0 ........................... <[]>
+  [ 45] pushlist ................................ <[]>
+  [ 46] setprop 764 ............................. buttonObjs = []
+  [ 49] pushzero ................................ <0>
+  [ 50] pusharglistnoret 1 ...................... <0>
+  [ 52] extcall 32 .............................. return 0
+  [ 55] ret
+end
+
+on addButton me, argInfo
+  [  0] pushcons 0 .............................. <"ButtonScript">
+  [  2] pusharglist 1 ........................... <"ButtonScript">
+  [  4] extcall 11 .............................. <script("ButtonScript")>
+  [  6] getparam 0 .............................. <me>
+  [  8] getparam 8 .............................. <argInfo>
+  [ 10] pushint8 1 .............................. <1>
+  [ 13] pusharglist 2 ........................... <argInfo, 1>
+  [ 15] extcall 23 .............................. <getAt(argInfo, 1)>
+  [ 17] getparam 8 .............................. <argInfo>
+  [ 19] pushint8 2 .............................. <2>
+  [ 22] pusharglist 2 ........................... <argInfo, 2>
+  [ 24] extcall 23 .............................. <getAt(argInfo, 2)>
+  [ 26] getparam 8 .............................. <argInfo>
+  [ 28] pushint8 3 .............................. <3>
+  [ 31] pusharglist 2 ........................... <argInfo, 3>
+  [ 33] extcall 23 .............................. <getAt(argInfo, 3)>
+  [ 35] getparam 8 .............................. <argInfo>
+  [ 37] pushint8 4 .............................. <4>
+  [ 40] pusharglist 2 ........................... <argInfo, 4>
+  [ 42] extcall 23 .............................. <getAt(argInfo, 4)>
+  [ 44] pusharglist 6 ........................... <script("ButtonScript"), me, getAt(argInfo, 1), getAt(argInfo, 2), getAt(argInfo, 3), getAt(argInfo, 4)>
+  [ 46] extcall 0 ............................... <new(script("ButtonScript"), me, getAt(argInfo, 1), getAt(argInfo, 2), getAt(argInfo, 3), getAt(argInfo, 4))>
+  [ 48] setlocal 0 .............................. tmpObj = new(script("ButtonScript"), me, getAt(argInfo, 1), getAt(argInfo, 2), getAt(argInfo, 3), getAt(argInfo, 4))
+  [ 50] getprop 764 ............................. <buttonObjs>
+  [ 53] getlocal 0 .............................. <tmpObj>
+  [ 55] pusharglistnoret 2 ...................... <buttonObjs, tmpObj>
+  [ 57] extcall 183 ............................. add(buttonObjs, tmpObj)
+  [ 60] ret
+end
+
+on fakeMouse me, argObj, argWhat
+  [  0] getparam 8 .............................. <argObj>
+  [  2] pusharglist 1 ........................... <argObj>
+  [  4] extcall 34 .............................. <objectp(argObj)>
+  [  7] not ..................................... <not objectp(argObj)>
+  [  8] jmpifz [ 79] ............................ if not objectp(argObj) then
+  [ 11] getprop 764 ............................. <buttonObjs>
+  [ 14] peek 0
+  [ 16] pusharglist 1
+  [ 18] extcall 175
+  [ 21] pushint8 1
+  [ 23] peek 0
+  [ 25] peek 2
+  [ 27] lteq
+  [ 28] jmpifz [ 65] ............................ repeat with tmpObj in buttonObjs
+  [ 31] peek 2
+  [ 33] peek 1
+  [ 35] pusharglist 2
+  [ 37] extcall 23
+  [ 39] setlocal 0
+  [ 41] getlocal 0 .............................. <tmpObj>
+  [ 43] getobjprop 160 .......................... <tmpObj.ID>
+  [ 46] getparam 8 .............................. <argObj>
+  [ 48] eq ...................................... <tmpObj.ID = argObj>
+  [ 49] jmpifz [ 59] ............................ if tmpObj.ID = argObj then
+  [ 52] getlocal 0 .............................. <tmpObj>
+  [ 54] setparam 8 .............................. argObj = tmpObj
+  [ 56] jmp [ 65] ............................... exit repeat
+  [ 59] pushint8 1
+  [ 61] add
+  [ 62] endrepeat [ 23]
+  [ 65] pop 3
+  [ 67] getparam 8 .............................. <argObj>
+  [ 69] pusharglist 1 ........................... <argObj>
+  [ 71] extcall 34 .............................. <objectp(argObj)>
+  [ 74] not ..................................... <not objectp(argObj)>
+  [ 75] jmpifz [ 79] ............................ if not objectp(argObj) then
+  [ 78] ret ..................................... exit
+  [ 79] getparam 8 .............................. <argObj>
+  [ 81] getparam 8 .............................. <argObj>
+  [ 83] getobjprop 460 .......................... <argObj.mouseObj>
+  [ 86] getparam 16 ............................. <argWhat>
+  [ 88] pusharglistnoret 3 ...................... <argObj, argObj.mouseObj, argWhat>
+  [ 90] localcall 4 ............................. mouse(argObj, argObj.mouseObj, argWhat)
+  [ 92] ret
+end
+
+on mouse me, argObj, argWhat
+  [  0] getparam 16 ............................. <argWhat>
+  [  2] pushsymb 223 ............................ <#down>
+  [  5] eq ...................................... <argWhat = #down>
+  [  6] jmpifz [ 98] ............................ if argWhat = #down then / else
+  [  9] getprop 765 ............................. <currentlyUsingSPObj>
+  [ 12] pusharglist 1 ........................... <currentlyUsingSPObj>
+  [ 14] extcall 34 .............................. <objectp(currentlyUsingSPObj)>
+  [ 17] jmpifz [ 37] ............................ if objectp(currentlyUsingSPObj) then
+  [ 20] getprop 765 ............................. <currentlyUsingSPObj>
+  [ 23] setprop 766 ............................. lastUsingSPObj = currentlyUsingSPObj
+  [ 26] getprop 765 ............................. <currentlyUsingSPObj>
+  [ 29] pushsymb 769 ............................ <#normal>
+  [ 32] pusharglistnoret 2 ...................... <currentlyUsingSPObj, #normal>
+  [ 34] extcall 768 ............................. setState(currentlyUsingSPObj, #normal)
+  [ 37] getprop 765 ............................. <currentlyUsingSPObj>
+  [ 40] getparam 8 .............................. <argObj>
+  [ 42] eq ...................................... <currentlyUsingSPObj = argObj>
+  [ 43] getprop 136 ............................. <mode>
+  [ 46] pushsymb 770 ............................ <#Toggle>
+  [ 49] eq ...................................... <mode = #Toggle>
+  [ 50] not ..................................... <not (mode = #Toggle)>
+  [ 51] and ..................................... <(currentlyUsingSPObj = argObj) and not (mode = #Toggle)>
+  [ 52] jmpifz [ 77] ............................ if (currentlyUsingSPObj = argObj) and not (mode = #Toggle) then / else
+  [ 55] getprop 294 ............................. <SP>
+  [ 58] pushcons 8 .............................. <"Dummy">
+  [ 60] pusharglist 1 ........................... <"Dummy">
+  [ 62] extcall 307 ............................. <member("Dummy")>
+  [ 65] pushint8 37 ............................. <37>
+  [ 68] set 6 ................................... set the member of sprite SP to member("Dummy")
+  [ 70] pushzero ................................ <0>
+  [ 71] setprop 765 ............................. currentlyUsingSPObj = 0
+  [ 74] jmp [ 95]
+  [ 77] getparam 8 .............................. <argObj>
+  [ 79] pushsymb 223 ............................ <#down>
+  [ 82] pushint8 1 .............................. <1>
+  [ 85] pusharglistnoret 3 ...................... <argObj, #down, 1>
+  [ 87] extcall 768 ............................. setState(argObj, #down, 1)
+  [ 90] getparam 8 .............................. <argObj>
+  [ 92] setprop 765 ............................. currentlyUsingSPObj = argObj
+  [ 95] jmp [119]
+  [ 98] getparam 16 ............................. <argWhat>
+  [100] pushsymb 250 ............................ <#click>
+  [103] eq ...................................... <argWhat = #click>
+  [104] jmpifz [110] ............................ if argWhat = #click then / else
+  [107] jmp [119]
+  [110] getparam 16 ............................. <argWhat>
+  [112] pushsymb 259 ............................ <#UpOutside>
+  [115] eq ...................................... <argWhat = #UpOutside>
+  [116] jmpifz [119] ............................ if argWhat = #UpOutside then
+  [119] getprop 691 ............................. <reportObj>
+  [122] getparam 8 .............................. <argObj>
+  [124] getparam 16 ............................. <argWhat>
+  [126] pusharglistnoret 3 ...................... <reportObj, argObj, argWhat>
+  [128] localcall 4 ............................. mouse(reportObj, argObj, argWhat)
+  [130] ret
+end
+
+on getCurrentlyActive me
+  [  0] getprop 765 ............................. <currentlyUsingSPObj>
+  [  3] pusharglistnoret 1 ...................... <currentlyUsingSPObj>
+  [  5] extcall 32 .............................. return currentlyUsingSPObj
+  [  8] ret
+end

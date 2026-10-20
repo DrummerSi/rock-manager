@@ -1,0 +1,538 @@
+property ancestor, m_varSubstitutes, m_externFuncCalls, m_expressionCreatedVars, m_callingObj
+
+on new me
+  ancestor = script("ParserScript").new()
+  me.clearLocalVars()
+  m_externFuncCalls = [:]
+  extFuncObj = script("FunctionsForParserScript").new()
+  tmpHandlers = extFuncObj.handlers()
+  tmpHandlers.deleteOne(#new)
+  tmpHandlers.deleteOne(#kill)
+  repeat with n = 1 to tmpHandlers.count()
+    m_externFuncCalls.addProp(tmpHandlers[n], [extFuncObj, tmpHandlers[n]])
+  end repeat
+  return me
+end
+
+on kill me
+  return 0
+end
+
+on clearLocalVars me
+  m_expressionCreatedVars = [#true: 1, #false: 0, #void: VOID]
+end
+
+on parseAndCalc me, argStr
+  tmp = ancestor.parseExpression(argStr)
+  return me.calc(tmp)
+end
+
+on calc me, argParsedList, argVarSubstitutes, argExternFunctionCallInfo, argCallingObj
+  m_varSubstitutes = argVarSubstitutes
+  if not listp(m_varSubstitutes) then
+    m_varSubstitutes = [:]
+  end if
+  m_callingObj = argCallingObj
+  tmp = me.calcParsed(argParsedList)
+  if tmp[2] = #calc then
+    tmp = me.evaluateTerm(tmp)
+  end if
+  return tmp[1]
+  return me.evaluateTerm(tmp)
+end
+
+on calcParsed me, argLst, argOption
+  calced = [:]
+  operatorsInfo = argLst[1]
+  terms = argLst[2]
+  if argOption = #Arguments then
+    tmpArgs = argLst[2]
+    tmpCalcedArgs = []
+    repeat with n = 1 to tmpArgs.count
+      tmpCalcedArgs.add(me.calcParsed(tmpArgs[n]))
+    end repeat
+    return tmpCalcedArgs
+  else
+    if operatorsInfo.count = 0 then
+      if terms.count > 0 then
+        if terms[1][2] = #list then
+          tmp = me.calcParsed(terms[1][1], #Arguments)
+          resultTermType = terms[1][2]
+          realResult = [tmp, resultTermType]
+        else
+          tmp = me.evaluateTerm(terms[1])
+          resultTermType = tmp[2]
+          tmp = tmp[1]
+          realResult = [tmp, resultTermType]
+        end if
+      else
+        return VOID
+      end if
+    end if
+  end if
+  repeat with opNr = operatorsInfo.count down to 1
+    Info = operatorsInfo[opNr]
+    op = Info[1]
+    opInfo = ancestor.m_allOpInfo.getaProp(op)
+    if opInfo[3] = #un then
+      termsCalcOrder = [1]
+      currentTermsInfo = [[#place: Info[2]]]
+    else
+      termsCalcOrder = [1, 2]
+      if opInfo[4] = #RL then
+        termsCalcOrder = [2, 1]
+      end if
+      currentTermsInfo = [[#place: Info[2]], [#place: Info[2] + 1]]
+    end if
+    alreadyCalcedTerms = []
+    notCalcedTerms = []
+    repeat with m = 1 to currentTermsInfo.count
+      termNr = termsCalcOrder[m]
+      tmpInfo = currentTermsInfo[termNr]
+      tmpTermPlace = tmpInfo[#place]
+      calcedTerm = calced.getaProp(tmpTermPlace)
+      if voidp(calcedTerm) then
+        notCalcedTerms.add(termNr)
+        tmpTerm = terms[tmpTermPlace][1]
+        tmpTermType = terms[tmpTermPlace][2]
+        if tmpTermType = #sublist then
+          tmpTerm = me.calcParsed(tmpTerm)
+          tmpTermType = tmpTerm[2]
+        else
+          if tmpTermType = #Arguments then
+            tmpTerm = me.calcParsed(tmpTerm, #Arguments)
+          else
+            if tmpTermType = #list then
+              tmpTerm = me.calcParsed(tmpTerm, #Arguments)
+              tmpTerm = [tmpTerm, tmpTermType]
+            else
+              if tmpTermType = #var then
+                tmpTerm = [tmpTerm, tmpTermType]
+              else
+                if tmpTermType = #func then
+                  tmpTerm = [tmpTerm, tmpTermType]
+                else
+                  tmpTerm = [tmpTerm, tmpTermType]
+                end if
+              end if
+            end if
+          end if
+        end if
+        tmpInfo.setaProp(#OrgTerm, tmpTerm)
+        tmpInfo.setaProp(#UseTerm, tmpTerm)
+        next repeat
+      end if
+      alreadyCalcedTerms.add(termNr)
+      tmpTerm = calcedTerm[1][1]
+      tmpTermType = tmpTerm[2]
+      tmpInfo.setaProp(#UseTerm, tmpTerm)
+    end repeat
+    if opInfo[3] = #un then
+      tmp = me.useVariable(currentTermsInfo[1][#OrgTerm], op)
+      resultTermType = ilk(tmp)
+      realResult = [tmp, resultTermType]
+      next repeat
+    end if
+    if op = "." then
+      term1 = currentTermsInfo[1][#UseTerm]
+      if not listp(term1) then
+        pott("Errrr", term1)
+        return VOID
+      end if
+      term1 = me.useVariable(term1, #Get)
+      if voidp(term1) then
+        tmp = 0
+        resultTermType = #integer
+      else
+        resultTermType = #calc
+        if not listp(currentTermsInfo[2][#UseTerm]) then
+          term2 = currentTermsInfo[2][#UseTerm]
+          tmp = [term1, string(term2)]
+        else
+          term2 = currentTermsInfo[2][#UseTerm][1]
+          tmp = [term1, symbol(term2)]
+        end if
+      end if
+    else
+      if listp(ancestor.m_operatorThatSet.getaProp(op)) then
+        term1 = currentTermsInfo[1][#UseTerm]
+        term2 = currentTermsInfo[2][#UseTerm]
+        term2 = me.evaluateTerm(term2)
+        me.useVariable(term1, op, term2)
+        tmp = term2[1]
+        resultTermType = term2[2]
+      else
+        if op = "f()" then
+          tmp = me.callFunction(currentTermsInfo[1][#UseTerm], currentTermsInfo[2][#UseTerm])
+          resultTermType = ilk(tmp)
+        else
+          if op = "[" then
+            term1 = currentTermsInfo[1][#UseTerm]
+            term1 = me.useVariable(term1, #Get)
+            term2 = currentTermsInfo[2][#UseTerm]
+            tmp = [term1, term2]
+            resultTermType = #FromList
+          else
+            term1 = me.evaluateTerm(currentTermsInfo[1][#UseTerm])
+            term2 = me.evaluateTerm(currentTermsInfo[2][#UseTerm])
+            if offset("=", op) or offset("<", op) or offset(">", op) then
+              resultTermType = #integer
+            else
+              resultTermType = term1[2]
+            end if
+            term1 = term1[1]
+            term2 = term2[1]
+            if voidp(term1) then
+              term1 = 0
+            end if
+            if voidp(term2) then
+              term2 = 0
+            end if
+            case op of
+              "[":
+                tmp = term1[term2]
+              "*":
+                tmp = term1 * term2
+              "/":
+                tmp = term1 / term2
+              "+":
+                tmp = term1 + term2
+              "-":
+                tmp = term1 - term2
+              "%":
+                tmp = term1 mod term2
+              ">":
+                tmp = term1 > term2
+              "<":
+                tmp = term1 < term2
+              ">=":
+                tmp = term1 >= term2
+              "<=":
+                tmp = term1 <= term2
+              "==":
+                tmp = term1 = term2
+              "!=":
+                tmp = term1 <> term2
+              "&&":
+                tmp = term1 and term2
+                if tmp = 0 then
+                  return [0, #integer]
+                end if
+              "||":
+                tmp = term1 or term2
+              "|":
+                tmp = bitOr(term1, term2)
+              "&":
+                tmp = bitAnd(term1, term2)
+            end case
+          end if
+        end if
+      end if
+    end if
+    realResult = [tmp, resultTermType]
+    if alreadyCalcedTerms.count = 2 then
+      ptr = calced.getaProp(currentTermsInfo[1][#place])
+      ptr[1][1] = realResult
+      ptr = calced.getaProp(currentTermsInfo[2][#place])
+      ptr[1][1] = realResult
+      next repeat
+    end if
+    if alreadyCalcedTerms.count = 1 then
+      ptr = calced.getaProp(currentTermsInfo[alreadyCalcedTerms[1]][#place])
+      ptr[1][1] = realResult
+      if notCalcedTerms.count > 0 then
+        calced.setaProp(currentTermsInfo[notCalcedTerms[1]][#place], ptr)
+      end if
+      next repeat
+    end if
+    ptrptr = [realResult]
+    repeat with n = 1 to currentTermsInfo.count
+      calced.setaProp(currentTermsInfo[n][#place], [ptrptr])
+    end repeat
+  end repeat
+  return realResult
+end
+
+on callFunction me, argFunctionInfo, argArgs
+  global gThisIsTemporary
+  if not listp(argFunctionInfo) then
+    pott("ERRR function", argFunctionInfo)
+    argFunctionInfo = [argFunctionInfo, #func]
+  end if
+  funcSpec = argFunctionInfo[1]
+  funcResolve = argFunctionInfo[2]
+  tmpArgsWithoutTypeInfo = []
+  if not voidp(argArgs) then
+    if ilk(argArgs) = #propList then
+      argArgs = [argArgs]
+    end if
+    repeat with n = 1 to argArgs.count
+      tmpArg = argArgs[n]
+      if listp(tmpArg) then
+        if tmpArg[2] = #list then
+          tmpArg = me.cleanListFromInfo(tmpArg[1])
+          tmpArgsWithoutTypeInfo.add(tmpArg)
+          next repeat
+        end if
+        tmpArg = me.evaluateTerm(tmpArg)
+        tmpArgsWithoutTypeInfo.add(tmpArg[1])
+      end if
+    end repeat
+  end if
+  repeat with n = tmpArgsWithoutTypeInfo.count to 10
+    tmpArgsWithoutTypeInfo.add(VOID)
+  end repeat
+  if funcResolve = #calc then
+    funcName = funcSpec[2]
+    if objectp(funcSpec[1]) then
+      realObj = rGetAncestorWithHandler(funcSpec[1], funcName)
+      if not objectp(realObj) then
+        pott("Handler doesnt exist", argFunctionInfo)
+        return VOID
+      end if
+      return call(symbol(funcName), realObj, tmpArgsWithoutTypeInfo[1], tmpArgsWithoutTypeInfo[2], tmpArgsWithoutTypeInfo[3], tmpArgsWithoutTypeInfo[4], tmpArgsWithoutTypeInfo[5], tmpArgsWithoutTypeInfo[6], tmpArgsWithoutTypeInfo[7], tmpArgsWithoutTypeInfo[8], tmpArgsWithoutTypeInfo[9], tmpArgsWithoutTypeInfo[10])
+    else
+      if funcSpec[1] = "Director" then
+        pott("Director function, not implemented", funcName)
+        return VOID
+      else
+        pott("Unknown function resolve", argFunctionInfo)
+      end if
+    end if
+  else
+    funcName = symbol(funcSpec)
+    if voidp(funcName) then
+      pott("Func info lost!", argFunctionInfo)
+      return VOID
+    end if
+    tmp = m_externFuncCalls[funcName]
+    if listp(tmp) then
+      return call(tmp[2], tmp[1], tmpArgsWithoutTypeInfo[1], tmpArgsWithoutTypeInfo[2], tmpArgsWithoutTypeInfo[3], tmpArgsWithoutTypeInfo[4], tmpArgsWithoutTypeInfo[5], tmpArgsWithoutTypeInfo[6], tmpArgsWithoutTypeInfo[7], tmpArgsWithoutTypeInfo[8], tmpArgsWithoutTypeInfo[9], tmpArgsWithoutTypeInfo[10])
+    end if
+    str = "gThisIsTemporary = " & argFunctionInfo[1] & "("
+    repeat with arg in argArgs
+      str = str & arg & ", "
+    end repeat
+    delete funcResolve.char[str.length - 1..str.length]
+    str = str & ")"
+    pott("CalcParse using DO", str)
+    do(str)
+    return gThisIsTemporary
+  end if
+end
+
+on useVariable me, argVarInfo, argDoWhat, argValInfo, argSpecial
+  global gRock
+  argVarName = argVarInfo[1]
+  if listp(argVarName) then
+    if argVarName[1] = "Director" then
+      case argVarName[2] of
+        "stage":
+          useVar = the stage
+        "moviePath":
+          useVar = the moviePath
+      end case
+    else
+      useVar = argVarName
+      tmpCalcList = 1
+    end if
+  else
+    if stringp(argVarName) then
+      if argVarName = "Director" then
+        return argVarName
+      else
+        useVar = m_varSubstitutes.getaProp(symbol(argVarName))
+        settableObj = useVar
+        if not voidp(useVar) then
+          nothing()
+        else
+          if argVarName.char[1] = "#" then
+            useVar = value(argVarName)
+          else
+            if argVarName.char[1] = "Û" then
+              if objectp(gRock) then
+                if argVarName.char[2] = "C" then
+                  useVar = gRock.m_context.getFocus(symbol(argVarName.char[3..argVarName.length]))
+                  settableObj = useVar
+                  if not objectp(useVar) then
+                    pott("No object in focus: " & string(argVarName))
+                  end if
+                else
+                  if argVarName.char[2] = "#" then
+                    useVar = gRock.m_classManager.getObjByID(symbol(argVarName.char[3..argVarName.length]))
+                    settableObj = useVar
+                    setThisProp = symbol(argVarName)
+                    if not objectp(useVar) then
+                      pott("No object with ID = " & string(argVarName))
+                    end if
+                  end if
+                end if
+              end if
+            else
+              if argVarName = "me" then
+                useVar = m_callingObj
+              else
+                useVar = m_expressionCreatedVars[symbol(argVarName)]
+                settableObj = m_expressionCreatedVars
+                setThisProp = symbol(argVarName)
+              end if
+            end if
+          end if
+        end if
+      end if
+    else
+      if objectp(argVarName) then
+        useVar = argVarName
+      else
+        return VOID
+      end if
+    end if
+  end if
+  if argDoWhat = #Get then
+    if tmpCalcList = 1 then
+    end if
+  end if
+  if listp(argValInfo) then
+    argVal = argValInfo[1]
+  end if
+  if tmpCalcList = 1 then
+    settableObj = useVar[1]
+    if not objectp(settableObj) then
+      return VOID
+    end if
+    setThisProp = useVar[2]
+    if symbolp(setThisProp) then
+      orgVal = rgetProp(settableObj, setThisProp, ilk(argVal))
+    else
+      if integerp(setThisProp) then
+        if not listp(settableObj) then
+          pott("Not a list!")
+          return VOID
+        end if
+        if (setThisProp <= settableObj.count()) and (setThisProp > 0) then
+          orgVal = settableObj[setThisProp]
+        else
+          pott("Index outta range!")
+        end if
+      end if
+    end if
+  else
+    orgVal = useVar
+  end if
+  if argDoWhat = #Get then
+    return orgVal
+  end if
+  if not stringp(argDoWhat) then
+    return VOID
+  end if
+  if listp(argValInfo) then
+    if argValInfo[2] = #list then
+      me.cleanListFromInfo(argVal)
+    end if
+  end if
+  case argDoWhat of
+    "=":
+      orgVal = argVal
+    "+=":
+      orgVal = orgVal + argVal
+    "-=":
+      orgVal = orgVal - argVal
+    "*=":
+      orgVal = orgVal * argVal
+    "/=":
+      orgVal = orgVal / argVal
+    "++":
+      orgVal = orgVal + 1
+    "--":
+      orgVal = orgVal - 1
+    "ptr*":
+    "ptr&":
+    "pre++":
+      orgVal = orgVal + 1
+    "pre--":
+      orgVal = orgVal - 1
+  end case
+  if symbolp(setThisProp) then
+    if listp(settableObj) then
+      settableObj.setaProp(setThisProp, orgVal)
+    else
+      rsetProp(settableObj, setThisProp, orgVal)
+    end if
+  else
+    if integerp(setThisProp) then
+      settableObj[setThisProp] = orgVal
+    end if
+  end if
+  return orgVal
+end
+
+on cleanListFromInfo me, argList
+  if not listp(argList[1]) then
+    return argList
+  end if
+  repeat with n = 1 to argList.count
+    argList[n] = argList[n][1]
+  end repeat
+  return argList
+end
+
+on evaluateTerm me, argTerm
+  if argTerm[2] = #calc then
+    tmp = me.useVariable(argTerm, #Get)
+    return [tmp, ilk(tmp)]
+  else
+    if argTerm[2] = #var then
+      if stringp(argTerm[1]) then
+        if argTerm[1].char[1] = "#" then
+          return [value(argTerm[1]), #symbol]
+        else
+          if argTerm[1].char[1] = QUOTE then
+            argTerm[1] = argTerm[1].char[2..argTerm[1].length - 1]
+          else
+            tmp = me.useVariable(argTerm, #Get)
+            return [tmp, ilk(tmp)]
+          end if
+        end if
+      end if
+    else
+      if argTerm[2] = #sublist then
+        return me.calcParsed(argTerm[1])
+      end if
+    end if
+  end if
+  return argTerm
+end
+
+on zzEvaluateTerm me, argTerm, argKnownType
+  if argKnownType = #list then
+    return argTerm
+  end if
+  if integerp(argTerm) or floatp(argTerm) then
+    return argTerm
+  end if
+  if listp(argTerm) then
+    if ilk(argTerm) = #propList then
+      return argTerm
+    end if
+    return me.useVariable(argTerm, #Get)
+  end if
+  if stringp(argTerm) then
+    if argTerm.char[1] = "#" then
+      delete me.char[1]
+      return symbol(argTerm)
+    else
+      tmp = m_expressionCreatedVars[symbol(argTerm)]
+      if not voidp(tmp) then
+        return tmp
+      end if
+      if argTerm.char[1] = QUOTE then
+        delete me.char[1]
+        delete me.char[argTerm.length]
+        return argTerm
+      end if
+    end if
+    pott("Hey, unknown term type!", argTerm)
+    return 10
+  end if
+  return 0
+end

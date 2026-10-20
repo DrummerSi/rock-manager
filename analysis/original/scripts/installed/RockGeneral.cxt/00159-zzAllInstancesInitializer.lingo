@@ -1,0 +1,205 @@
+property m_lineNr, m_numLines, m_str, m_objsByClass, m_classesVars, m_classMasterObj, m_firstDataItemNr, m_tuneTotalTimeScanning, m_tuneTotalTimeSettingProps
+
+on new me, argFilesToRead, argClassesVars, argClassMasterObj, argExceptionList
+  m_classMasterObj = argClassMasterObj
+  m_classesVars = argClassesVars
+  m_objsByClass = [:]
+  m_tuneTotalTimeScanning = 0
+  m_tuneTotalTimeSettingProps = 0
+  the itemDelimiter = numToChar(9)
+  repeat with fileName in argFilesToRead
+    tmpObjs = me.initObjsFromFile(fileName, argExceptionList)
+  end repeat
+  pott("Scanning", m_tuneTotalTimeScanning, "Setting props", m_tuneTotalTimeSettingProps)
+  return me
+end
+
+on kill me
+  return 0
+end
+
+on initObjsFromFile me, argFileName, argExceptionList
+  if voidp(argExceptionList) then
+    argExceptionList = [:]
+  end if
+  m_str = readFile(argFileName)
+  if not stringp(m_str) then
+    pott("Not read", argFileName)
+    exit
+  end if
+  m_lineNr = 1
+  m_numLines = the number of lines in m_str
+  X = the milliSeconds
+  lst = tabDataStringToPropList(m_str)
+  m_tuneTotalTimeScanning = m_tuneTotalTimeScanning + the milliSeconds - X
+  X = the milliSeconds
+  tmpExceptClassList = argExceptionList[#class]
+  if voidp(tmpExceptClassList) then
+    tmpExceptClassList = []
+  end if
+  allClassesObjs = [:]
+  repeat with n = 1 to lst.count()
+    className = symbol(lst.getPropAt(n))
+    if tmpExceptClassList.getPos(className) then
+      next repeat
+    end if
+    thisClassInstances = m_objsByClass.getaProp(className)
+    if voidp(thisClassInstances) then
+      thisClassInstances = []
+      m_objsByClass.setaProp(className, thisClassInstances)
+    end if
+    scriptName = "Class" & lst.getPropAt(n) & "Script"
+    if member(scriptName).number < 1 then
+      pott(scriptName & " was not found!", argFileName)
+    else
+      subLst = lst[n]
+      tmp = subLst[1]
+      tmpNumInstances = tmp.count()
+      objs = []
+      repeat with tmpInstanceNr = 1 to tmpNumInstances
+        obj = script(scriptName).new()
+        objs.add(obj)
+        thisClassInstances.add(obj)
+      end repeat
+      me.recurseInit(objs, subLst, className, [])
+    end if
+    allClassesObjs.addProp(className, objs)
+  end repeat
+  m_tuneTotalTimeSettingProps = m_tuneTotalTimeSettingProps + the milliSeconds - X
+  return allClassesObjs
+end
+
+on recurseInit me, argObjs, argValList, argClassName, argOverClasses, argAdditionalBaseClasses, argBelongsToClass
+  repeat with n = 1 to argValList.count()
+    propName = symbol(argValList.getPropAt(n))
+    if voidp(propName) then
+      pott("er. Not good", argValList.getPropAt(n), argValList, n)
+      next repeat
+    end if
+    valList = argValList[n]
+    varInfo = m_classMasterObj.getVarInfo(argClassName, propName)
+    if voidp(varInfo) then
+      pott(propName, "does not exist in", argClassName)
+      if argObjs.count then
+        pott(argObjs[1])
+      end if
+      next repeat
+    end if
+    varType = varInfo[1]
+    if m_classMasterObj.isStdType(varType) then
+      tmpBaseClasses = varInfo[3].duplicate()
+      if symbolp(argBelongsToClass) then
+        tmpWhichBaseClass = argBelongsToClass
+      else
+        tmpWhichBaseClass = varInfo[2]
+      end if
+      if listp(argAdditionalBaseClasses) then
+        if voidp(argBelongsToClass) then
+          if argAdditionalBaseClasses.count then
+            tmpWhichBaseClass = argAdditionalBaseClasses[argAdditionalBaseClasses.count()]
+          end if
+        end if
+        mergeLists(tmpBaseClasses, argAdditionalBaseClasses)
+      end if
+      tmpWhichNum = tmpBaseClasses.getPos(tmpWhichBaseClass)
+      if tmpWhichNum < 1 then
+        tmpWhichNum = 1
+      end if
+      repeat with m = 1 to argObjs.count
+        tmpObj = argObjs[m]
+        repeat with i = tmpBaseClasses.count() down to tmpWhichNum
+          tmpObj = tmpObj.ancestor
+        end repeat
+        if m > valList.count then
+          val = EMPTY
+        else
+          val = valList[m]
+        end if
+        repeat with i = 1 to argOverClasses.count()
+          tmpObj = tmpObj.getaProp(argOverClasses[i])
+        end repeat
+        val = convStrToType(val, varType)
+        if not voidp(val) then
+          tmpObj.setaProp(propName, val)
+        end if
+      end repeat
+      next repeat
+    end if
+    if ilk(valList) = #propList then
+      tmp = argOverClasses.duplicate()
+      tmp.add(propName)
+      me.recurseInit(argObjs, valList, varType, tmp, varInfo[3], varInfo[2])
+      next repeat
+    end if
+  end repeat
+end
+
+on scan me, argList, argDepth
+  tmpVarOnHold = 0
+  m_cols = []
+  repeat while m_lineNr <= m_numLines
+    currLine = m_str.line[m_lineNr]
+    word1 = currLine.word[1]
+    if word1.length > 0 then
+      if (word1.char[1..2] <> "##") and (word1.char[1..2] <> "**") and (word1.char[1..2] <> "--") then
+        tmpVar = word1
+        tmpNumWords = the number of words in currLine
+        tmpOffset = offset(word1, currLine)
+        tmpDepth = the number of items in currLine.char[1..tmpOffset]
+        if tmpDepth > argDepth then
+          sublist = [:]
+          me.scan(sublist, tmpDepth)
+          argList.addProp(tmpVarOnHold, sublist)
+        else
+          if tmpDepth < argDepth then
+            m_lineNr = m_lineNr - 1
+            return argList
+          else
+            if tmpNumWords = 1 then
+              tmpVarOnHold = tmpVar
+            else
+              if tmpVar = "ID" then
+                firstEntry = currLine.word[2]
+                off = offset(firstEntry, currLine)
+                m_firstDataItemNr = the number of items in currLine.char[1..off]
+              end if
+              argList.addProp(tmpVar, me.readLine(currLine, m_firstDataItemNr))
+            end if
+          end if
+        end if
+      end if
+    end if
+    m_lineNr = m_lineNr + 1
+  end repeat
+  return argList
+end
+
+on readLine me, argLineStr, argStartReadFromItemNr
+  valList = []
+  valNr = 1
+  if integerp(argStartReadFromItemNr) then
+    itemNr = argStartReadFromItemNr
+  else
+    tmpWord = word 2 of argLineStr
+    put EMPTY into me.word[1]
+    tmpOff = offset(tmpWord, argLineStr)
+    itemNr = the number of items in argLineStr.char[1..tmpOff]
+  end if
+  numItems = the number of items in argLineStr
+  repeat while itemNr <= numItems
+    currItem = argLineStr.item[itemNr]
+    if currItem.char[1] = QUOTE then
+      currItem = removeExcelQuotes(currItem)
+    end if
+    valList.add(currItem)
+    valNr = valNr + 1
+    itemNr = itemNr + 1
+  end repeat
+  repeat with n = valList.count down to 1
+    if valList[n] <> EMPTY then
+      exit repeat
+    end if
+    valList.deleteAt(n)
+  end repeat
+  return valList
+end

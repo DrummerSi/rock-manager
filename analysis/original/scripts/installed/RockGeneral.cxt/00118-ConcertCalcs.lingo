@@ -1,0 +1,248 @@
+global gRock
+
+on calcNumAudience argArgs
+  band_r = gRock.m_context.getFocus(#Band)
+  album_r = gRock.m_context.getFocus(#album)
+  tmpNumPerGroup = [:]
+  tmpTotReachFact = 0
+  mission_r = gRock.m_context.getFocus(#Mission)
+  tmpBoost = mission_r.Vars.getaProp(#LiveReachBoost)
+  if not voidp(tmpBoost) then
+    argArgs[#ReachesGroups] = argArgs[#ReachesGroups].duplicate()
+    groups_r = gRock.m_classManager.getObjsOfClass(#Group)
+    repeat with group_r in groups_r
+      tmp = tmpBoost
+      if not voidp(argArgs[#ReachesGroups].getaProp(group_r.ID)) then
+        tmp = tmp + argArgs[#ReachesGroups].getaProp(group_r.ID)
+      end if
+      argArgs[#ReachesGroups].setaProp(group_r.ID, tmp)
+    end repeat
+  end if
+  repeat with n = 1 to argArgs[#ReachesGroups].count
+    tmpReachFact = argArgs[#ReachesGroups][n]
+    tmpTotReachFact = tmpTotReachFact + tmpReachFact
+  end repeat
+  if tmpTotReachFact = 0 then
+    return tmpNumPerGroup
+  end if
+  tmpTot = 0
+  tmpTotRegulars = 0
+  repeat with n = 1 to argArgs[#ReachesGroups].count
+    tmpReachFact = argArgs[#ReachesGroups][n]
+    tmpNumRegularsFromGroup = argArgs[#GuaranteedVisitors] * tmpReachFact / tmpTotReachFact
+    group_r = gRock.m_classManager.getObjByIDAndClass(argArgs[#ReachesGroups].getPropAt(n), #Group)
+    tmpHype = 0
+    tmpAtt = group_r.Attitudes.getAttitude(band_r.ID)
+    if listp(tmpAtt) then
+      tmpHype = tmpAtt[#Hype]
+      if objectp(tmpHype) then
+        tmpHype = tmpHype.Current
+      end if
+    end if
+    tmpLiveRepAffects = 1.0 + (band_r.LiveReputation * 0.29999999999999999)
+    if objectp(album_r) then
+      tmpFreshness = album_r.Freshness
+    else
+      alert("No album, how to handle this?")
+      tmpFreshness = 0.5
+    end if
+    tmpFract = tmpReachFact * argArgs[#PopulationFactor] * tmpHype * 0.02 * tmpLiveRepAffects * tmpFreshness
+    if tmpFract > 1 then
+      tmpFract = 1.0
+    else
+      if tmpFract < 0 then
+        tmpFract = 0.0
+      end if
+    end if
+    tmpNumFromGroup = tmpNumRegularsFromGroup + (tmpFract * group_r.size)
+    tmpTotRegulars = tmpTotRegulars + tmpNumRegularsFromGroup
+    tmpTot = tmpTot + tmpNumFromGroup
+    tmpNumPerGroup.addProp(group_r.ID, tmpNumFromGroup)
+  end repeat
+  return tmpNumPerGroup
+end
+
+on calcAudienceSatisfaction argArgs
+  returnList = [:]
+  band_r = gRock.m_context.getFocus(#Band)
+  if band_r.getCanPerform() <> 1 then
+    returnList.addProp(#Cancelled, 1)
+    return returnList
+  end if
+  musicians_r = band_r.getMusicianObjs()
+  repeat with mus_r in musicians_r
+    mus_r.Needs.satisfy(#NeedLive, 1.0)
+  end repeat
+  tmpNumPerGroup = calcNumAudience(argArgs)
+  tmpTotAudience = 0
+  repeat with n = 1 to tmpNumPerGroup.count
+    tmpTotAudience = tmpTotAudience + tmpNumPerGroup[n]
+  end repeat
+  tmpFilledFact = tmpTotAudience / argArgs[#VenueSize]
+  if tmpFilledFact > 1.30000000000000004 then
+    tmpFilledFact = 1.30000000000000004
+  end if
+  tmpRealAudience = tmpTotAudience
+  if tmpRealAudience > argArgs[#VenueSize] then
+    tmpRealAudience = argArgs[#VenueSize]
+  end if
+  returnList.addProp(#NumAudience, tmpRealAudience)
+  returnList.addProp(#FilledFact, tmpFilledFact)
+  returnList.addProp(#WantedToGo, tmpTotAudience)
+  tmpFillBoost = 1.0
+  if tmpFilledFact > 0.90000000000000002 then
+    tmpFillBoost = 1.0 + ((tmpFilledFact - 0.90000000000000002) / 0.10000000000000001)
+  else
+    if tmpFilledFact < 0.20000000000000001 then
+      tmpFillBoost = tmpFilledFact / 0.20000000000000001
+    end if
+  end if
+  tmpFillBoost = (0.29999999999999999 * (tmpFillBoost - 1.0)) + 1.0
+  mission_r = gRock.m_context.getFocus(#Mission)
+  tmpLikeBoost = mission_r.Vars.getaProp(#GroupsLikeBoost)
+  if voidp(tmpLikeBoost) then
+    tmpLikeBoost = 0.0
+  end if
+  BandPerformance = band_r.getLivePerformance() * tmpFillBoost
+  if rOKCheatPass() then
+    tuneDebug("Performance", BandPerformance)
+  end if
+  returnList.addProp(#Performance, BandPerformance)
+  merchandises_r = []
+  repeat with merchandiseID in band_r.Merchandise
+    merchandises_r.add(gRock.m_classManager.getObjByIDAndClass(merchandiseID, #Merchandise))
+  end repeat
+  totalBuysMerchandise = 0
+  debugStr = EMPTY
+  album_r = gRock.m_context.getFocus(#album)
+  tmpAvgLike = 0
+  tmpExpoReachesGroups = [:]
+  tmpExpoQualityPerGroup = [:]
+  if (tmpTotAudience >= 1) and (band_r.memberObjs.count > 0) then
+    tmpLikeWeighted = [:]
+    repeat with n = 1 to tmpNumPerGroup.count
+      group_r = gRock.m_classManager.getObjByIDAndClass(tmpNumPerGroup.getPropAt(n), #Group)
+      tmpLike = calcLikesConcert(group_r, VOID, VOID, BandPerformance)
+      tmpLike = tmpLike + tmpLikeBoost
+      if tmpLike > 1 then
+        tmpLike = 1.0
+      end if
+      repeat with merchandise_r in merchandises_r
+        tmpMerchandiseInterest = tmpLike
+        if tmpMerchandiseInterest < 0 then
+          tmpMerchandiseInterest = 0
+        end if
+        tmpDesire = group_r.Economy - merchandise_r.PriceLevel
+        buysFraction = tmpDesire * tmpLike
+        if buysFraction > 0.45000000000000001 then
+          buysFraction = 0.45000000000000001
+        else
+          if buysFraction < 0 then
+            buysFraction = 0.0
+          end if
+        end if
+        totalBuysMerchandise = totalBuysMerchandise + integer(buysFraction * group_r.size)
+      end repeat
+      tmpWeight = tmpNumPerGroup[n] / tmpTotAudience
+      debugStr = debugStr & string(group_r.ID) && string(tmpLike) && string(tmpWeight) & RETURN
+      tmpLikeWeighted.addProp(tmpWeight, tmpLike)
+      tmpExpoReachesGroups.addProp(group_r.ID, tmpWeight)
+      tmpExpoQualityPerGroup.addProp(group_r.ID, tmpLike)
+    end repeat
+    tmpAvgLike = calcAverage(tmpLikeWeighted)
+    debugStr = debugStr & "Avg like " & string(tmpAvgLike) & RETURN
+    tmpLikeBoost = mission_r.Vars.getaProp(#ConcertLikeBoost)
+    if voidp(tmpLikeBoost) then
+      tmpLikeBoost = 0.0
+    end if
+    tmpAvgLike = tmpAvgLike + tmpLikeBoost
+    tmpAvgLike = tmpAvgLike + makeRandomBetween(-0.10000000000000001, 0.10000000000000001)
+  end if
+  if tmpAvgLike > 1.0 then
+    tmpAvgLike = 1.0
+  end if
+  debugStr = debugStr & "Final like " & string(tmpAvgLike) & RETURN
+  if rOKCheatPass() then
+    tuneDebug(debugStr)
+  end if
+  if argArgs[#IsTour] <> 1 then
+    expo_r = gRock.m_classManager.createObj(#AudienceExposure)
+    expo_r.ID = gRock.m_classManager.genUniqueID(expo_r)
+    expo_r.Intensity = 1
+    expo_r.InfluenceWhat.addProp(band_r.ID, 1)
+    expo_r.InfluenceWhat.addProp(album_r.ID, 1)
+    expo_r.QualityPerGroup = tmpExpoQualityPerGroup
+    expo_r.ReachesGroups = tmpExpoReachesGroups
+    expo_r.setDates(gRock.m_date.getDateInt(), 1)
+  end if
+  returnList.addProp(#MerchandiseIncome, 0)
+  if argArgs[#PopulationFactor] > 0 then
+    if objectp(merchandise_r) then
+      totalBuysMerchandise = totalBuysMerchandise * argArgs[#PopulationFactor]
+      returnList.setaProp(#MerchandiseIncome, totalBuysMerchandise * merchandise_r.Revenue)
+    end if
+  end if
+  if voidp(argArgs[#AddToSatisfaction]) then
+    argArgs[#AddToSatisfaction] = 0
+  end if
+  tmpAvgLike = tmpAvgLike + argArgs[#AddToSatisfaction]
+  tmpLiveRepChange = (tmpAvgLike - 0.20000000000000001) * (float(tmpTotAudience) / 500.0)
+  if abs(tmpLiveRepChange) > 0.5 then
+    tmpLiveRepChange = getSign(tmpLiveRepChange) * 0.5
+  end if
+  band_r.LiveReputation = band_r.LiveReputation + tmpLiveRepChange
+  if band_r.LiveReputation > 1 then
+    band_r.LiveReputation = 1
+  else
+    if band_r.LiveReputation < -1 then
+      band_r.LiveReputation = -1
+    end if
+  end if
+  tmpMoodChange = tmpAvgLike - 0.5
+  if tmpMoodChange < -0.5 then
+    tmpMoodChange = -0.5
+  end if
+  tmpMoodChange = 0.20000000000000001 * tmpMoodChange
+  repeat with mus_r in musicians_r
+    rCreateModifier(#Concert, mus_r.ID, [#Mood], tmpMoodChange, 5)
+  end repeat
+  returnList.addProp(#Satisfaction, tmpAvgLike)
+  if rOKCheatPass() then
+    tuneDebug(returnList)
+  end if
+  return returnList
+end
+
+on calcLikesConcert argWho_r, argWeights, argReturnWhat, argPerformance
+  if voidp(argWeights) then
+    argWeights = [#music: 1, #image: 1, #SongType: 1, #quality: 1, #Freshness: 0.29999999999999999]
+  end if
+  likesAlbumInfo = rDefLikesAlbum(argWho_r, VOID, argWeights, #ExtraInfo)
+  tmpLike = likesAlbumInfo[#Like]
+  if not voidp(argPerformance) then
+    tmpLike = calcAverage([4.0: argPerformance, 1.0: tmpLike])
+  end if
+  if argReturnWhat = #ExtraInfo then
+    return likesAlbumInfo
+  end if
+  return tmpLike
+end
+
+on zzcalcLikesConcert argWho_r, argWeights, argReturnWhat, argPerformance
+  album_r = gRock.m_context.getFocus(#album)
+  if voidp(argWeights) then
+    argWeights = [#music: 1, #image: 1, #SongType: 1, #quality: 1, #Performance: 1.80000000000000004]
+  end if
+  likesAlbumInfo = rDefLikesAlbum(argWho_r, VOID, argWeights, #ExtraInfo)
+  tmpWeighted = likesAlbumInfo[#WeightedList]
+  likesAlbumInfo[#LikeSorted].addProp(argPerformance, [#Performance])
+  tmpLike = likesAlbumInfo[#Like]
+  if argWeights[#Performance] > 0 then
+    tmpWeighted.addProp(argWeights[#Performance], argPerformance)
+  end if
+  tmpLike = calcAverage(tmpWeighted)
+  if argReturnWhat = #ExtraInfo then
+    return likesAlbumInfo
+  end if
+  return tmpLike
+end
