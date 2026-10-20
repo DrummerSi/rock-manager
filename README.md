@@ -137,6 +137,8 @@ Bandmate windows now play original character speech with source-cue lip syncing.
 Rehearsal now uses original mood-specific portraits and the native album status fields. Play song previews the recorded mix and stops when the band window closes; song selection belongs in the studio. Actor decoding now follows the native live-score ink36 rule: every matching white pixel is transparent, including enclosed regions. The prior exterior-only matte was incorrect. See [animation transparency evidence](analysis/original/animation-white-artifacts.md). The audio export includes training completion voices and original lip-sync cues. Five focused browser checks compare painted portraits with source bitmaps, inspect compact cards, enforce rehearsal guidance and verify playback.
 
 
-## AI Use
+## Tools Used
 
-Codex AI, alongside REA (https://rea.tools/) was used to analyse the original 2001 game binary, and recreate it in Typescript for use on the web
+- Ghidra. Reverse engineering tool to analyse the original game
+- REA (Reverse Engineer Anything). Connects Ghidra to AI agent
+- Codex. AI Agent used to analyse and re-build game as a web project
