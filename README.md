@@ -1,8 +1,13 @@
 ![RockManager logo](/public/assets/logo.png)
 
+### [Click here to play online](https://drummersi.github.io/rock-manager/)
+
+---
+
 # Rock Manager recreation
 
 A browser-first TypeScript/Phaser 3 recreation of Rock Manager’s game mechanics. Every game screen, control, dialog and text input is rendered inside one 800×600 canvas. HTML only hosts the canvas and fits it to the window.
+
 
 ## Run in a browser
 
@@ -33,7 +38,7 @@ Mission song previews preload as compressed audio during initial loading and bef
 
 Graphics and city ambience load at startup. Speech, previews and recording stems load when needed and remain cached in memory for the session; the larger mission audio library is not downloaded before the menu.
 
-## Desktop
+## Desktop - Not yet tested
 
 The same web build is wrapped by Tauri 2, with no native plugins or remote services.
 
@@ -142,3 +147,8 @@ Rehearsal now uses original mood-specific portraits and the native album status 
 - Ghidra. Reverse engineering tool to analyse the original game
 - REA (Reverse Engineer Anything). Connects Ghidra to AI agent
 - Codex. AI Agent used to analyse and re-build game as a web project
+
+
+#### Notes
+- Sprites are preloaded and cached on first launch.
+- Most audio is loaded as it's required, so there may be a delay on slow connections.
