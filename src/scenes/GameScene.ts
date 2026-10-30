@@ -53,10 +53,12 @@ import {composeCover} from '../ui/album-cover';
 import {scenarioBooking} from '../ui/scenario-booking';
 import {completeMusicianQuit,musicianQuitOccupied} from '../game/musician-quits';
 import { labelSurveyWindow, channelSettingsWindow, contractWindow, labelWindow, mixerWindow, sessionWindow, studioWindow } from '../ui/tutorial-windows';
+import packageJson from '../../package.json' with {type:'json'};
 
 type Modal = 'venue-notice'|'tour'|'tour-city'|'tour-stage'|'tour-expenses'|'tour-book'|'tour-ongoing'|'tour-result'|'tour-cancel'|'tour-intro'|'tour-complete'|'label-action' | 'label-survey' | 'gangsta' | 'gangsta-action' | 'gangsta-target' | 'gangsta-security' | 'gangsta-card' | 'video' | 'video-book' | 'video-card' | 'scenario-book' | 'scenario-event' | 'mission-result' | 'mission-warning' | 'bandmate' | 'bandmate-action' | 'bandmate-training' | 'training-result' | 'artist-away' | 'briefing' | 'rehearsal' | 'recruit' | 'rename' | 'menu' | 'help' | 'reset' | 'publisher' | 'songs' | 'missions' | 'quit' | 'studio' | 'mixer' | 'settings' | 'finish-demo' | 'replace-demo' | 'session' | 'label' | 'contract' | 'rejection' | 'design' | 'release' | 'venue' | 'concert-book' | 'media' | 'advert' | 'media-action' | 'chart' | 'agenda' | 'activity-result' | null;
 const musicians: Musician[] = data.allMusicians;
 const money = (value: number) => value.toLocaleString('en-GB');
+const repositoryUrl = 'https://github.com/DrummerSi/rock-manager';
 
 export class GameScene extends Phaser.Scene {
   private state!: GameState;
@@ -378,6 +380,11 @@ export class GameScene extends Phaser.Scene {
       image.setCrop(0, 144 - mask.y, image.width, image.height - (144 - mask.y));
       this.hud.add(image);
     }
+    const credit = this.hudText(32, 572, 'By Drummer_si', '#858585')
+      .setInteractive({ cursor: 'pointer' })
+      .on('pointerup', () => window.open(repositoryUrl, '_blank', 'noopener,noreferrer'));
+    credit.setFontStyle('').setOrigin(0, 0.5);
+    this.hudText(768, 572, `v${packageJson.version}`, '#858585').setFontStyle('').setOrigin(1, 0.5);
     this.updateStatus();
   }
 
